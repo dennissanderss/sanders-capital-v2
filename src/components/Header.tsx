@@ -11,6 +11,7 @@ const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/blog', label: 'Blog' },
   { href: '/kennisbank', label: 'Kennisbank' },
+  { href: '/tools', label: 'Tools' },
   { href: '/premium', label: 'Premium' },
   { href: '/over', label: 'Over' },
   { href: '/contact', label: 'Contact' },
