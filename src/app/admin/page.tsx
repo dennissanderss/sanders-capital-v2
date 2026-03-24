@@ -305,6 +305,33 @@ export default function AdminPage() {
           </div>
 
           <div>
+            <label className="block text-sm text-text-muted mb-1">Afbeelding uploaden</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  const ext = file.name.split('.').pop()
+                  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+                  const { error } = await supabase.storage.from('images').upload(fileName, file)
+                  if (error) {
+                    alert('Upload mislukt: ' + error.message)
+                    return
+                  }
+                  const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName)
+                  const markdownImg = `![${file.name}](${urlData.publicUrl})`
+                  await navigator.clipboard.writeText(markdownImg)
+                  alert('Afbeelding geüpload! Markdown link is gekopieerd naar je klembord.\n\nPlak het in je content met Ctrl+V.')
+                }}
+                className="text-sm text-text-muted file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border file:border-border file:bg-bg-card file:text-text-muted file:text-sm file:cursor-pointer hover:file:text-heading file:transition-colors"
+              />
+            </div>
+            <p className="text-xs text-text-dim mt-1">Upload een afbeelding → markdown link wordt automatisch gekopieerd</p>
+          </div>
+
+          <div>
             <label className="block text-sm text-text-muted mb-1">Content (Markdown)</label>
             <textarea
               rows={16}
