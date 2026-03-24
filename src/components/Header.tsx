@@ -20,7 +20,6 @@ const toolsDropdown = [
   { href: '/tools/calculator', label: 'Position Size Calculator' },
   { href: '/tools/kalender', label: 'Economische Kalender' },
   { href: '/tools/begrippen', label: 'Economische Begrippen', sub: true },
-  { href: '/tools/sentiment', label: 'Forex Sentiment' },
   { href: '/tools/rente', label: 'Rentetarieven' },
 ]
 
