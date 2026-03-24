@@ -51,13 +51,14 @@ export default function Header() {
           : 'bg-transparent'
       }`}
     >
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 group">
+      <div className="max-w-6xl mx-auto px-6 flex flex-col items-center">
+        {/* Logo centered */}
+        <Link href="/" className="flex items-center gap-3 group pt-3 pb-1">
           <img
             src="/assets/images/logo.png"
             alt="Sanders Capital"
-            width={36}
-            height={36}
+            width={40}
+            height={40}
             className="rounded"
           />
           <span className="text-lg font-semibold tracking-wider text-heading font-display">
@@ -65,8 +66,8 @@ export default function Header() {
           </span>
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        {/* Desktop nav below logo */}
+        <nav className="hidden md:flex items-center gap-8 pb-2">
           {navLinks.map((link) => (
             <Link
               key={link.href}
