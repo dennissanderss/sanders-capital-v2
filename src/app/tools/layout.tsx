@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 const toolLinks = [
   { href: '/tools/calculator', label: 'Position Size Calculator' },
   { href: '/tools/kalender', label: 'Economische Kalender' },
+  { href: '/tools/begrippen', label: 'Economische Begrippen' },
   { href: '/tools/rente', label: 'Rentetarieven' },
 ]
 
