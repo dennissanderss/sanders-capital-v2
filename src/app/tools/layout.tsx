@@ -8,6 +8,7 @@ const toolLinks = [
   { href: '/tools/kalender', label: 'Economische Kalender', sub: [
     { href: '/tools/begrippen', label: 'Begrippen' },
   ]},
+  { href: '/tools/sentiment', label: 'Forex Sentiment' },
   { href: '/tools/rente', label: 'Rentetarieven' },
 ]
 
