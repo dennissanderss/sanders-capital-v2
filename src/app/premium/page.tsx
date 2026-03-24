@@ -8,10 +8,9 @@ export const metadata: Metadata = {
 }
 
 const freeFeatures = [
-  'Basis artikelen',
+  'Basis artikelen (zonder account)',
   'Kennisbank basis modules',
   'Community toegang',
-  'Wekelijkse nieuwsbrief',
 ]
 
 const premiumFeatures = [

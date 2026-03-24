@@ -115,6 +115,10 @@ export default function RegisterPage() {
               Inloggen
             </Link>
           </p>
+
+          <p className="text-xs text-text-dim text-center mt-4">
+            Let op: de bevestigingsmail kan in je spamfolder terechtkomen. Controleer deze als je geen mail ontvangt.
+          </p>
         </div>
       </FadeIn>
     </div>
