@@ -30,9 +30,15 @@ export default function RentePage() {
         <h1 className="text-3xl md:text-4xl font-display font-semibold text-heading mb-4">
           Rentetarieven Centrale Banken
         </h1>
-        <p className="text-text-muted max-w-lg mx-auto">
+        <p className="text-text-muted max-w-lg mx-auto mb-5">
           Overzicht van de actuele beleidsrentes van de belangrijkste centrale banken wereldwijd.
         </p>
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-bg-card border border-border">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          <span className="text-xs text-text-dim">Laatst bijgewerkt: maart 2026</span>
+          <span className="text-xs text-text-dim">·</span>
+          <span className="text-xs text-text-dim">Handmatig bijgewerkt</span>
+        </div>
       </div>
 
       {/* Major currencies highlight */}
