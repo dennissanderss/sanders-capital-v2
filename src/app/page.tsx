@@ -31,26 +31,37 @@ export default async function HomePage() {
 
         <div className="relative z-10 text-center max-w-3xl mx-auto px-6">
           <FadeIn>
-            <DisclaimerBadge className="mb-6" />
+            <div className="mb-8 flex justify-center">
+              <img
+                src="/assets/images/logo.png"
+                alt="Sanders Capital"
+                width={120}
+                height={120}
+                className="rounded-lg drop-shadow-2xl"
+              />
+            </div>
           </FadeIn>
           <FadeIn delay={100}>
+            <DisclaimerBadge className="mb-6" />
+          </FadeIn>
+          <FadeIn delay={200}>
             <p className="text-sm tracking-[0.2em] uppercase text-accent-light mb-4 font-body">
               Community &amp; Educatie
             </p>
           </FadeIn>
-          <FadeIn delay={200}>
+          <FadeIn delay={300}>
             <h1 className="text-5xl md:text-7xl font-display font-semibold text-heading leading-tight mb-6">
               Kennis. Discipline.{' '}
               <em className="text-accent-light">Groei.</em>
             </h1>
           </FadeIn>
-          <FadeIn delay={300}>
+          <FadeIn delay={400}>
             <p className="text-lg text-text-muted max-w-xl mx-auto mb-8">
               Educatieve content over financiële markten. Bouw een solide fundament met
               gestructureerde kennis, discipline en data-gedreven inzichten.
             </p>
           </FadeIn>
-          <FadeIn delay={400}>
+          <FadeIn delay={500}>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/blog"
