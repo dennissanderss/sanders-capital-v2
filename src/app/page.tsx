@@ -75,8 +75,8 @@ export default async function HomePage() {
           {[
             { end: 50, suffix: '+', label: 'Artikelen' },
             { end: 12, suffix: '+', label: 'Onderwerpen' },
-            { end: 1000, suffix: '+', label: 'Community leden' },
-            { end: 0, label: '', text: 'Data-gedreven' },
+            { end: 0, label: '', text: 'Gratis community' },
+            { end: 0, label: '', text: '100% data-gedreven' },
           ].map((stat, i) => (
             <FadeIn key={i} delay={i * 100}>
               <div>
