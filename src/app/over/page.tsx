@@ -47,7 +47,7 @@ export default function OverPage() {
             {/* Profile photo */}
             <div className="w-28 h-36 sm:w-32 sm:h-40 rounded-2xl overflow-hidden border border-border shrink-0">
               <Image
-                src="/assets/images/Dennis.jpg"
+                src="/assets/images/dennis2.jpg"
                 alt="Dennis Sanders"
                 width={128}
                 height={160}
