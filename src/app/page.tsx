@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import FadeIn from '@/components/FadeIn'
 import CounterAnimation from '@/components/CounterAnimation'
 import DisclaimerBadge from '@/components/DisclaimerBadge'
+import TickerTape from '@/components/TickerTape'
 
 export default async function HomePage() {
   const supabase = await createServerSupabaseClient()
@@ -68,6 +69,13 @@ export default async function HomePage() {
           </FadeIn>
         </div>
       </section>
+
+      {/* Ticker Tape */}
+      <div className="border-y border-border bg-bg-elevated/50">
+        <div className="max-w-6xl mx-auto">
+          <TickerTape />
+        </div>
+      </div>
 
       {/* Stats */}
       <section className="border-y border-border bg-bg-elevated/50">
