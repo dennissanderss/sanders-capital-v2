@@ -2,6 +2,22 @@
 
 import Link from 'next/link'
 
+const articleStyles = `
+  .article-content h2 { font-family: var(--font-display); font-size: 2rem; font-weight: 700; color: var(--color-heading); margin-top: 3rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border); line-height: 1.2; }
+  .article-content h3 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; color: var(--color-heading); margin-top: 2.25rem; margin-bottom: 0.5rem; line-height: 1.3; }
+  .article-content p { margin-bottom: 1.25rem; line-height: 1.85; color: var(--color-text); }
+  .article-content strong { font-weight: 600; color: var(--color-heading); }
+  .article-content em { font-style: italic; color: var(--color-accent-light); }
+  .article-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.25rem; }
+  .article-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.25rem; }
+  .article-content li { margin-bottom: 0.4rem; line-height: 1.75; color: var(--color-text); }
+  .article-content blockquote { border-left: 3px solid var(--color-accent-dim); padding-left: 1rem; margin: 1.5rem 0; color: var(--color-text-muted); font-style: italic; }
+  .article-content img { max-width: 100%; border-radius: 6px; }
+  .article-content img[style*="float: left"] { float: left; margin: 0.5rem 1.5rem 0.75rem 0; }
+  .article-content img[style*="float: right"] { float: right; margin: 0.5rem 0 0.75rem 1.5rem; }
+  .article-content::after { content: ''; display: table; clear: both; }
+`
+
 export default function ArticleContent({
   content,
   isPremium,
@@ -13,7 +29,10 @@ export default function ArticleContent({
 }) {
   if (!isPremium || hasAccess) {
     return (
-      <article className="article-content" dangerouslySetInnerHTML={{ __html: content }} />
+      <>
+        <style>{articleStyles}</style>
+        <article className="article-content" dangerouslySetInnerHTML={{ __html: content }} />
+      </>
     )
   }
 
@@ -22,6 +41,7 @@ export default function ArticleContent({
 
   return (
     <div className="relative">
+      <style>{articleStyles}</style>
       <article className="article-content premium-blur" dangerouslySetInnerHTML={{ __html: previewHtml }} />
       <div className="h-32" />
 
