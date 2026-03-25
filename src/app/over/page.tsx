@@ -140,7 +140,8 @@ export default function OverPage() {
               <p>
                 Er zijn genoeg community&apos;s van twee- of drieduizend euro waar grote beloftes worden
                 gemaakt. Geen trackrecord, geen eerlijke ervaring, geen data. Alleen marketing en
-                FOMO. Dat is niet wat ik bouw.
+                FOMO. Te veel influencers in deze industrie verdienen hun geld aan commissies en
+                affiliate deals, niet aan hun eigen trades. Dat is niet wat ik bouw.
               </p>
               <p>
                 Sanders Capital is gebouwd op een simpel principe: waardevolle kennis hoort
