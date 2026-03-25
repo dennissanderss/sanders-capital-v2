@@ -27,6 +27,10 @@ export const metadata: Metadata = {
   description:
     'Educatieve content over financiële markten. Leer over trading, risicomanagement en marktpsychologie.',
   metadataBase: new URL('https://sanderscapital.nl'),
+  icons: {
+    icon: '/assets/images/logo.png',
+    apple: '/assets/images/logo.png',
+  },
   openGraph: {
     title: 'Sanders Capital — Kennis. Discipline. Groei.',
     description:
