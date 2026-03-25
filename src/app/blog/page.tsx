@@ -20,7 +20,7 @@ export default async function BlogPage() {
     <div className="max-w-6xl mx-auto px-6 py-24">
       <FadeIn>
         <div className="mb-16">
-          <h1 className="text-4xl md:text-5xl font-display font-semibold text-heading mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-semibold text-heading mb-4">
             Blog
           </h1>
           <p className="text-text-muted max-w-2xl">
@@ -29,7 +29,7 @@ export default async function BlogPage() {
         </div>
       </FadeIn>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
         {articles?.map((article, i) => (
           <FadeIn key={article.id} delay={i * 80}>
             <Link

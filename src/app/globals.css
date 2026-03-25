@@ -201,3 +201,20 @@
   background: linear-gradient(transparent, var(--color-bg));
   pointer-events: none;
 }
+
+@media (max-width: 640px) {
+  .article-content h2 {
+    font-size: 1.4rem;
+    margin-top: 1.5rem;
+  }
+  .article-content h3 {
+    font-size: 1.15rem;
+    margin-top: 1.25rem;
+  }
+  .article-content img[style*="float: left"],
+  .article-content img[style*="float: right"] {
+    float: none !important;
+    width: 100% !important;
+    margin: 0.75rem 0 !important;
+  }
+}

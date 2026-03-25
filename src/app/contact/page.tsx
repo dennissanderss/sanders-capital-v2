@@ -78,7 +78,7 @@ export default function ContactPage() {
     <div className="max-w-3xl mx-auto px-6 py-24">
       {/* Header */}
       <FadeIn>
-        <h1 className="text-4xl md:text-5xl font-display font-semibold text-heading mb-6">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-semibold text-heading mb-6">
           Contact
         </h1>
       </FadeIn>
@@ -124,7 +124,7 @@ export default function ContactPage() {
               href={link.href}
               target={link.href.startsWith('mailto') ? undefined : '_blank'}
               rel={link.href.startsWith('mailto') ? undefined : 'noopener noreferrer'}
-              className="flex items-center gap-4 p-4 rounded-xl bg-bg-card border border-border hover:border-border-light transition-colors group"
+              className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-bg-card border border-border hover:border-border-light transition-colors group"
             >
               <div className="w-10 h-10 rounded-lg bg-bg-hover flex items-center justify-center text-accent-light group-hover:text-heading transition-colors shrink-0">
                 {link.icon}

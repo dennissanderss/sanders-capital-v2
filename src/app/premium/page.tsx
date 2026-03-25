@@ -56,7 +56,7 @@ export default function PremiumPage() {
       </FadeIn>
 
       {/* Pricing tiers */}
-      <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-24">
+      <div className="grid md:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto mb-24">
         <FadeIn delay={100}>
           <div className="p-8 rounded-xl bg-bg-card border border-border h-full">
             <div className="mb-6">
@@ -128,7 +128,7 @@ export default function PremiumPage() {
           <h2 className="text-2xl font-display font-semibold text-heading text-center mb-12">
             Hoe het werkt
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {[
               { step: '1', title: 'Maak een account', desc: 'Registreer gratis en krijg direct toegang tot basis content.' },
               { step: '2', title: 'Verken de content', desc: 'Lees artikelen, verken de kennisbank en ontdek wat bij jou past.' },

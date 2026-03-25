@@ -40,7 +40,7 @@ export default async function HomePage() {
             </p>
           </FadeIn>
           <FadeIn delay={200}>
-            <h1 className="text-5xl md:text-7xl font-display font-semibold text-heading leading-tight mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-display font-semibold text-heading leading-tight mb-6">
               Kennis. Discipline.{' '}
               <em className="text-accent-light">Groei.</em>
             </h1>
@@ -52,7 +52,7 @@ export default async function HomePage() {
             </p>
           </FadeIn>
           <FadeIn delay={400}>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <Link
                 href="/blog"
                 className="px-6 py-3 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors"
@@ -90,7 +90,7 @@ export default async function HomePage() {
 
       {/* Stats */}
       <section className="border-y border-border bg-bg-elevated/50">
-        <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 text-center">
           {[
             { end: 50, suffix: '+', label: 'Artikelen' },
             { end: 12, suffix: '+', label: 'Onderwerpen' },
@@ -99,7 +99,7 @@ export default async function HomePage() {
           ].map((stat, i) => (
             <FadeIn key={i} delay={i * 100}>
               <div>
-                <p className="text-2xl md:text-3xl font-display font-semibold text-heading">
+                <p className="text-xl sm:text-2xl md:text-3xl font-display font-semibold text-heading">
                   {stat.text ? (
                     stat.text
                   ) : (
@@ -127,7 +127,7 @@ export default async function HomePage() {
             </p>
           </FadeIn>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
             {[
               {
                 icon: (

@@ -99,7 +99,7 @@ export default async function ArticlePage({ params }: Props) {
               </span>
             )}
           </div>
-          <h1 className="text-3xl md:text-4xl font-display font-semibold text-heading mb-4">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-display font-semibold text-heading mb-4">
             {article.title}
           </h1>
           <div className="flex items-center gap-4 text-sm text-text-muted">
@@ -124,7 +124,7 @@ export default async function ArticlePage({ params }: Props) {
 
       {/* Previous/Next navigation */}
       <FadeIn delay={400}>
-        <div className="mt-16 pt-8 border-t border-border grid grid-cols-2 gap-4">
+        <div className="mt-16 pt-8 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           {prevArticle ? (
             <Link
               href={`/blog/${prevArticle.slug}`}

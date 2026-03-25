@@ -27,7 +27,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
                 <div key={link.href} className="relative group flex items-center">
                   <Link
                     href={link.href}
-                    className={`px-4 py-2.5 text-sm whitespace-nowrap transition-colors border-b-2 ${
+                    className={`px-3 sm:px-4 py-2 sm:py-2.5 text-sm whitespace-nowrap transition-colors border-b-2 ${
                       isActive
                         ? 'border-accent text-heading'
                         : 'border-transparent text-text-muted hover:text-heading hover:border-border-light'

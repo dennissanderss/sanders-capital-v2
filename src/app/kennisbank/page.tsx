@@ -92,7 +92,7 @@ export default async function KennisbankPage() {
     <div className="max-w-6xl mx-auto px-6 py-24">
       <FadeIn>
         <div className="mb-16">
-          <h1 className="text-4xl md:text-5xl font-display font-semibold text-heading mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-semibold text-heading mb-4">
             Kennisbank
           </h1>
           <p className="text-text-muted max-w-2xl">
@@ -101,7 +101,7 @@ export default async function KennisbankPage() {
         </div>
       </FadeIn>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
         {groupedItems.map((cat, i) => (
           <FadeIn key={cat.id} delay={i * 100}>
             <div

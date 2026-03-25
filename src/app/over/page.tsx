@@ -43,7 +43,7 @@ export default function OverPage() {
       {/* Intro */}
       <section className="max-w-3xl mx-auto px-6 mb-24">
         <FadeIn>
-          <div className="flex flex-col sm:flex-row items-start gap-8">
+          <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 md:gap-8">
             {/* Profile photo */}
             <div className="w-32 h-44 sm:w-36 sm:h-52 rounded-2xl overflow-hidden border border-border shrink-0">
               <Image
@@ -57,7 +57,7 @@ export default function OverPage() {
             </div>
 
             <div>
-              <h1 className="text-4xl md:text-5xl font-display font-semibold text-heading mb-2">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-semibold text-heading mb-2">
                 Dennis Sanders
               </h1>
               <p className="text-sm tracking-wide text-accent-light mb-5">

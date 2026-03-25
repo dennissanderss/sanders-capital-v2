@@ -42,7 +42,7 @@ export default function RentePage() {
       </div>
 
       {/* Major currencies highlight */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-10">
         {interestRates.slice(0, 8).map((item) => (
           <div key={item.currency} className="p-4 rounded-xl bg-bg-card border border-border text-center">
             <p className="text-2xl mb-1">{item.country}</p>
@@ -59,26 +59,26 @@ export default function RentePage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Land</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Centrale Bank</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Valuta</th>
-                <th className="text-right px-6 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Rente</th>
+                <th className="text-left px-2 sm:px-4 md:px-6 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Land</th>
+                <th className="text-left px-2 sm:px-4 md:px-6 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Centrale Bank</th>
+                <th className="text-left px-2 sm:px-4 md:px-6 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Valuta</th>
+                <th className="text-right px-2 sm:px-4 md:px-6 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Rente</th>
               </tr>
             </thead>
             <tbody>
               {interestRates.map((item) => (
                 <tr key={item.currency} className="border-b border-border/50 hover:bg-bg-hover transition-colors">
-                  <td className="px-6 py-3.5">
+                  <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3.5">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{item.country}</span>
                       <span className="text-sm text-heading">{item.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-3.5 text-sm text-text-muted">{item.bank}</td>
-                  <td className="px-6 py-3.5">
+                  <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3.5 text-sm text-text-muted">{item.bank}</td>
+                  <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3.5">
                     <span className="px-2 py-0.5 rounded bg-bg border border-border text-xs font-mono text-heading">{item.currency}</span>
                   </td>
-                  <td className="px-6 py-3.5 text-right">
+                  <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3.5 text-right">
                     <span className="text-sm font-semibold text-heading">{item.rate}</span>
                   </td>
                 </tr>

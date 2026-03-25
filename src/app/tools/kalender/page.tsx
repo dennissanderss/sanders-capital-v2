@@ -25,11 +25,11 @@ export default function KalenderPage() {
           className="hidden"
         />
         {/* TradingView Economic Calendar Widget */}
-        <div className="tradingview-widget-container">
+        <div className="tradingview-widget-container h-[400px] sm:h-[500px] md:h-[600px]">
           <iframe
             src="https://s.tradingview.com/embed-widget/events/?locale=en#%7B%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%2C%22width%22%3A%22100%25%22%2C%22height%22%3A600%2C%22importanceFilter%22%3A%22-1%2C0%2C1%22%2C%22countryFilter%22%3A%22us%2Cgb%2Ceu%2Cjp%2Cau%2Cca%2Cch%2Cnz%22%7D"
             width="100%"
-            height="600"
+            height="100%"
             style={{ border: 'none' }}
             title="Economische Kalender"
           />
