@@ -339,6 +339,7 @@ export default function AdminPage() {
             <RichEditor
               value={editing.content}
               onChange={(html) => setEditing({ ...editing, content: html })}
+              supabase={supabase}
             />
           </div>
 

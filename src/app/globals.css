@@ -112,6 +112,10 @@
 .article-content ul { list-style-type: disc; }
 .article-content ol { list-style-type: decimal; }
 .article-content li { margin-bottom: 0.4rem; line-height: 1.75; color: var(--color-text); }
+.article-content img { max-width: 100%; border-radius: 6px; }
+.article-content img[style*="float: left"] { float: left; margin: 0.5rem 1.5rem 0.75rem 0; }
+.article-content img[style*="float: right"] { float: right; margin: 0.5rem 0 0.75rem 1.5rem; }
+.article-content::after { content: ''; display: table; clear: both; }
 .article-content blockquote {
   border-left: 3px solid var(--color-accent-dim);
   padding-left: 1rem;
