@@ -39,6 +39,14 @@ interface Category {
   order_index: number
 }
 
+interface Profile {
+  id: string
+  email: string
+  full_name: string
+  role: 'free' | 'premium' | 'admin'
+  created_at: string
+}
+
 const tagOptions = ['Module 1', 'Module 2', 'Module 3', 'Marktanalyse', 'Psychologie', 'Risicomanagement', 'Strategie', 'Data']
 
 const iconOptions = [
@@ -64,10 +72,11 @@ function generateSlug(title: string) {
 }
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<'articles' | 'kennisbank' | 'categories'>('articles')
+  const [tab, setTab] = useState<'articles' | 'kennisbank' | 'categories' | 'users'>('articles')
   const [articles, setArticles] = useState<Article[]>([])
   const [kennisbankItems, setKennisbankItems] = useState<KennisbankItem[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [users, setUsers] = useState<Profile[]>([])
   const [editing, setEditing] = useState<Article | null>(null)
   const [editingKb, setEditingKb] = useState<KennisbankItem | null>(null)
   const [editingCat, setEditingCat] = useState<Category | null>(null)
@@ -94,15 +103,17 @@ export default function AdminPage() {
       return
     }
 
-    const [{ data: arts }, { data: kbs }, { data: cats }] = await Promise.all([
+    const [{ data: arts }, { data: kbs }, { data: cats }, { data: profs }] = await Promise.all([
       supabase.from('articles').select('*').order('created_at', { ascending: false }),
       supabase.from('kennisbank_items').select('*').order('category').order('order_index'),
       supabase.from('kennisbank_categories').select('*').order('order_index'),
+      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
     ])
 
     if (arts) setArticles(arts)
     if (kbs) setKennisbankItems(kbs)
     if (cats) setCategories(cats)
+    if (profs) setUsers(profs)
     setLoading(false)
   }, [supabase, router])
 
@@ -207,6 +218,12 @@ export default function AdminPage() {
     loadData()
   }
 
+  const changeUserRole = async (userId: string, newRole: 'free' | 'premium' | 'admin') => {
+    if (newRole === 'admin' && !confirm('Weet je zeker dat je deze gebruiker admin rechten wilt geven?')) return
+    await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
+    setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: newRole } : u))
+  }
+
   const toggleCategoryPremium = async (cat: Category) => {
     await supabase.from('kennisbank_categories').update({ is_premium: !cat.is_premium }).eq('id', cat.id)
     setCategories((prev) => prev.map((c) => c.id === cat.id ? { ...c, is_premium: !c.is_premium } : c))
@@ -248,6 +265,14 @@ export default function AdminPage() {
             }`}
           >
             Categorieën
+          </button>
+          <button
+            onClick={() => { setTab('users'); setEditing(null); setEditingKb(null); setEditingCat(null) }}
+            className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+              tab === 'users' ? 'bg-accent text-white' : 'bg-bg-card border border-border text-text-muted hover:text-heading'
+            }`}
+          >
+            Gebruikers
           </button>
         </div>
       </div>
@@ -648,6 +673,98 @@ export default function AdminPage() {
                   >
                     Verwijderen
                   </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* USERS TAB */}
+      {tab === 'users' && (
+        <>
+          <div className="mb-6">
+            <p className="text-sm text-text-muted">
+              Beheer gebruikersrollen. Premium leden kunnen premium artikelen en kennisbank items zien.
+            </p>
+            <div className="flex items-center gap-4 mt-3 text-xs">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-text-dim" />
+                Free: {users.filter(u => u.role === 'free').length}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-gold" />
+                Premium: {users.filter(u => u.role === 'premium').length}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-accent" />
+                Admin: {users.filter(u => u.role === 'admin').length}
+              </span>
+              <span className="text-text-dim">
+                Totaal: {users.length}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {users.map((user) => (
+              <div
+                key={user.id}
+                className="flex items-center justify-between p-4 rounded-xl bg-bg-card border border-border"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-sm font-semibold text-heading truncate">
+                      {user.full_name || 'Geen naam'}
+                    </h3>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                      user.role === 'admin'
+                        ? 'bg-accent/20 text-accent-light'
+                        : user.role === 'premium'
+                        ? 'bg-gold-dim text-gold'
+                        : 'bg-bg-hover text-text-dim'
+                    }`}>
+                      {user.role === 'admin' ? 'Admin' : user.role === 'premium' ? 'Premium' : 'Free'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-text-dim">
+                    <span>{user.email}</span>
+                    <span>Lid sinds {new Date(user.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  </div>
+                </div>
+                <div className="flex gap-2 shrink-0 ml-4">
+                  {user.role === 'free' && (
+                    <button
+                      onClick={() => changeUserRole(user.id, 'premium')}
+                      className="px-3 py-1.5 rounded-lg border border-gold/40 bg-gold-dim text-xs text-gold font-medium hover:bg-gold/20 transition-colors"
+                    >
+                      Maak Premium
+                    </button>
+                  )}
+                  {user.role === 'premium' && (
+                    <>
+                      <button
+                        onClick={() => changeUserRole(user.id, 'free')}
+                        className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors"
+                      >
+                        Terug naar Free
+                      </button>
+                      <button
+                        onClick={() => changeUserRole(user.id, 'admin')}
+                        className="px-3 py-1.5 rounded-lg border border-accent/40 bg-accent/10 text-xs text-accent-light font-medium hover:bg-accent/20 transition-colors"
+                      >
+                        Maak Admin
+                      </button>
+                    </>
+                  )}
+                  {user.role === 'admin' && (
+                    <button
+                      onClick={() => changeUserRole(user.id, 'premium')}
+                      className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors"
+                    >
+                      Verwijder Admin
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
