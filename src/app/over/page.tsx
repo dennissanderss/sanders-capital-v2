@@ -133,15 +133,27 @@ export default function OverPage() {
       <section className="max-w-3xl mx-auto px-6 mb-24">
         <FadeIn>
           <div className="p-8 rounded-xl bg-bg-card border border-border text-center">
-            <h2 className="text-2xl font-display font-semibold text-heading mb-4">
+            <h2 className="text-2xl font-display font-semibold text-heading mb-6">
               Waarom dit platform
             </h2>
-            <p className="text-text leading-relaxed max-w-2xl mx-auto">
-              Sanders Capital bestaat omdat ik de educatie wil delen die ik zelf had willen hebben
-              toen ik begon. Geen heilige graal, geen shortcuts. Gestructureerde kennis, eerlijke
-              data, en de discipline om het vol te houden wanneer het moeilijk wordt.
-              Ik deel wat ik leer, terwijl ik het leer.
-            </p>
+            <div className="text-text leading-relaxed max-w-2xl mx-auto space-y-4">
+              <p>
+                Er zijn genoeg community&apos;s van twee- of drieduizend euro waar grote beloftes worden
+                gemaakt. Geen trackrecord, geen eerlijke ervaring, geen data — alleen marketing en
+                FOMO. Dat is niet wat ik bouw.
+              </p>
+              <p>
+                Sanders Capital is gebouwd op een simpel principe: waardevolle kennis hoort
+                toegankelijk te zijn, en gratis kennis hoort niet oppervlakkig te zijn. Wat je hier
+                vindt is gestructureerde educatie vanuit een achtergrond in accountancy en
+                data-analyse — niet vanuit een Lamborghini op Instagram.
+              </p>
+              <p className="text-text-muted">
+                Ik deel wat ik leer, terwijl ik het leer. Geen heilige graal, geen shortcuts. Gewoon
+                eerlijke data, gestructureerde kennis, en de discipline om het vol te houden wanneer
+                het moeilijk wordt.
+              </p>
+            </div>
           </div>
         </FadeIn>
       </section>
