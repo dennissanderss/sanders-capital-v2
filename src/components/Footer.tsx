@@ -101,6 +101,9 @@ export default function Footer() {
               <Link href="/disclaimer" className="text-sm text-text-muted hover:text-heading transition-colors">
                 Privacy
               </Link>
+              <Link href="/voorwaarden" className="text-sm text-text-muted hover:text-heading transition-colors">
+                Algemene Voorwaarden
+              </Link>
               <a href="mailto:sanderscapital@hotmail.com" className="text-sm text-text-muted hover:text-heading transition-colors">
                 sanderscapital@hotmail.com
               </a>
