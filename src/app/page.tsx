@@ -94,21 +94,15 @@ export default async function HomePage() {
           {[
             { end: 50, suffix: '+', label: 'Artikelen' },
             { end: 12, suffix: '+', label: 'Onderwerpen' },
-            { end: 0, label: '', text: 'Gratis community' },
-            { end: 0, label: '', text: '100% data-gedreven' },
+            { end: 4, suffix: '+', label: 'Jaren ervaring' },
+            { end: 100, suffix: '%', label: 'Data-gedreven' },
           ].map((stat, i) => (
             <FadeIn key={i} delay={i * 100}>
               <div>
                 <p className="text-xl sm:text-2xl md:text-3xl font-display font-semibold text-heading">
-                  {stat.text ? (
-                    stat.text
-                  ) : (
-                    <CounterAnimation end={stat.end} suffix={stat.suffix} />
-                  )}
+                  <CounterAnimation end={stat.end} suffix={stat.suffix} />
                 </p>
-                {stat.label && (
-                  <p className="text-sm text-text-muted mt-1">{stat.label}</p>
-                )}
+                <p className="text-sm text-text-muted mt-1">{stat.label}</p>
               </div>
             </FadeIn>
           ))}
