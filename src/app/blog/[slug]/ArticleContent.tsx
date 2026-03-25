@@ -3,6 +3,55 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import Link from 'next/link'
+import type { ComponentPropsWithoutRef } from 'react'
+
+const components = {
+  h2: ({ children }: ComponentPropsWithoutRef<'h2'>) => (
+    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.85rem', fontWeight: 700, color: 'var(--color-heading)', marginTop: '3rem', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--color-border)', lineHeight: 1.2 }}>
+      {children}
+    </h2>
+  ),
+  h3: ({ children }: ComponentPropsWithoutRef<'h3'>) => (
+    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 600, color: 'var(--color-heading)', marginTop: '2.25rem', marginBottom: '0.5rem', lineHeight: 1.3 }}>
+      {children}
+    </h3>
+  ),
+  p: ({ children }: ComponentPropsWithoutRef<'p'>) => (
+    <p style={{ marginBottom: '1.25rem', lineHeight: 1.85, color: 'var(--color-text)' }}>
+      {children}
+    </p>
+  ),
+  ul: ({ children }: ComponentPropsWithoutRef<'ul'>) => (
+    <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.25rem', marginTop: '0.25rem', listStyleType: 'disc' }}>
+      {children}
+    </ul>
+  ),
+  ol: ({ children }: ComponentPropsWithoutRef<'ol'>) => (
+    <ol style={{ paddingLeft: '1.5rem', marginBottom: '1.25rem', marginTop: '0.25rem', listStyleType: 'decimal' }}>
+      {children}
+    </ol>
+  ),
+  li: ({ children }: ComponentPropsWithoutRef<'li'>) => (
+    <li style={{ marginBottom: '0.4rem', lineHeight: 1.75, color: 'var(--color-text)' }}>
+      {children}
+    </li>
+  ),
+  strong: ({ children }: ComponentPropsWithoutRef<'strong'>) => (
+    <strong style={{ fontWeight: 600, color: 'var(--color-heading)' }}>
+      {children}
+    </strong>
+  ),
+  em: ({ children }: ComponentPropsWithoutRef<'em'>) => (
+    <em style={{ fontStyle: 'italic', color: 'var(--color-accent-light)' }}>
+      {children}
+    </em>
+  ),
+  blockquote: ({ children }: ComponentPropsWithoutRef<'blockquote'>) => (
+    <blockquote style={{ borderLeft: '3px solid var(--color-accent-dim)', paddingLeft: '1rem', margin: '1.5rem 0', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+      {children}
+    </blockquote>
+  ),
+}
 
 export default function ArticleContent({
   content,
@@ -17,8 +66,8 @@ export default function ArticleContent({
 
   if (!isPremium || hasAccess) {
     return (
-      <article className="prose-sc">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{normalizedContent}</ReactMarkdown>
+      <article>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>{normalizedContent}</ReactMarkdown>
       </article>
     )
   }
@@ -29,8 +78,8 @@ export default function ArticleContent({
 
   return (
     <div className="relative">
-      <article className="prose-sc premium-blur">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{preview}</ReactMarkdown>
+      <article className="premium-blur">
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>{preview}</ReactMarkdown>
         <div className="h-32" />
       </article>
 
