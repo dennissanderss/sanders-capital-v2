@@ -45,13 +45,13 @@ export default function OverPage() {
         <FadeIn>
           <div className="flex flex-col sm:flex-row items-start gap-8">
             {/* Profile photo */}
-            <div className="w-28 h-36 sm:w-32 sm:h-40 rounded-2xl overflow-hidden border border-border shrink-0">
+            <div className="w-32 h-44 sm:w-36 sm:h-52 rounded-2xl overflow-hidden border border-border shrink-0">
               <Image
                 src="/assets/images/dennis2.jpg"
                 alt="Dennis Sanders"
-                width={128}
-                height={160}
-                className="w-full h-full object-cover object-top"
+                width={144}
+                height={208}
+                className="w-full h-full object-cover object-center"
                 priority
               />
             </div>
