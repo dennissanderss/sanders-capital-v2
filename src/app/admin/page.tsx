@@ -30,8 +30,29 @@ interface KennisbankItem {
   order_index: number
 }
 
+interface Category {
+  id: string
+  name: string
+  slug: string
+  icon: string
+  is_premium: boolean
+  order_index: number
+}
+
 const tagOptions = ['Module 1', 'Module 2', 'Module 3', 'Marktanalyse', 'Psychologie', 'Risicomanagement', 'Strategie', 'Data']
-const categoryOptions = ['risicomanagement', 'psychologie', 'marktstructuur', 'fundamentals', 'data-analyse', 'verdieping']
+
+const iconOptions = [
+  { value: 'shield', label: 'Schild' },
+  { value: 'smile', label: 'Psychologie' },
+  { value: 'activity', label: 'Grafiek' },
+  { value: 'monitor', label: 'Monitor' },
+  { value: 'settings', label: 'Tandwiel' },
+  { value: 'lock', label: 'Slot' },
+  { value: 'book', label: 'Boek' },
+  { value: 'star', label: 'Ster' },
+  { value: 'trending-up', label: 'Trend' },
+  { value: 'bar-chart', label: 'Grafiek staaf' },
+]
 
 function generateSlug(title: string) {
   return title
@@ -43,11 +64,13 @@ function generateSlug(title: string) {
 }
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<'articles' | 'kennisbank'>('articles')
+  const [tab, setTab] = useState<'articles' | 'kennisbank' | 'categories'>('articles')
   const [articles, setArticles] = useState<Article[]>([])
   const [kennisbankItems, setKennisbankItems] = useState<KennisbankItem[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [editing, setEditing] = useState<Article | null>(null)
   const [editingKb, setEditingKb] = useState<KennisbankItem | null>(null)
+  const [editingCat, setEditingCat] = useState<Category | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -71,19 +94,15 @@ export default function AdminPage() {
       return
     }
 
-    const { data: arts } = await supabase
-      .from('articles')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    const { data: kbs } = await supabase
-      .from('kennisbank_items')
-      .select('*')
-      .order('category')
-      .order('order_index')
+    const [{ data: arts }, { data: kbs }, { data: cats }] = await Promise.all([
+      supabase.from('articles').select('*').order('created_at', { ascending: false }),
+      supabase.from('kennisbank_items').select('*').order('category').order('order_index'),
+      supabase.from('kennisbank_categories').select('*').order('order_index'),
+    ])
 
     if (arts) setArticles(arts)
     if (kbs) setKennisbankItems(kbs)
+    if (cats) setCategories(cats)
     setLoading(false)
   }, [supabase, router])
 
@@ -109,9 +128,18 @@ export default function AdminPage() {
     title: '',
     slug: '',
     content: '',
-    category: 'risicomanagement',
+    category: categories[0]?.slug || 'risicomanagement',
     is_premium: false,
     order_index: 0,
+  })
+
+  const newCategory = (): Category => ({
+    id: '',
+    name: '',
+    slug: '',
+    icon: 'shield',
+    is_premium: false,
+    order_index: categories.length + 1,
   })
 
   const saveArticle = async () => {
@@ -154,6 +182,36 @@ export default function AdminPage() {
     loadData()
   }
 
+  const saveCategory = async () => {
+    if (!editingCat) return
+    const { id, ...data } = editingCat
+    const slug = data.slug || generateSlug(data.name)
+
+    if (id) {
+      await supabase.from('kennisbank_categories').update({ ...data, slug }).eq('id', id)
+    } else {
+      await supabase.from('kennisbank_categories').insert({ ...data, slug })
+    }
+    setEditingCat(null)
+    loadData()
+  }
+
+  const deleteCategory = async (id: string, slug: string) => {
+    const hasItems = kennisbankItems.some((i) => i.category === slug)
+    if (hasItems) {
+      alert('Deze categorie heeft nog items. Verwijder of verplaats die eerst.')
+      return
+    }
+    if (!confirm('Weet je zeker dat je deze categorie wilt verwijderen?')) return
+    await supabase.from('kennisbank_categories').delete().eq('id', id)
+    loadData()
+  }
+
+  const toggleCategoryPremium = async (cat: Category) => {
+    await supabase.from('kennisbank_categories').update({ is_premium: !cat.is_premium }).eq('id', cat.id)
+    setCategories((prev) => prev.map((c) => c.id === cat.id ? { ...c, is_premium: !c.is_premium } : c))
+  }
+
   if (loading) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center">
@@ -168,7 +226,7 @@ export default function AdminPage() {
         <h1 className="text-3xl font-display font-semibold text-heading">Admin Panel</h1>
         <div className="flex gap-2">
           <button
-            onClick={() => { setTab('articles'); setEditing(null); setEditingKb(null) }}
+            onClick={() => { setTab('articles'); setEditing(null); setEditingKb(null); setEditingCat(null) }}
             className={`px-4 py-2 rounded-lg text-sm transition-colors ${
               tab === 'articles' ? 'bg-accent text-white' : 'bg-bg-card border border-border text-text-muted hover:text-heading'
             }`}
@@ -176,12 +234,20 @@ export default function AdminPage() {
             Artikelen
           </button>
           <button
-            onClick={() => { setTab('kennisbank'); setEditing(null); setEditingKb(null) }}
+            onClick={() => { setTab('kennisbank'); setEditing(null); setEditingKb(null); setEditingCat(null) }}
             className={`px-4 py-2 rounded-lg text-sm transition-colors ${
               tab === 'kennisbank' ? 'bg-accent text-white' : 'bg-bg-card border border-border text-text-muted hover:text-heading'
             }`}
           >
             Kennisbank
+          </button>
+          <button
+            onClick={() => { setTab('categories'); setEditing(null); setEditingKb(null); setEditingCat(null) }}
+            className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+              tab === 'categories' ? 'bg-accent text-white' : 'bg-bg-card border border-border text-text-muted hover:text-heading'
+            }`}
+          >
+            Categorieën
           </button>
         </div>
       </div>
@@ -383,12 +449,23 @@ export default function AdminPage() {
             + Nieuw item
           </button>
 
-          {categoryOptions.map((cat) => {
-            const catItems = kennisbankItems.filter((i) => i.category === cat)
-            if (catItems.length === 0) return null
+          {categories.map((cat) => {
+            const catItems = kennisbankItems.filter((i) => i.category === cat.slug)
+            if (catItems.length === 0) return (
+              <div key={cat.id} className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="text-sm font-semibold text-heading">{cat.name}</h3>
+                  {cat.is_premium && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold-dim text-gold">Premium</span>}
+                </div>
+                <p className="text-xs text-text-dim pl-1">Geen items</p>
+              </div>
+            )
             return (
-              <div key={cat} className="mb-6">
-                <h3 className="text-sm font-semibold text-heading capitalize mb-3">{cat}</h3>
+              <div key={cat.id} className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="text-sm font-semibold text-heading">{cat.name}</h3>
+                  {cat.is_premium && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold-dim text-gold">Premium</span>}
+                </div>
                 <div className="space-y-2">
                   {catItems.map((item) => (
                     <div
@@ -457,8 +534,8 @@ export default function AdminPage() {
                 onChange={(e) => setEditingKb({ ...editingKb, category: e.target.value })}
                 className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
               >
-                {categoryOptions.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.slug}>{c.name}</option>
                 ))}
               </select>
             </div>
@@ -495,6 +572,161 @@ export default function AdminPage() {
 
           <button
             onClick={saveKbItem}
+            className="px-6 py-2.5 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors"
+          >
+            Opslaan
+          </button>
+        </div>
+      )}
+
+      {/* CATEGORIES TAB */}
+      {tab === 'categories' && !editingCat && (
+        <>
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-sm text-text-muted">
+              Schakel premium in per categorie — bezoekers zien dan "Ontdek Premium" met een slot.
+            </p>
+            <button
+              onClick={() => setEditingCat(newCategory())}
+              className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors shrink-0 ml-4"
+            >
+              + Nieuwe categorie
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {categories.map((cat) => (
+              <div
+                key={cat.id}
+                className="flex items-center justify-between p-4 rounded-xl bg-bg-card border border-border"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-text-dim text-xs w-5 text-right shrink-0">{cat.order_index}</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-heading">{cat.name}</span>
+                      <span className="text-xs text-text-dim">/{cat.slug}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-text-dim">{kennisbankItems.filter((i) => i.category === cat.slug).length} items</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0 ml-4">
+                  {/* Premium toggle */}
+                  <button
+                    onClick={() => toggleCategoryPremium(cat)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                      cat.is_premium
+                        ? 'border-gold/40 bg-gold-dim text-gold hover:bg-gold/20'
+                        : 'border-border text-text-muted hover:text-heading'
+                    }`}
+                  >
+                    {cat.is_premium ? (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                        Premium
+                      </>
+                    ) : (
+                      'Gratis'
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => setEditingCat(cat)}
+                    className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors"
+                  >
+                    Bewerken
+                  </button>
+                  <button
+                    onClick={() => deleteCategory(cat.id, cat.slug)}
+                    className="px-3 py-1.5 rounded-lg border border-border text-xs text-red-400 hover:bg-red-400/10 transition-colors"
+                  >
+                    Verwijderen
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* CATEGORY EDITOR */}
+      {tab === 'categories' && editingCat && (
+        <div className="space-y-4 max-w-lg">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-display font-semibold text-heading">
+              {editingCat.id ? 'Categorie bewerken' : 'Nieuwe categorie'}
+            </h2>
+            <button
+              onClick={() => setEditingCat(null)}
+              className="text-sm text-text-muted hover:text-heading transition-colors"
+            >
+              Annuleren
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-sm text-text-muted mb-1">Naam</label>
+            <input
+              type="text"
+              value={editingCat.name}
+              onChange={(e) => setEditingCat({ ...editingCat, name: e.target.value, slug: generateSlug(e.target.value) })}
+              className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
+              placeholder="bijv. Technische Analyse"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-text-muted mb-1">Slug</label>
+            <input
+              type="text"
+              value={editingCat.slug}
+              onChange={(e) => setEditingCat({ ...editingCat, slug: e.target.value })}
+              className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-text-muted text-sm focus:outline-none focus:border-accent"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-text-muted mb-1">Icoon</label>
+              <select
+                value={editingCat.icon}
+                onChange={(e) => setEditingCat({ ...editingCat, icon: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
+              >
+                {iconOptions.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label} ({o.value})</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-text-muted mb-1">Volgorde</label>
+              <input
+                type="number"
+                value={editingCat.order_index}
+                onChange={(e) => setEditingCat({ ...editingCat, order_index: parseInt(e.target.value) || 0 })}
+                className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
+              />
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
+            <input
+              type="checkbox"
+              checked={editingCat.is_premium}
+              onChange={(e) => setEditingCat({ ...editingCat, is_premium: e.target.checked })}
+              className="rounded border-border"
+            />
+            Premium categorie (toont "Ontdek Premium" overlay op kennisbank)
+          </label>
+
+          <button
+            onClick={saveCategory}
             className="px-6 py-2.5 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors"
           >
             Opslaan
