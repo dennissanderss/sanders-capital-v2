@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import dynamic from 'next/dynamic'
+
+const RichEditor = dynamic(() => import('@/components/RichEditor'), { ssr: false })
 
 interface Article {
   id: string
@@ -332,12 +335,10 @@ export default function AdminPage() {
           </div>
 
           <div>
-            <label className="block text-sm text-text-muted mb-1">Content (Markdown)</label>
-            <textarea
-              rows={16}
+            <label className="block text-sm text-text-muted mb-1">Content</label>
+            <RichEditor
               value={editing.content}
-              onChange={(e) => setEditing({ ...editing, content: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent resize-y font-mono"
+              onChange={(html) => setEditing({ ...editing, content: html })}
             />
           </div>
 
