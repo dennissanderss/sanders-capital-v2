@@ -13,16 +13,18 @@ export default function ArticleContent({
   isPremium: boolean
   hasAccess: boolean
 }) {
+  const normalizedContent = content.replace(/\\n/g, '\n')
+
   if (!isPremium || hasAccess) {
     return (
       <article className="prose-sc">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{normalizedContent}</ReactMarkdown>
       </article>
     )
   }
 
   // Show first 2 paragraphs + blur overlay for non-premium users
-  const paragraphs = content.split('\n\n')
+  const paragraphs = normalizedContent.split('\n\n')
   const preview = paragraphs.slice(0, 3).join('\n\n')
 
   return (
