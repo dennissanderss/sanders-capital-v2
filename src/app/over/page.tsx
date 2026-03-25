@@ -1,4 +1,5 @@
 import FadeIn from '@/components/FadeIn'
+import Image from 'next/image'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -43,9 +44,16 @@ export default function OverPage() {
       <section className="max-w-3xl mx-auto px-6 mb-24">
         <FadeIn>
           <div className="flex flex-col sm:flex-row items-start gap-8">
-            {/* Profile placeholder */}
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-bg-card border border-border flex items-center justify-center shrink-0">
-              <span className="text-2xl font-display font-semibold text-accent-light">DS</span>
+            {/* Profile photo */}
+            <div className="w-28 h-36 sm:w-32 sm:h-40 rounded-2xl overflow-hidden border border-border shrink-0">
+              <Image
+                src="/assets/images/Dennis.jpg"
+                alt="Dennis Sanders"
+                width={128}
+                height={160}
+                className="w-full h-full object-cover object-top"
+                priority
+              />
             </div>
 
             <div>
