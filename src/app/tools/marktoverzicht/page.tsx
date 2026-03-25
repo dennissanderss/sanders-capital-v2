@@ -29,9 +29,17 @@ export default function MarktoverzichtPage() {
           </svg>
           Forex Cross Rates
         </h2>
-        <p className="text-sm text-text-dim mb-4">
-          Vergelijk alle major valutaparen in één overzichtelijke tabel.
-        </p>
+        <div className="p-5 rounded-xl bg-bg-card border border-border mb-4">
+          <p className="text-sm text-text leading-relaxed mb-3">
+            De cross rates tabel toont de wisselkoersen tussen alle major valutaparen in één overzicht.
+            Elke cel toont hoeveel van de <span className="text-heading font-medium">horizontale valuta</span> je
+            krijgt voor één eenheid van de <span className="text-heading font-medium">verticale valuta</span>.
+          </p>
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-text-dim">
+            <span><span className="text-green-400">Groen</span> = gestegen ten opzichte van vorige sluiting</span>
+            <span><span className="text-red-400">Rood</span> = gedaald ten opzichte van vorige sluiting</span>
+          </div>
+        </div>
         <div className="rounded-xl border border-border overflow-hidden bg-bg-card">
           <TradingViewWidget type="cross-rates" />
         </div>
@@ -48,9 +56,24 @@ export default function MarktoverzichtPage() {
           </svg>
           Forex Heatmap
         </h2>
-        <p className="text-sm text-text-dim mb-4">
-          Visueel overzicht van de sterkste en zwakste valuta&apos;s op dit moment.
-        </p>
+        <div className="p-5 rounded-xl bg-bg-card border border-border mb-4">
+          <p className="text-sm text-text leading-relaxed mb-3">
+            De heatmap geeft een visueel overzicht van de relatieve sterkte van elke valuta.
+            Hoe <span className="text-green-400 font-medium">groener</span> een vak, hoe sterker die valuta presteert
+            ten opzichte van de rest. Hoe <span className="text-red-400 font-medium">roder</span>, hoe zwakker.
+          </p>
+          <p className="text-sm text-text leading-relaxed mb-3">
+            Dit helpt je snel te identificeren welke valuta&apos;s kracht tonen en welke zwakte &mdash;
+            handig om te bepalen welke paren het meest potentieel hebben voor een trade setup.
+          </p>
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-text-dim">
+            <span><span className="text-green-400">Donkergroen</span> = zeer sterk</span>
+            <span><span className="text-green-400/60">Lichtgroen</span> = licht sterk</span>
+            <span className="text-text-dim">Grijs = neutraal</span>
+            <span><span className="text-red-400/60">Lichtrood</span> = licht zwak</span>
+            <span><span className="text-red-400">Donkerrood</span> = zeer zwak</span>
+          </div>
+        </div>
         <div className="rounded-xl border border-border overflow-hidden bg-bg-card">
           <TradingViewWidget type="forex-heatmap" />
         </div>
