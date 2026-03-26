@@ -167,7 +167,12 @@ export default function AdminPage() {
       if (id) {
         await adminWrite('update', 'articles', { ...data, slug, updated_at: new Date().toISOString() }, id)
       } else {
-        await adminWrite('insert', 'articles', { ...data, slug })
+        try {
+          await adminWrite('insert', 'articles', { ...data, slug })
+        } catch {
+          slug = slug + '-' + Date.now().toString(36)
+          await adminWrite('insert', 'articles', { ...data, slug })
+        }
       }
       setEditing(null)
       loadData()
@@ -196,12 +201,18 @@ export default function AdminPage() {
   const saveKbItem = async () => {
     if (!editingKb) return
     const { id, ...data } = editingKb
-    const slug = data.slug || generateSlug(data.title)
+    let slug = data.slug || generateSlug(data.title)
     try {
       if (id) {
         await adminWrite('update', 'kennisbank_items', { ...data, slug }, id)
       } else {
-        await adminWrite('insert', 'kennisbank_items', { ...data, slug })
+        // Als slug al bestaat, voeg uniek suffix toe
+        try {
+          await adminWrite('insert', 'kennisbank_items', { ...data, slug })
+        } catch {
+          slug = slug + '-' + Date.now().toString(36)
+          await adminWrite('insert', 'kennisbank_items', { ...data, slug })
+        }
       }
       setEditingKb(null)
       loadData()
