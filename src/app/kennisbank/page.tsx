@@ -121,23 +121,49 @@ export default async function KennisbankPage() {
               </div>
 
               {cat.items.length > 0 ? (
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {cat.items.map((item) => (
                     <li key={item.id}>
-                      <div className="flex items-center gap-2 text-sm">
-                        {item.is_premium ? (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold shrink-0">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                          </svg>
-                        ) : (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light shrink-0">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                        <span className={item.is_premium ? 'text-text-muted' : 'text-text'}>
-                          {item.title}
+                      <div className="flex items-start gap-2 text-sm">
+                        <span className="mt-0.5 shrink-0">
+                          {item.is_premium ? (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold">
+                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                          ) : (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
                         </span>
+                        <div className="min-w-0">
+                          <span className={item.is_premium ? 'text-text-muted' : 'text-text'}>
+                            {item.title}
+                          </span>
+                          {/* Download documents */}
+                          {Array.isArray(item.documents) && item.documents.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-1.5">
+                              {item.documents.map((doc: { name: string; url: string; size: number }, di: number) => (
+                                <a
+                                  key={di}
+                                  href={doc.url}
+                                  download={doc.name}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-accent-light text-xs hover:bg-accent/20 transition-colors"
+                                >
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                  </svg>
+                                  {doc.name.length > 20 ? doc.name.slice(0, 18) + '…' : doc.name}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </li>
                   ))}

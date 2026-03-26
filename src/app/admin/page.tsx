@@ -20,6 +20,12 @@ interface Article {
   created_at: string
 }
 
+interface KennisbankDocument {
+  name: string
+  url: string
+  size: number
+}
+
 interface KennisbankItem {
   id: string
   title: string
@@ -28,6 +34,7 @@ interface KennisbankItem {
   category: string
   is_premium: boolean
   order_index: number
+  documents?: KennisbankDocument[]
 }
 
 interface Category {
@@ -71,6 +78,22 @@ function generateSlug(title: string) {
     .trim()
 }
 
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
+function getFileIcon(name: string) {
+  const ext = name.split('.').pop()?.toLowerCase()
+  if (['pdf'].includes(ext || '')) return '📄'
+  if (['doc', 'docx'].includes(ext || '')) return '📝'
+  if (['xls', 'xlsx'].includes(ext || '')) return '📊'
+  if (['ppt', 'pptx'].includes(ext || '')) return '📑'
+  if (['zip', 'rar'].includes(ext || '')) return '🗜️'
+  return '📎'
+}
+
 export default function AdminPage() {
   const [tab, setTab] = useState<'articles' | 'kennisbank' | 'categories' | 'users'>('articles')
   const [articles, setArticles] = useState<Article[]>([])
@@ -81,27 +104,24 @@ export default function AdminPage() {
   const [editingKb, setEditingKb] = useState<KennisbankItem | null>(null)
   const [editingCat, setEditingCat] = useState<Category | null>(null)
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  const [uploadingDocs, setUploadingDocs] = useState(false)
 
+  // Move modal state
+  const [moveModal, setMoveModal] = useState<{
+    type: 'articleToKb' | 'kbToArticle'
+    item: Article | KennisbankItem
+    selectedCategory?: string
+  } | null>(null)
+
+  const router = useRouter()
   const supabase = createClient()
 
   const loadData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push('/login')
-      return
-    }
+    if (!user) { router.push('/login'); return }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'admin') {
-      router.push('/dashboard')
-      return
-    }
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role !== 'admin') { router.push('/dashboard'); return }
 
     const [{ data: arts }, { data: kbs }, { data: cats }, { data: profs }] = await Promise.all([
       supabase.from('articles').select('*').order('created_at', { ascending: false }),
@@ -117,47 +137,18 @@ export default function AdminPage() {
     setLoading(false)
   }, [supabase, router])
 
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  useEffect(() => { loadData() }, [loadData])
 
+  // ─── ARTICLES ─────────────────────────────────────────────
   const newArticle = (): Article => ({
-    id: '',
-    title: '',
-    slug: '',
-    excerpt: '',
-    content: '',
-    tag: '',
-    is_premium: false,
-    published: false,
-    reading_time: 5,
-    created_at: new Date().toISOString(),
-  })
-
-  const newKbItem = (): KennisbankItem => ({
-    id: '',
-    title: '',
-    slug: '',
-    content: '',
-    category: categories[0]?.slug || 'risicomanagement',
-    is_premium: false,
-    order_index: 0,
-  })
-
-  const newCategory = (): Category => ({
-    id: '',
-    name: '',
-    slug: '',
-    icon: 'shield',
-    is_premium: false,
-    order_index: categories.length + 1,
+    id: '', title: '', slug: '', excerpt: '', content: '', tag: '',
+    is_premium: false, published: false, reading_time: 5, created_at: new Date().toISOString(),
   })
 
   const saveArticle = async () => {
     if (!editing) return
     const { id, created_at, ...data } = editing
     const slug = data.slug || generateSlug(data.title)
-
     if (id) {
       await supabase.from('articles').update({ ...data, slug, updated_at: new Date().toISOString() }).eq('id', id)
     } else {
@@ -173,11 +164,17 @@ export default function AdminPage() {
     loadData()
   }
 
+  // ─── KENNISBANK ITEMS ──────────────────────────────────────
+  const newKbItem = (): KennisbankItem => ({
+    id: '', title: '', slug: '', content: '',
+    category: categories[0]?.slug || 'risicomanagement',
+    is_premium: false, order_index: 0, documents: [],
+  })
+
   const saveKbItem = async () => {
     if (!editingKb) return
     const { id, ...data } = editingKb
     const slug = data.slug || generateSlug(data.title)
-
     if (id) {
       await supabase.from('kennisbank_items').update({ ...data, slug }).eq('id', id)
     } else {
@@ -193,11 +190,89 @@ export default function AdminPage() {
     loadData()
   }
 
+  // ─── DOCUMENT UPLOAD ───────────────────────────────────────
+  const uploadDocument = async (file: File) => {
+    if (!editingKb) return
+    setUploadingDocs(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const fileName = `kb-docs/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const { error } = await supabase.storage.from('documents').upload(fileName, file)
+      if (error) {
+        // Try images bucket as fallback
+        const { error: err2 } = await supabase.storage.from('images').upload(fileName, file)
+        if (err2) { alert('Upload mislukt: ' + (err2.message || error.message)); return }
+        const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName)
+        const doc: KennisbankDocument = { name: file.name, url: urlData.publicUrl, size: file.size }
+        setEditingKb({ ...editingKb, documents: [...(editingKb.documents || []), doc] })
+      } else {
+        const { data: urlData } = supabase.storage.from('documents').getPublicUrl(fileName)
+        const doc: KennisbankDocument = { name: file.name, url: urlData.publicUrl, size: file.size }
+        setEditingKb({ ...editingKb, documents: [...(editingKb.documents || []), doc] })
+      }
+    } finally {
+      setUploadingDocs(false)
+    }
+  }
+
+  const removeDocument = (index: number) => {
+    if (!editingKb) return
+    const docs = [...(editingKb.documents || [])]
+    docs.splice(index, 1)
+    setEditingKb({ ...editingKb, documents: docs })
+  }
+
+  // ─── MOVE ARTICLE → KENNISBANK ─────────────────────────────
+  const confirmMoveToKb = async () => {
+    if (!moveModal || moveModal.type !== 'articleToKb') return
+    const art = moveModal.item as Article
+    const category = moveModal.selectedCategory || categories[0]?.slug
+    if (!category) return
+
+    await supabase.from('kennisbank_items').insert({
+      title: art.title,
+      slug: art.slug || generateSlug(art.title),
+      content: art.content,
+      category,
+      is_premium: art.is_premium,
+      order_index: 0,
+      documents: [],
+    })
+    await supabase.from('articles').delete().eq('id', art.id)
+    setMoveModal(null)
+    loadData()
+  }
+
+  // ─── MOVE KENNISBANK → ARTICLE ─────────────────────────────
+  const confirmMoveToArticle = async () => {
+    if (!moveModal || moveModal.type !== 'kbToArticle') return
+    const kb = moveModal.item as KennisbankItem
+
+    await supabase.from('articles').insert({
+      title: kb.title,
+      slug: kb.slug || generateSlug(kb.title),
+      content: kb.content,
+      excerpt: '',
+      tag: '',
+      is_premium: kb.is_premium,
+      published: false,
+      reading_time: 5,
+    })
+    await supabase.from('kennisbank_items').delete().eq('id', kb.id)
+    setMoveModal(null)
+    loadData()
+  }
+
+  // ─── CATEGORIES ────────────────────────────────────────────
+  const newCategory = (): Category => ({
+    id: '', name: '', slug: '', icon: 'shield',
+    is_premium: false, order_index: categories.length + 1,
+  })
+
   const saveCategory = async () => {
     if (!editingCat) return
     const { id, ...data } = editingCat
     const slug = data.slug || generateSlug(data.name)
-
     if (id) {
       await supabase.from('kennisbank_categories').update({ ...data, slug }).eq('id', id)
     } else {
@@ -209,24 +284,22 @@ export default function AdminPage() {
 
   const deleteCategory = async (id: string, slug: string) => {
     const hasItems = kennisbankItems.some((i) => i.category === slug)
-    if (hasItems) {
-      alert('Deze categorie heeft nog items. Verwijder of verplaats die eerst.')
-      return
-    }
+    if (hasItems) { alert('Deze categorie heeft nog items. Verwijder of verplaats die eerst.'); return }
     if (!confirm('Weet je zeker dat je deze categorie wilt verwijderen?')) return
     await supabase.from('kennisbank_categories').delete().eq('id', id)
     loadData()
   }
 
+  const toggleCategoryPremium = async (cat: Category) => {
+    await supabase.from('kennisbank_categories').update({ is_premium: !cat.is_premium }).eq('id', cat.id)
+    setCategories((prev) => prev.map((c) => c.id === cat.id ? { ...c, is_premium: !c.is_premium } : c))
+  }
+
+  // ─── USERS ─────────────────────────────────────────────────
   const changeUserRole = async (userId: string, newRole: 'free' | 'premium' | 'admin') => {
     if (newRole === 'admin' && !confirm('Weet je zeker dat je deze gebruiker admin rechten wilt geven?')) return
     await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
     setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: newRole } : u))
-  }
-
-  const toggleCategoryPremium = async (cat: Category) => {
-    await supabase.from('kennisbank_categories').update({ is_premium: !cat.is_premium }).eq('id', cat.id)
-    setCategories((prev) => prev.map((c) => c.id === cat.id ? { ...c, is_premium: !c.is_premium } : c))
   }
 
   if (loading) {
@@ -239,45 +312,72 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-24">
-      <div className="flex items-center justify-between mb-8">
+
+      {/* MOVE MODAL */}
+      {moveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+            {moveModal.type === 'articleToKb' && (
+              <>
+                <h3 className="text-lg font-display font-semibold text-heading mb-2">Verplaats naar Kennisbank</h3>
+                <p className="text-sm text-text-muted mb-4">
+                  Kies een categorie voor <strong className="text-heading">"{(moveModal.item as Article).title}"</strong>.
+                  Het artikel wordt verwijderd uit Artikelen.
+                </p>
+                <label className="block text-sm text-text-muted mb-1">Categorie</label>
+                <select
+                  value={moveModal.selectedCategory || categories[0]?.slug}
+                  onChange={(e) => setMoveModal({ ...moveModal, selectedCategory: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg bg-bg border border-border text-heading text-sm mb-4 focus:outline-none focus:border-accent"
+                >
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.slug}>{c.name}</option>
+                  ))}
+                </select>
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setMoveModal(null)} className="px-4 py-2 rounded-lg border border-border text-sm text-text-muted hover:text-heading transition-colors">Annuleren</button>
+                  <button onClick={confirmMoveToKb} className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors">Verplaatsen</button>
+                </div>
+              </>
+            )}
+            {moveModal.type === 'kbToArticle' && (
+              <>
+                <h3 className="text-lg font-display font-semibold text-heading mb-2">Verplaats naar Artikelen</h3>
+                <p className="text-sm text-text-muted mb-4">
+                  <strong className="text-heading">"{(moveModal.item as KennisbankItem).title}"</strong> wordt
+                  verplaatst naar Artikelen als concept. Je kunt daarna tag, leestijd en excerpt instellen.
+                </p>
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setMoveModal(null)} className="px-4 py-2 rounded-lg border border-border text-sm text-text-muted hover:text-heading transition-colors">Annuleren</button>
+                  <button onClick={confirmMoveToArticle} className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors">Verplaatsen</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* HEADER */}
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
         <h1 className="text-3xl font-display font-semibold text-heading">Admin Panel</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={() => { setTab('articles'); setEditing(null); setEditingKb(null); setEditingCat(null) }}
-            className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-              tab === 'articles' ? 'bg-accent text-white' : 'bg-bg-card border border-border text-text-muted hover:text-heading'
-            }`}
-          >
-            Artikelen
-          </button>
-          <button
-            onClick={() => { setTab('kennisbank'); setEditing(null); setEditingKb(null); setEditingCat(null) }}
-            className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-              tab === 'kennisbank' ? 'bg-accent text-white' : 'bg-bg-card border border-border text-text-muted hover:text-heading'
-            }`}
-          >
-            Kennisbank
-          </button>
-          <button
-            onClick={() => { setTab('categories'); setEditing(null); setEditingKb(null); setEditingCat(null) }}
-            className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-              tab === 'categories' ? 'bg-accent text-white' : 'bg-bg-card border border-border text-text-muted hover:text-heading'
-            }`}
-          >
-            Categorieën
-          </button>
-          <button
-            onClick={() => { setTab('users'); setEditing(null); setEditingKb(null); setEditingCat(null) }}
-            className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-              tab === 'users' ? 'bg-accent text-white' : 'bg-bg-card border border-border text-text-muted hover:text-heading'
-            }`}
-          >
-            Gebruikers
-          </button>
+        <div className="flex gap-2 flex-wrap">
+          {(['articles', 'kennisbank', 'categories', 'users'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => { setTab(t); setEditing(null); setEditingKb(null); setEditingCat(null) }}
+              className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                tab === t ? 'bg-accent text-white' : 'bg-bg-card border border-border text-text-muted hover:text-heading'
+              }`}
+            >
+              {t === 'articles' ? 'Artikelen' : t === 'kennisbank' ? 'Kennisbank' : t === 'categories' ? 'Categorieën' : 'Gebruikers'}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* ARTICLES TAB */}
+      {/* ═══════════════════════════════════════════════════════
+          ARTICLES TAB — LIST
+      ═══════════════════════════════════════════════════════ */}
       {tab === 'articles' && !editing && (
         <>
           <button
@@ -286,39 +386,32 @@ export default function AdminPage() {
           >
             + Nieuw artikel
           </button>
-
           <div className="space-y-3">
             {articles.map((a) => (
-              <div
-                key={a.id}
-                className="flex items-center justify-between p-4 rounded-xl bg-bg-card border border-border"
-              >
+              <div key={a.id} className="flex items-center justify-between p-4 rounded-xl bg-bg-card border border-border">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-sm font-semibold text-heading truncate">{a.title}</h3>
-                    {a.is_premium && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold-dim text-gold">Premium</span>
-                    )}
+                    {a.is_premium && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold-dim text-gold shrink-0">Premium</span>}
                   </div>
                   <div className="flex items-center gap-3 text-xs text-text-dim">
-                    <span className={a.published ? 'text-green-400' : 'text-amber-400'}>
-                      {a.published ? 'Gepubliceerd' : 'Concept'}
-                    </span>
-                    <span>{a.tag}</span>
+                    <span className={a.published ? 'text-green-400' : 'text-amber-400'}>{a.published ? 'Gepubliceerd' : 'Concept'}</span>
+                    {a.tag && <span>{a.tag}</span>}
                     <span>{a.reading_time} min</span>
                   </div>
                 </div>
-                <div className="flex gap-2 shrink-0 ml-4">
+                <div className="flex gap-2 shrink-0 ml-4 flex-wrap justify-end">
                   <button
-                    onClick={() => setEditing(a)}
+                    onClick={() => setMoveModal({ type: 'articleToKb', item: a, selectedCategory: categories[0]?.slug })}
                     className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors"
+                    title="Verplaats naar Kennisbank"
                   >
+                    → Kennisbank
+                  </button>
+                  <button onClick={() => setEditing(a)} className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors">
                     Bewerken
                   </button>
-                  <button
-                    onClick={() => deleteArticle(a.id)}
-                    className="px-3 py-1.5 rounded-lg border border-border text-xs text-red-400 hover:bg-red-400/10 transition-colors"
-                  >
+                  <button onClick={() => deleteArticle(a.id)} className="px-3 py-1.5 rounded-lg border border-border text-xs text-red-400 hover:bg-red-400/10 transition-colors">
                     Verwijderen
                   </button>
                 </div>
@@ -328,233 +421,169 @@ export default function AdminPage() {
         </>
       )}
 
-      {/* ARTICLE EDITOR */}
+      {/* ═══════════════════════════════════════════════════════
+          ARTICLES TAB — EDITOR
+      ═══════════════════════════════════════════════════════ */}
       {tab === 'articles' && editing && (
         <div className="space-y-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-display font-semibold text-heading">
-              {editing.id ? 'Artikel bewerken' : 'Nieuw artikel'}
-            </h2>
-            <button
-              onClick={() => setEditing(null)}
-              className="text-sm text-text-muted hover:text-heading transition-colors"
-            >
-              Annuleren
-            </button>
+            <h2 className="text-xl font-display font-semibold text-heading">{editing.id ? 'Artikel bewerken' : 'Nieuw artikel'}</h2>
+            <button onClick={() => setEditing(null)} className="text-sm text-text-muted hover:text-heading transition-colors">Annuleren</button>
           </div>
 
           <div>
             <label className="block text-sm text-text-muted mb-1">Titel</label>
-            <input
-              type="text"
-              value={editing.title}
+            <input type="text" value={editing.title}
               onChange={(e) => setEditing({ ...editing, title: e.target.value, slug: generateSlug(e.target.value) })}
               className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
             />
           </div>
-
           <div>
             <label className="block text-sm text-text-muted mb-1">Slug</label>
-            <input
-              type="text"
-              value={editing.slug}
+            <input type="text" value={editing.slug}
               onChange={(e) => setEditing({ ...editing, slug: e.target.value })}
               className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-text-muted text-sm focus:outline-none focus:border-accent"
             />
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-text-muted mb-1">Tag</label>
-              <select
-                value={editing.tag}
-                onChange={(e) => setEditing({ ...editing, tag: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
-              >
+              <select value={editing.tag} onChange={(e) => setEditing({ ...editing, tag: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent">
                 <option value="">Geen tag</option>
-                {tagOptions.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
+                {tagOptions.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-sm text-text-muted mb-1">Leestijd (min)</label>
-              <input
-                type="number"
-                value={editing.reading_time}
+              <input type="number" value={editing.reading_time}
                 onChange={(e) => setEditing({ ...editing, reading_time: parseInt(e.target.value) || 5 })}
                 className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
               />
             </div>
           </div>
-
           <div>
             <label className="block text-sm text-text-muted mb-1">Excerpt</label>
-            <textarea
-              rows={2}
-              value={editing.excerpt}
+            <textarea rows={2} value={editing.excerpt}
               onChange={(e) => setEditing({ ...editing, excerpt: e.target.value })}
               className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent resize-none"
             />
           </div>
-
           <div>
             <label className="block text-sm text-text-muted mb-1">Afbeeldingen uploaden</label>
-            <div className="flex items-center gap-3">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={async (e) => {
-                  const files = e.target.files
-                  if (!files || files.length === 0) return
-                  const uploadedLinks: string[] = []
-                  for (let i = 0; i < files.length; i++) {
-                    const file = files[i]
-                    const ext = file.name.split('.').pop()
-                    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-                    const { error } = await supabase.storage.from('images').upload(fileName, file)
-                    if (error) {
-                      alert(`Upload mislukt voor ${file.name}: ${error.message}`)
-                      continue
-                    }
-                    const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName)
-                    uploadedLinks.push(`![${file.name}](${urlData.publicUrl})`)
-                  }
-                  if (uploadedLinks.length > 0) {
-                    const allLinks = uploadedLinks.join('\n\n')
-                    await navigator.clipboard.writeText(allLinks)
-                    alert(`${uploadedLinks.length} afbeelding${uploadedLinks.length > 1 ? 'en' : ''} geüpload! Markdown links zijn gekopieerd naar je klembord.\n\nPlak ze in je content met Ctrl+V.`)
-                  }
-                  e.target.value = ''
-                }}
-                className="text-sm text-text-muted file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border file:border-border file:bg-bg-card file:text-text-muted file:text-sm file:cursor-pointer hover:file:text-heading file:transition-colors"
-              />
-            </div>
-            <p className="text-xs text-text-dim mt-1">Selecteer meerdere afbeeldingen tegelijk → markdown links worden gekopieerd naar je klembord</p>
+            <input type="file" accept="image/*" multiple
+              onChange={async (e) => {
+                const files = e.target.files
+                if (!files || files.length === 0) return
+                const links: string[] = []
+                for (const file of Array.from(files)) {
+                  const ext = file.name.split('.').pop()
+                  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+                  const { error } = await supabase.storage.from('images').upload(fileName, file)
+                  if (error) { alert(`Upload mislukt: ${file.name}`); continue }
+                  const { data: u } = supabase.storage.from('images').getPublicUrl(fileName)
+                  links.push(`<img src="${u.publicUrl}" alt="${file.name}" />`)
+                }
+                if (links.length > 0) {
+                  await navigator.clipboard.writeText(links.join('\n'))
+                  alert(`${links.length} afbeelding(en) geüpload en gekopieerd naar klembord.`)
+                }
+                e.target.value = ''
+              }}
+              className="text-sm text-text-muted file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border file:border-border file:bg-bg-card file:text-text-muted file:text-sm file:cursor-pointer hover:file:text-heading file:transition-colors"
+            />
+            <p className="text-xs text-text-dim mt-1">Meerdere tegelijk selecteren → HTML img-tags worden gekopieerd naar klembord</p>
           </div>
-
           <div>
             <label className="block text-sm text-text-muted mb-1">Content</label>
-            <RichEditor
-              value={editing.content}
-              onChange={(html) => setEditing({ ...editing, content: html })}
-              supabase={supabase}
-            />
+            <RichEditor value={editing.content} onChange={(html) => setEditing({ ...editing, content: html })} supabase={supabase} />
           </div>
-
           <div className="flex items-center gap-6">
             <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
-              <input
-                type="checkbox"
-                checked={editing.is_premium}
-                onChange={(e) => setEditing({ ...editing, is_premium: e.target.checked })}
-                className="rounded border-border"
-              />
+              <input type="checkbox" checked={editing.is_premium} onChange={(e) => setEditing({ ...editing, is_premium: e.target.checked })} className="rounded border-border" />
               Premium
             </label>
             <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
-              <input
-                type="checkbox"
-                checked={editing.published}
-                onChange={(e) => setEditing({ ...editing, published: e.target.checked })}
-                className="rounded border-border"
-              />
+              <input type="checkbox" checked={editing.published} onChange={(e) => setEditing({ ...editing, published: e.target.checked })} className="rounded border-border" />
               Gepubliceerd
             </label>
           </div>
-
-          <button
-            onClick={saveArticle}
-            className="px-6 py-2.5 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors"
-          >
+          <button onClick={saveArticle} className="px-6 py-2.5 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors">
             Opslaan
           </button>
         </div>
       )}
 
-      {/* KENNISBANK TAB */}
+      {/* ═══════════════════════════════════════════════════════
+          KENNISBANK TAB — LIST
+      ═══════════════════════════════════════════════════════ */}
       {tab === 'kennisbank' && !editingKb && (
         <>
-          <button
-            onClick={() => setEditingKb(newKbItem())}
-            className="mb-6 px-4 py-2 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors"
-          >
+          <button onClick={() => setEditingKb(newKbItem())} className="mb-6 px-4 py-2 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors">
             + Nieuw item
           </button>
-
           {categories.map((cat) => {
             const catItems = kennisbankItems.filter((i) => i.category === cat.slug)
-            if (catItems.length === 0) return (
-              <div key={cat.id} className="mb-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <h3 className="text-sm font-semibold text-heading">{cat.name}</h3>
-                  {cat.is_premium && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold-dim text-gold">Premium</span>}
-                </div>
-                <p className="text-xs text-text-dim pl-1">Geen items</p>
-              </div>
-            )
             return (
               <div key={cat.id} className="mb-6">
                 <div className="flex items-center gap-2 mb-3">
                   <h3 className="text-sm font-semibold text-heading">{cat.name}</h3>
                   {cat.is_premium && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold-dim text-gold">Premium</span>}
+                  <span className="text-xs text-text-dim">{catItems.length} items</span>
                 </div>
-                <div className="space-y-2">
-                  {catItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-bg-card border border-border"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm text-text truncate">{item.title}</span>
-                        {item.is_premium && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold-dim text-gold shrink-0">Premium</span>
-                        )}
+                {catItems.length === 0 ? (
+                  <p className="text-xs text-text-dim pl-1">Geen items</p>
+                ) : (
+                  <div className="space-y-2">
+                    {catItems.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-bg-card border border-border">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-sm text-text truncate">{item.title}</span>
+                          {item.is_premium && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold-dim text-gold shrink-0">Premium</span>}
+                          {(item.documents?.length ?? 0) > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/20 text-accent-light shrink-0">
+                              {item.documents!.length} doc{item.documents!.length > 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-2 shrink-0 ml-4 flex-wrap justify-end">
+                          <button
+                            onClick={() => setMoveModal({ type: 'kbToArticle', item })}
+                            className="px-3 py-1 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors"
+                            title="Verplaats naar Artikelen"
+                          >
+                            → Artikel
+                          </button>
+                          <button onClick={() => setEditingKb({ ...item, documents: item.documents || [] })} className="px-3 py-1 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors">
+                            Bewerken
+                          </button>
+                          <button onClick={() => deleteKbItem(item.id)} className="px-3 py-1 rounded-lg border border-border text-xs text-red-400 hover:bg-red-400/10 transition-colors">
+                            Verwijderen
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-2 shrink-0 ml-4">
-                        <button
-                          onClick={() => setEditingKb(item)}
-                          className="px-3 py-1 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors"
-                        >
-                          Bewerken
-                        </button>
-                        <button
-                          onClick={() => deleteKbItem(item.id)}
-                          className="px-3 py-1 rounded-lg border border-border text-xs text-red-400 hover:bg-red-400/10 transition-colors"
-                        >
-                          Verwijderen
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )
           })}
         </>
       )}
 
-      {/* KENNISBANK EDITOR */}
+      {/* ═══════════════════════════════════════════════════════
+          KENNISBANK TAB — EDITOR
+      ═══════════════════════════════════════════════════════ */}
       {tab === 'kennisbank' && editingKb && (
         <div className="space-y-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-display font-semibold text-heading">
-              {editingKb.id ? 'Item bewerken' : 'Nieuw item'}
-            </h2>
-            <button
-              onClick={() => setEditingKb(null)}
-              className="text-sm text-text-muted hover:text-heading transition-colors"
-            >
-              Annuleren
-            </button>
+            <h2 className="text-xl font-display font-semibold text-heading">{editingKb.id ? 'Item bewerken' : 'Nieuw item'}</h2>
+            <button onClick={() => setEditingKb(null)} className="text-sm text-text-muted hover:text-heading transition-colors">Annuleren</button>
           </div>
 
           <div>
             <label className="block text-sm text-text-muted mb-1">Titel</label>
-            <input
-              type="text"
-              value={editingKb.title}
+            <input type="text" value={editingKb.title}
               onChange={(e) => setEditingKb({ ...editingKb, title: e.target.value, slug: generateSlug(e.target.value) })}
               className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
             />
@@ -563,77 +592,125 @@ export default function AdminPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-text-muted mb-1">Categorie</label>
-              <select
-                value={editingKb.category}
-                onChange={(e) => setEditingKb({ ...editingKb, category: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
-              >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.slug}>{c.name}</option>
-                ))}
+              <select value={editingKb.category} onChange={(e) => setEditingKb({ ...editingKb, category: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent">
+                {categories.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-sm text-text-muted mb-1">Volgorde</label>
-              <input
-                type="number"
-                value={editingKb.order_index}
+              <input type="number" value={editingKb.order_index}
                 onChange={(e) => setEditingKb({ ...editingKb, order_index: parseInt(e.target.value) || 0 })}
                 className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
               />
             </div>
           </div>
 
+          {/* Image upload */}
           <div>
-            <label className="block text-sm text-text-muted mb-1">Content (Markdown)</label>
-            <textarea
-              rows={12}
-              value={editingKb.content}
-              onChange={(e) => setEditingKb({ ...editingKb, content: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent resize-y font-mono"
+            <label className="block text-sm text-text-muted mb-1">Afbeeldingen uploaden</label>
+            <input type="file" accept="image/*" multiple
+              onChange={async (e) => {
+                const files = e.target.files
+                if (!files || files.length === 0) return
+                const links: string[] = []
+                for (const file of Array.from(files)) {
+                  const ext = file.name.split('.').pop()
+                  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+                  const { error } = await supabase.storage.from('images').upload(fileName, file)
+                  if (error) { alert(`Upload mislukt: ${file.name}`); continue }
+                  const { data: u } = supabase.storage.from('images').getPublicUrl(fileName)
+                  links.push(`<img src="${u.publicUrl}" alt="${file.name}" />`)
+                }
+                if (links.length > 0) {
+                  await navigator.clipboard.writeText(links.join('\n'))
+                  alert(`${links.length} afbeelding(en) geüpload en gekopieerd naar klembord.`)
+                }
+                e.target.value = ''
+              }}
+              className="text-sm text-text-muted file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border file:border-border file:bg-bg-card file:text-text-muted file:text-sm file:cursor-pointer hover:file:text-heading file:transition-colors"
             />
+            <p className="text-xs text-text-dim mt-1">Meerdere tegelijk selecteren → HTML img-tags worden gekopieerd naar klembord</p>
+          </div>
+
+          {/* Rich editor */}
+          <div>
+            <label className="block text-sm text-text-muted mb-1">Content</label>
+            <RichEditor value={editingKb.content} onChange={(html) => setEditingKb({ ...editingKb, content: html })} supabase={supabase} />
+          </div>
+
+          {/* Document upload */}
+          <div>
+            <label className="block text-sm text-text-muted mb-2">Documenten (downloadbaar voor lezers)</label>
+
+            {/* Existing docs list */}
+            {(editingKb.documents || []).length > 0 && (
+              <div className="space-y-2 mb-3">
+                {(editingKb.documents || []).map((doc, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-bg border border-border">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-base">{getFileIcon(doc.name)}</span>
+                      <div className="min-w-0">
+                        <p className="text-sm text-heading truncate">{doc.name}</p>
+                        <p className="text-xs text-text-dim">{formatFileSize(doc.size)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-3">
+                      <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-xs text-accent-light hover:underline">Preview</a>
+                      <button onClick={() => removeDocument(i)} className="text-xs text-red-400 hover:text-red-300 transition-colors">Verwijderen</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upload new doc */}
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.txt,.csv"
+                multiple
+                disabled={uploadingDocs}
+                onChange={async (e) => {
+                  const files = e.target.files
+                  if (!files || files.length === 0) return
+                  for (const file of Array.from(files)) {
+                    await uploadDocument(file)
+                  }
+                  e.target.value = ''
+                }}
+                className="text-sm text-text-muted file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border file:border-border file:bg-bg-card file:text-text-muted file:text-sm file:cursor-pointer hover:file:text-heading file:transition-colors disabled:opacity-50"
+              />
+              {uploadingDocs && <span className="text-xs text-text-dim animate-pulse">Uploaden...</span>}
+            </div>
+            <p className="text-xs text-text-dim mt-1">PDF, Word, Excel, PowerPoint, ZIP — lezers kunnen deze downloaden op de pagina</p>
           </div>
 
           <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
-            <input
-              type="checkbox"
-              checked={editingKb.is_premium}
-              onChange={(e) => setEditingKb({ ...editingKb, is_premium: e.target.checked })}
-              className="rounded border-border"
-            />
+            <input type="checkbox" checked={editingKb.is_premium} onChange={(e) => setEditingKb({ ...editingKb, is_premium: e.target.checked })} className="rounded border-border" />
             Premium
           </label>
 
-          <button
-            onClick={saveKbItem}
-            className="px-6 py-2.5 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors"
-          >
+          <button onClick={saveKbItem} className="px-6 py-2.5 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors">
             Opslaan
           </button>
         </div>
       )}
 
-      {/* CATEGORIES TAB */}
+      {/* ═══════════════════════════════════════════════════════
+          CATEGORIES TAB — LIST
+      ═══════════════════════════════════════════════════════ */}
       {tab === 'categories' && !editingCat && (
         <>
           <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-text-muted">
-              Schakel premium in per categorie — bezoekers zien dan "Ontdek Premium" met een slot.
-            </p>
-            <button
-              onClick={() => setEditingCat(newCategory())}
-              className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors shrink-0 ml-4"
-            >
+            <p className="text-sm text-text-muted">Schakel premium in per categorie — bezoekers zien dan "Ontdek Premium" met een slot.</p>
+            <button onClick={() => setEditingCat(newCategory())} className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors shrink-0 ml-4">
               + Nieuwe categorie
             </button>
           </div>
-
           <div className="space-y-3">
             {categories.map((cat) => (
-              <div
-                key={cat.id}
-                className="flex items-center justify-between p-4 rounded-xl bg-bg-card border border-border"
-              >
+              <div key={cat.id} className="flex items-center justify-between p-4 rounded-xl bg-bg-card border border-border">
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="text-text-dim text-xs w-5 text-right shrink-0">{cat.order_index}</span>
                   <div>
@@ -641,47 +718,18 @@ export default function AdminPage() {
                       <span className="text-sm font-semibold text-heading">{cat.name}</span>
                       <span className="text-xs text-text-dim">/{cat.slug}</span>
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-text-dim">{kennisbankItems.filter((i) => i.category === cat.slug).length} items</span>
-                    </div>
+                    <span className="text-xs text-text-dim">{kennisbankItems.filter((i) => i.category === cat.slug).length} items</span>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-3 shrink-0 ml-4">
-                  {/* Premium toggle */}
-                  <button
-                    onClick={() => toggleCategoryPremium(cat)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-                      cat.is_premium
-                        ? 'border-gold/40 bg-gold-dim text-gold hover:bg-gold/20'
-                        : 'border-border text-text-muted hover:text-heading'
-                    }`}
-                  >
+                  <button onClick={() => toggleCategoryPremium(cat)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${cat.is_premium ? 'border-gold/40 bg-gold-dim text-gold hover:bg-gold/20' : 'border-border text-text-muted hover:text-heading'}`}>
                     {cat.is_premium ? (
-                      <>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
-                        Premium
-                      </>
-                    ) : (
-                      'Gratis'
-                    )}
+                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>Premium</>
+                    ) : 'Gratis'}
                   </button>
-
-                  <button
-                    onClick={() => setEditingCat(cat)}
-                    className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors"
-                  >
-                    Bewerken
-                  </button>
-                  <button
-                    onClick={() => deleteCategory(cat.id, cat.slug)}
-                    className="px-3 py-1.5 rounded-lg border border-border text-xs text-red-400 hover:bg-red-400/10 transition-colors"
-                  >
-                    Verwijderen
-                  </button>
+                  <button onClick={() => setEditingCat(cat)} className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors">Bewerken</button>
+                  <button onClick={() => deleteCategory(cat.id, cat.slug)} className="px-3 py-1.5 rounded-lg border border-border text-xs text-red-400 hover:bg-red-400/10 transition-colors">Verwijderen</button>
                 </div>
               </div>
             ))}
@@ -689,50 +737,75 @@ export default function AdminPage() {
         </>
       )}
 
-      {/* USERS TAB */}
+      {/* ═══════════════════════════════════════════════════════
+          CATEGORIES TAB — EDITOR
+      ═══════════════════════════════════════════════════════ */}
+      {tab === 'categories' && editingCat && (
+        <div className="space-y-4 max-w-lg">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-display font-semibold text-heading">{editingCat.id ? 'Categorie bewerken' : 'Nieuwe categorie'}</h2>
+            <button onClick={() => setEditingCat(null)} className="text-sm text-text-muted hover:text-heading transition-colors">Annuleren</button>
+          </div>
+          <div>
+            <label className="block text-sm text-text-muted mb-1">Naam</label>
+            <input type="text" value={editingCat.name}
+              onChange={(e) => setEditingCat({ ...editingCat, name: e.target.value, slug: generateSlug(e.target.value) })}
+              className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
+              placeholder="bijv. Technische Analyse"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-text-muted mb-1">Slug</label>
+            <input type="text" value={editingCat.slug}
+              onChange={(e) => setEditingCat({ ...editingCat, slug: e.target.value })}
+              className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-text-muted text-sm focus:outline-none focus:border-accent"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-text-muted mb-1">Icoon</label>
+              <select value={editingCat.icon} onChange={(e) => setEditingCat({ ...editingCat, icon: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent">
+                {iconOptions.map((o) => <option key={o.value} value={o.value}>{o.label} ({o.value})</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-text-muted mb-1">Volgorde</label>
+              <input type="number" value={editingCat.order_index}
+                onChange={(e) => setEditingCat({ ...editingCat, order_index: parseInt(e.target.value) || 0 })}
+                className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
+              />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
+            <input type="checkbox" checked={editingCat.is_premium} onChange={(e) => setEditingCat({ ...editingCat, is_premium: e.target.checked })} className="rounded border-border" />
+            Premium categorie (toont "Ontdek Premium" overlay op kennisbank)
+          </label>
+          <button onClick={saveCategory} className="px-6 py-2.5 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors">Opslaan</button>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════
+          USERS TAB
+      ═══════════════════════════════════════════════════════ */}
       {tab === 'users' && (
         <>
           <div className="mb-6">
-            <p className="text-sm text-text-muted">
-              Beheer gebruikersrollen. Premium leden kunnen premium artikelen en kennisbank items zien.
-            </p>
+            <p className="text-sm text-text-muted">Beheer gebruikersrollen. Premium leden kunnen premium artikelen en kennisbank items zien.</p>
             <div className="flex items-center gap-4 mt-3 text-xs">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-text-dim" />
-                Free: {users.filter(u => u.role === 'free').length}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-gold" />
-                Premium: {users.filter(u => u.role === 'premium').length}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-accent" />
-                Admin: {users.filter(u => u.role === 'admin').length}
-              </span>
-              <span className="text-text-dim">
-                Totaal: {users.length}
-              </span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-text-dim" />Free: {users.filter(u => u.role === 'free').length}</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gold" />Premium: {users.filter(u => u.role === 'premium').length}</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-accent" />Admin: {users.filter(u => u.role === 'admin').length}</span>
+              <span className="text-text-dim">Totaal: {users.length}</span>
             </div>
           </div>
-
           <div className="space-y-3">
             {users.map((user) => (
-              <div
-                key={user.id}
-                className="flex items-center justify-between p-4 rounded-xl bg-bg-card border border-border"
-              >
+              <div key={user.id} className="flex items-center justify-between p-4 rounded-xl bg-bg-card border border-border">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-semibold text-heading truncate">
-                      {user.full_name || 'Geen naam'}
-                    </h3>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                      user.role === 'admin'
-                        ? 'bg-accent/20 text-accent-light'
-                        : user.role === 'premium'
-                        ? 'bg-gold-dim text-gold'
-                        : 'bg-bg-hover text-text-dim'
-                    }`}>
+                    <h3 className="text-sm font-semibold text-heading truncate">{user.full_name || 'Geen naam'}</h3>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${user.role === 'admin' ? 'bg-accent/20 text-accent-light' : user.role === 'premium' ? 'bg-gold-dim text-gold' : 'bg-bg-hover text-text-dim'}`}>
                       {user.role === 'admin' ? 'Admin' : user.role === 'premium' ? 'Premium' : 'Free'}
                     </span>
                   </div>
@@ -743,121 +816,22 @@ export default function AdminPage() {
                 </div>
                 <div className="flex gap-2 shrink-0 ml-4">
                   {user.role === 'free' && (
-                    <button
-                      onClick={() => changeUserRole(user.id, 'premium')}
-                      className="px-3 py-1.5 rounded-lg border border-gold/40 bg-gold-dim text-xs text-gold font-medium hover:bg-gold/20 transition-colors"
-                    >
-                      Maak Premium
-                    </button>
+                    <button onClick={() => changeUserRole(user.id, 'premium')} className="px-3 py-1.5 rounded-lg border border-gold/40 bg-gold-dim text-xs text-gold font-medium hover:bg-gold/20 transition-colors">Maak Premium</button>
                   )}
                   {user.role === 'premium' && (
                     <>
-                      <button
-                        onClick={() => changeUserRole(user.id, 'free')}
-                        className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors"
-                      >
-                        Terug naar Free
-                      </button>
-                      <button
-                        onClick={() => changeUserRole(user.id, 'admin')}
-                        className="px-3 py-1.5 rounded-lg border border-accent/40 bg-accent/10 text-xs text-accent-light font-medium hover:bg-accent/20 transition-colors"
-                      >
-                        Maak Admin
-                      </button>
+                      <button onClick={() => changeUserRole(user.id, 'free')} className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors">Terug naar Free</button>
+                      <button onClick={() => changeUserRole(user.id, 'admin')} className="px-3 py-1.5 rounded-lg border border-accent/40 bg-accent/10 text-xs text-accent-light font-medium hover:bg-accent/20 transition-colors">Maak Admin</button>
                     </>
                   )}
                   {user.role === 'admin' && (
-                    <button
-                      onClick={() => changeUserRole(user.id, 'premium')}
-                      className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors"
-                    >
-                      Verwijder Admin
-                    </button>
+                    <button onClick={() => changeUserRole(user.id, 'premium')} className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors">Verwijder Admin</button>
                   )}
                 </div>
               </div>
             ))}
           </div>
         </>
-      )}
-
-      {/* CATEGORY EDITOR */}
-      {tab === 'categories' && editingCat && (
-        <div className="space-y-4 max-w-lg">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-display font-semibold text-heading">
-              {editingCat.id ? 'Categorie bewerken' : 'Nieuwe categorie'}
-            </h2>
-            <button
-              onClick={() => setEditingCat(null)}
-              className="text-sm text-text-muted hover:text-heading transition-colors"
-            >
-              Annuleren
-            </button>
-          </div>
-
-          <div>
-            <label className="block text-sm text-text-muted mb-1">Naam</label>
-            <input
-              type="text"
-              value={editingCat.name}
-              onChange={(e) => setEditingCat({ ...editingCat, name: e.target.value, slug: generateSlug(e.target.value) })}
-              className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
-              placeholder="bijv. Technische Analyse"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-text-muted mb-1">Slug</label>
-            <input
-              type="text"
-              value={editingCat.slug}
-              onChange={(e) => setEditingCat({ ...editingCat, slug: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-text-muted text-sm focus:outline-none focus:border-accent"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-text-muted mb-1">Icoon</label>
-              <select
-                value={editingCat.icon}
-                onChange={(e) => setEditingCat({ ...editingCat, icon: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
-              >
-                {iconOptions.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label} ({o.value})</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm text-text-muted mb-1">Volgorde</label>
-              <input
-                type="number"
-                value={editingCat.order_index}
-                onChange={(e) => setEditingCat({ ...editingCat, order_index: parseInt(e.target.value) || 0 })}
-                className="w-full px-4 py-2 rounded-lg bg-bg-card border border-border text-heading text-sm focus:outline-none focus:border-accent"
-              />
-            </div>
-          </div>
-
-          <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
-            <input
-              type="checkbox"
-              checked={editingCat.is_premium}
-              onChange={(e) => setEditingCat({ ...editingCat, is_premium: e.target.checked })}
-              className="rounded border-border"
-            />
-            Premium categorie (toont "Ontdek Premium" overlay op kennisbank)
-          </label>
-
-          <button
-            onClick={saveCategory}
-            className="px-6 py-2.5 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors"
-          >
-            Opslaan
-          </button>
-        </div>
       )}
     </div>
   )
