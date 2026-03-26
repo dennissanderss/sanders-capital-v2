@@ -114,11 +114,11 @@ export default async function KennisbankPage() {
         </div>
       </FadeIn>
 
-      <div className="grid md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+      <div className="grid md:grid-cols-2 gap-4 sm:gap-5 md:gap-6 auto-rows-fr">
         {groupedItems.map((cat, i) => (
-          <FadeIn key={cat.id} delay={i * 100}>
+          <FadeIn key={cat.id} delay={i * 100} className="h-full">
             <div
-              className={`p-6 rounded-xl transition-all duration-300 glass glass-hover ${
+              className={`p-6 rounded-xl transition-all duration-300 glass glass-hover h-full flex flex-col ${
                 cat.is_premium ? 'glass-gold' : ''
               }`}
             >
@@ -132,7 +132,7 @@ export default async function KennisbankPage() {
               </div>
 
               {cat.items.length > 0 ? (
-                <ul className="space-y-3">
+                <ul className="space-y-3 flex-1">
                   {cat.items.map((item: KbItem) => (
                     <li key={item.id}>
                       <div className="flex items-start gap-2 text-sm">
@@ -183,13 +183,13 @@ export default async function KennisbankPage() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-text-dim">Binnenkort beschikbaar</p>
+                <p className="text-sm text-text-dim flex-1">Binnenkort beschikbaar</p>
               )}
 
               {cat.is_premium && (
                 <Link
                   href="/premium"
-                  className="inline-block mt-4 text-xs text-gold hover:text-gold/80 transition-colors"
+                  className="inline-block mt-4 text-xs text-gold hover:text-gold/80 transition-colors self-start"
                 >
                   Ontdek premium →
                 </Link>
