@@ -1,3 +1,4 @@
+import React from 'react'
 import Link from 'next/link'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import FadeIn from '@/components/FadeIn'
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
 }
 
 function CategoryIcon({ icon }: { icon: string }) {
-  const icons: Record<string, JSX.Element> = {
+  const icons: Record<string, React.ReactElement> = {
     shield: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -75,17 +76,29 @@ function CategoryIcon({ icon }: { icon: string }) {
   return icons[icon] ?? icons['shield']
 }
 
+interface KbItem {
+  id: string
+  title: string
+  slug: string
+  category: string
+  is_premium: boolean
+  order_index: number
+  documents: { name: string; url: string; size: number }[] | null
+}
+
 export default async function KennisbankPage() {
   const supabase = await createServerSupabaseClient()
 
-  const [{ data: categories }, { data: items }] = await Promise.all([
+  const [{ data: categories }, { data: rawItems }] = await Promise.all([
     supabase.from('kennisbank_categories').select('*').order('order_index'),
     supabase.from('kennisbank_items').select('*').order('order_index', { ascending: true }),
   ])
 
+  const items = (rawItems ?? []) as KbItem[]
+
   const groupedItems = (categories ?? []).map((cat) => ({
     ...cat,
-    items: items?.filter((item) => item.category === cat.slug) || [],
+    items: items.filter((item) => item.category === cat.slug),
   }))
 
   return (
@@ -122,7 +135,7 @@ export default async function KennisbankPage() {
 
               {cat.items.length > 0 ? (
                 <ul className="space-y-3">
-                  {cat.items.map((item) => (
+                  {cat.items.map((item: KbItem) => (
                     <li key={item.id}>
                       <div className="flex items-start gap-2 text-sm">
                         <span className="mt-0.5 shrink-0">
@@ -147,7 +160,7 @@ export default async function KennisbankPage() {
                           {/* Download documents */}
                           {Array.isArray(item.documents) && item.documents.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-1.5">
-                              {item.documents.map((doc: { name: string; url: string; size: number }, di: number) => (
+                              {(item.documents as { name: string; url: string; size: number }[]).map((doc, di: number) => (
                                 <a
                                   key={di}
                                   href={doc.url}

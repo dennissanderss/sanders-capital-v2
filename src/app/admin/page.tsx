@@ -162,14 +162,14 @@ export default function AdminPage() {
   const saveArticle = async () => {
     if (!editing) return
     const { id, created_at, ...data } = editing
-    const slug = data.slug || generateSlug(data.title)
+    let slug = data.slug || generateSlug(data.title)
     try {
       if (id) {
         await adminWrite('update', 'articles', { ...data, slug, updated_at: new Date().toISOString() }, id)
       } else {
         try {
           await adminWrite('insert', 'articles', { ...data, slug })
-        } catch {
+        } catch (_e) {
           slug = slug + '-' + Date.now().toString(36)
           await adminWrite('insert', 'articles', { ...data, slug })
         }
@@ -209,7 +209,7 @@ export default function AdminPage() {
         // Als slug al bestaat, voeg uniek suffix toe
         try {
           await adminWrite('insert', 'kennisbank_items', { ...data, slug })
-        } catch {
+        } catch (_e) {
           slug = slug + '-' + Date.now().toString(36)
           await adminWrite('insert', 'kennisbank_items', { ...data, slug })
         }
