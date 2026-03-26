@@ -116,6 +116,20 @@ export default function AdminPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  // All writes go through the admin API route (uses service role key → bypasses RLS)
+  const adminWrite = async (action: string, table: string, data?: object, id?: string) => {
+    const res = await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, table, data, id }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.error || 'Opslaan mislukt')
+    }
+    return res.json()
+  }
+
   const loadData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
@@ -149,19 +163,27 @@ export default function AdminPage() {
     if (!editing) return
     const { id, created_at, ...data } = editing
     const slug = data.slug || generateSlug(data.title)
-    if (id) {
-      await supabase.from('articles').update({ ...data, slug, updated_at: new Date().toISOString() }).eq('id', id)
-    } else {
-      await supabase.from('articles').insert({ ...data, slug })
+    try {
+      if (id) {
+        await adminWrite('update', 'articles', { ...data, slug, updated_at: new Date().toISOString() }, id)
+      } else {
+        await adminWrite('insert', 'articles', { ...data, slug })
+      }
+      setEditing(null)
+      loadData()
+    } catch (e) {
+      alert('Fout bij opslaan: ' + (e as Error).message)
     }
-    setEditing(null)
-    loadData()
   }
 
   const deleteArticle = async (id: string) => {
     if (!confirm('Weet je zeker dat je dit artikel wilt verwijderen?')) return
-    await supabase.from('articles').delete().eq('id', id)
-    loadData()
+    try {
+      await adminWrite('delete', 'articles', undefined, id)
+      loadData()
+    } catch (e) {
+      alert('Fout bij verwijderen: ' + (e as Error).message)
+    }
   }
 
   // ─── KENNISBANK ITEMS ──────────────────────────────────────
@@ -175,19 +197,27 @@ export default function AdminPage() {
     if (!editingKb) return
     const { id, ...data } = editingKb
     const slug = data.slug || generateSlug(data.title)
-    if (id) {
-      await supabase.from('kennisbank_items').update({ ...data, slug }).eq('id', id)
-    } else {
-      await supabase.from('kennisbank_items').insert({ ...data, slug })
+    try {
+      if (id) {
+        await adminWrite('update', 'kennisbank_items', { ...data, slug }, id)
+      } else {
+        await adminWrite('insert', 'kennisbank_items', { ...data, slug })
+      }
+      setEditingKb(null)
+      loadData()
+    } catch (e) {
+      alert('Fout bij opslaan: ' + (e as Error).message)
     }
-    setEditingKb(null)
-    loadData()
   }
 
   const deleteKbItem = async (id: string) => {
     if (!confirm('Weet je zeker dat je dit item wilt verwijderen?')) return
-    await supabase.from('kennisbank_items').delete().eq('id', id)
-    loadData()
+    try {
+      await adminWrite('delete', 'kennisbank_items', undefined, id)
+      loadData()
+    } catch (e) {
+      alert('Fout bij verwijderen: ' + (e as Error).message)
+    }
   }
 
   // ─── DOCUMENT UPLOAD ───────────────────────────────────────
@@ -228,39 +258,45 @@ export default function AdminPage() {
     const art = moveModal.item as Article
     const category = moveModal.selectedCategory || categories[0]?.slug
     if (!category) return
-
-    await supabase.from('kennisbank_items').insert({
-      title: art.title,
-      slug: art.slug || generateSlug(art.title),
-      content: art.content,
-      category,
-      is_premium: art.is_premium,
-      order_index: 0,
-      documents: [],
-    })
-    await supabase.from('articles').delete().eq('id', art.id)
-    setMoveModal(null)
-    loadData()
+    try {
+      await adminWrite('insert', 'kennisbank_items', {
+        title: art.title,
+        slug: art.slug || generateSlug(art.title),
+        content: art.content,
+        category,
+        is_premium: art.is_premium,
+        order_index: 0,
+        documents: [],
+      })
+      await adminWrite('delete', 'articles', undefined, art.id)
+      setMoveModal(null)
+      loadData()
+    } catch (e) {
+      alert('Fout bij verplaatsen: ' + (e as Error).message)
+    }
   }
 
   // ─── MOVE KENNISBANK → ARTICLE ─────────────────────────────
   const confirmMoveToArticle = async () => {
     if (!moveModal || moveModal.type !== 'kbToArticle') return
     const kb = moveModal.item as KennisbankItem
-
-    await supabase.from('articles').insert({
-      title: kb.title,
-      slug: kb.slug || generateSlug(kb.title),
-      content: kb.content,
-      excerpt: '',
-      tag: '',
-      is_premium: kb.is_premium,
-      published: false,
-      reading_time: 5,
-    })
-    await supabase.from('kennisbank_items').delete().eq('id', kb.id)
-    setMoveModal(null)
-    loadData()
+    try {
+      await adminWrite('insert', 'articles', {
+        title: kb.title,
+        slug: kb.slug || generateSlug(kb.title),
+        content: kb.content,
+        excerpt: '',
+        tag: '',
+        is_premium: kb.is_premium,
+        published: false,
+        reading_time: 5,
+      })
+      await adminWrite('delete', 'kennisbank_items', undefined, kb.id)
+      setMoveModal(null)
+      loadData()
+    } catch (e) {
+      alert('Fout bij verplaatsen: ' + (e as Error).message)
+    }
   }
 
   // ─── CATEGORIES ────────────────────────────────────────────
@@ -273,33 +309,49 @@ export default function AdminPage() {
     if (!editingCat) return
     const { id, ...data } = editingCat
     const slug = data.slug || generateSlug(data.name)
-    if (id) {
-      await supabase.from('kennisbank_categories').update({ ...data, slug }).eq('id', id)
-    } else {
-      await supabase.from('kennisbank_categories').insert({ ...data, slug })
+    try {
+      if (id) {
+        await adminWrite('update', 'kennisbank_categories', { ...data, slug }, id)
+      } else {
+        await adminWrite('insert', 'kennisbank_categories', { ...data, slug })
+      }
+      setEditingCat(null)
+      loadData()
+    } catch (e) {
+      alert('Fout bij opslaan: ' + (e as Error).message)
     }
-    setEditingCat(null)
-    loadData()
   }
 
   const deleteCategory = async (id: string, slug: string) => {
     const hasItems = kennisbankItems.some((i) => i.category === slug)
     if (hasItems) { alert('Deze categorie heeft nog items. Verwijder of verplaats die eerst.'); return }
     if (!confirm('Weet je zeker dat je deze categorie wilt verwijderen?')) return
-    await supabase.from('kennisbank_categories').delete().eq('id', id)
-    loadData()
+    try {
+      await adminWrite('delete', 'kennisbank_categories', undefined, id)
+      loadData()
+    } catch (e) {
+      alert('Fout bij verwijderen: ' + (e as Error).message)
+    }
   }
 
   const toggleCategoryPremium = async (cat: Category) => {
-    await supabase.from('kennisbank_categories').update({ is_premium: !cat.is_premium }).eq('id', cat.id)
-    setCategories((prev) => prev.map((c) => c.id === cat.id ? { ...c, is_premium: !c.is_premium } : c))
+    try {
+      await adminWrite('update', 'kennisbank_categories', { is_premium: !cat.is_premium }, cat.id)
+      setCategories((prev) => prev.map((c) => c.id === cat.id ? { ...c, is_premium: !c.is_premium } : c))
+    } catch (e) {
+      alert('Fout: ' + (e as Error).message)
+    }
   }
 
   // ─── USERS ─────────────────────────────────────────────────
   const changeUserRole = async (userId: string, newRole: 'free' | 'premium' | 'admin') => {
     if (newRole === 'admin' && !confirm('Weet je zeker dat je deze gebruiker admin rechten wilt geven?')) return
-    await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
-    setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: newRole } : u))
+    try {
+      await adminWrite('update', 'profiles', { role: newRole }, userId)
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: newRole } : u))
+    } catch (e) {
+      alert('Fout: ' + (e as Error).message)
+    }
   }
 
   if (loading) {
