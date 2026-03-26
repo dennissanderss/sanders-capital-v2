@@ -53,9 +53,9 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
-          ? 'bg-bg-elevated/80 backdrop-blur-xl border-b border-border'
+          ? 'glass-elevated border-b border-white/[0.07]'
           : 'bg-transparent'
       }`}
     >
@@ -111,7 +111,7 @@ export default function Header() {
 
             {/* Dropdown menu */}
             <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-              <div className="bg-bg-elevated/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl py-2 min-w-[220px]">
+              <div className="glass-elevated rounded-xl shadow-2xl py-2 min-w-[220px]">
                 {toolsDropdown.map((item) => (
                   <Link
                     key={item.href}
@@ -175,7 +175,7 @@ export default function Header() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <nav className="md:hidden bg-bg-elevated/95 backdrop-blur-xl border-b border-border">
+        <nav className="md:hidden glass-elevated border-b border-white/[0.07]">
           <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col gap-3">
             {navLinks.slice(0, 3).map((link) => (
               <Link

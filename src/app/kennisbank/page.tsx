@@ -118,10 +118,8 @@ export default async function KennisbankPage() {
         {groupedItems.map((cat, i) => (
           <FadeIn key={cat.id} delay={i * 100}>
             <div
-              className={`p-6 rounded-xl bg-bg-card border transition-colors ${
-                cat.is_premium
-                  ? 'border-dashed border-gold/30 hover:border-gold/50'
-                  : 'border-border hover:border-border-light'
+              className={`p-6 rounded-xl transition-all duration-300 glass glass-hover ${
+                cat.is_premium ? 'glass-gold' : ''
               }`}
             >
               <div className="flex items-center gap-3 mb-4">

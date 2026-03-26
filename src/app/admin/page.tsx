@@ -379,7 +379,7 @@ export default function AdminPage() {
       {/* MOVE MODAL */}
       {moveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+          <div className="glass-elevated rounded-2xl p-6 w-full max-w-md mx-4">
             {moveModal.type === 'articleToKb' && (
               <>
                 <h3 className="text-lg font-display font-semibold text-heading mb-2">Verplaats naar Kennisbank</h3>
@@ -451,7 +451,7 @@ export default function AdminPage() {
           </button>
           <div className="space-y-3">
             {articles.map((a) => (
-              <div key={a.id} className="flex items-center justify-between p-4 rounded-xl bg-bg-card border border-border">
+              <div key={a.id} className="flex items-center justify-between p-4 rounded-xl glass">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-sm font-semibold text-heading truncate">{a.title}</h3>
@@ -773,7 +773,7 @@ export default function AdminPage() {
           </div>
           <div className="space-y-3">
             {categories.map((cat) => (
-              <div key={cat.id} className="flex items-center justify-between p-4 rounded-xl bg-bg-card border border-border">
+              <div key={cat.id} className="flex items-center justify-between p-4 rounded-xl glass">
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="text-text-dim text-xs w-5 text-right shrink-0">{cat.order_index}</span>
                   <div>
@@ -864,7 +864,7 @@ export default function AdminPage() {
           </div>
           <div className="space-y-3">
             {users.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-4 rounded-xl bg-bg-card border border-border">
+              <div key={user.id} className="flex items-center justify-between p-4 rounded-xl glass">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-sm font-semibold text-heading truncate">{user.full_name || 'Geen naam'}</h3>

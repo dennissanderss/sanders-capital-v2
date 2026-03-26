@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg: #0a0c10;
-  --color-bg-elevated: #0f1218;
-  --color-bg-card: #13161d;
-  --color-bg-hover: #1a1e28;
+  --color-bg: #080a0e;
+  --color-bg-elevated: #0d1016;
+  --color-bg-card: rgba(16, 20, 28, 0.6);
+  --color-bg-hover: rgba(26, 30, 40, 0.7);
   --color-surface: #1a1e28;
-  --color-border: #1e2230;
-  --color-border-light: #2a2e3a;
+  --color-border: rgba(255, 255, 255, 0.07);
+  --color-border-light: rgba(255, 255, 255, 0.12);
   --color-text: #c8ccd8;
   --color-text-muted: #6b7084;
   --color-text-dim: #4a4f62;
@@ -20,6 +20,12 @@
   --color-gold-dim: rgba(184, 147, 90, 0.15);
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body: 'DM Sans', -apple-system, sans-serif;
+
+  /* Glass tokens */
+  --glass-blur: 20px;
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-shadow-gold: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(184, 147, 90, 0.12);
 }
 
 @layer base {
@@ -39,6 +45,31 @@
     overflow-x: hidden;
   }
 
+  /* Ambient background glows — give glass blur something to show through */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: -10%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(ellipse, rgba(61, 110, 165, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -20%;
+    right: -10%;
+    width: 55%;
+    height: 55%;
+    background: radial-gradient(ellipse, rgba(184, 147, 90, 0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     color: var(--color-heading);
@@ -49,6 +80,43 @@
     background-color: var(--color-accent-dim);
     color: var(--color-heading);
   }
+}
+
+/* ─── Glass effect utilities ──────────────────────────────── */
+
+/* Standard glass card */
+.glass {
+  background: rgba(16, 20, 28, 0.6) !important;
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow);
+}
+
+/* Elevated glass (modals, dropdowns) */
+.glass-elevated {
+  background: rgba(13, 16, 22, 0.75) !important;
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Premium / gold glass */
+.glass-gold {
+  background: rgba(16, 20, 28, 0.55) !important;
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(184, 147, 90, 0.2) !important;
+  box-shadow: var(--glass-shadow-gold);
+}
+
+/* Hover state for glass cards */
+.glass-hover:hover {
+  background: rgba(22, 27, 38, 0.7) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  transition: all 0.25s ease;
 }
 
 /* Grain overlay — disabled for clean look */

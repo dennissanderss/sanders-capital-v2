@@ -34,7 +34,7 @@ export default async function BlogPage() {
           <FadeIn key={article.id} delay={i * 80}>
             <Link
               href={`/blog/${article.slug}`}
-              className="block p-6 rounded-xl bg-bg-card border border-border hover:border-border-light transition-all group h-full"
+              className="block p-6 rounded-xl glass glass-hover transition-all group h-full"
             >
               <div className="flex items-center gap-2 mb-3">
                 {article.tag && (

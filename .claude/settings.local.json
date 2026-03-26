@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(cp \"C:\\\\Users\\\\denni\\\\Documents\\\\Claude coding\\\\sanders-capital-v2\\\\public\\\\assets\\\\images\\\\logo.png\" \"C:\\\\Users\\\\denni\\\\Documents\\\\Claude coding\\\\sanders-capital-v2\\\\src\\\\app\\\\icon.png\")",
+      "Bash(rm \"C:\\\\Users\\\\denni\\\\Documents\\\\Claude coding\\\\sanders-capital-v2\\\\src\\\\app\\\\favicon.ico\")",
+      "Bash(node fix-content.mjs)",
+      "Bash(node -e \"fetch\\(''https://aattshdzszmzowmhdqui.supabase.co/rest/v1/articles?slug=eq.basis-van-trading&select=content'',{headers:{''apikey'':''sb_publishable_7NrRQpOx1UNR8MUlD5gJ2w_cSMy1IP6'',''Authorization'':''Bearer sb_publishable_7NrRQpOx1UNR8MUlD5gJ2w_cSMy1IP6''}}\\).then\\(r=>r.json\\(\\)\\).then\\(d=>console.log\\(JSON.stringify\\(d[0].content.slice\\(0,50\\)\\)\\)\\)\")",
+      "Bash(node -e \"fetch\\(''https://aattshdzszmzowmhdqui.supabase.co/rest/v1/articles?slug=eq.basis-van-trading&select=content'',{headers:{''apikey'':''sb_publishable_7NrRQpOx1UNR8MUlD5gJ2w_cSMy1IP6'',''Authorization'':''Bearer sb_publishable_7NrRQpOx1UNR8MUlD5gJ2w_cSMy1IP6''}}\\).then\\(r=>r.json\\(\\)\\).then\\(d=>{ const c = d[0].content; console.log\\(''Bevat ##:'', c.includes\\(''##''\\)\\); console.log\\(''Eerste 200 chars:'', JSON.stringify\\(c.slice\\(0,200\\)\\)\\); }\\)\")",
+      "Bash(node -e \":*)",
+      "Bash(npm install:*)",
+      "Bash(node convert-to-html.mjs)",
+      "Bash(npm run:*)",
+      "Bash(node migrate-categories.mjs)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

@@ -107,7 +107,7 @@ export default async function KennisbankItemPage({ params }: Props) {
       {/* Documenten downloaden */}
       {hasAccess && documents.length > 0 && (
         <FadeIn delay={300}>
-          <div className="mt-12 p-6 rounded-xl bg-bg-card border border-border">
+          <div className="mt-12 p-6 rounded-xl glass">
             <h3 className="text-sm font-semibold text-heading mb-4 flex items-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -124,7 +124,7 @@ export default async function KennisbankItemPage({ params }: Props) {
                   download={doc.name}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-3 rounded-lg border border-border hover:border-accent/40 hover:bg-accent/5 transition-colors group"
+                  className="flex items-center justify-between p-3 rounded-lg glass glass-hover transition-all group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="text-xl">
@@ -160,7 +160,7 @@ export default async function KennisbankItemPage({ params }: Props) {
           {prevItem ? (
             <Link
               href={`/kennisbank/${prevItem.slug}`}
-              className="p-4 rounded-lg border border-border hover:border-border-light transition-colors"
+              className="p-4 rounded-lg glass glass-hover transition-all"
             >
               <span className="text-xs text-text-dim">Vorig</span>
               <p className="text-sm text-heading mt-1">{prevItem.title}</p>
