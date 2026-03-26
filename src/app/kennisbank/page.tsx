@@ -138,9 +138,12 @@ export default async function KennisbankPage() {
                           )}
                         </span>
                         <div className="min-w-0">
-                          <span className={item.is_premium ? 'text-text-muted' : 'text-text'}>
+                          <Link
+                            href={`/kennisbank/${item.slug}`}
+                            className={`hover:underline underline-offset-2 transition-colors ${item.is_premium ? 'text-text-muted hover:text-heading' : 'text-text hover:text-heading'}`}
+                          >
                             {item.title}
-                          </span>
+                          </Link>
                           {/* Download documents */}
                           {Array.isArray(item.documents) && item.documents.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-1.5">
