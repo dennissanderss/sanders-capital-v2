@@ -30,7 +30,7 @@ export default function VoorwaardenPage() {
               <p>In deze algemene voorwaarden wordt verstaan onder:</p>
               <ul className="space-y-1.5 pl-5 list-disc text-text-muted">
                 <li><strong className="text-text">Sanders Capital:</strong> de eenmanszaak Sanders Capital, gevestigd in Nederland, aanbieder van het platform sanderscapital.nl.</li>
-                <li><strong className="text-text">Platform:</strong> de website sanderscapital.nl, inclusief alle subpagina&apos;s, applicaties en diensten die daaronder vallen.</li>
+                <li><strong className="text-text">Platform:</strong> de website sanderscapital.nl, inclusief alle subpagina&apos;s, applicaties en diensten die daaronder vallen, alsmede de gekoppelde Discord-server van Sanders Capital.</li>
                 <li><strong className="text-text">Gebruiker:</strong> iedere natuurlijke persoon die het platform bezoekt, zich registreert of een account aanmaakt.</li>
                 <li><strong className="text-text">Lid:</strong> een gebruiker die een account heeft aangemaakt op het platform.</li>
                 <li><strong className="text-text">Premium lid:</strong> een lid dat een betaald abonnement heeft afgesloten voor toegang tot premium content.</li>
@@ -46,7 +46,7 @@ export default function VoorwaardenPage() {
               Artikel 2 — Toepasselijkheid
             </h2>
             <div className="space-y-2 text-text-muted">
-              <p>2.1. Deze algemene voorwaarden zijn van toepassing op elk gebruik van het platform, elke registratie en elk abonnement dat via het platform wordt afgesloten.</p>
+              <p>2.1. Deze algemene voorwaarden zijn van toepassing op elk gebruik van het platform, elke registratie en elk abonnement dat via het platform wordt afgesloten. Dit omvat tevens deelname aan de gekoppelde Discord-community van Sanders Capital.</p>
               <p>2.2. Door het platform te gebruiken, een account aan te maken of een abonnement af te sluiten, verklaart de gebruiker kennis te hebben genomen van deze voorwaarden en hiermee akkoord te gaan.</p>
               <p>2.3. Sanders Capital behoudt zich het recht voor deze voorwaarden eenzijdig te wijzigen. Wijzigingen treden in werking na publicatie op het platform. Bij substantiële wijzigingen worden leden per e-mail geïnformeerd.</p>
             </div>
