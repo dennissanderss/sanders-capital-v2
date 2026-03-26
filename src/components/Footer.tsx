@@ -104,6 +104,9 @@ export default function Footer() {
               <Link href="/voorwaarden" className="text-sm text-text-muted hover:text-heading transition-colors">
                 Algemene Voorwaarden
               </Link>
+              <Link href="/voorwaarden-discord" className="text-sm text-text-muted hover:text-heading transition-colors">
+                Voorwaarden Discord
+              </Link>
               <a href="mailto:sanderscapital@hotmail.com" className="text-sm text-text-muted hover:text-heading transition-colors">
                 sanderscapital@hotmail.com
               </a>
