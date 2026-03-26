@@ -173,15 +173,18 @@ export default function RichEditor({
     }
   }, [value])
 
-  async function handleImageUpload(file: File) {
+  async function handleImageUpload(files: FileList | File[]) {
     if (!supabase) return
+    const fileArray = Array.from(files)
     setUploading(true)
     try {
-      const fileName = `${Date.now()}-${file.name}`
-      const { error } = await supabase.storage.from('images').upload(fileName, file)
-      if (error) { alert('Upload mislukt: ' + error.message); return }
-      const { data } = supabase.storage.from('images').getPublicUrl(fileName)
-      editor?.chain().focus().setImage({ src: data.publicUrl, alt: file.name }).run()
+      for (const file of fileArray) {
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`
+        const { error } = await supabase.storage.from('images').upload(fileName, file)
+        if (error) { alert(`Upload mislukt voor ${file.name}: ${error.message}`); continue }
+        const { data } = supabase.storage.from('images').getPublicUrl(fileName)
+        editor?.chain().focus().setImage({ src: data.publicUrl, alt: file.name }).run()
+      }
     } finally {
       setUploading(false)
     }
@@ -232,8 +235,9 @@ export default function RichEditor({
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          multiple
           style={{ display: 'none' }}
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = '' }}
+          onChange={(e) => { const f = e.target.files; if (f && f.length > 0) handleImageUpload(f); e.target.value = '' }}
         />
       </div>
 

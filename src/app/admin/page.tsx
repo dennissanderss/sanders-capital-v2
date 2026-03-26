@@ -399,30 +399,39 @@ export default function AdminPage() {
           </div>
 
           <div>
-            <label className="block text-sm text-text-muted mb-1">Afbeelding uploaden</label>
+            <label className="block text-sm text-text-muted mb-1">Afbeeldingen uploaden</label>
             <div className="flex items-center gap-3">
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={async (e) => {
-                  const file = e.target.files?.[0]
-                  if (!file) return
-                  const ext = file.name.split('.').pop()
-                  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-                  const { error } = await supabase.storage.from('images').upload(fileName, file)
-                  if (error) {
-                    alert('Upload mislukt: ' + error.message)
-                    return
+                  const files = e.target.files
+                  if (!files || files.length === 0) return
+                  const uploadedLinks: string[] = []
+                  for (let i = 0; i < files.length; i++) {
+                    const file = files[i]
+                    const ext = file.name.split('.').pop()
+                    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+                    const { error } = await supabase.storage.from('images').upload(fileName, file)
+                    if (error) {
+                      alert(`Upload mislukt voor ${file.name}: ${error.message}`)
+                      continue
+                    }
+                    const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName)
+                    uploadedLinks.push(`![${file.name}](${urlData.publicUrl})`)
                   }
-                  const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName)
-                  const markdownImg = `![${file.name}](${urlData.publicUrl})`
-                  await navigator.clipboard.writeText(markdownImg)
-                  alert('Afbeelding geüpload! Markdown link is gekopieerd naar je klembord.\n\nPlak het in je content met Ctrl+V.')
+                  if (uploadedLinks.length > 0) {
+                    const allLinks = uploadedLinks.join('\n\n')
+                    await navigator.clipboard.writeText(allLinks)
+                    alert(`${uploadedLinks.length} afbeelding${uploadedLinks.length > 1 ? 'en' : ''} geüpload! Markdown links zijn gekopieerd naar je klembord.\n\nPlak ze in je content met Ctrl+V.`)
+                  }
+                  e.target.value = ''
                 }}
                 className="text-sm text-text-muted file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border file:border-border file:bg-bg-card file:text-text-muted file:text-sm file:cursor-pointer hover:file:text-heading file:transition-colors"
               />
             </div>
-            <p className="text-xs text-text-dim mt-1">Upload een afbeelding → markdown link wordt automatisch gekopieerd</p>
+            <p className="text-xs text-text-dim mt-1">Selecteer meerdere afbeeldingen tegelijk → markdown links worden gekopieerd naar je klembord</p>
           </div>
 
           <div>
