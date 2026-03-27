@@ -19,10 +19,6 @@ const articleStyles = `
   .article-content img[data-float="right"] { float: right; margin: 0.5rem 0 0.75rem 1.5rem; }
   .article-content::after { content: ''; display: table; clear: both; }
   @media (max-width: 640px) {
-    .article-content img[style*="float:left"], .article-content img[style*="float: left"],
-    .article-content img[data-float="left"],
-    .article-content img[style*="float:right"], .article-content img[style*="float: right"],
-    .article-content img[data-float="right"] { float: none !important; margin: 1rem auto !important; width: 100% !important; }
     .article-content h2 { font-size: 1.5rem; }
     .article-content h3 { font-size: 1.2rem; }
   }
