@@ -12,10 +12,16 @@ const articleStyles = `
   .article-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.25rem; }
   .article-content li { margin-bottom: 0.4rem; line-height: 1.75; color: var(--color-text); }
   .article-content blockquote { border-left: 3px solid var(--color-accent-dim); padding-left: 1rem; margin: 1.5rem 0; color: var(--color-text-muted); font-style: italic; }
-  .article-content img { max-width: 100%; border-radius: 6px; }
+  .article-content img { max-width: 100%; border-radius: 6px; display: block; }
   .article-content img[style*="float: left"] { float: left; margin: 0.5rem 1.5rem 0.75rem 0; }
   .article-content img[style*="float: right"] { float: right; margin: 0.5rem 0 0.75rem 1.5rem; }
   .article-content::after { content: ''; display: table; clear: both; }
+  @media (max-width: 640px) {
+    .article-content img[style*="float: left"],
+    .article-content img[style*="float: right"] { float: none !important; margin: 1rem auto !important; width: 100% !important; max-width: 100% !important; }
+    .article-content h2 { font-size: 1.5rem; }
+    .article-content h3 { font-size: 1.2rem; }
+  }
 `
 
 export default function ArticleContent({
