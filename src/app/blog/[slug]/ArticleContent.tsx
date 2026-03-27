@@ -13,10 +13,14 @@ const articleStyles = `
   .article-content li { margin-bottom: 0.4rem; line-height: 1.75; color: var(--color-text); }
   .article-content blockquote { border-left: 3px solid var(--color-accent-dim); padding-left: 1rem; margin: 1.5rem 0; color: var(--color-text-muted); font-style: italic; }
   .article-content img { max-width: 100%; border-radius: 6px; display: block; }
-  .article-content img[style*="float:left"], .article-content img[style*="float: left"],
-  .article-content img[data-float="left"] { float: left; margin: 0.5rem 1.5rem 0.75rem 0; }
-  .article-content img[style*="float:right"], .article-content img[style*="float: right"],
-  .article-content img[data-float="right"] { float: right; margin: 0.5rem 0 0.75rem 1.5rem; }
+  .article-content img[style*="float:left"],
+  .article-content img[style*="float: left"],
+  .article-content img[data-float="left"],
+  .article-content img[float="left"] { float: left !important; margin: 0.5rem 1.5rem 0.75rem 0 !important; display: block !important; }
+  .article-content img[style*="float:right"],
+  .article-content img[style*="float: right"],
+  .article-content img[data-float="right"],
+  .article-content img[float="right"] { float: right !important; margin: 0.5rem 0 0.75rem 1.5rem !important; display: block !important; }
   .article-content::after { content: ''; display: table; clear: both; }
   @media (max-width: 640px) {
     .article-content h2 { font-size: 1.5rem; }
