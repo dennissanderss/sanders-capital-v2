@@ -17,9 +17,27 @@ const FloatImage = BaseImage.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
-      float: { default: 'none' },
-      width: { default: '50%' },
+      float: {
+        default: 'none',
+        parseHTML: (el) => el.getAttribute('data-float') || 'none',
+        renderHTML: (attrs) => ({ 'data-float': attrs.float }),
+      },
+      width: {
+        default: '50%',
+        parseHTML: (el) => el.getAttribute('data-width') || '50%',
+        renderHTML: (attrs) => ({ 'data-width': attrs.width }),
+      },
     }
+  },
+  renderHTML({ HTMLAttributes }) {
+    const { 'data-float': float, 'data-width': width, src, alt, title } = HTMLAttributes
+    const styleMap: Record<string, string> = {
+      none:  `display:block;max-width:100%;width:${width || '50%'};margin:1rem auto`,
+      left:  `float:left;max-width:100%;width:${width || '50%'};margin:0.5rem 1.5rem 0.75rem 0`,
+      right: `float:right;max-width:100%;width:${width || '50%'};margin:0.5rem 0 0.75rem 1.5rem`,
+    }
+    const style = styleMap[float as string] || styleMap.none
+    return ['img', { src, alt, title, style, 'data-float': float, 'data-width': width }]
   },
   addNodeView() {
     return ReactNodeViewRenderer(ImageNodeView)
