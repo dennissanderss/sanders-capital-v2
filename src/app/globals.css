@@ -279,10 +279,4 @@
     font-size: 1.15rem;
     margin-top: 1.25rem;
   }
-  .article-content img[style*="float: left"],
-  .article-content img[style*="float: right"] {
-    float: none !important;
-    width: 100% !important;
-    margin: 0.75rem 0 !important;
-  }
 }
