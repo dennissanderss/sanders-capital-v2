@@ -127,8 +127,8 @@ export default function FxSelectorDashboard() {
     setError(null)
     try {
       const res = await fetch(endpoint)
-      if (!res.ok) throw new Error(`API error: ${res.status}`)
       const json = await res.json()
+      if (!res.ok) throw new Error(json.error || `API error: ${res.status}`)
       setData(json)
       setUpdates(prev => [
         `${new Date().toLocaleTimeString('nl-NL')} — Data bijgewerkt`,

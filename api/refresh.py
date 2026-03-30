@@ -17,7 +17,12 @@ def _run_analysis():
     dxy_data = intermarket_data.get("dxy")
     currency_scores = calculate_all_currency_scores(currency_data, dxy_data)
     intermarket = analyze_intermarket(intermarket_data)
-    yesterday = load_yesterday_scores()
+
+    yesterday = None
+    try:
+        yesterday = load_yesterday_scores()
+    except Exception as e:
+        print(f"Load yesterday failed: {e}")
 
     pairs = score_all_pairs(
         currency_scores=currency_scores,
@@ -107,11 +112,20 @@ def _run_analysis():
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        result = _run_analysis()
-        body = json.dumps(result, default=str)
+        try:
+            result = _run_analysis()
+            body = json.dumps(result, default=str)
 
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(body.encode())
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(body.encode())
+        except Exception as e:
+            import traceback
+            error_body = json.dumps({"error": str(e), "trace": traceback.format_exc()})
+            self.send_response(500)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(error_body.encode())
