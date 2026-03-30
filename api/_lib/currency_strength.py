@@ -1,9 +1,9 @@
 from .market_data import get_price_change
 
 
-def calculate_momentum_score(df):
-    change_5d = get_price_change(df, 5)
-    change_20d = get_price_change(df, 20)
+def calculate_momentum_score(closes):
+    change_5d = get_price_change(closes, 5)
+    change_20d = get_price_change(closes, 20)
     if change_5d is None or change_20d is None:
         return 0.0
 
@@ -34,7 +34,7 @@ def _same_dir(a, b):
 def calculate_all_currency_scores(currency_data, dxy_data=None):
     scores = {}
 
-    if dxy_data is not None and not dxy_data.empty:
+    if dxy_data and len(dxy_data) > 0:
         scores["USD"] = {
             "bias": calculate_momentum_score(dxy_data),
             "momentum_5d": get_price_change(dxy_data, 5) or 0,
@@ -43,13 +43,13 @@ def calculate_all_currency_scores(currency_data, dxy_data=None):
     else:
         scores["USD"] = {"bias": 0.0, "momentum_5d": 0, "momentum_20d": 0}
 
-    for currency, df in currency_data.items():
+    for currency, closes in currency_data.items():
         if currency == "USD":
             continue
         scores[currency] = {
-            "bias": calculate_momentum_score(df),
-            "momentum_5d": get_price_change(df, 5) or 0,
-            "momentum_20d": get_price_change(df, 20) or 0,
+            "bias": calculate_momentum_score(closes),
+            "momentum_5d": get_price_change(closes, 5) or 0,
+            "momentum_20d": get_price_change(closes, 20) or 0,
         }
 
     for ccy in ["USD", "EUR", "GBP", "JPY", "AUD", "NZD", "CAD", "CHF"]:

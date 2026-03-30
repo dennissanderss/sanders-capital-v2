@@ -4,12 +4,12 @@ from .market_data import get_price_change, get_direction, get_current_price
 def analyze_intermarket(data):
     result = {}
     for name in ["us10y", "oil", "gold", "sp500", "vix", "dxy"]:
-        df = data.get(name)
-        if df is not None and not df.empty:
+        closes = data.get(name)
+        if closes and len(closes) > 0:
             result[name] = {
-                "direction": get_direction(df, 5),
-                "change_5d": get_price_change(df, 5) or 0,
-                "current": get_current_price(df),
+                "direction": get_direction(closes, 5),
+                "change_5d": get_price_change(closes, 5) or 0,
+                "current": get_current_price(closes),
             }
         else:
             result[name] = {"direction": "flat", "change_5d": 0, "current": None}
@@ -33,7 +33,8 @@ def analyze_intermarket(data):
     result["risk_sentiment"] = risk
 
     vix_change = result["vix"]["change_5d"]
-    dxy_20d = get_price_change(data.get("dxy"), 20) if data.get("dxy") is not None else None
+    dxy_closes = data.get("dxy")
+    dxy_20d = get_price_change(dxy_closes, 20) if dxy_closes else None
 
     if abs(vix_change) > 15:
         regime = "transition"
