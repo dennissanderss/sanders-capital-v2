@@ -42,6 +42,62 @@ function ImpactBadge({ impact }: { impact: string }) {
   return <span className={`text-[10px] px-1.5 py-0.5 rounded border ${color} capitalize`}>{impact}</span>
 }
 
+function useCountdown(targetDate: Date | null) {
+  const [timeLeft, setTimeLeft] = useState('')
+  useEffect(() => {
+    if (!targetDate) return
+    const tick = () => {
+      const now = new Date().getTime()
+      const diff = targetDate.getTime() - now
+      if (diff <= 0) { setTimeLeft('Nu live!'); return }
+      const d = Math.floor(diff / 86400000)
+      const h = Math.floor((diff % 86400000) / 3600000)
+      const m = Math.floor((diff % 3600000) / 60000)
+      const s = Math.floor((diff % 60000) / 1000)
+      setTimeLeft(d > 0 ? `${d}d ${h}u ${m}m ${s}s` : h > 0 ? `${h}u ${m}m ${s}s` : `${m}m ${s}s`)
+    }
+    tick()
+    const interval = setInterval(tick, 1000)
+    return () => clearInterval(interval)
+  }, [targetDate])
+  return timeLeft
+}
+
+function NextEventCountdown({ events }: { events: CalendarEvent[] }) {
+  // Find next upcoming high-impact event
+  const now = new Date()
+  const upcoming = events
+    .filter(e => e.impact === 'hoog' && new Date(e.date).getTime() > now.getTime())
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  const next = upcoming[0] || null
+  const nextDate = next ? new Date(next.date) : null
+  const countdown = useCountdown(nextDate)
+
+  if (!next) return null
+
+  return (
+    <div className="mb-6 p-4 rounded-xl bg-bg-card border border-accent/30 flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+      <div className="flex items-center gap-2">
+        <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+        <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Volgend high-impact event</span>
+      </div>
+      <div className="flex items-center gap-3 flex-1">
+        <span className="text-lg">{flagEmoji(next.flag)}</span>
+        <div>
+          <p className="text-sm font-semibold text-heading">{next.currency} — {next.title}</p>
+          <p className="text-xs text-text-dim">
+            {(() => { try { return nextDate!.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) } catch { return next.date } })()}
+          </p>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className="text-lg font-mono font-semibold text-accent-light">{countdown}</p>
+        <p className="text-[10px] text-text-dim">aftellen</p>
+      </div>
+    </div>
+  )
+}
+
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD', 'CNY']
 
 export default function KalenderPage() {
@@ -106,6 +162,9 @@ export default function KalenderPage() {
           Aankomende economische events en data releases die de markten beïnvloeden.
         </p>
       </div>
+
+      {/* Live countdown to next event */}
+      {data && <NextEventCountdown events={data.events} />}
 
       {/* CB Meetings highlight */}
       {data && data.meetings.length > 0 && (

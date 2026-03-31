@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface RateData {
   currency: string
@@ -21,6 +21,14 @@ interface RatesResponse {
   generatedAt: string
   count: number
   error?: string
+}
+
+interface MeetingEvent {
+  title: string
+  currency: string
+  date: string
+  impact: string
+  flag: string
 }
 
 // Flag emoji helper from country code
@@ -73,6 +81,7 @@ function TargetIndicator({ rate, target }: { rate: number | null; target: number
 
 export default function RentePage() {
   const [data, setData] = useState<RatesResponse | null>(null)
+  const [meetings, setMeetings] = useState<MeetingEvent[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -80,16 +89,30 @@ export default function RentePage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/rates')
-      const json = await res.json()
-      if (!res.ok || json.error) throw new Error(json.error || `API error: ${res.status}`)
-      setData(json)
+      const [ratesRes, meetingsRes] = await Promise.all([
+        fetch('/api/rates'),
+        fetch('/api/rates/meetings'),
+      ])
+      const ratesJson = await ratesRes.json()
+      if (!ratesRes.ok || ratesJson.error) throw new Error(ratesJson.error || `API error: ${ratesRes.status}`)
+      setData(ratesJson)
+
+      if (meetingsRes.ok) {
+        const meetingsJson = await meetingsRes.json()
+        const meetingsList: MeetingEvent[] = Object.entries(meetingsJson.meetings || {}).map(
+          ([ccy, m]) => ({ currency: ccy, ...(m as { date: string; title: string }), impact: 'hoog', flag: ratesJson.rates?.find((r: RateData) => r.currency === ccy)?.flag || '' })
+        )
+        setMeetings(meetingsList)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Onbekende fout')
     } finally {
       setLoading(false)
     }
   }
+
+  // Auto-fetch on mount
+  useEffect(() => { fetchRates() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const majors = data?.rates.filter(r =>
     ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD'].includes(r.currency)
@@ -148,8 +171,9 @@ export default function RentePage() {
       )}
 
       {!data && !loading && !error && (
-        <div className="text-center py-16">
-          <p className="text-text-muted text-sm">Klik op de knop hierboven om de actuele rentetarieven op te halen.</p>
+        <div className="text-center py-16 flex flex-col items-center gap-3">
+          <span className="inline-block w-8 h-8 border-3 border-accent/30 border-t-accent rounded-full animate-spin" />
+          <p className="text-text-muted text-sm">Rentetarieven ophalen...</p>
         </div>
       )}
 
@@ -189,6 +213,64 @@ export default function RentePage() {
               </a>
             ))}
           </div>
+
+          {/* Upcoming meetings */}
+          {meetings.length > 0 && (
+            <div className="mb-10">
+              <h2 className="text-sm font-semibold text-heading uppercase tracking-wider mb-3 flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                Aankomende rentebeslissingen (komende 2 weken)
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {meetings.map((m) => {
+                  const rateInfo = data?.rates.find(r => r.currency === m.currency)
+                  return (
+                    <div key={m.currency} className="p-4 rounded-xl bg-bg-card border border-accent/20 flex items-center gap-3">
+                      <span className="text-2xl">{flagEmoji(m.flag)}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-heading">{m.currency}</span>
+                          {rateInfo?.bias && <BiasTag bias={rateInfo.bias} />}
+                        </div>
+                        <p className="text-xs text-text-muted truncate">{m.title}</p>
+                        <p className="text-xs text-text-dim mt-0.5">
+                          {(() => { try { return new Date(m.date).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) } catch { return m.date } })()}
+                        </p>
+                        {rateInfo && rateInfo.rate !== null && (
+                          <p className="text-[10px] text-text-dim mt-0.5">
+                            Huidige rente: {rateInfo.rate}% {rateInfo.target !== null ? `· Target: ${rateInfo.target}%` : ''}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Upcoming meetings from rate data (when no calendar meetings found) */}
+          {meetings.length === 0 && data?.rates.some(r => r.nextMeeting) && (
+            <div className="mb-10">
+              <h2 className="text-sm font-semibold text-heading uppercase tracking-wider mb-3 flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                Volgende vergaderingen
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {majors.filter(r => r.nextMeeting).map((r) => (
+                  <div key={r.currency} className="p-3 rounded-lg bg-bg-card border border-border text-center">
+                    <span className="text-lg">{flagEmoji(r.flag)}</span>
+                    <p className="text-xs font-semibold text-heading mt-1">{r.currency}</p>
+                    <p className="text-[10px] text-text-dim">{r.nextMeeting}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Full table */}
           <div className="rounded-xl bg-bg-card border border-border overflow-hidden">
