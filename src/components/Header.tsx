@@ -18,6 +18,7 @@ const navLinks = [
 
 const toolsDropdown = [
   { href: '/tools/fx-selector', label: 'FX Pair Selector' },
+  { href: '/tools/fx-analyse', label: 'FX Analyse' },
   { href: '/tools/marktoverzicht', label: 'Marktoverzicht' },
   { href: '/tools/calculator', label: 'Position Size Calculator' },
   { href: '/tools/kalender', label: 'Economische Kalender' },
