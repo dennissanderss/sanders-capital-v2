@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sanderscapital.nl/sitemap.xml
+
+# Disallow admin and API routes
+Disallow: /admin
+Disallow: /api/
+Disallow: /dashboard

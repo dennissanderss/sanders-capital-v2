@@ -1,10 +1,16 @@
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import FadeIn from '@/components/FadeIn'
 import Breadcrumb from '@/components/Breadcrumb'
 import KennisbankContent from './KennisbankContent'
 import type { Metadata } from 'next'
+
+// Slugs that have dedicated static pages
+const STATIC_REDIRECTS: Record<string, string> = {
+  '1-economische-begrippen': '/kennisbank/begrippen',
+  'economische-begrippen': '/kennisbank/begrippen',
+}
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -25,6 +31,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function KennisbankItemPage({ params }: Props) {
   const { slug } = await params
+
+  // Redirect slugs that have dedicated static pages
+  if (STATIC_REDIRECTS[slug]) redirect(STATIC_REDIRECTS[slug])
+
   const supabase = await createServerSupabaseClient()
 
   const { data: item } = await supabase

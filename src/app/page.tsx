@@ -224,6 +224,67 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* FX Outlook */}
+      <section className="py-24">
+        <div className="max-w-6xl mx-auto px-6">
+          <FadeIn>
+            <div className="relative overflow-hidden rounded-2xl border border-accent-dim/30 bg-gradient-to-br from-accent-glow/30 via-bg-card to-bg-card">
+              <div className="absolute top-0 right-0 w-1/2 h-full opacity-[0.04]" style={{
+                backgroundImage: 'radial-gradient(circle at 70% 30%, rgba(61,110,165,0.8) 0%, transparent 60%)',
+              }} />
+              <div className="relative grid md:grid-cols-2 gap-8 p-8 md:p-12">
+                <div className="flex flex-col justify-center">
+                  <span className="text-xs tracking-[0.2em] uppercase text-accent-light mb-3 font-body">
+                    Marktanalyse
+                  </span>
+                  <h2 className="text-2xl md:text-3xl font-display font-semibold text-heading mb-4">
+                    FX Outlook
+                  </h2>
+                  <p className="text-text-muted leading-relaxed mb-6">
+                    Wekelijkse en maandelijkse macro-analyses van de valutamarkt. Van centrale bank beleid
+                    tot geopolitieke verschuivingen — begrijp de krachten die valutaparen bewegen en
+                    vertaal data naar een onderbouwde visie.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {['Marktanalyse', 'Data', 'Strategie'].map(tag => (
+                      <span key={tag} className="text-xs px-2.5 py-1 rounded-md bg-accent/10 text-accent-light border border-accent/20">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <Link
+                    href="/blog/fx-outlook"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors self-start group"
+                  >
+                    Bekijk FX Outlook
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-0.5 transition-transform">
+                      <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+                <div className="flex items-center justify-center">
+                  <div className="w-full max-w-xs space-y-3">
+                    {[
+                      { pair: 'EUR/USD', dir: 'Bearish', color: 'text-red-400', badge: 'bg-red-500/10 border-red-500/20' },
+                      { pair: 'GBP/JPY', dir: 'Bullish', color: 'text-green-400', badge: 'bg-green-500/10 border-green-500/20' },
+                      { pair: 'AUD/USD', dir: 'Neutraal', color: 'text-amber-400', badge: 'bg-amber-500/10 border-amber-500/20' },
+                    ].map(item => (
+                      <div key={item.pair} className="flex items-center justify-between p-3.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                        <span className="text-sm font-mono font-bold text-heading">{item.pair}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded border ${item.badge} ${item.color}`}>
+                          {item.dir}
+                        </span>
+                      </div>
+                    ))}
+                    <p className="text-[10px] text-text-dim text-center pt-1">Voorbeeld — geen actueel advies</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-24">
         <div className="max-w-3xl mx-auto px-6 text-center">
