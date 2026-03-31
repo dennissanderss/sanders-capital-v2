@@ -1008,7 +1008,7 @@ export default function DailyBriefingDashboard() {
                         )}
 
                         {isExpanded && tf.explanation && tf.explanation.length > 0 && (
-                          <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-1.5 animate-in fade-in duration-200">
+                          <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-1.5">
                             {tf.explanation.map((line: string, i: number) => (
                               <p key={i} className="text-[11px] text-text-dim leading-relaxed">
                                 {line}
