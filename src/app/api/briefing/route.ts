@@ -302,7 +302,13 @@ export async function GET() {
         name: 'US 10Y Yields',
         unit: '%',
         context: 'Stijgende yields = USD sterker, risk-off druk op aandelen en high-yield valuta\'s. Dalende yields = USD zwakker, risk-on.',
-        howToRead: 'Yields stijgen → beleggers eisen meer rente → geld stroomt naar USD. Yields dalen → verwachting van renteverlaging → USD zwakker.',
+        howToRead: `De US 10-Year Treasury Yield is het rendement dat beleggers eisen om 10 jaar geld aan de VS uit te lenen. Dit is één van de belangrijkste indicatoren in de financiële wereld.
+
+Waarom beweegt het? Yields stijgen als beleggers verwachten dat de Fed de rente hoog houdt (inflatie hardnekkig, sterke economie). Yields dalen als de markt verwacht dat de Fed gaat verlagen (zwakke economie, deflatie-risico).
+
+Impact op FX: Stijgende yields → meer rendement op USD-obligaties → internationaal kapitaal stroomt naar USD → USD sterker. Dit raakt alle paren: EUR/USD daalt, USD/JPY stijgt. Dalende yields → het tegenovergestelde. Bovendien: stijgende yields drukken aandelenmarkten (hogere disconteringsvoet) wat risk-off versterkt.
+
+Let op: het gaat niet alleen om het niveau maar vooral om de richting en snelheid van de beweging.`,
         regimeImpact: 'Stijgende yields + dalende aandelen = Risk-Off. Dalende yields + stijgende aandelen = Risk-On.',
       },
       {
@@ -310,7 +316,13 @@ export async function GET() {
         name: 'S&P 500',
         unit: '',
         context: 'Stijgende aandelenmarkt = risk-on (goed voor AUD, NZD, CAD). Dalende markt = risk-off (goed voor JPY, CHF, USD).',
-        howToRead: 'Aandelen omhoog → beleggers nemen risico → high-yield valuta\'s profiteren. Aandelen omlaag → vlucht naar veiligheid.',
+        howToRead: `De S&P 500 is de belangrijkste aandelenindex ter wereld — 500 grootste bedrijven in de VS. Het is de ultieme risk-on/risk-off barometer.
+
+Waarom belangrijk voor FX? Grote institutionele beleggers (pensioenfondsen, hedgefunds) verschuiven miljarden tussen aandelen en obligaties/valuta's. Als de S&P stijgt, nemen ze meer risico → kopen high-yield valuta's (AUD, NZD, CAD) en verkopen safe-havens (JPY, CHF). Als de S&P daalt, vluchten ze naar veiligheid → JPY en CHF stijgen.
+
+Correlaties: S&P 500 ↑ = AUD/JPY ↑, NZD/JPY ↑, USD/CHF ↑ (risk-on flows). S&P 500 ↓ = AUD/JPY ↓, EUR/CHF ↓ (risk-off flows). Let ook op de snelheid: een geleidelijke daling is anders dan een crash — bij snelle dalingen versterkt de correlatie met JPY/CHF enorm.
+
+Tip: kijk niet alleen naar de dagverandering maar ook naar de trend. Een S&P die 5 dagen op rij daalt is een sterker risk-off signaal dan één rode dag.`,
         regimeImpact: 'S&P 500 bepaalt het risicosentiment. Sterke daling = Risk-Off signaal.',
       },
       {
@@ -318,7 +330,13 @@ export async function GET() {
         name: 'VIX (Angstindex)',
         unit: '',
         context: 'VIX boven 20 = verhoogde angst (risk-off). VIX onder 15 = lage angst (risk-on). VIX boven 30 = paniek.',
-        howToRead: 'Stijgende VIX → meer onzekerheid → JPY en CHF worden sterker. Dalende VIX → meer vertrouwen → AUD, NZD sterker.',
+        howToRead: `De VIX (Volatility Index) meet de verwachte volatiliteit van de S&P 500 voor de komende 30 dagen. Het wordt berekend uit optieprijzen — hoe meer traders bereid zijn te betalen voor bescherming (puts), hoe hoger de VIX.
+
+Niveaus: VIX onder 15 = kalme markt, weinig angst, risk-on. VIX 15-20 = normaal, lichte waakzaamheid. VIX 20-25 = verhoogde stress, voorzichtigheid geboden. VIX 25-30 = serieuze angst, risk-off dominant. VIX boven 30 = paniek, extreme vlucht naar veiligheid (JPY, CHF, USD, goud).
+
+Impact op FX: Stijgende VIX → JPY en CHF worden sterker (safe-haven inflow). AUD, NZD en CAD worden zwakker (carry trades worden afgebouwd). USD kan beide kanten op — bij milde stress stijgt USD, bij extreme stress kan USD dalen als de Fed ingrijpt.
+
+Belangrijk: VIX is mean-reverting. Extreem hoge VIX (>35) keert meestal terug naar het gemiddelde, wat betekent dat extreme risk-off periodes tijdelijk zijn. Maar een VIX die langzaam stijgt van 15 naar 25 is gevaarlijker dan een spike naar 30 die direct terugvalt.`,
         regimeImpact: 'VIX is de thermometer van angst. Hoge VIX = Risk-Off, lage VIX = Risk-On.',
       },
       {
@@ -326,7 +344,13 @@ export async function GET() {
         name: 'Goud (XAU/USD)',
         unit: '$',
         context: 'Goud stijgt bij onzekerheid en dalende reële rente. Goud daalt bij stijgende yields en sterke USD.',
-        howToRead: 'Goud omhoog → markt zoekt veiligheid → bevestigt risk-off. Goud omlaag + USD omhoog → sterke USD-rally.',
+        howToRead: `Goud is de oudste safe-haven ter wereld. Het heeft geen rente-opbrengst, dus de waarde hangt af van wat je misloopt door goud aan te houden in plaats van obligaties (= opportunity cost).
+
+Wanneer stijgt goud? 1) Dalende reële rente (nominale rente minus inflatie) — als obligaties minder opleveren dan inflatie, wordt goud aantrekkelijker. 2) Geopolitieke onzekerheid — oorlog, handelsconflicten, politieke instabiliteit. 3) USD zwakte — goud is in USD geprijsd, dus een zwakkere dollar maakt goud goedkoper voor buitenlandse kopers. 4) Centrale banken die goud kopen (China, Rusland, India doen dit structureel).
+
+Impact op FX: Goud ↑ + S&P ↓ = sterke risk-off bevestiging → JPY, CHF sterker. Goud ↑ + USD ↓ = dollar-zwakte thema → EUR/USD stijgt. Goud ↓ + Yields ↑ = sterke USD-rally → EUR/USD daalt.
+
+Combinaties: Let op goud samen met yields. Als yields stijgen en goud daalt, is dat een sterk USD-bullish signaal. Als goud stijgt ondanks stijgende yields, is er serieuze angst in de markt.`,
         regimeImpact: 'Goud bevestigt het regime: stijgend goud + dalende aandelen = duidelijk Risk-Off.',
       },
       {
@@ -334,7 +358,15 @@ export async function GET() {
         name: 'Olie (WTI)',
         unit: '$',
         context: 'Stijgende olie = bullish voor CAD en NOK (olie-exporteurs). Bearish voor JPY (olie-importeur). Kan inflatie aanwakkeren.',
-        howToRead: 'Olie omhoog → CAD sterker, JPY zwakker. Olie omlaag → CAD zwakker. Extreme stijging → inflatierisico → hawkish CB\'s.',
+        howToRead: `Olie (WTI Crude) is de meest verhandelde grondstof ter wereld en heeft directe impact op specifieke valuta's én op inflatieverwachtingen.
+
+Directe valuta-impact: CAD is de "olie-valuta" — Canada exporteert enorm veel olie. Olie ↑ = CAD ↑ (USD/CAD ↓). JPY is het tegenovergestelde — Japan importeert vrijwel alle olie. Olie ↑ = JPY ↓ (USD/JPY ↑). NOK (Noorse Kroon) reageert ook sterk op olie, maar die traden we niet.
+
+Indirecte impact via inflatie: Stijgende olie → hogere benzine/energiekosten → hogere inflatie → centrale banken worden hawkisher → hogere rentes → valuta sterker. Dit effect werkt met vertraging (weken/maanden) maar is krachtig.
+
+Wanneer is olie extra belangrijk? Bij extreme bewegingen (>5% per dag) of structurele trends. Een geleidelijke stijging van $70 naar $90 over maanden is een sterker signaal voor CAD dan een dagelijkse schommeling van 2%.
+
+Combinatie: Olie ↑ + S&P ↑ = risk-on met inflatiedruk → AUD, CAD sterk. Olie ↑ + S&P ↓ = supply-shock angst (stagflatie) → risk-off maar CAD kan alsnog sterk zijn.`,
         regimeImpact: 'Olie beïnvloedt specifieke valuta\'s meer dan het algemene regime.',
       },
     ]

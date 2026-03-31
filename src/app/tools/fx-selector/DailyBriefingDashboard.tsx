@@ -164,6 +164,43 @@ function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: Currenc
       whyParts.push(`Renteverschil: ${pair.rateDiff > 0 ? '+' : ''}${pair.rateDiff}%`)
     }
 
+    // Build detailed fundamental explanation
+    const explanationParts: string[] = []
+    if (isBullish || isBearish) {
+      const strongCcy = isBullish ? pair.base : pair.quote
+      const weakCcy = isBullish ? pair.quote : pair.base
+      const strongRank = isBullish ? baseRank : quoteRank
+      const weakRank = isBullish ? quoteRank : baseRank
+
+      if (strongRank?.bias) {
+        const b = strongRank.bias.toLowerCase()
+        if (b.includes('verkrappend') || b.includes('hawkish')) {
+          explanationParts.push(`${strongCcy} is hawkish (${strongRank.bias}) — de centrale bank verkrapt of houdt rente hoog. Dit trekt kapitaal aan en maakt de valuta sterker.`)
+        } else if (b.includes('afwachtend')) {
+          explanationParts.push(`${strongCcy} is afwachtend — de centrale bank houdt beleid stabiel. Sterkte komt hier vanuit de zwakte van ${weakCcy}.`)
+        }
+      }
+
+      if (weakRank?.bias) {
+        const b = weakRank.bias.toLowerCase()
+        if (b.includes('verruimend') || b.includes('dovish')) {
+          explanationParts.push(`${weakCcy} is dovish (${weakRank.bias}) — de centrale bank verruimt of verlaagt rente. Dit jaagt kapitaal weg en maakt de valuta zwakker.`)
+        } else if (b.includes('afwachtend')) {
+          explanationParts.push(`${weakCcy} is afwachtend maar scoort lager door rente- of macro-dynamiek.`)
+        }
+      }
+
+      if (pair.rateDiff !== null && Math.abs(pair.rateDiff) >= 1) {
+        const higher = pair.rateDiff > 0 ? pair.base : pair.quote
+        const lower = pair.rateDiff > 0 ? pair.quote : pair.base
+        explanationParts.push(`Renteverschil: ${higher} biedt ${Math.abs(pair.rateDiff)}% meer rente dan ${lower}. Grotere renteverschillen trekken carry-trade kapitaal aan richting de hogere rente.`)
+      }
+
+      if (strongRank && weakRank) {
+        explanationParts.push(`Fundamentele score: ${strongCcy} = ${strongRank.score > 0 ? '+' : ''}${strongRank.score.toFixed(1)} vs ${weakCcy} = ${weakRank.score > 0 ? '+' : ''}${weakRank.score.toFixed(1)}. Hoe groter het verschil, hoe sterker de divergentie.`)
+      }
+    }
+
     let eventWarning = ''
     if (pairEvents.length > 0) {
       eventWarning = `Let op: ${pairEvents.map(e => `${e.title} (${e.currency}, ${e.time})`).join(', ')} — volatiliteit verwacht.`
@@ -176,6 +213,7 @@ function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: Currenc
       score: pair.score,
       action,
       why: whyParts.join(' | '),
+      explanation: explanationParts,
       eventWarning,
       isBullish,
       isBearish,
@@ -423,13 +461,40 @@ export default function DailyBriefingDashboard() {
               <summary className="text-[11px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
                 Per signaal uitleg bekijken ▸
               </summary>
-              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {data.intermarketSignals?.map(signal => (
-                  <div key={signal.key} className="p-3 rounded-lg bg-white/[0.02] border border-border/50">
-                    <p className="text-xs font-semibold text-heading mb-1">{signal.name}</p>
-                    <p className="text-[11px] text-text-dim leading-relaxed">{signal.howToRead}</p>
-                  </div>
-                ))}
+              <div className="mt-3 space-y-3">
+                {data.intermarketSignals?.map(signal => {
+                  const isUp = signal.direction === 'up'
+                  const isDown = signal.direction === 'down'
+                  return (
+                    <div key={signal.key} className="rounded-xl bg-white/[0.02] border border-border/50 overflow-hidden">
+                      <div className="px-4 py-2.5 bg-white/[0.02] border-b border-border/30 flex items-center justify-between">
+                        <p className="text-sm font-semibold text-heading">{signal.name}</p>
+                        <div className="flex items-center gap-2">
+                          {signal.current !== null && (
+                            <span className="text-xs font-mono text-text-muted">
+                              {signal.unit === '$' ? '$' : ''}{signal.current}{signal.unit === '%' ? '%' : ''}
+                            </span>
+                          )}
+                          <span className={`text-xs font-mono font-semibold ${isUp ? 'text-green-400' : isDown ? 'text-red-400' : 'text-text-dim'}`}>
+                            {isUp ? '▲' : isDown ? '▼' : '—'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="px-4 py-3 space-y-2">
+                        {signal.howToRead.split('\n\n').map((paragraph, pi) => (
+                          <p key={pi} className="text-[11px] text-text-dim leading-relaxed">
+                            {paragraph}
+                          </p>
+                        ))}
+                        <div className="mt-2 p-2.5 rounded-lg bg-accent-glow/10 border border-accent-dim/20">
+                          <p className="text-[11px] text-text-dim leading-relaxed">
+                            <strong className="text-accent-light">Regime impact:</strong> {signal.regimeImpact}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </details>
           </section>
@@ -642,9 +707,24 @@ export default function DailyBriefingDashboard() {
                     {/* Action body */}
                     <div className="px-5 py-4 bg-bg-card">
                       <p className="text-sm text-heading font-medium mb-2">{tf.action}</p>
-                      <p className="text-xs text-text-dim mb-2">{tf.why}</p>
+                      <p className="text-xs text-text-dim mb-3">{tf.why}</p>
+
+                      {/* Detailed fundamental explanation */}
+                      {tf.explanation && tf.explanation.length > 0 && (
+                        <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] mb-3 space-y-1.5">
+                          <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1">
+                            Waarom {tf.isBullish ? 'bullish' : tf.isBearish ? 'bearish' : 'neutraal'}?
+                          </p>
+                          {tf.explanation.map((line: string, i: number) => (
+                            <p key={i} className="text-[11px] text-text-dim leading-relaxed">
+                              {line}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+
                       {tf.eventWarning && (
-                        <div className="p-2.5 rounded-lg bg-amber-500/[0.06] border border-amber-500/20 mt-2">
+                        <div className="p-2.5 rounded-lg bg-amber-500/[0.06] border border-amber-500/20">
                           <p className="text-xs text-amber-400/90">⚠ {tf.eventWarning}</p>
                         </div>
                       )}
