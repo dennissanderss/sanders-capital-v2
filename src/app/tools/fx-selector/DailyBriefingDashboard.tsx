@@ -469,7 +469,86 @@ export default function DailyBriefingDashboard() {
               <div className="px-5 sm:px-6 py-4 bg-bg-card">
                 <p className="text-sm text-text-muted leading-relaxed">{data.regimeExplain}</p>
 
+                {/* Regime drivers — welke cijfers leiden tot dit regime */}
                 <details className="mt-4 group">
+                  <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                    Waarom {data.regime}? — de cijfers erachter
+                  </summary>
+                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] space-y-3">
+                    {/* Safe-haven vs high-yield scores */}
+                    {(() => {
+                      const safeHavens = data.currencyRanking.filter(c => ['JPY', 'CHF', 'USD'].includes(c.currency))
+                      const highYield = data.currencyRanking.filter(c => ['AUD', 'NZD', 'CAD'].includes(c.currency))
+                      const safeAvg = safeHavens.reduce((s, c) => s + c.score, 0) / (safeHavens.length || 1)
+                      const highAvg = highYield.reduce((s, c) => s + c.score, 0) / (highYield.length || 1)
+                      return (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                              <p className="text-[10px] text-text-dim uppercase tracking-wider mb-2">Safe-Haven (JPY, CHF, USD)</p>
+                              {safeHavens.map(c => (
+                                <div key={c.currency} className="flex items-center justify-between text-xs mb-1">
+                                  <span className="text-text-muted font-medium">{c.currency}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-text-dim">{c.bias || '—'}</span>
+                                    <span className={`font-mono font-semibold ${c.score > 0 ? 'text-green-400' : c.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                                      {c.score > 0 ? '+' : ''}{c.score.toFixed(1)}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                              <div className="mt-2 pt-2 border-t border-white/[0.05] flex items-center justify-between text-[10px]">
+                                <span className="text-text-dim">Gemiddeld</span>
+                                <span className={`font-mono font-bold ${safeAvg > 0 ? 'text-green-400' : safeAvg < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                                  {safeAvg > 0 ? '+' : ''}{safeAvg.toFixed(1)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                              <p className="text-[10px] text-text-dim uppercase tracking-wider mb-2">High-Yield (AUD, NZD, CAD)</p>
+                              {highYield.map(c => (
+                                <div key={c.currency} className="flex items-center justify-between text-xs mb-1">
+                                  <span className="text-text-muted font-medium">{c.currency}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-text-dim">{c.bias || '—'}</span>
+                                    <span className={`font-mono font-semibold ${c.score > 0 ? 'text-green-400' : c.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                                      {c.score > 0 ? '+' : ''}{c.score.toFixed(1)}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                              <div className="mt-2 pt-2 border-t border-white/[0.05] flex items-center justify-between text-[10px]">
+                                <span className="text-text-dim">Gemiddeld</span>
+                                <span className={`font-mono font-bold ${highAvg > 0 ? 'text-green-400' : highAvg < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                                  {highAvg > 0 ? '+' : ''}{highAvg.toFixed(1)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className={`p-2.5 rounded-lg border text-[11px] leading-relaxed ${
+                            data.regime === 'Risk-Off' ? 'bg-red-500/[0.05] border-red-500/15 text-red-300/80' :
+                            data.regime === 'Risk-On' ? 'bg-green-500/[0.05] border-green-500/15 text-green-300/80' :
+                            data.regime === 'USD Dominant' ? 'bg-blue-500/[0.05] border-blue-500/15 text-blue-300/80' :
+                            data.regime === 'USD Zwak' ? 'bg-amber-500/[0.05] border-amber-500/15 text-amber-300/80' :
+                            'bg-white/[0.03] border-border text-text-dim'
+                          }`}>
+                            {data.regime === 'Risk-Off' && `Safe-haven gemiddeld (${safeAvg > 0 ? '+' : ''}${safeAvg.toFixed(1)}) is sterker dan high-yield (${highAvg > 0 ? '+' : ''}${highAvg.toFixed(1)}) → kapitaal stroomt naar veilige havens → Risk-Off.`}
+                            {data.regime === 'Risk-On' && `High-yield gemiddeld (${highAvg > 0 ? '+' : ''}${highAvg.toFixed(1)}) is sterker dan safe-haven (${safeAvg > 0 ? '+' : ''}${safeAvg.toFixed(1)}) → kapitaal zoekt rendement → Risk-On.`}
+                            {data.regime === 'USD Dominant' && `USD score is hoog door hawkish Fed-beleid. Dit trekt kapitaal naar de dollar, ongeacht het bredere sentiment.`}
+                            {data.regime === 'USD Zwak' && `USD score is laag door dovish verwachtingen. Kapitaal stroomt weg van de dollar naar sterkere alternatieven.`}
+                            {data.regime === 'Gemengd' && `Geen duidelijk verschil tussen safe-haven en high-yield scores. De markt heeft geen dominant thema — focus op individuele paar-divergenties.`}
+                          </div>
+                        </>
+                      )
+                    })()}
+                  </div>
+                </details>
+
+                {/* Regime methodology */}
+                <details className="mt-2 group">
                   <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
                       <polyline points="9 18 15 12 9 6" />
