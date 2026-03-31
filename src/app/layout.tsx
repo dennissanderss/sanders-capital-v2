@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Cormorant_Garamond, DM_Sans } from 'next/font/google'
+import Script from 'next/script'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import ScrollProgress from '@/components/ScrollProgress'
@@ -49,6 +50,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="nl" className={`${cormorant.variable} ${dmSans.variable}`}>
+      <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-9XPW26WZ3D"
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-9XPW26WZ3D');
+          `}
+        </Script>
+      </head>
       <body className="min-h-screen flex flex-col antialiased">
         <ScrollProgress />
         <Header />

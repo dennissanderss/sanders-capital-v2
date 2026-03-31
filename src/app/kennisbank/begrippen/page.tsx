@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Breadcrumb from '@/components/Breadcrumb'
 
 export const metadata: Metadata = {
   title: 'Economische Begrippen - Sanders Capital',
@@ -176,6 +177,11 @@ function ImpactBadge({ level }: { level: string }) {
 export default function BegrippenPage() {
   return (
     <div className="max-w-4xl mx-auto px-6 py-16">
+      <Breadcrumb items={[
+        { label: 'Kennisbank', href: '/kennisbank' },
+        { label: 'Fundamentals', href: '/kennisbank#fundamentals' },
+        { label: 'Economische Begrippen' },
+      ]} />
       <div className="text-center mb-12">
         <h1 className="text-3xl md:text-4xl font-display font-semibold text-heading mb-4">
           Economische Indicatoren

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import FadeIn from '@/components/FadeIn'
+import Breadcrumb from '@/components/Breadcrumb'
 import KennisbankContent from './KennisbankContent'
 import type { Metadata } from 'next'
 
@@ -51,7 +52,7 @@ export default async function KennisbankItemPage({ params }: Props) {
   // Check of de categorie premium is
   const { data: category } = await supabase
     .from('kennisbank_categories')
-    .select('is_premium')
+    .select('name, is_premium')
     .eq('slug', item.category)
     .single()
 
@@ -77,16 +78,11 @@ export default async function KennisbankItemPage({ params }: Props) {
   return (
     <div className="max-w-3xl mx-auto px-6 py-24">
       <FadeIn>
-        <Link
-          href="/kennisbank"
-          className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-heading transition-colors mb-8"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12" />
-            <polyline points="12 19 5 12 12 5" />
-          </svg>
-          Terug naar kennisbank
-        </Link>
+        <Breadcrumb items={[
+          { label: 'Kennisbank', href: '/kennisbank' },
+          ...(category?.name ? [{ label: category.name, href: `/kennisbank#${item.category}` }] : []),
+          { label: item.title },
+        ]} />
       </FadeIn>
 
       <FadeIn delay={100}>

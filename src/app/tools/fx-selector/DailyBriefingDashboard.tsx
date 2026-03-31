@@ -280,6 +280,20 @@ export default function DailyBriefingDashboard() {
     } catch {}
   }
 
+  const [backfilling, setBackfilling] = useState(false)
+  const backfillTrackRecord = async () => {
+    setBackfilling(true)
+    try {
+      await fetch('/api/trackrecord/backfill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days: 7 }),
+      })
+      await fetchTrackRecord()
+    } catch {}
+    setBackfilling(false)
+  }
+
   useEffect(() => {
     fetchBriefing()
     fetchTrackRecord()
@@ -661,10 +675,26 @@ export default function DailyBriefingDashboard() {
                         )}
                       </>
                     )}
-                    <p className="text-[10px] text-text-dim mt-3 leading-relaxed">
-                      Meting: de bias wordt opgeslagen bij het laden van de briefing. Resultaat wordt de volgende dag gemeten o.b.v. prijsbeweging.
-                      Dit meet de fundamentele richting — niet de timing van je entry. Je 15min structure breaks bepalen je exacte instap.
-                    </p>
+                    <div className="flex items-center justify-between mt-3 gap-3">
+                      <p className="text-[10px] text-text-dim leading-relaxed">
+                        Meting: de bias wordt opgeslagen bij het laden van de briefing. Resultaat wordt de volgende dag gemeten o.b.v. prijsbeweging.
+                      </p>
+                      <button
+                        onClick={backfillTrackRecord}
+                        disabled={backfilling}
+                        className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-accent/20 text-[10px] text-accent-light/70 hover:text-accent-light hover:border-accent/40 transition-colors disabled:opacity-50"
+                      >
+                        {backfilling ? (
+                          <span className="inline-block w-3 h-3 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+                        ) : (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="1 4 1 10 7 10" /><polyline points="23 20 23 14 17 14" />
+                            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+                          </svg>
+                        )}
+                        {backfilling ? 'Laden...' : 'Backfill 7d'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

@@ -209,24 +209,6 @@ export default function Header() {
                     </div>
                   </Link>
                 ))}
-                {/* Divider + Economische Begrippen */}
-                <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />
-                <Link
-                  href="/kennisbank/begrippen"
-                  className={`flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-white/[0.08] ${
-                    pathname === '/kennisbank/begrippen' ? 'bg-white/[0.06]' : ''
-                  }`}
-                >
-                  <span className={`mt-0.5 flex-shrink-0 ${pathname === '/kennisbank/begrippen' ? 'text-accent-light' : 'text-text-dim'}`}>
-                    <NavIcon icon="book" />
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <span className={`text-sm font-medium ${pathname === '/kennisbank/begrippen' ? 'text-heading' : 'text-text-muted'} transition-colors`}>
-                      Economische Begrippen
-                    </span>
-                    <p className="text-xs text-text-dim mt-0.5 leading-relaxed">Indicatoren & begrippen uitgelegd</p>
-                  </div>
-                </Link>
               </div>
             </div>
           </div>
@@ -366,15 +348,6 @@ export default function Header() {
                 )}
               </Link>
             ))}
-            <Link
-              href="/kennisbank/begrippen"
-              className={`text-sm py-1.5 pl-4 transition-colors ${
-                pathname === '/kennisbank/begrippen' ? 'text-heading' : 'text-text-muted'
-              }`}
-            >
-              Economische Begrippen
-            </Link>
-
             {/* Tools section */}
             <div className="text-sm py-2 text-text-muted font-semibold">Tools</div>
             {toolsDropdown.map((item) => (

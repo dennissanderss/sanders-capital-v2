@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import DisclaimerBadge from '@/components/DisclaimerBadge'
 import FadeIn from '@/components/FadeIn'
+import Breadcrumb from '@/components/Breadcrumb'
 import ArticleContent from './ArticleContent'
 import type { Metadata } from 'next'
 
@@ -73,16 +74,10 @@ export default async function ArticlePage({ params }: Props) {
   return (
     <div className="max-w-3xl mx-auto px-6 py-24">
       <FadeIn>
-        <Link
-          href="/blog"
-          className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-heading transition-colors mb-8"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12" />
-            <polyline points="12 19 5 12 12 5" />
-          </svg>
-          Terug naar blog
-        </Link>
+        <Breadcrumb items={[
+          { label: 'Blog', href: '/blog' },
+          { label: article.title },
+        ]} />
       </FadeIn>
 
       <FadeIn delay={100}>
