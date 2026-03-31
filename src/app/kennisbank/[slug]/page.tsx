@@ -1,10 +1,19 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
+import { createClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import FadeIn from '@/components/FadeIn'
 import Breadcrumb from '@/components/Breadcrumb'
 import KennisbankContent from './KennisbankContent'
 import type { Metadata } from 'next'
+
+// Service role client — bypasses RLS so content is always fetchable
+function getPublicSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 // Slugs that have dedicated static pages
 const STATIC_REDIRECTS: Record<string, string> = {
@@ -18,7 +27,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createServerSupabaseClient()
+  const supabase = getPublicSupabase()
   const { data: item } = await supabase
     .from('kennisbank_items')
     .select('title')
@@ -35,7 +44,7 @@ export default async function KennisbankItemPage({ params }: Props) {
   // Redirect slugs that have dedicated static pages
   if (STATIC_REDIRECTS[slug]) redirect(STATIC_REDIRECTS[slug])
 
-  const supabase = await createServerSupabaseClient()
+  const supabase = getPublicSupabase()
 
   const { data: item } = await supabase
     .from('kennisbank_items')
@@ -68,12 +77,13 @@ export default async function KennisbankItemPage({ params }: Props) {
 
   const isPremium = item.is_premium || category?.is_premium
 
-  // Check toegang voor premium items
-  const { data: { user } } = await supabase.auth.getUser()
+  // Check toegang — needs session client for auth
+  const sessionClient = await createServerSupabaseClient()
+  const { data: { user } } = await sessionClient.auth.getUser()
 
   let hasAccess = !isPremium
   if (isPremium && user) {
-    const { data: profile } = await supabase
+    const { data: profile } = await sessionClient
       .from('profiles')
       .select('role')
       .eq('id', user.id)

@@ -1,6 +1,6 @@
 import React from 'react'
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { createClient } from '@supabase/supabase-js'
 import FadeIn from '@/components/FadeIn'
 import type { Metadata } from 'next'
 
@@ -87,7 +87,10 @@ interface KbItem {
 }
 
 export default async function KennisbankPage() {
-  const supabase = await createServerSupabaseClient()
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   const [{ data: categories }, { data: rawItems }] = await Promise.all([
     supabase.from('kennisbank_categories').select('*').order('order_index'),

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { createClient } from '@supabase/supabase-js'
 import FadeIn from '@/components/FadeIn'
 import type { Metadata } from 'next'
 
@@ -11,7 +11,10 @@ export const metadata: Metadata = {
 const OUTLOOK_TAGS = ['FX Outlook', 'Marktanalyse', 'Data', 'Strategie']
 
 export default async function FxOutlookPage() {
-  const supabase = await createServerSupabaseClient()
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
   const { data: articles } = await supabase
     .from('articles')
     .select('*')

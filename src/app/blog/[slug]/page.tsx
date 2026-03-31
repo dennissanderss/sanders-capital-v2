@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { createClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import DisclaimerBadge from '@/components/DisclaimerBadge'
 import FadeIn from '@/components/FadeIn'
@@ -7,13 +8,21 @@ import Breadcrumb from '@/components/Breadcrumb'
 import ArticleContent from './ArticleContent'
 import type { Metadata } from 'next'
 
+// Service role client to bypass RLS — articles always visible
+function getPublicSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
+
 type Props = {
   params: Promise<{ slug: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createServerSupabaseClient()
+  const supabase = getPublicSupabase()
   const { data: article } = await supabase
     .from('articles')
     .select('title, excerpt')
@@ -31,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ArticlePage({ params }: Props) {
   const { slug } = await params
-  const supabase = await createServerSupabaseClient()
+  const supabase = getPublicSupabase()
 
   const { data: article } = await supabase
     .from('articles')
@@ -56,14 +65,15 @@ export default async function ArticlePage({ params }: Props) {
       ? allArticles![currentIndex + 1]
       : null
 
-  // Check user access for premium articles
+  // Check user access for premium articles (needs session client)
+  const sessionClient = await createServerSupabaseClient()
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await sessionClient.auth.getUser()
 
   let hasAccess = !article.is_premium
   if (article.is_premium && user) {
-    const { data: profile } = await supabase
+    const { data: profile } = await sessionClient
       .from('profiles')
       .select('role')
       .eq('id', user.id)

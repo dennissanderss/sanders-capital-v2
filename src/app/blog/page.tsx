@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { createClient } from '@supabase/supabase-js'
 import FadeIn from '@/components/FadeIn'
 import type { Metadata } from 'next'
 
@@ -9,7 +9,10 @@ export const metadata: Metadata = {
 }
 
 export default async function BlogPage() {
-  const supabase = await createServerSupabaseClient()
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
   const { data: articles } = await supabase
     .from('articles')
     .select('*')
