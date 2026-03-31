@@ -98,7 +98,7 @@ export default function Footer() {
               <Link href="/disclaimer" className="text-sm text-text-muted hover:text-heading transition-colors">
                 Disclaimer
               </Link>
-              <Link href="/disclaimer" className="text-sm text-text-muted hover:text-heading transition-colors">
+              <Link href="/disclaimer#privacy" className="text-sm text-text-muted hover:text-heading transition-colors">
                 Privacy
               </Link>
               <Link href="/voorwaarden" className="text-sm text-text-muted hover:text-heading transition-colors">

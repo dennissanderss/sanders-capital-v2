@@ -124,14 +124,14 @@ export default function Header() {
 
             {/* Dropdown menu — before pseudo bridges the gap */}
             <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover/tools:opacity-100 group-hover/tools:visible transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent">
-              <div className="glass-elevated rounded-xl shadow-2xl border border-white/[0.08] py-2 min-w-[280px]">
+              <div className="rounded-xl shadow-2xl border border-white/[0.12] py-2 min-w-[280px]" style={{ background: 'rgba(13, 14, 20, 0.97)', backdropFilter: 'blur(24px)' }}>
                 {toolsDropdown.map((item, i) => (
                   <div key={item.href}>
                     {i === 2 && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
                     <Link
                       href={item.href}
-                      className={`flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-white/[0.04] ${
-                        pathname === item.href ? 'bg-white/[0.04]' : ''
+                      className={`flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-white/[0.08] ${
+                        pathname === item.href ? 'bg-white/[0.06]' : ''
                       }`}
                     >
                       <span className={`mt-0.5 flex-shrink-0 ${pathname === item.href ? 'text-accent-light' : 'text-text-dim'}`}>

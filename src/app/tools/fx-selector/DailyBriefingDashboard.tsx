@@ -68,6 +68,28 @@ interface BriefingData {
   error?: string
 }
 
+interface TrackRecord {
+  id: string
+  date: string
+  pair: string
+  direction: string
+  conviction: string
+  score: number
+  entry_price: number | null
+  exit_price: number | null
+  result: 'pending' | 'correct' | 'incorrect'
+  pips_moved: number | null
+  regime: string
+}
+
+interface TrackStats {
+  total: number
+  correct: number
+  incorrect: number
+  pending: number
+  winRate: number
+}
+
 function flagEmoji(code: string) {
   if (!code || code.length !== 2) return ''
   return code.toUpperCase().split('').map(c => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65)).join('')
@@ -80,7 +102,6 @@ function getIntermarketConclusion(signals: IntermarketSignal[]): { text: string;
   const sp = get('sp500')
   const gold = get('gold')
   const yields = get('us10y')
-  const oil = get('oil')
 
   const riskOnSignals: string[] = []
   const riskOffSignals: string[] = []
@@ -117,22 +138,16 @@ function getIntermarketConclusion(signals: IntermarketSignal[]): { text: string;
 
 // ─── Helper: trade focus from pair biases ───────────────────
 function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: CurrencyRank[]) {
-  // Get top 3 pairs with strongest conviction
   const strong = pairs.filter(p => p.conviction === 'sterk' || p.conviction === 'matig')
   const top = strong.slice(0, 3)
 
   return top.map(pair => {
     const isBullish = pair.direction.includes('bullish')
     const isBearish = pair.direction.includes('bearish')
-
-    // Find relevant events for this pair
     const pairEvents = events.filter(e => e.currency === pair.base || e.currency === pair.quote)
-
-    // Get currency details
     const baseRank = ranking.find(r => r.currency === pair.base)
     const quoteRank = ranking.find(r => r.currency === pair.quote)
 
-    // Build action text
     let action = ''
     if (isBullish) {
       action = `Zoek LONG structure breaks op je 15min chart. ${pair.base} is fundamenteel sterker dan ${pair.quote}.`
@@ -142,7 +157,6 @@ function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: Currenc
       action = 'Neutraal — wacht op duidelijkere fundamentele divergentie.'
     }
 
-    // Build why
     const whyParts: string[] = []
     if (baseRank?.bias) whyParts.push(`${pair.base}: ${baseRank.bias}`)
     if (quoteRank?.bias) whyParts.push(`${pair.quote}: ${quoteRank.bias}`)
@@ -150,7 +164,6 @@ function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: Currenc
       whyParts.push(`Renteverschil: ${pair.rateDiff > 0 ? '+' : ''}${pair.rateDiff}%`)
     }
 
-    // Event warning
     let eventWarning = ''
     if (pairEvents.length > 0) {
       eventWarning = `Let op: ${pairEvents.map(e => `${e.title} (${e.currency}, ${e.time})`).join(', ')} — volatiliteit verwacht.`
@@ -171,26 +184,6 @@ function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: Currenc
 }
 
 // ─── Components ─────────────────────────────────────────────
-function ScoreBar({ score, max = 5 }: { score: number; max?: number }) {
-  const pct = Math.min(Math.abs(score) / max * 100, 100)
-  const isPositive = score >= 0
-  return (
-    <div className="flex items-center gap-2 w-full">
-      <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden relative">
-        <div className="absolute left-1/2 top-0 w-px h-full bg-white/10" />
-        {isPositive ? (
-          <div className="absolute left-1/2 h-full rounded-r-full bg-green-500/60 transition-all" style={{ width: `${pct / 2}%` }} />
-        ) : (
-          <div className="absolute right-1/2 h-full rounded-l-full bg-red-500/60 transition-all" style={{ width: `${pct / 2}%` }} />
-        )}
-      </div>
-      <span className={`text-xs font-mono w-10 text-right ${score > 0 ? 'text-green-400' : score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
-        {score > 0 ? '+' : ''}{score.toFixed(1)}
-      </span>
-    </div>
-  )
-}
-
 function BiasTag({ bias }: { bias: string }) {
   if (!bias) return <span className="text-xs text-text-dim">—</span>
   const b = bias.toLowerCase()
@@ -212,6 +205,9 @@ export default function DailyBriefingDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showRegimeDetails, setShowRegimeDetails] = useState(false)
+  const [trackRecords, setTrackRecords] = useState<TrackRecord[]>([])
+  const [trackStats, setTrackStats] = useState<TrackStats>({ total: 0, correct: 0, incorrect: 0, pending: 0, winRate: 0 })
+  const [showTrackRecord, setShowTrackRecord] = useState(false)
 
   const fetchBriefing = async () => {
     setLoading(true)
@@ -228,7 +224,41 @@ export default function DailyBriefingDashboard() {
     }
   }
 
-  useEffect(() => { fetchBriefing() }, [])
+  const fetchTrackRecord = async () => {
+    try {
+      const res = await fetch('/api/trackrecord')
+      const json = await res.json()
+      setTrackRecords(json.records || [])
+      setTrackStats(json.stats || { total: 0, correct: 0, incorrect: 0, pending: 0, winRate: 0 })
+    } catch {
+      // Track record table might not exist yet
+    }
+  }
+
+  const saveTrackRecord = async () => {
+    try {
+      await fetch('/api/trackrecord', { method: 'POST' })
+      await fetchTrackRecord()
+    } catch {}
+  }
+
+  useEffect(() => {
+    fetchBriefing()
+    fetchTrackRecord()
+  }, [])
+
+  // Auto-save track record when briefing loads (once per day)
+  useEffect(() => {
+    if (data && !loading) {
+      const lastSave = localStorage.getItem('track_last_save')
+      const today = new Date().toISOString().split('T')[0]
+      if (lastSave !== today) {
+        saveTrackRecord()
+        localStorage.setItem('track_last_save', today)
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, loading])
 
   // Derived data
   const intermarketConclusion = data?.intermarketSignals ? getIntermarketConclusion(data.intermarketSignals) : null
@@ -322,7 +352,6 @@ export default function DailyBriefingDashboard() {
               <div className="px-5 sm:px-6 py-4 bg-bg-card">
                 <p className="text-sm text-text-muted leading-relaxed">{data.regimeExplain}</p>
 
-                {/* Expandable details */}
                 {showRegimeDetails && (
                   <div className="mt-4 space-y-3">
                     <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
@@ -349,7 +378,6 @@ export default function DailyBriefingDashboard() {
           <section className="mb-8">
             <h2 className="text-lg font-display font-semibold text-heading mb-4">Intermarket Signalen</h2>
 
-            {/* Signal cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-4">
               {data.intermarketSignals?.map(signal => {
                 const isUp = signal.direction === 'up'
@@ -391,7 +419,6 @@ export default function DailyBriefingDashboard() {
               </div>
             )}
 
-            {/* Expandable detail per signal */}
             <details className="mt-3">
               <summary className="text-[11px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
                 Per signaal uitleg bekijken ▸
@@ -412,7 +439,133 @@ export default function DailyBriefingDashboard() {
               ════════════════════════════════════════════════════════ */}
           {tradeFocus.length > 0 && (
             <section className="mb-8">
-              <h2 className="text-lg font-display font-semibold text-heading mb-2">Trade Focus</h2>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-display font-semibold text-heading">Trade Focus</h2>
+                {/* Track record link */}
+                <button
+                  onClick={() => setShowTrackRecord(!showTrackRecord)}
+                  className="flex items-center gap-1.5 text-xs text-accent-light/70 hover:text-accent-light transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  </svg>
+                  Trackrecord
+                  {trackStats.total > 0 && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                      trackStats.winRate >= 60 ? 'bg-green-500/15 text-green-400' :
+                      trackStats.winRate >= 40 ? 'bg-amber-500/15 text-amber-400' :
+                      'bg-red-500/15 text-red-400'
+                    }`}>
+                      {trackStats.winRate}%
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* ── Trackrecord Panel ── */}
+              {showTrackRecord && (
+                <div className="mb-5 rounded-xl border border-accent/20 overflow-hidden">
+                  <div className="px-5 py-3 bg-gradient-to-r from-accent/10 to-accent/5 border-b border-accent/20">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-text-dim uppercase tracking-wider">Trade Focus Trackrecord</p>
+                        <p className="text-[10px] text-text-dim mt-0.5">Laatste 30 dagen — gemeten vanaf NY sessie opening (14:00 CET)</p>
+                      </div>
+                      {trackStats.total > 0 && (
+                        <div className="text-right">
+                          <p className={`text-2xl font-display font-bold ${
+                            trackStats.winRate >= 60 ? 'text-green-400' :
+                            trackStats.winRate >= 40 ? 'text-amber-400' : 'text-red-400'
+                          }`}>{trackStats.winRate}%</p>
+                          <p className="text-[10px] text-text-dim">win rate</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="px-5 py-4 bg-bg-card">
+                    {trackStats.total === 0 && trackStats.pending === 0 ? (
+                      <p className="text-xs text-text-dim text-center py-2">
+                        Nog geen trackrecord beschikbaar. Data wordt dagelijks opgebouwd.
+                      </p>
+                    ) : (
+                      <>
+                        {/* Stats row */}
+                        <div className="grid grid-cols-4 gap-3 mb-4">
+                          <div className="text-center">
+                            <p className="text-lg font-mono font-bold text-heading">{trackStats.total}</p>
+                            <p className="text-[10px] text-text-dim">Totaal</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-lg font-mono font-bold text-green-400">{trackStats.correct}</p>
+                            <p className="text-[10px] text-text-dim">Correct</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-lg font-mono font-bold text-red-400">{trackStats.incorrect}</p>
+                            <p className="text-[10px] text-text-dim">Incorrect</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-lg font-mono font-bold text-amber-400">{trackStats.pending}</p>
+                            <p className="text-[10px] text-text-dim">Pending</p>
+                          </div>
+                        </div>
+
+                        {/* Win rate bar */}
+                        {trackStats.total > 0 && (
+                          <div className="mb-4">
+                            <div className="h-3 rounded-full bg-white/5 overflow-hidden flex">
+                              <div
+                                className="h-full bg-green-500/60 transition-all duration-500"
+                                style={{ width: `${trackStats.winRate}%` }}
+                              />
+                              <div
+                                className="h-full bg-red-500/60 transition-all duration-500"
+                                style={{ width: `${100 - trackStats.winRate}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Recent records */}
+                        <div className="space-y-1.5">
+                          {trackRecords.slice(0, 10).map(record => (
+                            <div key={record.id} className="flex items-center gap-3 py-1.5 px-3 rounded-lg bg-white/[0.02] text-xs">
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${
+                                record.result === 'correct' ? 'bg-green-400' :
+                                record.result === 'incorrect' ? 'bg-red-400' : 'bg-amber-400'
+                              }`} />
+                              <span className="text-text-dim font-mono w-16 shrink-0">{record.date}</span>
+                              <span className="font-bold text-heading w-16 shrink-0">{record.pair}</span>
+                              <span className={`capitalize ${
+                                record.direction.includes('bullish') ? 'text-green-400' : record.direction.includes('bearish') ? 'text-red-400' : 'text-text-dim'
+                              }`}>
+                                {record.direction.includes('bullish') ? '↑' : '↓'} {record.direction}
+                              </span>
+                              <span className="ml-auto font-mono">
+                                {record.result === 'pending' ? (
+                                  <span className="text-amber-400">pending</span>
+                                ) : record.pips_moved != null ? (
+                                  <span className={record.pips_moved > 0 ? 'text-green-400' : 'text-red-400'}>
+                                    {record.pips_moved > 0 ? '+' : ''}{record.pips_moved} pips
+                                  </span>
+                                ) : (
+                                  <span className={record.result === 'correct' ? 'text-green-400' : 'text-red-400'}>
+                                    {record.result}
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    <p className="text-[10px] text-text-dim mt-3 leading-relaxed">
+                      Meting: de bias wordt opgeslagen bij het laden van de briefing. Resultaat wordt de volgende dag gemeten o.b.v. prijsbeweging.
+                      Dit meet de fundamentele richting — niet de timing van je entry. Je 15min structure breaks bepalen je exacte instap.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <p className="text-xs text-text-muted mb-4">
                 De sterkste fundamentele divergenties van vandaag. Zoek hier je structure breaks.
               </p>
@@ -472,95 +625,56 @@ export default function DailyBriefingDashboard() {
           )}
 
           {/* ════════════════════════════════════════════════════════
-              4. TODAY'S EVENTS
+              4. TODAY'S EVENTS (collapsed by default)
               ════════════════════════════════════════════════════════ */}
           <section className="mb-8">
-            <h2 className="text-lg font-display font-semibold text-heading mb-4 flex items-center gap-2">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-              Vandaag &amp; Morgen — High Impact
-            </h2>
-            {data.todayEvents.length === 0 ? (
-              <div className="p-4 rounded-xl bg-bg-card border border-border text-center">
-                <p className="text-sm text-text-dim">Geen high-impact events vandaag of morgen. Rustige dag — focus op technische setups.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {data.todayEvents.map((evt, i) => (
-                  <div key={i} className="p-4 rounded-xl bg-bg-card border border-border">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <span className="text-lg">{flagEmoji(evt.flag)}</span>
-                      <span className="text-xs font-mono font-bold text-heading">{evt.currency}</span>
-                      <span className="text-xs font-mono text-text-dim">{evt.dateFormatted}</span>
-                      <span className="text-xs font-mono text-text-dim">{evt.time}</span>
-                      <span className="text-xs px-2 py-0.5 rounded bg-red-500/15 text-red-300 border border-red-500/20">{evt.impact}</span>
-                    </div>
-                    <h3 className="text-sm font-semibold text-heading mb-1">{evt.title}</h3>
-                    <div className="flex gap-4 text-xs text-text-dim mb-3">
-                      {evt.forecast && <span>Verwacht: <strong className="text-text-muted">{evt.forecast}</strong></span>}
-                      {evt.previous && <span>Vorig: <strong className="text-text-muted">{evt.previous}</strong></span>}
-                    </div>
-                    <div className="p-3 rounded-lg bg-accent-glow/20 border border-accent-dim/30">
-                      <p className="text-xs text-text-muted leading-relaxed">
-                        <strong className="text-accent-light">Context: </strong>{evt.context}
-                      </p>
-                    </div>
+            <details>
+              <summary className="text-lg font-display font-semibold text-heading mb-2 cursor-pointer hover:text-accent-light transition-colors flex items-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                Vandaag &amp; Morgen — High Impact
+                <span className="text-[10px] font-normal text-text-dim bg-white/5 px-2 py-0.5 rounded ml-1">
+                  {data.todayEvents.length} events
+                </span>
+                <span className="text-[11px] text-text-dim font-normal ml-auto">▸</span>
+              </summary>
+              <div className="mt-3">
+                {data.todayEvents.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-bg-card border border-border text-center">
+                    <p className="text-sm text-text-dim">Geen high-impact events vandaag of morgen. Rustige dag — focus op technische setups.</p>
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* ════════════════════════════════════════════════════════
-              5. CURRENCY SCORECARD
-              ════════════════════════════════════════════════════════ */}
-          <section className="mb-8">
-            <h2 className="text-lg font-display font-semibold text-heading mb-2">Currency Scorecard</h2>
-            <p className="text-xs text-text-muted mb-4">
-              Sterkste bovenaan, zwakste onderaan. Combineer sterk + zwak = beste divergentie.
-            </p>
-            <div className="rounded-xl bg-bg-card border border-border overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">#</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Valuta</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">CB Bias</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider hidden sm:table-cell">Rente</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider min-w-[140px]">Score</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider hidden md:table-cell">Reden</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.currencyRanking.map((ccy, i) => (
-                      <tr key={ccy.currency} className={`border-b border-border/30 hover:bg-bg-hover transition-colors ${
-                        i === 0 ? 'bg-green-500/[0.04]' : i === data.currencyRanking.length - 1 ? 'bg-red-500/[0.04]' : ''
-                      }`}>
-                        <td className="px-4 py-3 text-xs text-text-dim font-mono">{i + 1}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-base">{flagEmoji(ccy.flag)}</span>
-                            <span className="text-sm font-bold text-heading">{ccy.currency}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3"><BiasTag bias={ccy.bias} /></td>
-                        <td className="px-4 py-3 text-sm font-mono text-text-muted hidden sm:table-cell">
-                          {ccy.rate != null ? `${ccy.rate}%` : '—'}
-                        </td>
-                        <td className="px-4 py-3"><ScoreBar score={ccy.score} /></td>
-                        <td className="px-4 py-3 text-xs text-text-dim hidden md:table-cell max-w-[200px]">{ccy.reasons[0] || '—'}</td>
-                      </tr>
+                ) : (
+                  <div className="space-y-3">
+                    {data.todayEvents.map((evt, i) => (
+                      <div key={i} className="p-4 rounded-xl bg-bg-card border border-border">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className="text-lg">{flagEmoji(evt.flag)}</span>
+                          <span className="text-xs font-mono font-bold text-heading">{evt.currency}</span>
+                          <span className="text-xs font-mono text-text-dim">{evt.dateFormatted}</span>
+                          <span className="text-xs font-mono text-text-dim">{evt.time}</span>
+                          <span className="text-xs px-2 py-0.5 rounded bg-red-500/15 text-red-300 border border-red-500/20">{evt.impact}</span>
+                        </div>
+                        <h3 className="text-sm font-semibold text-heading mb-1">{evt.title}</h3>
+                        <div className="flex gap-4 text-xs text-text-dim mb-3">
+                          {evt.forecast && <span>Verwacht: <strong className="text-text-muted">{evt.forecast}</strong></span>}
+                          {evt.previous && <span>Vorig: <strong className="text-text-muted">{evt.previous}</strong></span>}
+                        </div>
+                        <div className="p-3 rounded-lg bg-accent-glow/20 border border-accent-dim/30">
+                          <p className="text-xs text-text-muted leading-relaxed">
+                            <strong className="text-accent-light">Context: </strong>{evt.context}
+                          </p>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                )}
               </div>
-            </div>
+            </details>
           </section>
 
           {/* ════════════════════════════════════════════════════════
-              6. PAIR BIAS TABLE (collapsed by default)
+              5. PAIR BIAS TABLE (collapsed by default)
               ════════════════════════════════════════════════════════ */}
           <section className="mb-8">
             <details>
@@ -594,6 +708,11 @@ export default function DailyBriefingDashboard() {
                         {pair.rateDiff !== null && (
                           <span>Rente: <strong className="text-text-muted font-mono">{pair.rateDiff > 0 ? '+' : ''}{pair.rateDiff}%</strong></span>
                         )}
+                      </div>
+                      <div className="flex gap-2 mb-2">
+                        <BiasTag bias={pair.baseBias} />
+                        <span className="text-text-dim text-xs">vs</span>
+                        <BiasTag bias={pair.quoteBias} />
                       </div>
                       <p className="text-xs text-text-dim leading-relaxed">{pair.reason}</p>
                     </div>

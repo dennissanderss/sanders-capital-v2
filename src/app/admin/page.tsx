@@ -131,6 +131,7 @@ export default function AdminPage() {
   const [editingCat, setEditingCat] = useState<Category | null>(null)
   const [loading, setLoading] = useState(true)
   const [uploadingDocs, setUploadingDocs] = useState(false)
+  const [taskCompletions, setTaskCompletions] = useState<Record<string, string>>({})
 
   // Move modal state
   const [moveModal, setMoveModal] = useState<{
@@ -178,6 +179,13 @@ export default function AdminPage() {
     if (profs) setUsers(profs)
     if (tls) setTools(tls)
     if (cbr) setCbRates(cbr)
+
+    // Load task completions from localStorage
+    try {
+      const saved = localStorage.getItem('admin_tasks')
+      if (saved) setTaskCompletions(JSON.parse(saved))
+    } catch {}
+
     setLoading(false)
   }, [supabase, router])
 
@@ -484,6 +492,8 @@ export default function AdminPage() {
                 { name: 'Economische Kalender', desc: 'Automatisch opgehaald via FairEconomy/ForexFactory API. Events worden live gefilterd.', status: 'live' },
                 { name: 'FX Koersen (Yahoo)', desc: 'Live valutakoersen worden real-time opgehaald via Yahoo Finance bij het openen van FX tools.', status: 'live' },
                 { name: 'Vergaderdata ophalen', desc: 'Rentevergaderingen worden automatisch uit de economische kalender gehaald (komende 2 weken).', status: 'live' },
+                { name: 'Daily Macro Briefing', desc: 'Regime, currency scores, pair biases en trade focus worden automatisch berekend o.b.v. CB data + intermarket.', status: 'live' },
+                { name: 'Intermarket Data (Yahoo)', desc: 'VIX, S&P 500, US 10Y Yields, Goud en Olie worden live opgehaald via Yahoo Finance (5 min cache).', status: 'live' },
                 { name: 'Auth & Premium gating', desc: 'Supabase Auth + RLS regelt automatisch toegang tot premium content en tools.', status: 'live' },
               ].map(item => (
                 <div key={item.name} className="p-4 rounded-xl glass flex items-start gap-3">
@@ -524,37 +534,78 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Weekly tasks */}
+          {/* Recurring tasks with completion tracking */}
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-heading mb-4 flex items-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
                 <polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
               </svg>
-              Wekelijkse taken
+              Terugkerende taken
             </h2>
+            <p className="text-xs text-text-dim mb-3">Taken worden automatisch gereset na hun periode. Vink af als voltooid — ze komen terug.</p>
             <div className="space-y-2">
               {[
-                { task: 'Controleer rentetarieven na CB besluit', freq: 'Na elk rentebesluit', priority: 'hoog', desc: 'Update rente, target, bias en laatste actie in de Rentes tab wanneer een centrale bank een besluit neemt.' },
-                { task: 'Vergaderdata synchroniseren', freq: 'Maandelijks', priority: 'medium', desc: 'Klik "Vergaderingen ophalen" in de Rentes tab om komende CB meetings bij te werken.' },
-                { task: 'Nieuwe blog post publiceren', freq: 'Wekelijks', priority: 'medium', desc: 'Schrijf en publiceer minstens 1 blog post voor SEO en content engagement.' },
-                { task: 'Kennisbank uitbreiden', freq: 'Maandelijks', priority: 'laag', desc: 'Voeg nieuwe educatieve content toe aan de kennisbank categorieën.' },
-                { task: 'Gebruikers reviewen', freq: 'Wekelijks', priority: 'laag', desc: 'Check nieuwe registraties en pas rollen aan waar nodig.' },
-              ].map(item => (
-                <div key={item.task} className="p-4 rounded-xl glass flex items-start gap-4">
-                  <span className={`text-[10px] px-2 py-0.5 rounded border shrink-0 mt-0.5 ${
-                    item.priority === 'hoog' ? 'border-red-500/20 text-red-400 bg-red-500/10' :
-                    item.priority === 'medium' ? 'border-amber-500/20 text-amber-400 bg-amber-500/10' :
-                    'border-border text-text-dim'
-                  }`}>{item.priority}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-heading">{item.task}</p>
-                      <span className="text-[10px] text-text-dim bg-bg px-1.5 py-0.5 rounded">{item.freq}</span>
+                { id: 'cb_rates', task: 'Controleer rentetarieven na CB besluit', freq: 'Na elk rentebesluit', resetDays: 30, priority: 'hoog', desc: 'Update rente, target, bias en laatste actie in de Rentes tab wanneer een centrale bank een besluit neemt.', tab: 'rentes' },
+                { id: 'meetings', task: 'Vergaderdata synchroniseren', freq: 'Maandelijks', resetDays: 30, priority: 'medium', desc: 'Klik "Vergaderingen ophalen" in de Rentes tab om komende CB meetings bij te werken.', tab: 'rentes' },
+                { id: 'blog', task: 'Nieuwe blog post publiceren', freq: 'Wekelijks', resetDays: 7, priority: 'medium', desc: 'Schrijf en publiceer minstens 1 blog post voor SEO en content engagement.', tab: 'articles' },
+                { id: 'kennisbank', task: 'Kennisbank uitbreiden', freq: 'Maandelijks', resetDays: 30, priority: 'laag', desc: 'Voeg nieuwe educatieve content toe aan de kennisbank categorieën.', tab: 'kennisbank' },
+                { id: 'users', task: 'Gebruikers reviewen', freq: 'Wekelijks', resetDays: 7, priority: 'laag', desc: 'Check nieuwe registraties en pas rollen aan waar nodig.', tab: 'users' },
+                { id: 'trade_track', task: 'Trade Focus trackrecord controleren', freq: 'Wekelijks', resetDays: 7, priority: 'medium', desc: 'Bekijk de resultaten van de Trade Focus aanbevelingen in de Daily Macro Briefing.', tab: 'status' },
+              ].map(item => {
+                const completedAt = taskCompletions[item.id]
+                const isCompleted = completedAt ? (Date.now() - new Date(completedAt).getTime()) < item.resetDays * 86400000 : false
+                const daysAgo = completedAt ? Math.floor((Date.now() - new Date(completedAt).getTime()) / 86400000) : null
+
+                return (
+                  <div key={item.id} className={`p-4 rounded-xl glass flex items-start gap-4 transition-all ${isCompleted ? 'opacity-60' : ''}`}>
+                    <button
+                      onClick={async () => {
+                        const now = new Date().toISOString()
+                        setTaskCompletions(prev => ({ ...prev, [item.id]: now }))
+                        localStorage.setItem('admin_tasks', JSON.stringify({ ...taskCompletions, [item.id]: now }))
+                      }}
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors cursor-pointer ${
+                        isCompleted
+                          ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                          : 'border-border hover:border-accent'
+                      }`}
+                    >
+                      {isCompleted && (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </button>
+                    <span className={`text-[10px] px-2 py-0.5 rounded border shrink-0 mt-0.5 ${
+                      item.priority === 'hoog' ? 'border-red-500/20 text-red-400 bg-red-500/10' :
+                      item.priority === 'medium' ? 'border-amber-500/20 text-amber-400 bg-amber-500/10' :
+                      'border-border text-text-dim'
+                    }`}>{item.priority}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className={`text-sm font-semibold ${isCompleted ? 'text-text-muted line-through' : 'text-heading'}`}>{item.task}</p>
+                        <span className="text-[10px] text-text-dim bg-bg px-1.5 py-0.5 rounded">{item.freq}</span>
+                        {isCompleted && daysAgo !== null && (
+                          <span className="text-[10px] text-green-400/60 bg-green-500/10 px-1.5 py-0.5 rounded">
+                            ✓ {daysAgo === 0 ? 'vandaag' : `${daysAgo}d geleden`}
+                          </span>
+                        )}
+                        {!isCompleted && completedAt && (
+                          <span className="text-[10px] text-amber-400/60 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                            Reset — opnieuw nodig
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-text-dim mt-0.5">{item.desc}</p>
+                      {item.tab !== 'status' && (
+                        <button onClick={() => setTab(item.tab as typeof tab)} className="text-[11px] text-accent-light/60 hover:text-accent-light mt-1 transition-colors">
+                          Ga naar {item.tab} →
+                        </button>
+                      )}
                     </div>
-                    <p className="text-xs text-text-dim mt-0.5">{item.desc}</p>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 

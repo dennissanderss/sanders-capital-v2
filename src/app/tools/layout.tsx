@@ -148,7 +148,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
                 Terug naar tools
               </button>
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push('/premium')}
                 className="px-5 py-2.5 rounded-lg bg-gold/20 border border-gold/30 text-sm text-gold font-medium hover:bg-gold/30 transition-colors"
               >
                 Bekijk Premium
