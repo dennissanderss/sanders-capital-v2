@@ -141,9 +141,9 @@ export async function POST() {
     }
     const briefing = await briefRes.json()
 
-    // Get top 3 pairs (same logic as frontend)
+    // Get top pairs — only "sterk" conviction for higher accuracy
     const strong = (briefing.pairBiases || []).filter(
-      (p: { conviction: string }) => p.conviction === 'sterk' || p.conviction === 'matig'
+      (p: { conviction: string }) => p.conviction === 'sterk'
     )
     const top = strong.slice(0, 3)
 

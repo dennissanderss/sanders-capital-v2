@@ -794,7 +794,7 @@ export default function DailyBriefingDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-xs text-text-dim uppercase tracking-wider">Trade Focus Trackrecord</p>
-                        <p className="text-[10px] text-text-dim mt-0.5">Laatste 30 dagen — gemeten vanaf NY sessie opening (14:00 CET)</p>
+                        <p className="text-[10px] text-text-dim mt-0.5">Laatste 30 dagen — daily close → daily close. Alleen sterke overtuiging.</p>
                       </div>
                       {trackStats.total > 0 && (
                         <div className="text-right">

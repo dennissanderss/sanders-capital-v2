@@ -221,11 +221,11 @@ export async function GET() {
 
       let direction: string
       let conviction: string
-      if (diff >= 3) { direction = 'bullish'; conviction = 'sterk' }
-      else if (diff >= 1.5) { direction = 'bullish'; conviction = 'matig' }
+      if (diff >= 3.5) { direction = 'bullish'; conviction = 'sterk' }
+      else if (diff >= 2) { direction = 'bullish'; conviction = 'matig' }
       else if (diff > 0.5) { direction = 'licht bullish'; conviction = 'laag' }
-      else if (diff <= -3) { direction = 'bearish'; conviction = 'sterk' }
-      else if (diff <= -1.5) { direction = 'bearish'; conviction = 'matig' }
+      else if (diff <= -3.5) { direction = 'bearish'; conviction = 'sterk' }
+      else if (diff <= -2) { direction = 'bearish'; conviction = 'matig' }
       else if (diff < -0.5) { direction = 'licht bearish'; conviction = 'laag' }
       else { direction = 'neutraal'; conviction = 'geen' }
 

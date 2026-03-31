@@ -104,11 +104,11 @@ export async function POST(request: Request) {
 
       let direction: string
       let conviction: string
-      if (diff >= 3) { direction = 'bullish'; conviction = 'sterk' }
-      else if (diff >= 1.5) { direction = 'bullish'; conviction = 'matig' }
+      if (diff >= 3.5) { direction = 'bullish'; conviction = 'sterk' }
+      else if (diff >= 2) { direction = 'bullish'; conviction = 'matig' }
       else if (diff > 0.5) { direction = 'licht bullish'; conviction = 'laag' }
-      else if (diff <= -3) { direction = 'bearish'; conviction = 'sterk' }
-      else if (diff <= -1.5) { direction = 'bearish'; conviction = 'matig' }
+      else if (diff <= -3.5) { direction = 'bearish'; conviction = 'sterk' }
+      else if (diff <= -2) { direction = 'bearish'; conviction = 'matig' }
       else if (diff < -0.5) { direction = 'licht bearish'; conviction = 'laag' }
       else { direction = 'neutraal'; conviction = 'geen' }
 
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     }).sort((a, b) => Math.abs(b.score) - Math.abs(a.score))
 
     const topPairs = pairBiases
-      .filter(p => p.conviction === 'sterk' || p.conviction === 'matig')
+      .filter(p => p.conviction === 'sterk')
       .slice(0, 3)
 
     if (topPairs.length === 0) {
