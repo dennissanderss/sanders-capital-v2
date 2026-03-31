@@ -6,13 +6,13 @@ from datetime import datetime
 # Extended central bank rates — the 8 majors come from macro_data.py,
 # additional countries are maintained here
 EXTRA_RATES = {
-    "CNY": {"country": "China", "bank": "People's Bank of China (PBoC)", "flag": "CN"},
-    "SEK": {"country": "Zweden", "bank": "Sveriges Riksbank", "flag": "SE"},
-    "NOK": {"country": "Noorwegen", "bank": "Norges Bank", "flag": "NO"},
-    "MXN": {"country": "Mexico", "bank": "Banco de México", "flag": "MX"},
-    "ZAR": {"country": "Zuid-Afrika", "bank": "South African Reserve Bank", "flag": "ZA"},
-    "TRY": {"country": "Turkije", "bank": "Central Bank of Turkey", "flag": "TR"},
-    "BRL": {"country": "Brazilië", "bank": "Banco Central do Brasil", "flag": "BR"},
+    "CNY": {"country": "China", "bank": "People's Bank of China (PBoC)", "flag": "CN", "sourceUrl": "http://www.pbc.gov.cn/en/3688006/index.html"},
+    "SEK": {"country": "Zweden", "bank": "Sveriges Riksbank", "flag": "SE", "sourceUrl": "https://www.riksbank.se/en-gb/monetary-policy/"},
+    "NOK": {"country": "Noorwegen", "bank": "Norges Bank", "flag": "NO", "sourceUrl": "https://www.norges-bank.no/en/topics/Monetary-policy/"},
+    "MXN": {"country": "Mexico", "bank": "Banco de México", "flag": "MX", "sourceUrl": "https://www.banxico.org.mx/monetary-policy/index.html"},
+    "ZAR": {"country": "Zuid-Afrika", "bank": "South African Reserve Bank", "flag": "ZA", "sourceUrl": "https://www.resbank.co.za/en/home/what-we-do/monetary-policy"},
+    "TRY": {"country": "Turkije", "bank": "Central Bank of Turkey", "flag": "TR", "sourceUrl": "https://www.tcmb.gov.tr/wps/wcm/connect/EN/TCMB+EN/Main+Menu/Core+Functions/Monetary+Policy/"},
+    "BRL": {"country": "Brazilië", "bank": "Banco Central do Brasil", "flag": "BR", "sourceUrl": "https://www.bcb.gov.br/en/monetarypolicy"},
 }
 
 COUNTRY_NAMES = {
@@ -49,6 +49,7 @@ def fetch_live_rates():
                 "rate": cb["rate"],
                 "flag": FLAGS.get(ccy, ""),
                 "source": "macro_data",
+                "sourceUrl": cb.get("source", ""),
                 "lastMove": cb.get("last_move", ""),
                 "nextMeeting": cb.get("next_meeting", ""),
                 "bias": cb.get("bias", ""),
@@ -94,6 +95,7 @@ def fetch_live_rates():
                         "rate": item.get("rate_pct", 0),
                         "flag": extra.get("flag", ""),
                         "source": "api-ninjas",
+                        "sourceUrl": extra.get("sourceUrl", ""),
                         "lastMove": "",
                         "nextMeeting": "",
                         "bias": "",
@@ -113,6 +115,7 @@ def fetch_live_rates():
                 "rate": None,
                 "flag": info["flag"],
                 "source": "unavailable",
+                "sourceUrl": info.get("sourceUrl", ""),
                 "lastMove": "",
                 "nextMeeting": "",
                 "bias": "",

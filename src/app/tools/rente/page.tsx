@@ -9,6 +9,7 @@ interface RateData {
   rate: number | null
   flag: string
   source: string
+  sourceUrl: string
   lastMove: string
   nextMeeting: string
   bias: string
@@ -137,7 +138,8 @@ export default function RentePage() {
           {/* Major currencies highlight */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-10">
             {majors.map((item) => (
-              <div key={item.currency} className="p-4 rounded-xl bg-bg-card border border-border text-center">
+              <a key={item.currency} href={item.sourceUrl} target="_blank" rel="noopener noreferrer"
+                className="p-4 rounded-xl bg-bg-card border border-border text-center hover:border-border-light transition-colors group block">
                 <p className="text-2xl mb-1">{flagEmoji(item.flag)}</p>
                 <p className="text-xs text-text-muted mb-1">{item.currency}</p>
                 <p className="text-xl font-display font-semibold text-heading">
@@ -149,7 +151,13 @@ export default function RentePage() {
                     <BiasTag bias={item.bias} />
                   </div>
                 )}
-              </div>
+                <p className="text-[10px] text-accent-light/0 group-hover:text-accent-light/70 transition-colors mt-1.5 flex items-center justify-center gap-1">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                  Bron
+                </p>
+              </a>
             ))}
           </div>
 
@@ -165,6 +173,7 @@ export default function RentePage() {
                     <th className="text-right px-2 sm:px-4 md:px-6 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Rente</th>
                     <th className="text-left px-2 sm:px-4 md:px-6 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider hidden md:table-cell">Laatste actie</th>
                     <th className="text-left px-2 sm:px-4 md:px-6 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider hidden lg:table-cell">Bias</th>
+                    <th className="text-center px-2 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Bron</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -190,6 +199,17 @@ export default function RentePage() {
                       </td>
                       <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3.5 hidden lg:table-cell">
                         <BiasTag bias={item.bias} />
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3.5 text-center">
+                        {item.sourceUrl ? (
+                          <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] text-accent-light/60 hover:text-accent-light transition-colors">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>
+                            Officieel
+                          </a>
+                        ) : '—'}
                       </td>
                     </tr>
                   ))}
