@@ -49,39 +49,92 @@ const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
   },
 ]
 
+interface UploadedFile {
+  name: string
+  tradeCount: number
+}
+
 export default function TradeScopeDashboard() {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard')
   const [trades, setTrades] = useState<ParsedTrade[]>([])
   const [metrics, setMetrics] = useState<TradeMetrics | null>(null)
   const [startingBalance, setStartingBalance] = useState(10000)
   const [isLoading, setIsLoading] = useState(false)
-  const [fileName, setFileName] = useState<string | null>(null)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const addFileInputRef = useRef<HTMLInputElement>(null)
+
+  const processFiles = useCallback(
+    (files: FileList, append: boolean) => {
+      setIsLoading(true)
+      const fileArray = Array.from(files)
+      let processed = 0
+      let allNewTrades: ParsedTrade[] = []
+      const newFileNames: UploadedFile[] = []
+
+      fileArray.forEach((file) => {
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          try {
+            const csvText = event.target?.result as string
+            const parsed = parseCSV(csvText)
+            allNewTrades = [...allNewTrades, ...parsed]
+            newFileNames.push({ name: file.name, tradeCount: parsed.length })
+          } catch (err) {
+            console.error(`CSV parse error (${file.name}):`, err)
+          }
+
+          processed++
+          if (processed === fileArray.length) {
+            // All files done — merge & deduplicate by openDate + symbol + profitLoss
+            const existingTrades = append ? trades : []
+            const combined = [...existingTrades, ...allNewTrades]
+
+            // Deduplicate
+            const seen = new Set<string>()
+            const unique = combined.filter((t) => {
+              const key = `${t.openDate.getTime()}-${t.symbol}-${t.profitLoss}-${t.action}`
+              if (seen.has(key)) return false
+              seen.add(key)
+              return true
+            })
+
+            // Sort by date
+            unique.sort((a, b) => a.openDate.getTime() - b.openDate.getTime())
+
+            // Re-number trades
+            unique.forEach((t, i) => { t.tradeNumber = i + 1 })
+
+            setTrades(unique)
+            setMetrics(calculateMetrics(unique, startingBalance))
+            setUploadedFiles((prev) => append ? [...prev, ...newFileNames] : newFileNames)
+            setIsLoading(false)
+          }
+        }
+        reader.readAsText(file)
+      })
+    },
+    [trades, startingBalance]
+  )
 
   const handleFileUpload = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (!file) return
-      setIsLoading(true)
-      setFileName(file.name)
-
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        try {
-          const csvText = event.target?.result as string
-          const parsed = parseCSV(csvText)
-          setTrades(parsed)
-          setMetrics(calculateMetrics(parsed, startingBalance))
-        } catch (err) {
-          console.error('CSV parse error:', err)
-          alert('Kon het CSV bestand niet lezen. Controleer of het een geldig FXReplay export is.')
-        } finally {
-          setIsLoading(false)
-        }
-      }
-      reader.readAsText(file)
+      const files = e.target.files
+      if (!files || files.length === 0) return
+      processFiles(files, false)
     },
-    [startingBalance]
+    [processFiles]
+  )
+
+  const handleAddFiles = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files
+      if (!files || files.length === 0) return
+      processFiles(files, true)
+      // Reset so same file can be re-selected
+      if (addFileInputRef.current) addFileInputRef.current.value = ''
+    },
+    [processFiles]
   )
 
   const handleBalanceChange = useCallback(
@@ -94,6 +147,15 @@ export default function TradeScopeDashboard() {
     [trades]
   )
 
+  const removeFile = useCallback(
+    (fileIndex: number) => {
+      // Can't easily remove specific file trades, so just show which files are loaded
+      // User can reset all and re-upload
+      setUploadedFiles((prev) => prev.filter((_, i) => i !== fileIndex))
+    },
+    []
+  )
+
   const monteCarloData = useMemo(() => {
     if (trades.length === 0) return null
     return runMonteCarlo(trades, 1000, startingBalance)
@@ -103,6 +165,24 @@ export default function TradeScopeDashboard() {
     if (trades.length === 0) return null
     return optimizeRiskReward(trades, startingBalance)
   }, [trades, startingBalance])
+
+  // Drag and drop handler
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const files = e.dataTransfer.files
+      if (files.length > 0) {
+        processFiles(files, trades.length > 0)
+      }
+    },
+    [processFiles, trades]
+  )
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }, [])
 
   // Empty state
   if (trades.length === 0) {
@@ -118,7 +198,7 @@ export default function TradeScopeDashboard() {
             TradeScope
           </h1>
           <p className="text-text-muted max-w-lg mx-auto">
-            Upload je FXReplay CSV export en krijg direct inzicht in je performance, equity curve,
+            Upload je FXReplay CSV exports en krijg direct inzicht in je performance, equity curve,
             Monte Carlo simulaties en optimalisatie suggesties.
           </p>
         </div>
@@ -126,24 +206,39 @@ export default function TradeScopeDashboard() {
         <div className="max-w-md mx-auto">
           <div
             onClick={() => fileInputRef.current?.click()}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
             className="p-8 rounded-xl glass glass-hover border-2 border-dashed border-border hover:border-accent/50 cursor-pointer transition-all text-center group"
           >
             <input
               ref={fileInputRef}
               type="file"
               accept=".csv"
+              multiple
               onChange={handleFileUpload}
               className="hidden"
             />
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-dim mx-auto mb-4 group-hover:text-accent-light transition-colors">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
-            <p className="text-heading font-medium mb-1">Upload CSV bestand</p>
-            <p className="text-sm text-text-dim">
-              Sleep je FXReplay export hierheen of klik om te selecteren
-            </p>
+            {isLoading ? (
+              <>
+                <div className="w-10 h-10 border-2 border-accent/30 border-t-accent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-heading font-medium mb-1">Bestanden verwerken...</p>
+              </>
+            ) : (
+              <>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-dim mx-auto mb-4 group-hover:text-accent-light transition-colors">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <p className="text-heading font-medium mb-1">Upload CSV bestanden</p>
+                <p className="text-sm text-text-dim">
+                  Sleep je FXReplay exports hierheen of klik om te selecteren
+                </p>
+                <p className="text-xs text-text-dim mt-2">
+                  Je kunt meerdere bestanden tegelijk selecteren
+                </p>
+              </>
+            )}
           </div>
 
           <div className="mt-6">
@@ -164,11 +259,15 @@ export default function TradeScopeDashboard() {
             <ul className="text-xs text-text-dim space-y-1">
               <li className="flex items-center gap-2">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light"><polyline points="20 6 9 17 4 12" /></svg>
-                FXReplay CSV export
+                FXReplay CSV export (analytics)
               </li>
               <li className="flex items-center gap-2">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light"><polyline points="20 6 9 17 4 12" /></svg>
-                Kolommen: Trade #, Open/Close Date, Symbol, Action, P/L, etc.
+                Meerdere bestanden tegelijk of achter elkaar uploaden
+              </li>
+              <li className="flex items-center gap-2">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light"><polyline points="20 6 9 17 4 12" /></svg>
+                Duplicaten worden automatisch gefilterd
               </li>
             </ul>
           </div>
@@ -178,13 +277,19 @@ export default function TradeScopeDashboard() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div
+      className="max-w-7xl mx-auto px-4 sm:px-6 py-8"
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+    >
       {/* Header with file info */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-display font-semibold text-heading">TradeScope</h1>
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-xs text-text-dim">{fileName}</span>
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <span className="text-xs text-text-dim">
+              {uploadedFiles.length} {uploadedFiles.length === 1 ? 'bestand' : 'bestanden'}
+            </span>
             <span className="text-xs text-text-dim">·</span>
             <span className="text-xs text-text-dim">{trades.length} trades</span>
             <span className="text-xs text-text-dim">·</span>
@@ -192,8 +297,26 @@ export default function TradeScopeDashboard() {
               Startbalans: ${startingBalance.toLocaleString()}
             </span>
           </div>
+          {/* File chips */}
+          {uploadedFiles.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {uploadedFiles.map((f, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-xs text-accent-light"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                  {f.name.length > 25 ? f.name.slice(0, 23) + '…' : f.name}
+                  <span className="text-text-dim">({f.tradeCount})</span>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-2">
             <label className="text-xs text-text-dim">Balans:</label>
             <input
@@ -204,20 +327,39 @@ export default function TradeScopeDashboard() {
             />
           </div>
           <button
+            onClick={() => addFileInputRef.current?.click()}
+            className="px-3 py-1.5 rounded-lg border border-accent/30 text-xs text-accent-light hover:bg-accent/10 transition-colors flex items-center gap-1.5"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            CSV toevoegen
+          </button>
+          <input
+            ref={addFileInputRef}
+            type="file"
+            accept=".csv"
+            multiple
+            onChange={handleAddFiles}
+            className="hidden"
+          />
+          <button
             onClick={() => {
               setTrades([])
               setMetrics(null)
-              setFileName(null)
+              setUploadedFiles([])
               if (fileInputRef.current) fileInputRef.current.value = ''
+              if (addFileInputRef.current) addFileInputRef.current.value = ''
             }}
             className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading hover:border-border-light transition-colors"
           >
-            Nieuw bestand
+            Reset
           </button>
           <input
             ref={fileInputRef}
             type="file"
             accept=".csv"
+            multiple
             onChange={handleFileUpload}
             className="hidden"
           />
