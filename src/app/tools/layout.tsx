@@ -21,7 +21,6 @@ const freeTools = [
   { href: '/tools/calculator', label: 'Position Size Calculator', slug: 'calculator' },
   { href: '/tools/kalender', label: 'Economische Kalender', slug: 'kalender' },
   { href: '/tools/rente', label: 'Rentetarieven', slug: 'rente' },
-  { href: '/tools/begrippen', label: 'Economische Begrippen', slug: 'begrippen' },
 ]
 
 const allTools = [...premiumTools, ...freeTools]

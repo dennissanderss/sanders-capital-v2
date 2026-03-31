@@ -118,7 +118,8 @@ export default async function KennisbankPage() {
         {groupedItems.map((cat, i) => (
           <FadeIn key={cat.id} delay={i * 100} className="h-full">
             <div
-              className={`p-6 rounded-xl transition-all duration-300 glass glass-hover h-full flex flex-col ${
+              id={cat.slug}
+              className={`p-6 rounded-xl transition-all duration-300 glass glass-hover h-full flex flex-col scroll-mt-24 ${
                 cat.is_premium ? 'glass-gold' : ''
               }`}
             >
