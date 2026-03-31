@@ -185,32 +185,51 @@ function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: Currenc
       const strongRank = isBullish ? baseRank : quoteRank
       const weakRank = isBullish ? quoteRank : baseRank
 
+      // Score comparison — altijd tonen
+      if (strongRank && weakRank) {
+        explanationParts.push(`Fundamentele score: ${strongCcy} = ${strongRank.score > 0 ? '+' : ''}${strongRank.score.toFixed(1)} vs ${weakCcy} = ${weakRank.score > 0 ? '+' : ''}${weakRank.score.toFixed(1)}. Hoe groter het verschil, hoe sterker de divergentie.`)
+      }
+
+      // Strong currency bias
       if (strongRank?.bias) {
         const b = strongRank.bias.toLowerCase()
         if (b.includes('verkrappend') || b.includes('hawkish')) {
           explanationParts.push(`${strongCcy} is hawkish (${strongRank.bias}) — de centrale bank verkrapt of houdt rente hoog. Dit trekt kapitaal aan en maakt de valuta sterker.`)
+        } else if (b.includes('verruimend') || b.includes('dovish')) {
+          explanationParts.push(`${strongCcy} is dovish (${strongRank.bias}) — maar scoort alsnog hoger dan ${weakCcy} door andere factoren (rente, macro-dynamiek).`)
         } else if (b.includes('afwachtend')) {
-          explanationParts.push(`${strongCcy} is afwachtend — de centrale bank houdt beleid stabiel. Sterkte komt hier vanuit de zwakte van ${weakCcy}.`)
+          explanationParts.push(`${strongCcy} is afwachtend (${strongRank.bias}) — de centrale bank houdt beleid stabiel. Sterkte komt vanuit de zwakte van ${weakCcy}.`)
+        } else {
+          explanationParts.push(`${strongCcy}: ${strongRank.bias} — huidige CB-positie geeft een fundamenteel voordeel t.o.v. ${weakCcy}.`)
         }
       }
 
+      // Weak currency bias
       if (weakRank?.bias) {
         const b = weakRank.bias.toLowerCase()
         if (b.includes('verruimend') || b.includes('dovish')) {
           explanationParts.push(`${weakCcy} is dovish (${weakRank.bias}) — de centrale bank verruimt of verlaagt rente. Dit jaagt kapitaal weg en maakt de valuta zwakker.`)
+        } else if (b.includes('verkrappend') || b.includes('hawkish')) {
+          explanationParts.push(`${weakCcy} is hawkish (${weakRank.bias}) — maar scoort alsnog lager dan ${strongCcy} door rente- of macro-verschil.`)
         } else if (b.includes('afwachtend')) {
-          explanationParts.push(`${weakCcy} is afwachtend maar scoort lager door rente- of macro-dynamiek.`)
+          explanationParts.push(`${weakCcy} is afwachtend (${weakRank.bias}) — scoort lager door rente- of macro-dynamiek t.o.v. ${strongCcy}.`)
+        } else {
+          explanationParts.push(`${weakCcy}: ${weakRank.bias} — huidige CB-positie is fundamenteel zwakker dan ${strongCcy}.`)
         }
       }
 
-      if (pair.rateDiff !== null && Math.abs(pair.rateDiff) >= 1) {
+      // Rate differential — altijd tonen als beschikbaar
+      if (pair.rateDiff !== null) {
         const higher = pair.rateDiff > 0 ? pair.base : pair.quote
         const lower = pair.rateDiff > 0 ? pair.quote : pair.base
-        explanationParts.push(`Renteverschil: ${higher} biedt ${Math.abs(pair.rateDiff)}% meer rente dan ${lower}. Grotere renteverschillen trekken carry-trade kapitaal aan richting de hogere rente.`)
-      }
-
-      if (strongRank && weakRank) {
-        explanationParts.push(`Fundamentele score: ${strongCcy} = ${strongRank.score > 0 ? '+' : ''}${strongRank.score.toFixed(1)} vs ${weakCcy} = ${weakRank.score > 0 ? '+' : ''}${weakRank.score.toFixed(1)}. Hoe groter het verschil, hoe sterker de divergentie.`)
+        const absDiff = Math.abs(pair.rateDiff)
+        if (absDiff >= 1) {
+          explanationParts.push(`Renteverschil: ${higher} biedt ${absDiff}% meer rente dan ${lower}. Grotere renteverschillen trekken carry-trade kapitaal aan richting de hogere rente.`)
+        } else if (absDiff > 0) {
+          explanationParts.push(`Renteverschil: ${higher} biedt ${absDiff}% meer rente dan ${lower}. Klein verschil — de CB-bias weegt hier zwaarder.`)
+        } else {
+          explanationParts.push(`Renteverschil: gelijk (${pair.base} en ${pair.quote} hebben dezelfde rente). De divergentie komt puur uit CB-beleidsverschillen.`)
+        }
       }
     }
 
