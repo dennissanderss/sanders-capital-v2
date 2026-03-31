@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
-import FxSelectorDashboard from './FxSelectorDashboard'
+import DailyBriefingDashboard from './DailyBriefingDashboard'
 
 export const metadata: Metadata = {
-  title: 'Daily FX Pair Selector — Sanders Capital',
-  description: 'Automatische FX analyse: valuta sterkte, intermarket signalen en dagelijkse pair selectie.',
+  title: 'Daily Macro Briefing — Sanders Capital',
+  description: 'Dagelijkse macro-analyse: regime, currency strength, pair bias en economische events met context.',
 }
 
-export default function FxSelectorPage() {
-  return <FxSelectorDashboard />
+export default function DailyBriefingPage() {
+  return <DailyBriefingDashboard />
 }

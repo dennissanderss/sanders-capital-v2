@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import Link from 'next/link'
 import FadeIn from '@/components/FadeIn'
 
 interface CBData {
@@ -14,28 +15,6 @@ interface CBData {
   source?: string
 }
 
-interface CalendarEvent {
-  currency: string
-  title: string
-  impact: string
-  date: string
-  forecast: string
-  previous: string
-}
-
-interface IndicatorInfo {
-  name: string
-  what: string
-  why: string
-  surprise: string
-}
-
-interface SourceInfo {
-  name: string
-  url: string
-  description: string
-}
-
 interface AnalysisData {
   pair: string
   base: string
@@ -45,9 +24,7 @@ interface AnalysisData {
   quoteCB: CBData
   rateDiff: number
   rateAdvantage: string
-  calendar: CalendarEvent[]
-  indicators: Record<string, IndicatorInfo>
-  sources?: Record<string, SourceInfo>
+  sources?: Record<string, { name: string; url: string; description: string }>
   cbDataUpdated?: string
   generatedAt: string
   error?: string
@@ -63,7 +40,6 @@ export default function FxAnalyseDashboard() {
   const [data, setData] = useState<AnalysisData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [expandedIndicators, setExpandedIndicators] = useState<Set<string>>(new Set())
 
   const fetchAnalysis = useCallback(async (pair: string, refresh = false) => {
     setLoading(true)
@@ -81,15 +57,6 @@ export default function FxAnalyseDashboard() {
     }
   }, [])
 
-  const toggleIndicator = (key: string) => {
-    setExpandedIndicators(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }
-
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-20 sm:py-24">
       <FadeIn>
@@ -97,12 +64,19 @@ export default function FxAnalyseDashboard() {
         <div className="text-center mb-8 sm:mb-12">
           <p className="text-xs tracking-[0.2em] uppercase text-accent-light mb-3">Educatieve Tool</p>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-semibold text-heading mb-3">
-            Fundamental FX Analyse
+            Macro Fundamentals
           </h1>
           <p className="text-sm sm:text-base text-text-muted max-w-2xl mx-auto">
-            Begrijp wat een valutapaar beweegt: macro-economie, centrale banken, economische kalender
-            en marktpositionering. Selecteer een paar en leer analyseren.
+            Begrijp wat een valutapaar beweegt. Selecteer een paar en leer hoe centrale banken,
+            renteverschillen en macro-economie de richting bepalen.
           </p>
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-glow/20 border border-accent-dim/30">
+            <span className="text-xs text-text-muted">Dit is de achtergrond.</span>
+            <Link href="/tools/fx-selector" className="text-xs text-accent-light font-semibold hover:underline">
+              Daily Macro Briefing →
+            </Link>
+            <span className="text-xs text-text-muted">geeft je de dagelijkse conclusie.</span>
+          </div>
         </div>
 
         {/* Pair selector */}
@@ -237,170 +211,48 @@ export default function FxAnalyseDashboard() {
               </div>
             </Section>
 
-            {/* 3. Economic Calendar */}
-            <Section number={3} title="Economische Kalender (deze week)">
-              <div className="flex items-center justify-between mb-4">
+            {/* 3. Bridge to Daily Briefing */}
+            <Section number={3} title="Van theorie naar praktijk">
+              <p className="text-sm text-text-muted mb-4 leading-relaxed">
+                Nu je begrijpt hoe {data.pair} werkt — welke centrale banken er zijn, wat hun beleid is,
+                en hoe het renteverschil de richting bepaalt — is de volgende stap: dit dagelijks toepassen.
+              </p>
+
+              <div className="p-4 rounded-lg bg-accent-glow/20 border border-accent-dim/30 mb-4">
+                <h4 className="text-sm font-semibold text-accent-light mb-2">De sleutel: verrassingen drijven de prijs</h4>
                 <p className="text-sm text-text-muted leading-relaxed">
-                  Hieronder staan de belangrijkste datareleases deze week voor {data.base} en {data.quote}.
-                  Elk cijfer kan de verwachtingen over rentebeleid veranderen — en daarmee de koers.
+                  De koers van {data.pair} weerspiegelt <em>wat de markt verwacht</em>. Als de {data.baseCB.bank} hawkish is,
+                  is dat al deels ingeprijsd. De prijs beweegt pas als er een <strong className="text-heading">verrassing</strong> komt:
+                  data die beter of slechter uitkomt dan verwacht, of een centrale bank die van toon verandert.
                 </p>
-                {data.sources?.calendar && (
-                  <a href={data.sources.calendar.url} target="_blank" rel="noopener noreferrer"
-                    className="shrink-0 ml-3 text-[10px] text-accent-light/60 hover:text-accent-light transition-colors flex items-center gap-1">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
-                    ForexFactory
-                  </a>
-                )}
               </div>
 
-              {data.calendar.length === 0 ? (
-                <p className="text-sm text-text-dim italic">Geen high-impact events gevonden voor deze week.</p>
-              ) : (
-                <div className="space-y-3">
-                  {data.calendar.map((evt, i) => (
-                    <div key={i} className="p-4 rounded-lg bg-bg-card border border-border">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className={`text-xs px-2 py-0.5 rounded font-semibold ${
-                          evt.currency === data.base ? 'bg-accent/15 text-accent-light' : 'bg-gold-dim text-gold'
-                        }`}>
-                          {evt.currency}
-                        </span>
-                        <span className={`text-xs px-2 py-0.5 rounded ${
-                          evt.impact === 'high' ? 'bg-red-500/15 text-red-300' : 'bg-yellow-500/15 text-yellow-300'
-                        }`}>
-                          {evt.impact === 'high' ? 'High Impact' : 'Medium Impact'}
-                        </span>
-                        <span className="text-xs text-text-dim">{evt.date}</span>
-                      </div>
-                      <h4 className="text-sm font-semibold text-heading mb-2">{evt.title}</h4>
-                      <div className="flex gap-4 text-xs text-text-dim">
-                        {evt.forecast && <span>Verwachting: <strong className="text-text-muted">{evt.forecast}</strong></span>}
-                        {evt.previous && <span>Vorige: <strong className="text-text-muted">{evt.previous}</strong></span>}
-                      </div>
-
-                      {/* Scenario analysis */}
-                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <ScenarioBox
-                          label="Lager dan verwacht"
-                          color="#ef5350"
-                          text={`Dovish voor ${evt.currency}. ${evt.currency === data.base ? `Bearish voor ${data.pair}` : `Bullish voor ${data.pair}`}. Markt kan meer knipverwachtingen inprijzen.`}
-                        />
-                        <ScenarioBox
-                          label="In lijn met verwachting"
-                          color="#6b7084"
-                          text="Neutraal. De markt heeft dit al ingeprijsd. Kleine reactie tenzij de details verrassen."
-                        />
-                        <ScenarioBox
-                          label="Hoger dan verwacht"
-                          color="#4caf50"
-                          text={`Hawkish voor ${evt.currency}. ${evt.currency === data.base ? `Bullish voor ${data.pair}` : `Bearish voor ${data.pair}`}. Markt kan knipverwachtingen terugschroeven.`}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Section>
-
-            {/* 4. Indicator Education */}
-            <Section number={4} title="Indicatoren uitgelegd">
-              <p className="text-sm text-text-muted mb-4 leading-relaxed">
-                Klik op een indicator om te leren wat het is, waarom het belangrijk is, en hoe de markt erop reageert.
-              </p>
-              <div className="space-y-2">
-                {Object.entries(data.indicators).map(([key, ind]) => (
-                  <div key={key} className="rounded-lg border border-border overflow-hidden">
-                    <button
-                      onClick={() => toggleIndicator(key)}
-                      className="w-full text-left p-3 sm:p-4 flex items-center justify-between hover:bg-bg-hover/30 transition-colors"
-                    >
-                      <span className="text-sm font-semibold text-heading">{ind.name}</span>
-                      <span className="text-text-dim text-xs">{expandedIndicators.has(key) ? '▼' : '▶'}</span>
-                    </button>
-                    {expandedIndicators.has(key) && (
-                      <div className="px-3 sm:px-4 pb-4 space-y-3">
-                        <div>
-                          <p className="text-xs text-accent-light font-semibold mb-1">Wat meet het?</p>
-                          <p className="text-sm text-text-muted">{ind.what}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-accent-light font-semibold mb-1">Waarom is het belangrijk?</p>
-                          <p className="text-sm text-text-muted">{ind.why}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-accent-light font-semibold mb-1">Hoe reageert de markt?</p>
-                          <p className="text-sm text-text-muted">{ind.surprise}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </Section>
-
-            {/* 5. Market Positioning */}
-            <Section number={5} title="Marktpositionering">
-              <p className="text-sm text-text-muted mb-4 leading-relaxed">
-                De markt prijst verwachtingen in voordat events plaatsvinden. Het is cruciaal om te begrijpen
-                wat al ingeprijsd is — want de koers beweegt op <strong className="text-heading">verrassingen</strong>, niet op het nieuws zelf.
-              </p>
-
-              <div className="space-y-4">
-                <div className="p-4 rounded-lg bg-bg-card border border-border">
-                  <h4 className="text-sm font-semibold text-heading mb-2">Wat is al ingeprijsd?</h4>
-                  <p className="text-sm text-text-muted leading-relaxed">
-                    De huidige koers van {data.pair} weerspiegelt de marktverwachtingen over het renteverschil
-                    tussen de {data.baseCB.bank} ({data.baseCB.rate}%) en de {data.quoteCB.bank} ({data.quoteCB.rate}%).
-                    {data.baseCB.bias.includes('verruimend') && ` De markt verwacht dat de ${data.baseCB.bank} verder knipt — dit is al deels ingeprijsd.`}
-                    {data.quoteCB.bias.includes('verruimend') && ` De markt verwacht dat de ${data.quoteCB.bank} verder knipt — dit is al deels ingeprijsd.`}
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-lg bg-bg-card border border-border">
-                  <h4 className="text-sm font-semibold text-heading mb-2">Waar zit de asymmetrie?</h4>
-                  <p className="text-sm text-text-muted leading-relaxed">
-                    Asymmetrie ontstaat wanneer de markt te veel of te weinig heeft ingeprijsd.
-                    Let op de beleidsrichting: als de {data.baseCB.bank} ({data.baseCB.bias}) agressiever knipt dan verwacht,
-                    is dat bearish voor {data.pair}. Als de {data.quoteCB.bank} ({data.quoteCB.bias}) juist minder
-                    knipt dan verwacht, is dat ook bearish voor {data.pair}.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-lg bg-accent-glow/20 border border-accent-dim/30">
-                  <h4 className="text-sm font-semibold text-accent-light mb-2">Hoe gebruik je dit?</h4>
-                  <p className="text-sm text-text-muted leading-relaxed">
-                    Vraag jezelf altijd af: &quot;Wat verwacht de markt?&quot; en &quot;Wat als het anders uitpakt?&quot;
-                    De grootste bewegingen komen niet van goed of slecht nieuws, maar van <strong className="text-heading">verrassingen</strong>.
-                    Als iedereen verwacht dat de Fed gaat knippen en ze doen het niet — dat is een verrassing.
-                    Dat is wanneer de grote moves gebeuren.
-                  </p>
-                </div>
-              </div>
-            </Section>
-
-            {/* 6. Framework */}
-            <Section number={6} title="Hoe analyseer je zelf?">
               <div className="space-y-3">
-                {[
-                  { step: '1', title: 'Begrijp het paar', text: 'Weet welke economieën en centrale banken je vergelijkt. Welke kant is de basis, welke de quote?' },
-                  { step: '2', title: 'Vergelijk macro', text: 'Welke economie is sterker? Hogere groei, hogere inflatie, sterkere arbeidsmarkt? Die valuta is fundamenteel sterker.' },
-                  { step: '3', title: 'Check de centrale banken', text: 'Wie is hawkish (rente hoog/hoger)? Wie is dovish (rente lager)? De hawkish kant heeft het fundamentele voordeel.' },
-                  { step: '4', title: 'Kijk naar de kalender', text: 'Welke data komt eraan? Wat is de verwachting? Wat als het hoger/lager uitkomt? Bereid je voor op scenario\'s.' },
-                  { step: '5', title: 'Check wat ingeprijsd is', text: 'Verwacht de markt al knipjes? Dan is dat ingeprijsd. De koers beweegt alleen bij verrassingen.' },
-                  { step: '6', title: 'Bouw je bias', text: 'Combineer alles: macro + beleid + kalender + positionering = je fundamentele richting. Zoek dan technische bevestiging op je chart.' },
-                ].map(item => (
-                  <div key={item.step} className="flex items-start gap-3 p-3 rounded-lg bg-bg-card/50">
-                    <span className="flex-shrink-0 w-7 h-7 rounded-full bg-accent/20 text-accent-light text-xs font-bold flex items-center justify-center mt-0.5">
-                      {item.step}
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-heading">{item.title}</p>
-                      <p className="text-xs text-text-muted mt-0.5">{item.text}</p>
-                    </div>
+                <div className="p-4 rounded-lg bg-bg-card border border-border">
+                  <h4 className="text-sm font-semibold text-heading mb-1">Hoe pas je dit toe?</h4>
+                  <p className="text-sm text-text-muted leading-relaxed">
+                    1. <strong>Ken de achtergrond</strong> (deze tool) — wie is hawkish, wie dovish, hoe staat het renteverschil?<br />
+                    2. <strong>Check de Daily Briefing</strong> — welke events komen vandaag, wat is de bias per paar?<br />
+                    3. <strong>Zoek technische bevestiging</strong> — de fundamentals geven je de richting, technicals geven je de entry.
+                  </p>
+                </div>
+
+                <Link
+                  href="/tools/fx-selector"
+                  className="flex items-center justify-between p-4 rounded-lg bg-accent/10 border border-accent/30 hover:bg-accent/15 transition-colors group"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-heading group-hover:text-accent-light transition-colors">
+                      Open Daily Macro Briefing →
+                    </p>
+                    <p className="text-xs text-text-dim mt-0.5">
+                      Bekijk de dagelijkse analyse: regime, currency scorecard en pair bias
+                    </p>
                   </div>
-                ))}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light shrink-0">
+                    <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+                  </svg>
+                </Link>
               </div>
             </Section>
 
@@ -511,11 +363,3 @@ function RateDiffBar({ base, quote }: { base: number; quote: number }) {
   )
 }
 
-function ScenarioBox({ label, color, text }: { label: string; color: string; text: string }) {
-  return (
-    <div className="p-2.5 rounded-lg" style={{ background: color + '0d', border: `1px solid ${color}22` }}>
-      <p className="text-xs font-semibold mb-1" style={{ color }}>{label}</p>
-      <p className="text-xs text-text-muted leading-relaxed">{text}</p>
-    </div>
-  )
-}

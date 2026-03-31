@@ -17,13 +17,25 @@ const navLinks = [
 ]
 
 const toolsDropdown = [
-  { href: '/tools/fx-selector', label: 'FX Pair Selector' },
-  { href: '/tools/fx-analyse', label: 'FX Analyse' },
-  { href: '/tools/marktoverzicht', label: 'Marktoverzicht' },
-  { href: '/tools/calculator', label: 'Position Size Calculator' },
-  { href: '/tools/kalender', label: 'Economische Kalender' },
-  { href: '/tools/rente', label: 'Rentetarieven' },
+  { href: '/tools/fx-selector', label: 'Daily Macro Briefing', desc: 'Dagelijkse marktanalyse & bias', icon: 'compass', premium: true },
+  { href: '/tools/fx-analyse', label: 'Macro Fundamentals', desc: 'Leer valutaparen analyseren', icon: 'layers', premium: true },
+  { href: '/tools/calculator', label: 'Position Size Calculator', desc: 'Bereken je positiegrootte', icon: 'calculator' },
+  { href: '/tools/kalender', label: 'Economische Kalender', desc: 'Aankomende events & data', icon: 'calendar' },
+  { href: '/tools/rente', label: 'Rentetarieven', desc: 'Centrale bank rentes', icon: 'percent' },
 ]
+
+function ToolIcon({ icon }: { icon: string }) {
+  const props = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  switch (icon) {
+    case 'compass': return <svg {...props}><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></svg>
+    case 'layers': return <svg {...props}><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></svg>
+    case 'bar-chart': return <svg {...props}><line x1="12" y1="20" x2="12" y2="10" /><line x1="18" y1="20" x2="18" y2="4" /><line x1="6" y1="20" x2="6" y2="16" /></svg>
+    case 'calculator': return <svg {...props}><rect x="4" y="2" width="16" height="20" rx="2" /><line x1="8" y1="6" x2="16" y2="6" /><line x1="8" y1="10" x2="8" y2="10.01" /><line x1="12" y1="10" x2="12" y2="10.01" /><line x1="16" y1="10" x2="16" y2="10.01" /><line x1="8" y1="14" x2="8" y2="14.01" /><line x1="12" y1="14" x2="12" y2="14.01" /><line x1="16" y1="14" x2="16" y2="14.01" /><line x1="8" y1="18" x2="16" y2="18" /></svg>
+    case 'calendar': return <svg {...props}><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+    case 'percent': return <svg {...props}><line x1="19" y1="5" x2="5" y2="19" /><circle cx="6.5" cy="6.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" /></svg>
+    default: return null
+  }
+}
 
 export default function Header() {
   const pathname = usePathname()
@@ -94,36 +106,52 @@ export default function Header() {
           ))}
 
           {/* Tools dropdown */}
-          <div className="relative group">
-            <Link
-              href="/tools"
-              className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading flex items-center gap-1 ${
+          <div className="relative group/tools">
+            <button
+              className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading flex items-center gap-1 cursor-pointer ${
                 pathname.startsWith('/tools') ? 'text-heading' : 'text-text-muted'
               }`}
+              onClick={() => window.location.href = '/tools'}
             >
               Tools
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className="mt-0.5 transition-transform duration-200 group-hover:rotate-180">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className="mt-0.5 transition-transform duration-200 group-hover/tools:rotate-180">
                 <path d="M2.5 4 5 6.5 7.5 4" />
               </svg>
               {pathname.startsWith('/tools') && (
                 <span className="absolute -bottom-1 left-0 right-0 h-px bg-accent" />
               )}
-            </Link>
+            </button>
 
-            {/* Dropdown menu */}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-              <div className="glass-elevated rounded-xl shadow-2xl py-2 min-w-[220px]">
-                {toolsDropdown.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`block px-4 py-2.5 text-sm transition-colors hover:bg-bg-hover ${
-                      item.sub ? 'pl-8 text-text-dim hover:text-text-muted' : 'text-text-muted hover:text-heading'
-                    } ${pathname === item.href ? 'text-heading bg-bg-hover' : ''}`}
-                  >
-                    {item.sub && <span className="text-text-dim mr-1">└</span>}
-                    {item.label}
-                  </Link>
+            {/* Dropdown menu — before pseudo bridges the gap */}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover/tools:opacity-100 group-hover/tools:visible transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent">
+              <div className="glass-elevated rounded-xl shadow-2xl border border-white/[0.08] py-2 min-w-[280px]">
+                {toolsDropdown.map((item, i) => (
+                  <div key={item.href}>
+                    {i === 2 && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
+                    <Link
+                      href={item.href}
+                      className={`flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-white/[0.04] ${
+                        pathname === item.href ? 'bg-white/[0.04]' : ''
+                      }`}
+                    >
+                      <span className={`mt-0.5 flex-shrink-0 ${pathname === item.href ? 'text-accent-light' : 'text-text-dim'}`}>
+                        <ToolIcon icon={item.icon} />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-medium ${pathname === item.href ? 'text-heading' : 'text-text-muted group-hover/item:text-heading'} transition-colors`}>
+                            {item.label}
+                          </span>
+                          {item.premium && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/10 text-accent-light leading-none">
+                              Pro
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-text-dim mt-0.5 leading-relaxed">{item.desc}</p>
+                      </div>
+                    </Link>
+                  </div>
                 ))}
               </div>
             </div>

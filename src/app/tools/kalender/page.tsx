@@ -75,24 +75,38 @@ function NextEventCountdown({ events }: { events: CalendarEvent[] }) {
 
   if (!next) return null
 
+  const timeStr = (() => {
+    try { return nextDate!.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) }
+    catch { return '' }
+  })()
+  const dateStr = (() => {
+    try { return nextDate!.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' }) }
+    catch { return '' }
+  })()
+
   return (
-    <div className="mb-6 p-4 rounded-xl bg-bg-card border border-accent/30 flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
-      <div className="flex items-center gap-2">
+    <div className="mb-6 p-4 sm:p-5 rounded-xl bg-bg-card border border-accent/30">
+      <div className="flex items-center gap-2 mb-3">
         <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
         <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Volgend high-impact event</span>
       </div>
-      <div className="flex items-center gap-3 flex-1">
-        <span className="text-lg">{flagEmoji(next.flag)}</span>
-        <div>
-          <p className="text-sm font-semibold text-heading">{next.currency} — {next.title}</p>
-          <p className="text-xs text-text-dim">
-            {(() => { try { return nextDate!.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) } catch { return next.date } })()}
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <span className="text-xl">{flagEmoji(next.flag)}</span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-heading truncate">{next.currency} — {next.title}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs text-text-dim">{dateStr}</span>
+              <span className="text-xs font-mono font-semibold text-text-muted">{timeStr}</span>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="text-right">
-        <p className="text-lg font-mono font-semibold text-accent-light">{countdown}</p>
-        <p className="text-[10px] text-text-dim">aftellen</p>
+        <div className="flex items-center gap-3 sm:text-right">
+          <div className="sm:hidden w-px h-8 bg-border" />
+          <div>
+            <p className="text-xl font-mono font-semibold text-accent-light tracking-tight">{countdown}</p>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -149,6 +163,24 @@ export default function KalenderPage() {
       }
       if (!groupedEvents[dateKey]) groupedEvents[dateKey] = []
       groupedEvents[dateKey].push(event)
+    }
+  }
+
+  // Find the next upcoming event to highlight in the table
+  let nextEventId: string | null = null
+  if (data) {
+    const now = new Date().getTime()
+    for (const [dateKey, events] of Object.entries(groupedEvents)) {
+      for (let i = 0; i < events.length; i++) {
+        try {
+          const d = new Date(events[i].date)
+          if (!isNaN(d.getTime()) && d.getTime() > now) {
+            nextEventId = `${dateKey}-${i}`
+            break
+          }
+        } catch { /* skip */ }
+      }
+      if (nextEventId) break
     }
   }
 
@@ -272,6 +304,7 @@ export default function KalenderPage() {
                   <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider w-8">
                     <span className="sr-only">Impact</span>
                   </th>
+                  <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Tijd</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Valuta</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Event</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider hidden sm:table-cell">Impact</th>
@@ -283,38 +316,44 @@ export default function KalenderPage() {
                 {Object.entries(groupedEvents).map(([dateKey, events]) => (
                   <Fragment key={dateKey}>
                     <tr className="bg-bg/50">
-                      <td colSpan={6} className="px-3 sm:px-4 py-2">
+                      <td colSpan={7} className="px-3 sm:px-4 py-2">
                         <span className="text-xs font-semibold text-accent-light uppercase tracking-wider">{dateKey}</span>
                       </td>
                     </tr>
-                    {events.map((event, i) => (
-                      <tr key={`${dateKey}-${i}`} className="border-b border-border/30 hover:bg-bg-hover transition-colors">
-                        <td className="px-3 sm:px-4 py-2.5">
-                          <ImpactDot impact={event.impact} />
-                        </td>
-                        <td className="px-3 sm:px-4 py-2.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm">{flagEmoji(event.flag)}</span>
-                            <span className="text-xs font-mono text-heading">{event.currency}</span>
-                          </div>
-                        </td>
-                        <td className="px-3 sm:px-4 py-2.5">
-                          <span className="text-sm text-heading">{event.title}</span>
-                          <span className="text-[10px] text-text-dim ml-2 hidden md:inline">
-                            {(() => { try { const d = new Date(event.date); return !isNaN(d.getTime()) ? d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '' } catch { return '' } })()}
-                          </span>
-                        </td>
-                        <td className="px-3 sm:px-4 py-2.5 hidden sm:table-cell">
-                          <ImpactBadge impact={event.impact} />
-                        </td>
-                        <td className="px-3 sm:px-4 py-2.5 text-right">
-                          <span className="text-sm text-text-muted font-mono">{event.forecast || '—'}</span>
-                        </td>
-                        <td className="px-3 sm:px-4 py-2.5 text-right">
-                          <span className="text-sm text-text-dim font-mono">{event.previous || '—'}</span>
-                        </td>
-                      </tr>
-                    ))}
+                    {events.map((event, i) => {
+                      const isNext = nextEventId !== null && `${dateKey}-${i}` === nextEventId
+                      return (
+                        <tr key={`${dateKey}-${i}`} className={`border-b border-border/30 hover:bg-bg-hover transition-colors ${isNext ? 'bg-accent/[0.06] relative' : ''}`} style={isNext ? { boxShadow: 'inset 3px 0 0 0 var(--color-accent, #3b82f6)' } : undefined}>
+                          <td className="px-3 sm:px-4 py-2.5">
+                            <ImpactDot impact={event.impact} />
+                          </td>
+                          <td className="px-3 sm:px-4 py-2.5">
+                            <span className="text-xs font-mono text-text-dim whitespace-nowrap">
+                              {(() => { try { const d = new Date(event.date); return !isNaN(d.getTime()) ? d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '—' } catch { return '—' } })()}
+                            </span>
+                          </td>
+                          <td className="px-3 sm:px-4 py-2.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm">{flagEmoji(event.flag)}</span>
+                              <span className="text-xs font-mono text-heading">{event.currency}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 sm:px-4 py-2.5">
+                            <span className="text-sm text-heading">{event.title}</span>
+                            {isNext && <span className="ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-accent/15 text-accent-light uppercase tracking-wider">Volgende</span>}
+                          </td>
+                          <td className="px-3 sm:px-4 py-2.5 hidden sm:table-cell">
+                            <ImpactBadge impact={event.impact} />
+                          </td>
+                          <td className="px-3 sm:px-4 py-2.5 text-right">
+                            <span className="text-sm text-text-muted font-mono">{event.forecast || '—'}</span>
+                          </td>
+                          <td className="px-3 sm:px-4 py-2.5 text-right">
+                            <span className="text-sm text-text-dim font-mono">{event.previous || '—'}</span>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </Fragment>
                 ))}
               </tbody>
