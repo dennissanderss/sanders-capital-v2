@@ -553,22 +553,38 @@ export default function AdminPage() {
                 { id: 'trade_track', task: 'Trade Focus trackrecord controleren', freq: 'Wekelijks', resetDays: 7, priority: 'medium', desc: 'Bekijk de resultaten van de Trade Focus aanbevelingen in de Daily Macro Briefing.', tab: 'status' },
               ].map(item => {
                 const completedAt = taskCompletions[item.id]
-                const isCompleted = completedAt ? (Date.now() - new Date(completedAt).getTime()) < item.resetDays * 86400000 : false
+                const msElapsed = completedAt ? Date.now() - new Date(completedAt).getTime() : null
+                const resetMs = item.resetDays * 86400000
+                const isCompleted = msElapsed !== null && msElapsed < resetMs
                 const daysAgo = completedAt ? Math.floor((Date.now() - new Date(completedAt).getTime()) / 86400000) : null
+                const daysUntilReset = isCompleted && msElapsed !== null ? Math.ceil((resetMs - msElapsed) / 86400000) : null
+
+                const toggleTask = () => {
+                  if (isCompleted) {
+                    // Uncheck: remove completion
+                    const updated = { ...taskCompletions }
+                    delete updated[item.id]
+                    setTaskCompletions(updated)
+                    localStorage.setItem('admin_tasks', JSON.stringify(updated))
+                  } else {
+                    // Check: mark as completed
+                    const now = new Date().toISOString()
+                    const updated = { ...taskCompletions, [item.id]: now }
+                    setTaskCompletions(updated)
+                    localStorage.setItem('admin_tasks', JSON.stringify(updated))
+                  }
+                }
 
                 return (
                   <div key={item.id} className={`p-4 rounded-xl glass flex items-start gap-4 transition-all ${isCompleted ? 'opacity-60' : ''}`}>
                     <button
-                      onClick={async () => {
-                        const now = new Date().toISOString()
-                        setTaskCompletions(prev => ({ ...prev, [item.id]: now }))
-                        localStorage.setItem('admin_tasks', JSON.stringify({ ...taskCompletions, [item.id]: now }))
-                      }}
+                      onClick={toggleTask}
                       className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors cursor-pointer ${
                         isCompleted
-                          ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                          ? 'bg-green-500/20 border-green-500/50 text-green-400 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400'
                           : 'border-border hover:border-accent'
                       }`}
+                      title={isCompleted ? 'Klik om ongedaan te maken' : 'Klik om af te vinken'}
                     >
                       {isCompleted && (
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -588,6 +604,14 @@ export default function AdminPage() {
                         {isCompleted && daysAgo !== null && (
                           <span className="text-[10px] text-green-400/60 bg-green-500/10 px-1.5 py-0.5 rounded">
                             ✓ {daysAgo === 0 ? 'vandaag' : `${daysAgo}d geleden`}
+                          </span>
+                        )}
+                        {isCompleted && daysUntilReset !== null && (
+                          <span className="text-[10px] text-text-dim bg-white/5 px-1.5 py-0.5 rounded flex items-center gap-1">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            reset over {daysUntilReset}d
                           </span>
                         )}
                         {!isCompleted && completedAt && (
@@ -610,8 +634,8 @@ export default function AdminPage() {
           </div>
 
           {/* Quick stats */}
-          <div>
-            <h2 className="text-lg font-semibold text-heading mb-4">Overzicht</h2>
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-heading mb-4">Content Overzicht</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-4 rounded-xl glass text-center">
                 <p className="text-2xl font-display font-semibold text-heading">{articles.length}</p>
@@ -628,6 +652,106 @@ export default function AdminPage() {
               <div className="p-4 rounded-xl glass text-center">
                 <p className="text-2xl font-display font-semibold text-heading">{cbRates.length}</p>
                 <p className="text-xs text-text-dim mt-1">Centrale banken</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Website Specs */}
+          <div>
+            <h2 className="text-lg font-semibold text-heading mb-4 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
+              </svg>
+              Website Specs
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Hosting */}
+              <div className="p-4 rounded-xl glass">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-7 h-7 rounded-lg bg-black flex items-center justify-center text-white text-xs font-bold">▲</span>
+                  <div>
+                    <p className="text-sm font-semibold text-heading">Vercel (Hobby)</p>
+                    <p className="text-[10px] text-text-dim">Hosting & Deployment</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-text-dim">Bandwidth</span>
+                    <span className="text-text-muted font-mono">100 GB / maand</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-text-dim">Serverless Functions</span>
+                    <span className="text-text-muted font-mono">100 GB-hrs / maand</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-text-dim">Build minuten</span>
+                    <span className="text-text-muted font-mono">6.000 min / maand</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-text-dim">Deploys</span>
+                    <span className="text-text-muted font-mono">Onbeperkt (auto via GitHub)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Supabase */}
+              <div className="p-4 rounded-xl glass">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center text-white text-xs font-bold">S</span>
+                  <div>
+                    <p className="text-sm font-semibold text-heading">Supabase (Free)</p>
+                    <p className="text-[10px] text-text-dim">Database, Auth & Storage</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-text-dim">Database</span>
+                    <span className="text-text-muted font-mono">500 MB</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-text-dim">Storage</span>
+                    <span className="text-text-muted font-mono">1 GB</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-text-dim">Bandwidth</span>
+                    <span className="text-text-muted font-mono">5 GB / maand</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-text-dim">Auth gebruikers</span>
+                    <span className="text-text-muted font-mono">50.000 MAU</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-text-dim">API requests</span>
+                    <span className="text-text-muted font-mono">500K / maand</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stack */}
+              <div className="p-4 rounded-xl glass">
+                <p className="text-sm font-semibold text-heading mb-2">Tech Stack</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {['Next.js 15', 'React 19', 'TypeScript', 'Tailwind CSS', 'Supabase', 'Vercel'].map(tech => (
+                    <span key={tech} className="text-[10px] px-2 py-1 rounded-md bg-white/5 border border-border text-text-muted">{tech}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* External APIs */}
+              <div className="p-4 rounded-xl glass">
+                <p className="text-sm font-semibold text-heading mb-2">Externe APIs (gratis)</p>
+                <div className="space-y-1.5">
+                  {[
+                    { name: 'Yahoo Finance', desc: 'Intermarket data & FX koersen' },
+                    { name: 'FairEconomy', desc: 'Economische kalender events' },
+                  ].map(api => (
+                    <div key={api.name} className="flex items-center gap-2 text-xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
+                      <span className="text-text-muted font-medium">{api.name}</span>
+                      <span className="text-text-dim">— {api.desc}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
