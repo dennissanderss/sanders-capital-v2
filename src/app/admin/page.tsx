@@ -118,7 +118,7 @@ function getFileIcon(name: string) {
 }
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<'articles' | 'kennisbank' | 'categories' | 'users' | 'tools' | 'rentes' | 'status'>('articles')
+  const [tab, setTab] = useState<'articles' | 'kennisbank' | 'categories' | 'users' | 'tools' | 'rentes' | 'status'>('status')
   const [articles, setArticles] = useState<Article[]>([])
   const [kennisbankItems, setKennisbankItems] = useState<KennisbankItem[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -132,6 +132,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [uploadingDocs, setUploadingDocs] = useState(false)
   const [taskCompletions, setTaskCompletions] = useState<Record<string, string>>({})
+  const [dbStats, setDbStats] = useState<{ tables: number; totalRows: number; storageMb: number } | null>(null)
 
   // Move modal state
   const [moveModal, setMoveModal] = useState<{
@@ -184,6 +185,27 @@ export default function AdminPage() {
     try {
       const saved = localStorage.getItem('admin_tasks')
       if (saved) setTaskCompletions(JSON.parse(saved))
+    } catch {}
+
+    // Calculate DB stats from loaded data
+    const totalRows = (arts?.length || 0) + (kbs?.length || 0) + (cats?.length || 0) + (profs?.length || 0) + (tls?.length || 0) + (cbr?.length || 0)
+    setDbStats({ tables: 6, totalRows, storageMb: 0 })
+
+    // Try to get storage usage
+    try {
+      const { data: buckets } = await supabase.storage.listBuckets()
+      let totalSize = 0
+      if (buckets) {
+        for (const bucket of buckets) {
+          const { data: files } = await supabase.storage.from(bucket.name).list('', { limit: 1000 })
+          if (files) {
+            for (const file of files) {
+              if (file.metadata?.size) totalSize += file.metadata.size
+            }
+          }
+        }
+      }
+      setDbStats(prev => prev ? { ...prev, storageMb: Math.round(totalSize / 1024 / 1024 * 10) / 10 } : prev)
     } catch {}
 
     setLoading(false)
@@ -703,26 +725,33 @@ export default function AdminPage() {
                     <p className="text-[10px] text-text-dim">Database, Auth & Storage</p>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-text-dim">Database</span>
-                    <span className="text-text-muted font-mono">500 MB</span>
+                <div className="space-y-2.5">
+                  <div>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-text-dim">Database</span>
+                      <span className="text-text-muted font-mono">{dbStats ? `${dbStats.totalRows} rijen` : '—'} / 500 MB</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                      <div className="h-full bg-emerald-500/50 rounded-full transition-all" style={{ width: `${Math.min(((dbStats?.totalRows || 0) / 5000) * 100, 100)}%` }} />
+                    </div>
+                    <p className="text-[10px] text-text-dim mt-0.5">{dbStats?.tables || 0} tabellen</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-text-dim">Storage</span>
+                      <span className="text-text-muted font-mono">{dbStats?.storageMb || 0} MB / 1 GB</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                      <div className="h-full bg-emerald-500/50 rounded-full transition-all" style={{ width: `${Math.min(((dbStats?.storageMb || 0) / 1024) * 100, 100)}%` }} />
+                    </div>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-text-dim">Storage</span>
-                    <span className="text-text-muted font-mono">1 GB</span>
+                    <span className="text-text-dim">Auth gebruikers</span>
+                    <span className="text-text-muted font-mono">{users.length} / 50.000</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-text-dim">Bandwidth</span>
                     <span className="text-text-muted font-mono">5 GB / maand</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-text-dim">Auth gebruikers</span>
-                    <span className="text-text-muted font-mono">50.000 MAU</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-text-dim">API requests</span>
-                    <span className="text-text-muted font-mono">500K / maand</span>
                   </div>
                 </div>
               </div>
@@ -1411,6 +1440,53 @@ export default function AdminPage() {
           ) : (
             /* ── List view ── */
             <>
+              {/* Next meeting highlight */}
+              {(() => {
+                const now = new Date()
+                const upcoming = cbRates
+                  .filter(r => r.next_meeting)
+                  .map(r => ({ ...r, meetDate: new Date(r.next_meeting) }))
+                  .filter(r => r.meetDate.getTime() > now.getTime())
+                  .sort((a, b) => a.meetDate.getTime() - b.meetDate.getTime())
+                const next = upcoming[0]
+                if (!next) return null
+                const daysUntil = Math.ceil((next.meetDate.getTime() - now.getTime()) / 86400000)
+                const flagStr = next.flag ? next.flag.toUpperCase().split('').map((c: string) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65)).join('') : ''
+                return (
+                  <div className="mb-6 p-5 rounded-xl border border-accent/20 bg-gradient-to-r from-accent/[0.06] to-transparent">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-2xl">
+                          {flagStr}
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-accent-light uppercase tracking-wider font-semibold">Eerstvolgende vergadering</p>
+                          <p className="text-lg font-display font-bold text-heading">{next.currency} — {next.bank.split('(')[0].trim()}</p>
+                          <p className="text-xs text-text-muted mt-0.5">
+                            {next.meetDate.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                            {next.bias && <> · <span className="text-text-dim">Bias: {next.bias}</span></>}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-2xl font-display font-bold ${daysUntil <= 3 ? 'text-red-400' : daysUntil <= 7 ? 'text-amber-400' : 'text-accent-light'}`}>
+                          {daysUntil}
+                        </p>
+                        <p className="text-[10px] text-text-dim">dagen</p>
+                      </div>
+                    </div>
+                    {daysUntil <= 3 && (
+                      <p className="text-xs text-amber-400/80 mt-3 flex items-center gap-1.5">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        Binnenkort! Bereid je voor om rente, target en bias bij te werken na het besluit.
+                      </p>
+                    )}
+                  </div>
+                )
+              })()}
+
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <p className="text-sm text-text-muted">Beheer rentetarieven van centrale banken. Wijzigingen zijn direct zichtbaar op de rentetarieven pagina.</p>
