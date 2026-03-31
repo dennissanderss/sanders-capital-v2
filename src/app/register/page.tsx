@@ -116,9 +116,12 @@ export default function RegisterPage() {
             </Link>
           </p>
 
-          <p className="text-xs text-text-dim text-center mt-4">
-            Let op: de bevestigingsmail kan in je spamfolder terechtkomen. Controleer deze als je geen mail ontvangt.
-          </p>
+          <div className="mt-5 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <p className="text-xs text-amber-400/90 leading-relaxed text-center">
+              <strong>Let op:</strong> Na registratie ontvang je een bevestigingsmail van <strong>noreply@mail.app.supabase.io</strong>.
+              Check je <strong>spam/ongewenste mail</strong> als je niets ontvangt — de mail komt niet van Sanders Capital maar van onze authenticatie-provider.
+            </p>
+          </div>
         </div>
       </FadeIn>
     </div>

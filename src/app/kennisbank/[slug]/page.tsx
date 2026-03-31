@@ -48,11 +48,20 @@ export default async function KennisbankItemPage({ params }: Props) {
       ? catItems![currentIndex + 1]
       : null
 
+  // Check of de categorie premium is
+  const { data: category } = await supabase
+    .from('kennisbank_categories')
+    .select('is_premium')
+    .eq('slug', item.category)
+    .single()
+
+  const isPremium = item.is_premium || category?.is_premium
+
   // Check toegang voor premium items
   const { data: { user } } = await supabase.auth.getUser()
 
-  let hasAccess = !item.is_premium
-  if (item.is_premium && user) {
+  let hasAccess = !isPremium
+  if (isPremium && user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -86,7 +95,7 @@ export default async function KennisbankItemPage({ params }: Props) {
             <span className="text-xs px-2.5 py-1 rounded-md bg-accent-glow text-accent-light capitalize">
               {item.category?.replace(/-/g, ' ')}
             </span>
-            {item.is_premium && (
+            {isPremium && (
               <span className="text-xs px-2 py-1 rounded-md bg-gold-dim text-gold">Premium</span>
             )}
           </div>
@@ -99,7 +108,7 @@ export default async function KennisbankItemPage({ params }: Props) {
       <FadeIn delay={200}>
         <KennisbankContent
           content={item.content || ''}
-          isPremium={item.is_premium}
+          isPremium={!!isPremium}
           hasAccess={hasAccess}
         />
       </FadeIn>

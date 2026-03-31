@@ -525,37 +525,75 @@ export default function DailyBriefingDashboard() {
                           </div>
                         )}
 
-                        {/* Recent records */}
-                        <div className="space-y-1.5">
-                          {trackRecords.slice(0, 10).map(record => (
-                            <div key={record.id} className="flex items-center gap-3 py-1.5 px-3 rounded-lg bg-white/[0.02] text-xs">
-                              <span className={`w-2 h-2 rounded-full shrink-0 ${
-                                record.result === 'correct' ? 'bg-green-400' :
-                                record.result === 'incorrect' ? 'bg-red-400' : 'bg-amber-400'
-                              }`} />
-                              <span className="text-text-dim font-mono w-16 shrink-0">{record.date}</span>
-                              <span className="font-bold text-heading w-16 shrink-0">{record.pair}</span>
-                              <span className={`capitalize ${
-                                record.direction.includes('bullish') ? 'text-green-400' : record.direction.includes('bearish') ? 'text-red-400' : 'text-text-dim'
-                              }`}>
-                                {record.direction.includes('bullish') ? '↑' : '↓'} {record.direction}
-                              </span>
-                              <span className="ml-auto font-mono">
-                                {record.result === 'pending' ? (
-                                  <span className="text-amber-400">pending</span>
-                                ) : record.pips_moved != null ? (
-                                  <span className={record.pips_moved > 0 ? 'text-green-400' : 'text-red-400'}>
-                                    {record.pips_moved > 0 ? '+' : ''}{record.pips_moved} pips
+                        {/* Correct trades */}
+                        {trackRecords.filter(r => r.result === 'correct').length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-[10px] font-semibold text-green-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                              Correct ({trackRecords.filter(r => r.result === 'correct').length})
+                            </p>
+                            <div className="space-y-1">
+                              {trackRecords.filter(r => r.result === 'correct').slice(0, 5).map(record => (
+                                <div key={record.id} className="flex items-center gap-3 py-1.5 px-3 rounded-lg bg-green-500/[0.04] border border-green-500/10 text-xs">
+                                  <span className="text-text-dim font-mono w-16 shrink-0">{record.date}</span>
+                                  <span className="font-bold text-heading w-16 shrink-0">{record.pair}</span>
+                                  <span className={record.direction.includes('bullish') ? 'text-green-400' : 'text-red-400'}>
+                                    {record.direction.includes('bullish') ? '↑ LONG' : '↓ SHORT'}
                                   </span>
-                                ) : (
-                                  <span className={record.result === 'correct' ? 'text-green-400' : 'text-red-400'}>
-                                    {record.result}
+                                  <span className="ml-auto font-mono text-green-400 font-semibold">
+                                    {record.pips_moved != null ? `+${Math.abs(record.pips_moved)} pips` : '✓'}
                                   </span>
-                                )}
-                              </span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        )}
+
+                        {/* Incorrect trades */}
+                        {trackRecords.filter(r => r.result === 'incorrect').length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-[10px] font-semibold text-red-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                              Incorrect ({trackRecords.filter(r => r.result === 'incorrect').length})
+                            </p>
+                            <div className="space-y-1">
+                              {trackRecords.filter(r => r.result === 'incorrect').slice(0, 5).map(record => (
+                                <div key={record.id} className="flex items-center gap-3 py-1.5 px-3 rounded-lg bg-red-500/[0.04] border border-red-500/10 text-xs">
+                                  <span className="text-text-dim font-mono w-16 shrink-0">{record.date}</span>
+                                  <span className="font-bold text-heading w-16 shrink-0">{record.pair}</span>
+                                  <span className={record.direction.includes('bullish') ? 'text-green-400' : 'text-red-400'}>
+                                    {record.direction.includes('bullish') ? '↑ LONG' : '↓ SHORT'}
+                                  </span>
+                                  <span className="ml-auto font-mono text-red-400 font-semibold">
+                                    {record.pips_moved != null ? `${record.pips_moved} pips` : '✗'}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Pending trades */}
+                        {trackRecords.filter(r => r.result === 'pending').length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              Pending ({trackRecords.filter(r => r.result === 'pending').length})
+                            </p>
+                            <div className="space-y-1">
+                              {trackRecords.filter(r => r.result === 'pending').slice(0, 5).map(record => (
+                                <div key={record.id} className="flex items-center gap-3 py-1.5 px-3 rounded-lg bg-amber-500/[0.04] border border-amber-500/10 text-xs">
+                                  <span className="text-text-dim font-mono w-16 shrink-0">{record.date}</span>
+                                  <span className="font-bold text-heading w-16 shrink-0">{record.pair}</span>
+                                  <span className={record.direction.includes('bullish') ? 'text-green-400' : 'text-red-400'}>
+                                    {record.direction.includes('bullish') ? '↑ LONG' : '↓ SHORT'}
+                                  </span>
+                                  <span className="ml-auto font-mono text-amber-400">afwachten...</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </>
                     )}
                     <p className="text-[10px] text-text-dim mt-3 leading-relaxed">
