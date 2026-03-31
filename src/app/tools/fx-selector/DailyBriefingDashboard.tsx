@@ -73,45 +73,110 @@ function flagEmoji(code: string) {
   return code.toUpperCase().split('').map(c => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65)).join('')
 }
 
-// ─── Components ─────────────────────────────────────────────
-function RegimeBadge({ regime }: { regime: string }) {
-  const colors: Record<string, string> = {
-    'Risk-On': 'bg-green-500/15 text-green-400 border-green-500/30',
-    'Risk-Off': 'bg-red-500/15 text-red-400 border-red-500/30',
-    'USD Dominant': 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-    'USD Zwak': 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-    'Gemengd': 'bg-white/10 text-text-muted border-border',
+// ─── Helper: intermarket conclusion ─────────────────────────
+function getIntermarketConclusion(signals: IntermarketSignal[]): { text: string; sentiment: string } {
+  const get = (key: string) => signals.find(s => s.key === key)
+  const vix = get('vix')
+  const sp = get('sp500')
+  const gold = get('gold')
+  const yields = get('us10y')
+  const oil = get('oil')
+
+  const riskOnSignals: string[] = []
+  const riskOffSignals: string[] = []
+
+  if (sp?.direction === 'up') riskOnSignals.push('S&P 500 stijgt')
+  if (sp?.direction === 'down') riskOffSignals.push('S&P 500 daalt')
+  if (vix?.direction === 'down') riskOnSignals.push('VIX daalt')
+  if (vix?.direction === 'up') riskOffSignals.push('VIX stijgt')
+  if (vix?.current && vix.current > 25) riskOffSignals.push(`VIX hoog (${vix.current})`)
+  if (gold?.direction === 'up') riskOffSignals.push('Goud stijgt (vlucht naar veiligheid)')
+  if (gold?.direction === 'down') riskOnSignals.push('Goud daalt')
+  if (yields?.direction === 'up') riskOffSignals.push('Yields stijgen (USD sterker)')
+  if (yields?.direction === 'down') riskOnSignals.push('Yields dalen')
+
+  if (riskOffSignals.length >= 3) {
+    return {
+      sentiment: 'risk-off',
+      text: `Intermarket bevestigt Risk-Off: ${riskOffSignals.join(', ')}. Verwacht sterkte in JPY, CHF en USD. Voorzichtig met long risk-posities (AUD, NZD).`,
+    }
   }
-  return (
-    <span className={`inline-flex px-3 py-1 rounded-lg text-sm font-semibold border ${colors[regime] || colors['Gemengd']}`}>
-      {regime}
-    </span>
-  )
+  if (riskOnSignals.length >= 3) {
+    return {
+      sentiment: 'risk-on',
+      text: `Intermarket bevestigt Risk-On: ${riskOnSignals.join(', ')}. Verwacht sterkte in AUD, NZD, CAD en zwakte in JPY. Zoek long setups in high-yield paren.`,
+    }
+  }
+
+  const allPoints = [...riskOnSignals.map(s => `✓ ${s}`), ...riskOffSignals.map(s => `✗ ${s}`)]
+  return {
+    sentiment: 'mixed',
+    text: `Gemengde signalen: ${allPoints.join(', ')}. Geen eenduidige bevestiging — wees selectiever en wacht op duidelijkere price action.`,
+  }
 }
 
-function DirectionBadge({ direction, conviction }: { direction: string; conviction: string }) {
-  const isBull = direction.includes('bullish')
-  const isBear = direction.includes('bearish')
-  const color = isBull ? 'text-green-400' : isBear ? 'text-red-400' : 'text-text-dim'
-  const arrow = isBull ? '↑' : isBear ? '↓' : '→'
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className={`text-base font-bold ${color}`}>{arrow}</span>
-      <span className={`text-sm font-medium ${color} capitalize`}>{direction}</span>
-      {conviction !== 'geen' && (
-        <span className="text-[10px] text-text-dim">({conviction})</span>
-      )}
-    </div>
-  )
+// ─── Helper: trade focus from pair biases ───────────────────
+function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: CurrencyRank[]) {
+  // Get top 3 pairs with strongest conviction
+  const strong = pairs.filter(p => p.conviction === 'sterk' || p.conviction === 'matig')
+  const top = strong.slice(0, 3)
+
+  return top.map(pair => {
+    const isBullish = pair.direction.includes('bullish')
+    const isBearish = pair.direction.includes('bearish')
+
+    // Find relevant events for this pair
+    const pairEvents = events.filter(e => e.currency === pair.base || e.currency === pair.quote)
+
+    // Get currency details
+    const baseRank = ranking.find(r => r.currency === pair.base)
+    const quoteRank = ranking.find(r => r.currency === pair.quote)
+
+    // Build action text
+    let action = ''
+    if (isBullish) {
+      action = `Zoek LONG structure breaks op je 15min chart. ${pair.base} is fundamenteel sterker dan ${pair.quote}.`
+    } else if (isBearish) {
+      action = `Zoek SHORT structure breaks op je 15min chart. ${pair.quote} is fundamenteel sterker dan ${pair.base}.`
+    } else {
+      action = 'Neutraal — wacht op duidelijkere fundamentele divergentie.'
+    }
+
+    // Build why
+    const whyParts: string[] = []
+    if (baseRank?.bias) whyParts.push(`${pair.base}: ${baseRank.bias}`)
+    if (quoteRank?.bias) whyParts.push(`${pair.quote}: ${quoteRank.bias}`)
+    if (pair.rateDiff !== null) {
+      whyParts.push(`Renteverschil: ${pair.rateDiff > 0 ? '+' : ''}${pair.rateDiff}%`)
+    }
+
+    // Event warning
+    let eventWarning = ''
+    if (pairEvents.length > 0) {
+      eventWarning = `Let op: ${pairEvents.map(e => `${e.title} (${e.currency}, ${e.time})`).join(', ')} — volatiliteit verwacht.`
+    }
+
+    return {
+      pair: pair.pair,
+      direction: pair.direction,
+      conviction: pair.conviction,
+      score: pair.score,
+      action,
+      why: whyParts.join(' | '),
+      eventWarning,
+      isBullish,
+      isBearish,
+    }
+  })
 }
 
+// ─── Components ─────────────────────────────────────────────
 function ScoreBar({ score, max = 5 }: { score: number; max?: number }) {
   const pct = Math.min(Math.abs(score) / max * 100, 100)
   const isPositive = score >= 0
   return (
     <div className="flex items-center gap-2 w-full">
       <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden relative">
-        {/* Center line */}
         <div className="absolute left-1/2 top-0 w-px h-full bg-white/10" />
         {isPositive ? (
           <div className="absolute left-1/2 h-full rounded-r-full bg-green-500/60 transition-all" style={{ width: `${pct / 2}%` }} />
@@ -126,11 +191,27 @@ function ScoreBar({ score, max = 5 }: { score: number; max?: number }) {
   )
 }
 
+function BiasTag({ bias }: { bias: string }) {
+  if (!bias) return <span className="text-xs text-text-dim">—</span>
+  const b = bias.toLowerCase()
+  const isHawkish = b.includes('verkrappend')
+  const isDovish = b.includes('verruimend')
+  const color = isHawkish ? 'bg-green-500/15 text-green-400 border-green-500/20'
+    : isDovish ? 'bg-red-500/15 text-red-400 border-red-500/20'
+    : 'bg-white/10 text-text-muted border-border'
+  return (
+    <span className={`text-[11px] px-2 py-0.5 rounded border ${color} whitespace-nowrap`}>
+      {bias}
+    </span>
+  )
+}
+
 // ─── Main Dashboard ─────────────────────────────────────────
 export default function DailyBriefingDashboard() {
   const [data, setData] = useState<BriefingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showRegimeDetails, setShowRegimeDetails] = useState(false)
 
   const fetchBriefing = async () => {
     setLoading(true)
@@ -149,6 +230,10 @@ export default function DailyBriefingDashboard() {
 
   useEffect(() => { fetchBriefing() }, [])
 
+  // Derived data
+  const intermarketConclusion = data?.intermarketSignals ? getIntermarketConclusion(data.intermarketSignals) : null
+  const tradeFocus = data ? getTradeFocus(data.pairBiases, data.todayEvents, data.currencyRanking) : []
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
       {/* Header */}
@@ -158,8 +243,7 @@ export default function DailyBriefingDashboard() {
           Daily Macro Briefing
         </h1>
         <p className="text-sm sm:text-base text-text-muted max-w-2xl mx-auto">
-          Jouw dagelijkse fundamentele analyse: macro regime, valuta sterkte, pair bias en events met context.
-          Open deze tool elke ochtend om je trading bias te bepalen.
+          Fundamentele analyse die leidt tot concrete trade focus. Check elke ochtend je bias voordat je je charts opent.
         </p>
       </div>
 
@@ -179,18 +263,13 @@ export default function DailyBriefingDashboard() {
 
       {data && !loading && (
         <>
-          {/* Last updated + refresh */}
+          {/* Last updated */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2 text-xs text-text-dim">
               <span className="w-2 h-2 rounded-full bg-green-400" />
-              <span>
-                {new Date(data.generatedAt).toLocaleString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-              </span>
+              {new Date(data.generatedAt).toLocaleString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
             </div>
-            <button
-              onClick={fetchBriefing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading hover:border-border-light transition-colors"
-            >
+            <button onClick={fetchBriefing} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading hover:border-border-light transition-colors">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
                 <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
@@ -199,104 +278,208 @@ export default function DailyBriefingDashboard() {
             </button>
           </div>
 
-          {/* ── 1. MACRO REGIME ── */}
+          {/* ════════════════════════════════════════════════════════
+              1. MACRO REGIME — Visual Dashboard Card
+              ════════════════════════════════════════════════════════ */}
           <section className="mb-8">
-            <div className="p-5 sm:p-6 rounded-xl bg-bg-card border border-border">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-                <h2 className="text-lg font-display font-semibold text-heading">Macro Regime</h2>
-                <RegimeBadge regime={data.regime} />
+            <div className="rounded-xl overflow-hidden border border-border">
+              {/* Regime header bar */}
+              <div className={`px-5 sm:px-6 py-4 ${
+                data.regime === 'Risk-Off' ? 'bg-gradient-to-r from-red-500/10 to-red-500/5' :
+                data.regime === 'Risk-On' ? 'bg-gradient-to-r from-green-500/10 to-green-500/5' :
+                data.regime === 'USD Dominant' ? 'bg-gradient-to-r from-blue-500/10 to-blue-500/5' :
+                data.regime === 'USD Zwak' ? 'bg-gradient-to-r from-amber-500/10 to-amber-500/5' :
+                'bg-gradient-to-r from-white/5 to-white/[0.02]'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${
+                      data.regime === 'Risk-Off' ? 'bg-red-500' :
+                      data.regime === 'Risk-On' ? 'bg-green-500' :
+                      data.regime === 'USD Dominant' ? 'bg-blue-500' :
+                      data.regime === 'USD Zwak' ? 'bg-amber-500' : 'bg-gray-500'
+                    } animate-pulse`} />
+                    <div>
+                      <p className="text-[10px] text-text-dim uppercase tracking-wider">Macro Regime</p>
+                      <p className={`text-xl font-display font-bold ${
+                        data.regime === 'Risk-Off' ? 'text-red-400' :
+                        data.regime === 'Risk-On' ? 'text-green-400' :
+                        data.regime === 'USD Dominant' ? 'text-blue-400' :
+                        data.regime === 'USD Zwak' ? 'text-amber-400' : 'text-text-muted'
+                      }`}>{data.regime}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowRegimeDetails(!showRegimeDetails)}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-border text-text-muted hover:text-heading hover:border-border-light transition-colors"
+                  >
+                    {showRegimeDetails ? 'Verberg uitleg' : 'Meer uitleg'}
+                  </button>
+                </div>
               </div>
-              <p className="text-sm text-text-muted leading-relaxed">{data.regimeExplain}</p>
 
-              <div className="mt-4 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                <p className="text-xs text-text-dim leading-relaxed mb-2">
-                  <strong className="text-text-muted">Hoe wordt het regime bepaald?</strong> {data.regimeMethodology}
-                </p>
-              </div>
+              {/* Regime body */}
+              <div className="px-5 sm:px-6 py-4 bg-bg-card">
+                <p className="text-sm text-text-muted leading-relaxed">{data.regimeExplain}</p>
 
-              <div className="mt-3 p-3 rounded-lg bg-accent-glow/10 border border-accent-dim/20">
-                <p className="text-xs text-text-dim leading-relaxed">
-                  <strong className="text-accent-light">High-yield vs safe-haven valuta&apos;s:</strong>{' '}
-                  <em>High-yield</em> valuta&apos;s (AUD, NZD, CAD) hebben hogere rentes en trekken kapitaal aan in goede tijden (Risk-On).
-                  <em> Safe-haven</em> valuta&apos;s (JPY, CHF, USD) worden juist sterker in onzekere tijden (Risk-Off) omdat beleggers veiligheid zoeken.
-                  Het regime vertelt je welke groep nu dominant is.
-                </p>
+                {/* Expandable details */}
+                {showRegimeDetails && (
+                  <div className="mt-4 space-y-3">
+                    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                      <p className="text-xs text-text-dim leading-relaxed">
+                        <strong className="text-text-muted">Hoe wordt het regime bepaald?</strong> {data.regimeMethodology}
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-accent-glow/10 border border-accent-dim/20">
+                      <p className="text-xs text-text-dim leading-relaxed">
+                        <strong className="text-accent-light">High-yield vs safe-haven:</strong>{' '}
+                        <em>High-yield</em> valuta&apos;s (AUD, NZD, CAD) hebben hogere rentes en trekken kapitaal aan in goede tijden (Risk-On).{' '}
+                        <em>Safe-haven</em> valuta&apos;s (JPY, CHF, USD) worden sterker in onzekere tijden (Risk-Off).
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </section>
 
-          {/* ── 1b. INTERMARKET SIGNALS ── */}
+          {/* ════════════════════════════════════════════════════════
+              2. INTERMARKET SIGNALEN + CONCLUSIE
+              ════════════════════════════════════════════════════════ */}
           <section className="mb-8">
-            <h2 className="text-lg font-display font-semibold text-heading mb-2">Intermarket Signalen</h2>
-            <p className="text-xs text-text-muted mb-4">
-              Live marktdata die het forex regime beïnvloedt. Gebruik als bevestiging van je fundamentele bias.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <h2 className="text-lg font-display font-semibold text-heading mb-4">Intermarket Signalen</h2>
+
+            {/* Signal cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-4">
               {data.intermarketSignals?.map(signal => {
                 const isUp = signal.direction === 'up'
                 const isDown = signal.direction === 'down'
                 const dirColor = isUp ? 'text-green-400' : isDown ? 'text-red-400' : 'text-text-dim'
-                const dirArrow = isUp ? '▲' : isDown ? '▼' : '—'
                 const hasData = signal.current !== null
 
                 return (
-                  <div key={signal.key} className="p-4 rounded-xl bg-bg-card border border-border">
-                    {/* Header with live data */}
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold text-heading">{signal.name}</h3>
-                      {hasData && (
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                          isUp ? 'bg-green-500/15 text-green-400' : isDown ? 'bg-red-500/15 text-red-400' : 'bg-white/10 text-text-dim'
-                        }`}>
-                          {dirArrow} {signal.changePct != null ? `${signal.changePct > 0 ? '+' : ''}${signal.changePct}%` : ''}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Live price */}
-                    {hasData && (
-                      <div className="flex items-baseline gap-2 mb-3">
-                        <span className="text-xl font-mono font-semibold text-heading">
+                  <div key={signal.key} className="p-3 rounded-xl bg-bg-card border border-border">
+                    <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1 truncate">{signal.name}</p>
+                    {hasData ? (
+                      <>
+                        <p className="text-lg font-mono font-semibold text-heading leading-tight">
                           {signal.unit === '$' ? '$' : ''}{signal.current}{signal.unit === '%' ? '%' : ''}
-                        </span>
-                        <span className={`text-xs font-mono ${dirColor}`}>
-                          {signal.change != null ? `${signal.change > 0 ? '+' : ''}${signal.change}` : ''}
-                        </span>
-                      </div>
-                    )}
-
-                    {!hasData && (
-                      <div className="mb-3">
-                        <span className="text-xs text-text-dim italic">Data niet beschikbaar</span>
-                      </div>
-                    )}
-
-                    {/* Context */}
-                    <p className="text-xs text-text-muted leading-relaxed mb-2">{signal.context}</p>
-                    <details className="group">
-                      <summary className="text-[11px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
-                        Meer uitleg ▸
-                      </summary>
-                      <div className="mt-2 p-2 rounded bg-white/[0.03]">
-                        <p className="text-[11px] text-text-dim leading-relaxed mb-1">
-                          <strong className="text-text-muted">Hoe lezen:</strong> {signal.howToRead}
                         </p>
-                        <p className="text-[10px] text-accent-light/50 mt-1">{signal.regimeImpact}</p>
-                      </div>
-                    </details>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className={`text-xs font-mono ${dirColor}`}>
+                            {isUp ? '▲' : isDown ? '▼' : '—'} {signal.changePct != null ? `${signal.changePct > 0 ? '+' : ''}${signal.changePct}%` : ''}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-xs text-text-dim italic mt-1">N/A</p>
+                    )}
                   </div>
                 )
               })}
             </div>
+
+            {/* Intermarket conclusion */}
+            {intermarketConclusion && (
+              <div className={`p-4 rounded-xl border ${
+                intermarketConclusion.sentiment === 'risk-off' ? 'bg-red-500/[0.06] border-red-500/20' :
+                intermarketConclusion.sentiment === 'risk-on' ? 'bg-green-500/[0.06] border-green-500/20' :
+                'bg-white/[0.03] border-border'
+              }`}>
+                <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">Conclusie</p>
+                <p className="text-sm text-text-muted leading-relaxed">{intermarketConclusion.text}</p>
+              </div>
+            )}
+
+            {/* Expandable detail per signal */}
+            <details className="mt-3">
+              <summary className="text-[11px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
+                Per signaal uitleg bekijken ▸
+              </summary>
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {data.intermarketSignals?.map(signal => (
+                  <div key={signal.key} className="p-3 rounded-lg bg-white/[0.02] border border-border/50">
+                    <p className="text-xs font-semibold text-heading mb-1">{signal.name}</p>
+                    <p className="text-[11px] text-text-dim leading-relaxed">{signal.howToRead}</p>
+                  </div>
+                ))}
+              </div>
+            </details>
           </section>
 
-          {/* ── 2. TODAY'S EVENTS ── */}
+          {/* ════════════════════════════════════════════════════════
+              3. TRADE FOCUS — De concrete output
+              ════════════════════════════════════════════════════════ */}
+          {tradeFocus.length > 0 && (
+            <section className="mb-8">
+              <h2 className="text-lg font-display font-semibold text-heading mb-2">Trade Focus</h2>
+              <p className="text-xs text-text-muted mb-4">
+                De sterkste fundamentele divergenties van vandaag. Zoek hier je structure breaks.
+              </p>
+              <div className="space-y-3">
+                {tradeFocus.map(tf => (
+                  <div
+                    key={tf.pair}
+                    className={`rounded-xl overflow-hidden border ${
+                      tf.isBullish ? 'border-green-500/30' : tf.isBearish ? 'border-red-500/30' : 'border-border'
+                    }`}
+                  >
+                    {/* Pair header */}
+                    <div className={`px-5 py-3 flex items-center justify-between ${
+                      tf.isBullish ? 'bg-green-500/[0.08]' : tf.isBearish ? 'bg-red-500/[0.08]' : 'bg-white/[0.03]'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg font-display font-bold text-heading">{tf.pair}</span>
+                        <span className={`text-sm font-semibold capitalize ${
+                          tf.isBullish ? 'text-green-400' : tf.isBearish ? 'text-red-400' : 'text-text-dim'
+                        }`}>
+                          {tf.isBullish ? '↑' : tf.isBearish ? '↓' : '→'} {tf.direction}
+                        </span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                          tf.conviction === 'sterk' ? 'bg-accent/15 text-accent-light' : 'bg-white/10 text-text-dim'
+                        }`}>
+                          {tf.conviction}
+                        </span>
+                      </div>
+                      <span className={`text-sm font-mono font-semibold ${
+                        tf.score > 0 ? 'text-green-400' : tf.score < 0 ? 'text-red-400' : 'text-text-dim'
+                      }`}>
+                        {tf.score > 0 ? '+' : ''}{tf.score}
+                      </span>
+                    </div>
+
+                    {/* Action body */}
+                    <div className="px-5 py-4 bg-bg-card">
+                      <p className="text-sm text-heading font-medium mb-2">{tf.action}</p>
+                      <p className="text-xs text-text-dim mb-2">{tf.why}</p>
+                      {tf.eventWarning && (
+                        <div className="p-2.5 rounded-lg bg-amber-500/[0.06] border border-amber-500/20 mt-2">
+                          <p className="text-xs text-amber-400/90">⚠ {tf.eventWarning}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                <p className="text-xs text-text-dim leading-relaxed">
+                  <strong className="text-text-muted">Hoe gebruik je dit?</strong> De fundamentals geven je de richting.
+                  Open je 15min chart, zoek 2 structure breaks in de richting van de bias, en neem de trade.
+                  Als er vandaag high-impact events zijn voor het paar, wacht dan de release af of trade met een kleiner risico.
+                </p>
+              </div>
+            </section>
+          )}
+
+          {/* ════════════════════════════════════════════════════════
+              4. TODAY'S EVENTS
+              ════════════════════════════════════════════════════════ */}
           <section className="mb-8">
             <h2 className="text-lg font-display font-semibold text-heading mb-4 flex items-center gap-2">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
               </svg>
-              Vandaag &amp; Morgen — High Impact Events
+              Vandaag &amp; Morgen — High Impact
             </h2>
             {data.todayEvents.length === 0 ? (
               <div className="p-4 rounded-xl bg-bg-card border border-border text-center">
@@ -311,16 +494,13 @@ export default function DailyBriefingDashboard() {
                       <span className="text-xs font-mono font-bold text-heading">{evt.currency}</span>
                       <span className="text-xs font-mono text-text-dim">{evt.dateFormatted}</span>
                       <span className="text-xs font-mono text-text-dim">{evt.time}</span>
-                      <span className="text-xs px-2 py-0.5 rounded bg-red-500/15 text-red-300 border border-red-500/20">
-                        {evt.impact}
-                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded bg-red-500/15 text-red-300 border border-red-500/20">{evt.impact}</span>
                     </div>
                     <h3 className="text-sm font-semibold text-heading mb-1">{evt.title}</h3>
                     <div className="flex gap-4 text-xs text-text-dim mb-3">
                       {evt.forecast && <span>Verwacht: <strong className="text-text-muted">{evt.forecast}</strong></span>}
                       {evt.previous && <span>Vorig: <strong className="text-text-muted">{evt.previous}</strong></span>}
                     </div>
-                    {/* Context — the real value */}
                     <div className="p-3 rounded-lg bg-accent-glow/20 border border-accent-dim/30">
                       <p className="text-xs text-text-muted leading-relaxed">
                         <strong className="text-accent-light">Context: </strong>{evt.context}
@@ -332,12 +512,13 @@ export default function DailyBriefingDashboard() {
             )}
           </section>
 
-          {/* ── 3. CURRENCY SCORECARD ── */}
+          {/* ════════════════════════════════════════════════════════
+              5. CURRENCY SCORECARD
+              ════════════════════════════════════════════════════════ */}
           <section className="mb-8">
             <h2 className="text-lg font-display font-semibold text-heading mb-2">Currency Scorecard</h2>
             <p className="text-xs text-text-muted mb-4">
-              Ranking op basis van CB-bias en rente vs target. Sterkste bovenaan, zwakste onderaan.
-              Combineer een sterke met een zwakke valuta voor de beste fundamentele setup.
+              Sterkste bovenaan, zwakste onderaan. Combineer sterk + zwak = beste divergentie.
             </p>
             <div className="rounded-xl bg-bg-card border border-border overflow-hidden">
               <div className="overflow-x-auto">
@@ -364,149 +545,88 @@ export default function DailyBriefingDashboard() {
                             <span className="text-sm font-bold text-heading">{ccy.currency}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3">
-                          <BiasTag bias={ccy.bias} />
-                        </td>
+                        <td className="px-4 py-3"><BiasTag bias={ccy.bias} /></td>
                         <td className="px-4 py-3 text-sm font-mono text-text-muted hidden sm:table-cell">
                           {ccy.rate != null ? `${ccy.rate}%` : '—'}
                         </td>
-                        <td className="px-4 py-3">
-                          <ScoreBar score={ccy.score} />
-                        </td>
-                        <td className="px-4 py-3 text-xs text-text-dim hidden md:table-cell max-w-[200px]">
-                          {ccy.reasons[0] || '—'}
-                        </td>
+                        <td className="px-4 py-3"><ScoreBar score={ccy.score} /></td>
+                        <td className="px-4 py-3 text-xs text-text-dim hidden md:table-cell max-w-[200px]">{ccy.reasons[0] || '—'}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             </div>
-            <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-              <p className="text-xs text-text-dim leading-relaxed">
-                <strong className="text-text-muted">Hoe lees je dit?</strong> De score is gebaseerd op centrale bank beleid.
-                Een hoge score betekent fundamenteel sterke valuta (hawkish beleid). Let op: een extreem sterke valuta kan technisch overbought zijn —
-                de fundamentals geven de richting, je technische analyse bepaalt de timing en entry.
+          </section>
+
+          {/* ════════════════════════════════════════════════════════
+              6. PAIR BIAS TABLE (collapsed by default)
+              ════════════════════════════════════════════════════════ */}
+          <section className="mb-8">
+            <details>
+              <summary className="text-lg font-display font-semibold text-heading mb-2 cursor-pointer hover:text-accent-light transition-colors">
+                Alle Pair Biases ▸
+              </summary>
+              <p className="text-xs text-text-muted mb-4 mt-2">
+                Fundamentele richting per paar. Gesorteerd op sterkste divergentie.
               </p>
-            </div>
-          </section>
-
-          {/* ── 4. PAIR BIAS TABLE ── */}
-          <section className="mb-8">
-            <h2 className="text-lg font-display font-semibold text-heading mb-2">Pair Bias</h2>
-            <p className="text-xs text-text-muted mb-4">
-              Fundamentele richting per paar. Gesorteerd op sterkste divergentie.
-              Zoek technische bevestiging op je chart voordat je een positie inneemt.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {data.pairBiases.map(pair => (
-                <div
-                  key={pair.pair}
-                  className={`p-4 rounded-xl bg-bg-card border transition-colors ${
-                    pair.conviction === 'sterk' ? 'border-accent/40' :
-                    pair.conviction === 'matig' ? 'border-border-light' : 'border-border'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-bold text-heading">{pair.pair}</span>
-                    <DirectionBadge direction={pair.direction} conviction={pair.conviction} />
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-text-dim mb-2">
-                    <span>Score: <strong className={`font-mono ${pair.score > 0 ? 'text-green-400' : pair.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>{pair.score > 0 ? '+' : ''}{pair.score}</strong></span>
-                    {pair.rateDiff !== null && (
-                      <span>Rente diff: <strong className="text-text-muted font-mono">{pair.rateDiff > 0 ? '+' : ''}{pair.rateDiff}%</strong></span>
-                    )}
-                  </div>
-                  <p className="text-xs text-text-dim leading-relaxed">{pair.reason}</p>
-                  <div className="mt-2 flex gap-2">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.04] text-text-dim">{pair.base}: {pair.baseBias || 'n/a'}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.04] text-text-dim">{pair.quote}: {pair.quoteBias || 'n/a'}</span>
-                  </div>
-                  {/* Link to FX Analyse for deeper analysis */}
-                  <Link
-                    href={`/tools/fx-analyse`}
-                    className="mt-2 inline-flex items-center gap-1 text-[10px] text-accent-light/60 hover:text-accent-light transition-colors"
-                  >
-                    Verdiep je in dit paar →
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* ── 5. HOW TO USE ── */}
-          <section className="mb-8">
-            <div className="p-5 sm:p-6 rounded-xl bg-accent-glow/20 border border-accent-dim/30">
-              <h2 className="text-base font-display font-semibold text-heading mb-3">Hoe gebruik je deze briefing?</h2>
-              <div className="space-y-2">
-                {[
-                  { step: '1', text: 'Check het macro regime — trade met het thema, niet ertegen.' },
-                  { step: '2', text: 'Bekijk de events van vandaag — weet wat de markt kan bewegen en bereid scenario\'s voor.' },
-                  { step: '3', text: 'Kijk naar de currency scorecard — welke valuta\'s zijn sterk/zwak en waarom?' },
-                  { step: '4', text: 'Kies je paren uit de pair bias tabel — sterkste vs zwakste = beste divergentie.' },
-                  { step: '5', text: 'Open je chart en zoek technische bevestiging — de fundamentals geven richting, technicals geven timing.' },
-                ].map(item => (
-                  <div key={item.step} className="flex items-start gap-2.5">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-accent/20 text-accent-light text-[10px] font-bold flex items-center justify-center mt-0.5">
-                      {item.step}
-                    </span>
-                    <p className="text-xs text-text-muted leading-relaxed">{item.text}</p>
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {data.pairBiases.map(pair => {
+                  const isBull = pair.direction.includes('bullish')
+                  const isBear = pair.direction.includes('bearish')
+                  return (
+                    <div key={pair.pair} className={`p-4 rounded-xl bg-bg-card border transition-colors ${
+                      pair.conviction === 'sterk' ? 'border-accent/40' : pair.conviction === 'matig' ? 'border-border-light' : 'border-border'
+                    }`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-bold text-heading">{pair.pair}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-base font-bold ${isBull ? 'text-green-400' : isBear ? 'text-red-400' : 'text-text-dim'}`}>
+                            {isBull ? '↑' : isBear ? '↓' : '→'}
+                          </span>
+                          <span className={`text-sm font-medium capitalize ${isBull ? 'text-green-400' : isBear ? 'text-red-400' : 'text-text-dim'}`}>
+                            {pair.direction}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-text-dim mb-2">
+                        <span>Score: <strong className={`font-mono ${pair.score > 0 ? 'text-green-400' : pair.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>{pair.score > 0 ? '+' : ''}{pair.score}</strong></span>
+                        {pair.rateDiff !== null && (
+                          <span>Rente: <strong className="text-text-muted font-mono">{pair.rateDiff > 0 ? '+' : ''}{pair.rateDiff}%</strong></span>
+                        )}
+                      </div>
+                      <p className="text-xs text-text-dim leading-relaxed">{pair.reason}</p>
+                    </div>
+                  )
+                })}
               </div>
-            </div>
+            </details>
           </section>
 
           {/* ── LINKS ── */}
           <div className="flex flex-wrap gap-3 mb-6">
-            <Link
-              href="/tools/fx-analyse"
-              className="px-4 py-2.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading hover:border-border-light transition-colors"
-            >
+            <Link href="/tools/fx-analyse" className="px-4 py-2.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading hover:border-border-light transition-colors">
               Macro Fundamentals →
               <span className="block text-[10px] text-text-dim">Leer hoe valutaparen werken</span>
             </Link>
-            <Link
-              href="/tools/kalender"
-              className="px-4 py-2.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading hover:border-border-light transition-colors"
-            >
+            <Link href="/tools/kalender" className="px-4 py-2.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading hover:border-border-light transition-colors">
               Economische Kalender →
               <span className="block text-[10px] text-text-dim">Volledige eventkalender</span>
             </Link>
-            <Link
-              href="/tools/rente"
-              className="px-4 py-2.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading hover:border-border-light transition-colors"
-            >
+            <Link href="/tools/rente" className="px-4 py-2.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading hover:border-border-light transition-colors">
               Rentetarieven →
               <span className="block text-[10px] text-text-dim">Alle centrale bank rentes</span>
             </Link>
           </div>
 
-          {/* Disclaimer */}
           <div className="p-4 rounded-xl border border-border bg-bg-card/30 text-center">
             <p className="text-xs text-text-dim leading-relaxed">
-              Deze briefing is puur educatief en geen financieel advies. Data wordt automatisch opgehaald van
-              economische kalenders en je eigen CB-rente database. Gebruik dit als framework, niet als handelssignaal.
+              Deze briefing is puur educatief en geen financieel advies. Data wordt automatisch opgehaald.
+              Fundamentals geven de richting — je technische analyse (structure breaks) bepaalt de timing en entry.
             </p>
           </div>
         </>
       )}
     </div>
-  )
-}
-
-// ─── Sub-components ─────────────────────────────────────────
-function BiasTag({ bias }: { bias: string }) {
-  if (!bias) return <span className="text-xs text-text-dim">—</span>
-  const b = bias.toLowerCase()
-  const isHawkish = b.includes('verkrappend')
-  const isDovish = b.includes('verruimend')
-  const color = isHawkish ? 'bg-green-500/15 text-green-400 border-green-500/20'
-    : isDovish ? 'bg-red-500/15 text-red-400 border-red-500/20'
-    : 'bg-white/10 text-text-muted border-border'
-  return (
-    <span className={`text-[11px] px-2 py-0.5 rounded border ${color} whitespace-nowrap`}>
-      {bias}
-    </span>
   )
 }
