@@ -11,6 +11,7 @@ interface CBData {
   last_move: string
   next_meeting: string
   summary: string
+  source?: string
 }
 
 interface CalendarEvent {
@@ -29,6 +30,12 @@ interface IndicatorInfo {
   surprise: string
 }
 
+interface SourceInfo {
+  name: string
+  url: string
+  description: string
+}
+
 interface AnalysisData {
   pair: string
   base: string
@@ -40,6 +47,8 @@ interface AnalysisData {
   rateAdvantage: string
   calendar: CalendarEvent[]
   indicators: Record<string, IndicatorInfo>
+  sources?: Record<string, SourceInfo>
+  cbDataUpdated?: string
   generatedAt: string
   error?: string
 }
@@ -56,11 +65,12 @@ export default function FxAnalyseDashboard() {
   const [error, setError] = useState<string | null>(null)
   const [expandedIndicators, setExpandedIndicators] = useState<Set<string>>(new Set())
 
-  const fetchAnalysis = useCallback(async (pair: string) => {
+  const fetchAnalysis = useCallback(async (pair: string, refresh = false) => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/analyse?pair=${encodeURIComponent(pair)}`)
+      const url = `/api/analyse?pair=${encodeURIComponent(pair)}${refresh ? '&refresh=1' : ''}`
+      const res = await fetch(url)
       const json = await res.json()
       if (!res.ok || json.error) throw new Error(json.error || `API error: ${res.status}`)
       setData(json)
@@ -96,7 +106,7 @@ export default function FxAnalyseDashboard() {
         </div>
 
         {/* Pair selector */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
           {PAIRS.map(pair => (
             <button
               key={pair}
@@ -111,6 +121,24 @@ export default function FxAnalyseDashboard() {
             </button>
           ))}
         </div>
+
+        {/* Refresh + last updated */}
+        {data && !loading && (
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-8 text-xs text-text-dim">
+            <button
+              onClick={() => fetchAnalysis(selectedPair, true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-text-muted hover:text-heading hover:border-border-light transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+              Ververs
+            </button>
+            <span>Gegenereerd: {new Date(data.generatedAt).toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+            {data.cbDataUpdated && <span>CB data: {data.cbDataUpdated}</span>}
+          </div>
+        )}
 
         {!data && !loading && !error && (
           <div className="text-center py-16">
@@ -211,10 +239,21 @@ export default function FxAnalyseDashboard() {
 
             {/* 3. Economic Calendar */}
             <Section number={3} title="Economische Kalender (deze week)">
-              <p className="text-sm text-text-muted mb-4 leading-relaxed">
-                Hieronder staan de belangrijkste datareleases deze week voor {data.base} en {data.quote}.
-                Elk cijfer kan de verwachtingen over rentebeleid veranderen — en daarmee de koers.
-              </p>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-text-muted leading-relaxed">
+                  Hieronder staan de belangrijkste datareleases deze week voor {data.base} en {data.quote}.
+                  Elk cijfer kan de verwachtingen over rentebeleid veranderen — en daarmee de koers.
+                </p>
+                {data.sources?.calendar && (
+                  <a href={data.sources.calendar.url} target="_blank" rel="noopener noreferrer"
+                    className="shrink-0 ml-3 text-[10px] text-accent-light/60 hover:text-accent-light transition-colors flex items-center gap-1">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    ForexFactory
+                  </a>
+                )}
+              </div>
 
               {data.calendar.length === 0 ? (
                 <p className="text-sm text-text-dim italic">Geen high-impact events gevonden voor deze week.</p>
@@ -365,8 +404,29 @@ export default function FxAnalyseDashboard() {
               </div>
             </Section>
 
+            {/* Sources */}
+            {data.sources && (
+              <div className="mt-8 p-4 rounded-lg border border-border bg-bg-card/30">
+                <h3 className="text-xs font-semibold text-text-muted mb-3">Bronnen</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {Object.values(data.sources).map((src, i) => (
+                    <a key={i} href={src.url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-start gap-2 p-2.5 rounded-lg bg-white/[0.02] border border-border/50 hover:border-border-light transition-colors group">
+                      <svg className="w-3.5 h-3.5 mt-0.5 text-accent-light/50 group-hover:text-accent-light shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                      <div>
+                        <p className="text-xs font-medium text-text-muted group-hover:text-heading transition-colors">{src.name}</p>
+                        <p className="text-[10px] text-text-dim leading-relaxed mt-0.5">{src.description}</p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Disclaimer */}
-            <div className="mt-8 p-4 rounded-lg border border-border bg-bg-card/30 text-center">
+            <div className="mt-4 p-4 rounded-lg border border-border bg-bg-card/30 text-center">
               <p className="text-xs text-text-dim leading-relaxed">
                 Deze tool is puur educatief en geen financieel advies.
                 Centrale bank data en indicatoren worden periodiek bijgewerkt.
@@ -411,6 +471,15 @@ function CBCard({ currency, cb }: { currency: string; cb: CBData }) {
         <p>Laatste actie: <span className="text-text-muted">{cb.last_move}</span></p>
         <p>Volgende vergadering: <span className="text-text-muted">{cb.next_meeting}</span></p>
       </div>
+      {cb.source && (
+        <a href={cb.source} target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 mt-3 text-[10px] text-accent-light/70 hover:text-accent-light transition-colors">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+          Bron: {cb.bank}
+        </a>
+      )}
     </div>
   )
 }

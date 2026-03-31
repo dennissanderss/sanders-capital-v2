@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   const body = await req.json()
   const { action, table, data, id } = body
 
-  const allowedTables = ['articles', 'kennisbank_items', 'kennisbank_categories', 'profiles']
+  const allowedTables = ['articles', 'kennisbank_items', 'kennisbank_categories', 'profiles', 'tool_settings']
   if (!allowedTables.includes(table)) {
     return NextResponse.json({ error: 'Invalid table' }, { status: 400 })
   }

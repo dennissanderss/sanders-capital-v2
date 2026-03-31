@@ -8,102 +8,120 @@ from datetime import datetime, date
 
 # ─── Central Bank Profiles ──────────────────────────────────
 # Updated periodically — these reflect the current policy stance
+# Last updated: 2026-03-31
+CB_DATA_UPDATED = "31 maart 2026"
+
 CENTRAL_BANKS = {
     "USD": {
         "bank": "Federal Reserve (Fed)",
-        "rate": 4.50,
-        "stance": "restrictief",
+        "rate": 3.75,
+        "stance": "gematigd restrictief",
         "bias": "afwachtend",
-        "last_move": "25bp knip (maart 2025)",
-        "next_meeting": "7 mei 2025",
+        "last_move": "25bp knip (januari 2026)",
+        "next_meeting": "6 mei 2026",
+        "source": "https://www.federalreserve.gov/monetarypolicy.htm",
         "summary": (
-            "De Fed houdt de rente hoog om inflatie terug te brengen naar 2%. "
-            "De arbeidsmarkt blijft sterk. De Fed wil eerst meer bewijs zien dat "
-            "inflatie duurzaam daalt voordat ze verder knippen."
+            "De Fed heeft de rente geleidelijk verlaagd naar 3.75% na meerdere knips in 2025. "
+            "Inflatie is dichter bij de 2% doelstelling maar kerninflatie blijft hardnekkig. "
+            "De Fed houdt een pauze sinds januari en wacht op meer data voordat ze verder knippen."
         ),
     },
     "EUR": {
         "bank": "Europese Centrale Bank (ECB)",
-        "rate": 2.65,
-        "stance": "gematigd restrictief",
-        "bias": "voorzichtig verruimend",
-        "last_move": "25bp knip (maart 2025)",
-        "next_meeting": "17 april 2025",
+        "rate": 1.90,
+        "stance": "neutraal",
+        "bias": "afwachtend",
+        "last_move": "25bp knip (januari 2026)",
+        "next_meeting": "16 april 2026",
+        "source": "https://www.ecb.europa.eu/mopo/decisions/html/index.en.html",
         "summary": (
-            "De ECB heeft al meerdere keren geknipt. De economie in de eurozone groeit langzaam. "
-            "Inflatie is dichter bij de 2% doelstelling. De ECB beweegt richting neutraal beleid."
+            "De ECB heeft de depositorente verlaagd naar 1.90% en nadert het neutrale niveau. "
+            "De economie in de eurozone toont voorzichtig herstel maar de groei blijft bescheiden. "
+            "De ECB houdt een pauze om het effect van eerdere knips te evalueren."
         ),
     },
     "GBP": {
         "bank": "Bank of England (BoE)",
-        "rate": 4.50,
-        "stance": "restrictief",
-        "bias": "voorzichtig",
-        "last_move": "25bp knip (februari 2025)",
-        "next_meeting": "8 mei 2025",
+        "rate": 3.75,
+        "stance": "gematigd restrictief",
+        "bias": "voorzichtig verruimend",
+        "last_move": "25bp knip (februari 2026)",
+        "next_meeting": "7 mei 2026",
+        "source": "https://www.bankofengland.co.uk/monetary-policy",
         "summary": (
-            "De BoE is voorzichtig met knippen. Inflatie in het VK is hardnekkiger dan in de VS of EU. "
-            "Looninflatie blijft hoog. De BoE knipt langzamer dan de ECB."
+            "De BoE heeft langzamer geknipt dan de ECB maar heeft de rente nu verlaagd naar 3.75%. "
+            "Looninflatie in het VK is afgenomen maar blijft boven het wenselijke niveau. "
+            "De BoE signaleert verdere geleidelijke knips als de data het toelaat."
         ),
     },
     "JPY": {
         "bank": "Bank of Japan (BoJ)",
-        "rate": 0.50,
-        "stance": "licht restrictief",
+        "rate": 1.00,
+        "stance": "gematigd restrictief",
         "bias": "voorzichtig verkrappend",
-        "last_move": "25bp verhoging (januari 2025)",
-        "next_meeting": "1 mei 2025",
+        "last_move": "25bp verhoging (januari 2026)",
+        "next_meeting": "28 april 2026",
+        "source": "https://www.boj.or.jp/en/mopo/index.htm",
         "summary": (
-            "De BoJ is de enige grote centrale bank die de rente verhoogt. Na jaren van negatieve rente "
-            "is Japan eindelijk begonnen te normaliseren. Dit maakt de yen fundamenteel sterker."
+            "De BoJ heeft het normalisatietraject voortgezet en de rente verhoogd naar 1.00%. "
+            "De Japanse inflatie blijft boven de 2% doelstelling en loongroei is solide. "
+            "De BoJ overweegt verdere verhogingen maar is voorzichtig vanwege de sterke yen."
         ),
     },
     "AUD": {
         "bank": "Reserve Bank of Australia (RBA)",
-        "rate": 4.10,
-        "stance": "restrictief",
-        "bias": "afwachtend",
-        "last_move": "25bp knip (februari 2025)",
-        "next_meeting": "20 mei 2025",
+        "rate": 3.35,
+        "stance": "gematigd restrictief",
+        "bias": "voorzichtig verruimend",
+        "last_move": "25bp knip (februari 2026)",
+        "next_meeting": "5 mei 2026",
+        "source": "https://www.rba.gov.au/monetary-policy/",
         "summary": (
-            "De RBA is begonnen met knippen maar blijft voorzichtig. De Australische economie is "
-            "gevoelig voor China's groei en grondstofprijzen. Inflatie daalt geleidelijk."
+            "De RBA heeft de rente geleidelijk verlaagd naar 3.35% na meerdere knips. "
+            "De Australische economie vertraagt door zwakkere Chinese groei en lagere grondstofprijzen. "
+            "Inflatie is aanzienlijk gedaald en de RBA staat open voor verdere verruiming."
         ),
     },
     "NZD": {
         "bank": "Reserve Bank of New Zealand (RBNZ)",
-        "rate": 3.75,
-        "stance": "gematigd restrictief",
-        "bias": "verruimend",
-        "last_move": "50bp knip (februari 2025)",
-        "next_meeting": "14 mei 2025",
+        "rate": 2.75,
+        "stance": "neutraal",
+        "bias": "afwachtend",
+        "last_move": "25bp knip (februari 2026)",
+        "next_meeting": "13 mei 2026",
+        "source": "https://www.rbnz.govt.nz/monetary-policy",
         "summary": (
-            "De RBNZ knipt agressiever dan andere centrale banken. De economie van Nieuw-Zeeland "
-            "is klein en open, gevoelig voor melkprijzen en de Chinese vraag."
+            "De RBNZ heeft agressief geknipt en de rente verlaagd naar 2.75%. "
+            "De economie van Nieuw-Zeeland herstelt langzaam na een periode van zwakke groei. "
+            "De RBNZ nadert het neutrale niveau en vertraagt het tempo van knips."
         ),
     },
     "CAD": {
         "bank": "Bank of Canada (BoC)",
-        "rate": 2.75,
+        "rate": 2.25,
         "stance": "neutraal",
-        "bias": "verruimend",
-        "last_move": "25bp knip (maart 2025)",
-        "next_meeting": "16 april 2025",
+        "bias": "afwachtend",
+        "last_move": "25bp knip (december 2025)",
+        "next_meeting": "15 april 2026",
+        "source": "https://www.bankofcanada.ca/core-functions/monetary-policy/",
         "summary": (
-            "De BoC heeft al flink geknipt. De Canadese economie is sterk afhankelijk van olie "
-            "en de VS als handelspartner. Inflatie is grotendeels onder controle."
+            "De BoC heeft de rente verlaagd naar 2.25% en bevindt zich rond het neutrale niveau. "
+            "De Canadese economie wordt beïnvloed door lagere olieprijzen en onzekerheid over handelsbeleid met de VS. "
+            "De BoC houdt een pauze en evalueert de impact van eerdere verruiming."
         ),
     },
     "CHF": {
         "bank": "Zwitserse Nationale Bank (SNB)",
-        "rate": 0.25,
+        "rate": 0.00,
         "stance": "neutraal",
-        "bias": "verruimend",
-        "last_move": "25bp knip (maart 2025)",
-        "next_meeting": "19 juni 2025",
+        "bias": "afwachtend",
+        "last_move": "25bp knip (juni 2025)",
+        "next_meeting": "18 juni 2026",
+        "source": "https://www.snb.ch/en/iabout/monpol",
         "summary": (
-            "De SNB heeft de rente agressief verlaagd. Zwitserland heeft lage inflatie. "
-            "De frank is traditioneel een veilige haven — sterk bij onzekerheid."
+            "De SNB heeft de rente teruggebracht naar 0.00% en zit op de ondergrens. "
+            "Zwitserland kampt met zeer lage inflatie en een sterke frank die de export remt. "
+            "De SNB houdt de rente stabiel en intervenieert indien nodig op de valutamarkt."
         ),
     },
 }
@@ -388,6 +406,24 @@ def get_pair_analysis_data(pair):
     rate_diff = base_cb["rate"] - quote_cb["rate"]
     rate_advantage = base if rate_diff > 0 else quote if rate_diff < 0 else "geen"
 
+    sources = {
+        "calendar": {
+            "name": "ForexFactory / FairEconomy",
+            "url": "https://www.forexfactory.com/calendar",
+            "description": "Economische kalender met high-impact events, verwachtingen en vorige waarden.",
+        },
+        "baseCB": {
+            "name": base_cb["bank"],
+            "url": base_cb.get("source", ""),
+            "description": f"Officieel monetair beleid en rentebeslissingen van de {base_cb['bank']}.",
+        },
+        "quoteCB": {
+            "name": quote_cb["bank"],
+            "url": quote_cb.get("source", ""),
+            "description": f"Officieel monetair beleid en rentebeslissingen van de {quote_cb['bank']}.",
+        },
+    }
+
     return {
         "pair": f"{base}/{quote}",
         "base": base,
@@ -399,5 +435,7 @@ def get_pair_analysis_data(pair):
         "rateAdvantage": rate_advantage,
         "calendar": calendar,
         "indicators": INDICATOR_EDUCATION,
+        "sources": sources,
+        "cbDataUpdated": CB_DATA_UPDATED,
         "generatedAt": datetime.now().isoformat(),
     }

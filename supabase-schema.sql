@@ -117,6 +117,38 @@ create policy "Admins can do everything with kennisbank"
     exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
   );
 
+-- 4. TOOL SETTINGS TABLE
+create table public.tool_settings (
+  id uuid default gen_random_uuid() primary key,
+  slug text unique not null,
+  name text not null,
+  is_premium boolean default false,
+  visible boolean default true,
+  created_at timestamp with time zone default now()
+);
+
+-- Tool settings RLS
+alter table public.tool_settings enable row level security;
+
+create policy "Anyone can read tool settings"
+  on public.tool_settings for select
+  using (true);
+
+create policy "Admins can manage tool settings"
+  on public.tool_settings for all
+  using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
+-- Seed tool settings
+insert into public.tool_settings (slug, name, is_premium, visible) values
+('fx-selector', 'FX Pair Selector', true, true),
+('fx-analyse', 'Fundamental FX Analyse', true, true),
+('marktoverzicht', 'Marktoverzicht', false, true),
+('calculator', 'Position Size Calculator', false, true),
+('kalender', 'Economische Kalender', false, true),
+('rente', 'Rentetarieven', false, true);
+
 -- ============================================
 -- SEED DATA
 -- ============================================

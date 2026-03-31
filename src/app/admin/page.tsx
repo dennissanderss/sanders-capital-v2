@@ -54,6 +54,14 @@ interface Profile {
   created_at: string
 }
 
+interface ToolSetting {
+  id: string
+  slug: string
+  name: string
+  is_premium: boolean
+  visible: boolean
+}
+
 const tagOptions = ['Module 1', 'Module 2', 'Module 3', 'Marktanalyse', 'Psychologie', 'Risicomanagement', 'Strategie', 'Data']
 
 const iconOptions = [
@@ -95,11 +103,12 @@ function getFileIcon(name: string) {
 }
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<'articles' | 'kennisbank' | 'categories' | 'users'>('articles')
+  const [tab, setTab] = useState<'articles' | 'kennisbank' | 'categories' | 'users' | 'tools'>('articles')
   const [articles, setArticles] = useState<Article[]>([])
   const [kennisbankItems, setKennisbankItems] = useState<KennisbankItem[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [users, setUsers] = useState<Profile[]>([])
+  const [tools, setTools] = useState<ToolSetting[]>([])
   const [editing, setEditing] = useState<Article | null>(null)
   const [editingKb, setEditingKb] = useState<KennisbankItem | null>(null)
   const [editingCat, setEditingCat] = useState<Category | null>(null)
@@ -137,17 +146,19 @@ export default function AdminPage() {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
     if (profile?.role !== 'admin') { router.push('/dashboard'); return }
 
-    const [{ data: arts }, { data: kbs }, { data: cats }, { data: profs }] = await Promise.all([
+    const [{ data: arts }, { data: kbs }, { data: cats }, { data: profs }, { data: tls }] = await Promise.all([
       supabase.from('articles').select('*').order('created_at', { ascending: false }),
       supabase.from('kennisbank_items').select('*').order('category').order('order_index'),
       supabase.from('kennisbank_categories').select('*').order('order_index'),
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+      supabase.from('tool_settings').select('*').order('created_at'),
     ])
 
     if (arts) setArticles(arts)
     if (kbs) setKennisbankItems(kbs)
     if (cats) setCategories(cats)
     if (profs) setUsers(profs)
+    if (tls) setTools(tls)
     setLoading(false)
   }, [supabase, router])
 
@@ -424,7 +435,7 @@ export default function AdminPage() {
       <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
         <h1 className="text-3xl font-display font-semibold text-heading">Admin Panel</h1>
         <div className="flex gap-2 flex-wrap">
-          {(['articles', 'kennisbank', 'categories', 'users'] as const).map((t) => (
+          {(['articles', 'kennisbank', 'categories', 'users', 'tools'] as const).map((t) => (
             <button
               key={t}
               onClick={() => { setTab(t); setEditing(null); setEditingKb(null); setEditingCat(null) }}
@@ -432,7 +443,7 @@ export default function AdminPage() {
                 tab === t ? 'bg-accent text-white' : 'bg-bg-card border border-border text-text-muted hover:text-heading'
               }`}
             >
-              {t === 'articles' ? 'Artikelen' : t === 'kennisbank' ? 'Kennisbank' : t === 'categories' ? 'Categorieën' : 'Gebruikers'}
+              {t === 'articles' ? 'Artikelen' : t === 'kennisbank' ? 'Kennisbank' : t === 'categories' ? 'Categorieën' : t === 'users' ? 'Gebruikers' : 'Tools'}
             </button>
           ))}
         </div>
@@ -894,6 +905,84 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
+        </>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════
+          TOOLS TAB
+      ═══════════════════════════════════════════════════════ */}
+      {tab === 'tools' && (
+        <>
+          <div className="mb-6">
+            <p className="text-sm text-text-muted">Bepaal welke tools premium zijn. Free gebruikers zien een lock-scherm bij premium tools.</p>
+            <div className="flex items-center gap-4 mt-3 text-xs">
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-text-dim" />Gratis: {tools.filter(t => !t.is_premium).length}</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gold" />Premium: {tools.filter(t => t.is_premium).length}</span>
+              <span className="text-text-dim">Totaal: {tools.length}</span>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {tools.map((tool) => (
+              <div key={tool.id} className="flex items-center justify-between p-4 rounded-xl glass">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-heading">{tool.name}</span>
+                      <span className="text-xs text-text-dim">/{tool.slug}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0 ml-4">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await adminWrite('update', 'tool_settings', { is_premium: !tool.is_premium }, tool.id)
+                        setTools((prev) => prev.map((t) => t.id === tool.id ? { ...t, is_premium: !t.is_premium } : t))
+                      } catch (e) {
+                        alert('Fout: ' + (e as Error).message)
+                      }
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                      tool.is_premium
+                        ? 'border-gold/40 bg-gold-dim text-gold hover:bg-gold/20'
+                        : 'border-border text-text-muted hover:text-heading'
+                    }`}
+                  >
+                    {tool.is_premium ? (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                        Premium
+                      </>
+                    ) : 'Gratis'}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await adminWrite('update', 'tool_settings', { visible: !tool.visible }, tool.id)
+                        setTools((prev) => prev.map((t) => t.id === tool.id ? { ...t, visible: !t.visible } : t))
+                      } catch (e) {
+                        alert('Fout: ' + (e as Error).message)
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-lg border text-xs transition-colors ${
+                      tool.visible
+                        ? 'border-green-500/30 text-green-400 hover:bg-green-500/10'
+                        : 'border-border text-text-dim hover:text-text-muted'
+                    }`}
+                  >
+                    {tool.visible ? 'Zichtbaar' : 'Verborgen'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {tools.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-sm text-text-dim">Geen tools gevonden. Voer de tool_settings SQL uit in Supabase.</p>
+            </div>
+          )}
         </>
       )}
     </div>
