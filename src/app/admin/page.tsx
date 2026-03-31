@@ -62,6 +62,21 @@ interface ToolSetting {
   visible: boolean
 }
 
+interface CentralBankRate {
+  id: string
+  currency: string
+  country: string
+  bank: string
+  rate: number | null
+  target: number | null
+  flag: string
+  bias: string
+  last_move: string
+  next_meeting: string
+  source_url: string
+  updated_at: string
+}
+
 const tagOptions = ['Module 1', 'Module 2', 'Module 3', 'Marktanalyse', 'Psychologie', 'Risicomanagement', 'Strategie', 'Data']
 
 const iconOptions = [
@@ -103,12 +118,14 @@ function getFileIcon(name: string) {
 }
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<'articles' | 'kennisbank' | 'categories' | 'users' | 'tools'>('articles')
+  const [tab, setTab] = useState<'articles' | 'kennisbank' | 'categories' | 'users' | 'tools' | 'rentes'>('articles')
   const [articles, setArticles] = useState<Article[]>([])
   const [kennisbankItems, setKennisbankItems] = useState<KennisbankItem[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [users, setUsers] = useState<Profile[]>([])
   const [tools, setTools] = useState<ToolSetting[]>([])
+  const [cbRates, setCbRates] = useState<CentralBankRate[]>([])
+  const [editingCb, setEditingCb] = useState<CentralBankRate | null>(null)
   const [editing, setEditing] = useState<Article | null>(null)
   const [editingKb, setEditingKb] = useState<KennisbankItem | null>(null)
   const [editingCat, setEditingCat] = useState<Category | null>(null)
@@ -146,12 +163,13 @@ export default function AdminPage() {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
     if (profile?.role !== 'admin') { router.push('/dashboard'); return }
 
-    const [{ data: arts }, { data: kbs }, { data: cats }, { data: profs }, { data: tls }] = await Promise.all([
+    const [{ data: arts }, { data: kbs }, { data: cats }, { data: profs }, { data: tls }, { data: cbr }] = await Promise.all([
       supabase.from('articles').select('*').order('created_at', { ascending: false }),
       supabase.from('kennisbank_items').select('*').order('category').order('order_index'),
       supabase.from('kennisbank_categories').select('*').order('order_index'),
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
       supabase.from('tool_settings').select('*').order('created_at'),
+      supabase.from('central_bank_rates').select('*').order('currency'),
     ])
 
     if (arts) setArticles(arts)
@@ -159,6 +177,7 @@ export default function AdminPage() {
     if (cats) setCategories(cats)
     if (profs) setUsers(profs)
     if (tls) setTools(tls)
+    if (cbr) setCbRates(cbr)
     setLoading(false)
   }, [supabase, router])
 
@@ -435,15 +454,15 @@ export default function AdminPage() {
       <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
         <h1 className="text-3xl font-display font-semibold text-heading">Admin Panel</h1>
         <div className="flex gap-2 flex-wrap">
-          {(['articles', 'kennisbank', 'categories', 'users', 'tools'] as const).map((t) => (
+          {(['articles', 'kennisbank', 'categories', 'users', 'tools', 'rentes'] as const).map((t) => (
             <button
               key={t}
-              onClick={() => { setTab(t); setEditing(null); setEditingKb(null); setEditingCat(null) }}
+              onClick={() => { setTab(t); setEditing(null); setEditingKb(null); setEditingCat(null); setEditingCb(null) }}
               className={`px-4 py-2 rounded-lg text-sm transition-colors ${
                 tab === t ? 'bg-accent text-white' : 'bg-bg-card border border-border text-text-muted hover:text-heading'
               }`}
             >
-              {t === 'articles' ? 'Artikelen' : t === 'kennisbank' ? 'Kennisbank' : t === 'categories' ? 'Categorieën' : t === 'users' ? 'Gebruikers' : 'Tools'}
+              {t === 'articles' ? 'Artikelen' : t === 'kennisbank' ? 'Kennisbank' : t === 'categories' ? 'Categorieën' : t === 'users' ? 'Gebruikers' : t === 'tools' ? 'Tools' : 'Rentes'}
             </button>
           ))}
         </div>
@@ -982,6 +1001,242 @@ export default function AdminPage() {
             <div className="text-center py-12">
               <p className="text-sm text-text-dim">Geen tools gevonden. Voer de tool_settings SQL uit in Supabase.</p>
             </div>
+          )}
+        </>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════
+          RENTES TAB
+      ═══════════════════════════════════════════════════════ */}
+      {tab === 'rentes' && (
+        <>
+          {editingCb ? (
+            /* ── Edit form ── */
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-heading">
+                  {editingCb.currency ? `${editingCb.currency} — ${editingCb.bank}` : 'Nieuwe centrale bank'}
+                </h2>
+                <button onClick={() => setEditingCb(null)} className="text-sm text-text-muted hover:text-heading">Annuleren</button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Valuta code</label>
+                  <input value={editingCb.currency} onChange={e => setEditingCb({ ...editingCb, currency: e.target.value.toUpperCase() })}
+                    className="w-full px-3 py-2 rounded-lg bg-bg border border-border text-heading text-sm" placeholder="USD" />
+                </div>
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Land</label>
+                  <input value={editingCb.country} onChange={e => setEditingCb({ ...editingCb, country: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-bg border border-border text-heading text-sm" placeholder="Verenigde Staten" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs text-text-muted mb-1">Centrale bank naam</label>
+                  <input value={editingCb.bank} onChange={e => setEditingCb({ ...editingCb, bank: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-bg border border-border text-heading text-sm" placeholder="Federal Reserve (Fed)" />
+                </div>
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Huidige rente (%)</label>
+                  <input type="number" step="0.01" value={editingCb.rate ?? ''} onChange={e => setEditingCb({ ...editingCb, rate: e.target.value ? Number(e.target.value) : null })}
+                    className="w-full px-3 py-2 rounded-lg bg-bg border border-border text-heading text-sm" placeholder="3.75" />
+                </div>
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Target rente (%)</label>
+                  <input type="number" step="0.01" value={editingCb.target ?? ''} onChange={e => setEditingCb({ ...editingCb, target: e.target.value ? Number(e.target.value) : null })}
+                    className="w-full px-3 py-2 rounded-lg bg-bg border border-border text-heading text-sm" placeholder="3.50" />
+                </div>
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Vlag (landcode)</label>
+                  <input value={editingCb.flag} onChange={e => setEditingCb({ ...editingCb, flag: e.target.value.toUpperCase() })}
+                    className="w-full px-3 py-2 rounded-lg bg-bg border border-border text-heading text-sm" placeholder="US" />
+                </div>
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Bias</label>
+                  <select value={editingCb.bias} onChange={e => setEditingCb({ ...editingCb, bias: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-bg border border-border text-heading text-sm">
+                    <option value="">Geen</option>
+                    <option value="afwachtend">Afwachtend</option>
+                    <option value="voorzichtig verruimend">Voorzichtig verruimend</option>
+                    <option value="verruimend">Verruimend</option>
+                    <option value="voorzichtig verkrappend">Voorzichtig verkrappend</option>
+                    <option value="verkrappend">Verkrappend</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Laatste actie</label>
+                  <input value={editingCb.last_move} onChange={e => setEditingCb({ ...editingCb, last_move: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-bg border border-border text-heading text-sm" placeholder="25bp knip (januari 2026)" />
+                </div>
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Volgende vergadering</label>
+                  <input value={editingCb.next_meeting} onChange={e => setEditingCb({ ...editingCb, next_meeting: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-bg border border-border text-heading text-sm" placeholder="6 mei 2026" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs text-text-muted mb-1">Bron URL</label>
+                  <input value={editingCb.source_url} onChange={e => setEditingCb({ ...editingCb, source_url: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-bg border border-border text-heading text-sm" placeholder="https://www.federalreserve.gov/monetarypolicy.htm" />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      const payload = {
+                        currency: editingCb.currency,
+                        country: editingCb.country,
+                        bank: editingCb.bank,
+                        rate: editingCb.rate,
+                        target: editingCb.target,
+                        flag: editingCb.flag,
+                        bias: editingCb.bias,
+                        last_move: editingCb.last_move,
+                        next_meeting: editingCb.next_meeting,
+                        source_url: editingCb.source_url,
+                        updated_at: new Date().toISOString(),
+                      }
+                      if (editingCb.id) {
+                        await adminWrite('update', 'central_bank_rates', payload, editingCb.id)
+                        setCbRates(prev => prev.map(r => r.id === editingCb.id ? { ...r, ...payload } : r))
+                      } else {
+                        const res = await adminWrite('insert', 'central_bank_rates', payload)
+                        setCbRates(prev => [...prev, res.data])
+                      }
+                      setEditingCb(null)
+                    } catch (e) {
+                      alert('Fout: ' + (e as Error).message)
+                    }
+                  }}
+                  className="px-5 py-2 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors"
+                >
+                  Opslaan
+                </button>
+                <button onClick={() => setEditingCb(null)} className="px-5 py-2 rounded-lg border border-border text-text-muted text-sm hover:text-heading transition-colors">
+                  Annuleren
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* ── List view ── */
+            <>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <p className="text-sm text-text-muted">Beheer rentetarieven van centrale banken. Wijzigingen zijn direct zichtbaar op de rentetarieven pagina.</p>
+                  <p className="text-xs text-text-dim mt-1">{cbRates.length} centrale banken</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch('/api/rates/meetings')
+                        const json = await res.json()
+                        if (!json.meetings || Object.keys(json.meetings).length === 0) {
+                          alert('Geen aankomende vergaderingen gevonden in de kalender.')
+                          return
+                        }
+                        let updated = 0
+                        for (const [ccy, meeting] of Object.entries(json.meetings as Record<string, { date: string; title: string }>)) {
+                          const existing = cbRates.find(r => r.currency === ccy)
+                          if (existing && meeting.date) {
+                            await adminWrite('update', 'central_bank_rates', { next_meeting: meeting.date, updated_at: new Date().toISOString() }, existing.id)
+                            setCbRates(prev => prev.map(r => r.currency === ccy ? { ...r, next_meeting: meeting.date } : r))
+                            updated++
+                          }
+                        }
+                        alert(`${updated} vergaderdata bijgewerkt vanuit economische kalender.`)
+                      } catch (e) {
+                        alert('Fout bij ophalen: ' + (e as Error).message)
+                      }
+                    }}
+                    className="px-4 py-2 rounded-lg border border-accent/40 text-accent text-sm font-medium hover:bg-accent/10 transition-colors flex items-center gap-2"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    Vergaderingen ophalen
+                  </button>
+                  <button
+                    onClick={() => setEditingCb({ id: '', currency: '', country: '', bank: '', rate: null, target: null, flag: '', bias: '', last_move: '', next_meeting: '', source_url: '', updated_at: '' })}
+                    className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors"
+                  >
+                    + Toevoegen
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {cbRates.map((cb) => {
+                  const diff = cb.rate !== null && cb.target !== null ? cb.rate - cb.target : null
+                  return (
+                    <div key={cb.id} className="flex items-center justify-between p-4 rounded-xl glass gap-4">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <span className="text-xl shrink-0">
+                          {cb.flag ? cb.flag.toUpperCase().split('').map(c => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65)).join('') : '🏳️'}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-semibold text-heading">{cb.currency}</span>
+                            <span className="text-xs text-text-dim">{cb.country}</span>
+                          </div>
+                          <p className="text-xs text-text-muted truncate">{cb.bank}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 shrink-0">
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-heading">{cb.rate !== null ? `${cb.rate}%` : '—'}</p>
+                          <p className="text-[10px] text-text-dim">
+                            target: {cb.target !== null ? `${cb.target}%` : '—'}
+                            {diff !== null && diff !== 0 && (
+                              <span className={diff > 0 ? ' text-amber-400' : ' text-blue-400'}>
+                                {' '}({diff > 0 ? '+' : ''}{diff.toFixed(2)}%)
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        {cb.bias && (
+                          <span className={`text-[10px] px-2 py-0.5 rounded border hidden sm:inline-block ${
+                            cb.bias.includes('verkrappend') ? 'border-green-500/20 text-green-400 bg-green-500/10' :
+                            cb.bias.includes('verruimend') ? 'border-red-500/20 text-red-400 bg-red-500/10' :
+                            'border-border text-text-dim'
+                          }`}>{cb.bias}</span>
+                        )}
+                        {cb.next_meeting && (
+                          <span className="text-[10px] text-text-dim hidden md:block">Vergadering: {cb.next_meeting}</span>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setEditingCb(cb)}
+                            className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors"
+                          >
+                            Bewerken
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`${cb.currency} (${cb.country}) verwijderen?`)) return
+                              try {
+                                await adminWrite('delete', 'central_bank_rates', undefined, cb.id)
+                                setCbRates(prev => prev.filter(r => r.id !== cb.id))
+                              } catch (e) {
+                                alert('Fout: ' + (e as Error).message)
+                              }
+                            }}
+                            className="px-2 py-1.5 rounded-lg border border-red-500/20 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              {cbRates.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-sm text-text-dim">Geen centrale banken gevonden. Voer de central_bank_rates SQL uit in Supabase of voeg er een toe.</p>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

@@ -140,6 +140,53 @@ create policy "Admins can manage tool settings"
     exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
   );
 
+-- 5. CENTRAL BANK RATES TABLE
+create table public.central_bank_rates (
+  id uuid default gen_random_uuid() primary key,
+  currency text unique not null,
+  country text not null,
+  bank text not null,
+  rate numeric(6,2),
+  target numeric(6,2),
+  flag text,
+  bias text default '',
+  last_move text default '',
+  next_meeting text default '',
+  source_url text default '',
+  updated_at timestamp with time zone default now()
+);
+
+-- Central bank rates RLS
+alter table public.central_bank_rates enable row level security;
+
+create policy "Anyone can read central bank rates"
+  on public.central_bank_rates for select
+  using (true);
+
+create policy "Admins can manage central bank rates"
+  on public.central_bank_rates for all
+  using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
+-- Seed central bank rates
+insert into public.central_bank_rates (currency, country, bank, rate, target, flag, bias, last_move, next_meeting, source_url) values
+('USD', 'Verenigde Staten', 'Federal Reserve (Fed)', 3.75, 3.50, 'US', 'afwachtend', '25bp knip (januari 2026)', '6 mei 2026', 'https://www.federalreserve.gov/monetarypolicy.htm'),
+('EUR', 'Eurozone', 'Europese Centrale Bank (ECB)', 1.90, 1.75, 'EU', 'afwachtend', '25bp knip (januari 2026)', '16 april 2026', 'https://www.ecb.europa.eu/mopo/decisions/html/index.en.html'),
+('GBP', 'Verenigd Koninkrijk', 'Bank of England (BoE)', 3.75, 3.50, 'GB', 'voorzichtig verruimend', '25bp knip (februari 2026)', '7 mei 2026', 'https://www.bankofengland.co.uk/monetary-policy'),
+('JPY', 'Japan', 'Bank of Japan (BoJ)', 1.00, 1.25, 'JP', 'voorzichtig verkrappend', '25bp verhoging (januari 2026)', '28 april 2026', 'https://www.boj.or.jp/en/mopo/index.htm'),
+('CHF', 'Zwitserland', 'Zwitserse Nationale Bank (SNB)', 0.00, 0.00, 'CH', 'afwachtend', '25bp knip (juni 2025)', '18 juni 2026', 'https://www.snb.ch/en/iabout/monpol'),
+('AUD', 'Australië', 'Reserve Bank of Australia (RBA)', 3.35, 3.10, 'AU', 'voorzichtig verruimend', '25bp knip (februari 2026)', '5 mei 2026', 'https://www.rba.gov.au/monetary-policy/'),
+('CAD', 'Canada', 'Bank of Canada (BoC)', 2.25, 2.00, 'CA', 'afwachtend', '25bp knip (december 2025)', '15 april 2026', 'https://www.bankofcanada.ca/core-functions/monetary-policy/'),
+('NZD', 'Nieuw-Zeeland', 'Reserve Bank of New Zealand (RBNZ)', 2.75, 2.50, 'NZ', 'afwachtend', '25bp knip (februari 2026)', '13 mei 2026', 'https://www.rbnz.govt.nz/monetary-policy'),
+('CNY', 'China', 'People''s Bank of China (PBoC)', 3.10, 3.00, 'CN', '', '', '', 'http://www.pbc.gov.cn/en/3688006/index.html'),
+('SEK', 'Zweden', 'Sveriges Riksbank', 2.25, 2.00, 'SE', '', '', '', 'https://www.riksbank.se/en-gb/monetary-policy/'),
+('NOK', 'Noorwegen', 'Norges Bank', 4.50, 4.00, 'NO', '', '', '', 'https://www.norges-bank.no/en/topics/Monetary-policy/'),
+('MXN', 'Mexico', 'Banco de México', 9.50, 9.00, 'MX', '', '', '', 'https://www.banxico.org.mx/monetary-policy/index.html'),
+('ZAR', 'Zuid-Afrika', 'South African Reserve Bank', 7.50, 7.25, 'ZA', '', '', '', 'https://www.resbank.co.za/en/home/what-we-do/monetary-policy'),
+('TRY', 'Turkije', 'Central Bank of Turkey', 42.50, 40.00, 'TR', '', '', '', 'https://www.tcmb.gov.tr/wps/wcm/connect/EN/TCMB+EN/Main+Menu/Core+Functions/Monetary+Policy/'),
+('BRL', 'Brazilië', 'Banco Central do Brasil', 14.25, 13.75, 'BR', '', '', '', 'https://www.bcb.gov.br/en/monetarypolicy');
+
 -- Seed tool settings
 insert into public.tool_settings (slug, name, is_premium, visible) values
 ('fx-selector', 'FX Pair Selector', true, true),
