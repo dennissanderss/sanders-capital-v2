@@ -1,4 +1,4 @@
-from .market_data import get_price_change, get_direction, get_current_price
+from api._lib.market_data import get_price_change, get_direction, get_current_price
 
 
 def analyze_intermarket(data):

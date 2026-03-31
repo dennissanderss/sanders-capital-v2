@@ -1,4 +1,4 @@
-from .market_data import get_price_change
+from api._lib.market_data import get_price_change
 
 
 def calculate_momentum_score(closes):

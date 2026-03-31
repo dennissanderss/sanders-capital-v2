@@ -4,12 +4,12 @@ from datetime import datetime
 
 
 def _run_analysis():
-    from _lib.market_data import fetch_currency_data, fetch_intermarket_data
-    from _lib.calendar import get_currencies_with_events
-    from _lib.currency_strength import calculate_all_currency_scores
-    from _lib.intermarket import analyze_intermarket
-    from _lib.pair_scorer import score_all_pairs
-    from _lib.supabase_client import save_snapshot, load_yesterday_scores
+    from api._lib.market_data import fetch_currency_data, fetch_intermarket_data
+    from api._lib.calendar import get_currencies_with_events
+    from api._lib.currency_strength import calculate_all_currency_scores
+    from api._lib.intermarket import analyze_intermarket
+    from api._lib.pair_scorer import score_all_pairs
+    from api._lib.supabase_client import save_snapshot, load_yesterday_scores
 
     currency_data = fetch_currency_data()
     intermarket_data = fetch_intermarket_data()
