@@ -26,6 +26,7 @@ const toolsDropdown = [
   { href: '/tools/calculator', label: 'Position Size Calculator', desc: 'Bereken je positiegrootte', icon: 'calculator' },
   { href: '/tools/kalender', label: 'Economische Kalender', desc: 'Aankomende events & data', icon: 'calendar' },
   { href: '/tools/rente', label: 'Rentetarieven', desc: 'Centrale bank rentes', icon: 'percent' },
+  { href: '/tools/begrippen', label: 'Economische Begrippen', desc: 'Indicatoren & begrippen uitgelegd', icon: 'book' },
 ]
 
 function ToolIcon({ icon }: { icon: string }) {
