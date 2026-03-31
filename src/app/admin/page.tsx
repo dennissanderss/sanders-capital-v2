@@ -77,7 +77,7 @@ interface CentralBankRate {
   updated_at: string
 }
 
-const tagOptions = ['Module 1', 'Module 2', 'Module 3', 'Marktanalyse', 'Psychologie', 'Risicomanagement', 'Strategie', 'Data']
+const tagOptions = ['Module 1', 'Module 2', 'Module 3', 'FX Outlook', 'Marktanalyse', 'Psychologie', 'Risicomanagement', 'Strategie', 'Data']
 
 const iconOptions = [
   { value: 'shield', label: 'Schild' },

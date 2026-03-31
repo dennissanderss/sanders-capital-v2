@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: 'Wekelijkse marktanalyses, macro outlook en FX verwachtingen.',
 }
 
-const OUTLOOK_TAGS = ['Marktanalyse', 'Data', 'Strategie']
+const OUTLOOK_TAGS = ['FX Outlook', 'Marktanalyse', 'Data', 'Strategie']
 
 export default async function FxOutlookPage() {
   const supabase = await createServerSupabaseClient()
