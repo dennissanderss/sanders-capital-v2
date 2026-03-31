@@ -23,6 +23,15 @@ function formatMoney(n: number): string {
   return prefix + Math.abs(n).toFixed(2)
 }
 
+function SectionHeader({ title, desc }: { title: string; desc: string }) {
+  return (
+    <div className="mb-4">
+      <h3 className="text-sm font-semibold text-heading">{title}</h3>
+      <p className="text-xs text-text-dim mt-0.5 leading-relaxed">{desc}</p>
+    </div>
+  )
+}
+
 export default function OptimizationTab({ trades, metrics, optimizationData, startingBalance }: Props) {
   const { optimized } = optimizationData
 
@@ -78,105 +87,106 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
 
   // Insights
   const insights = useMemo(() => {
-    const result: { type: 'good' | 'warning' | 'danger' | 'info'; text: string }[] = []
+    const result: { type: 'good' | 'warning' | 'danger' | 'info'; title: string; text: string }[] = []
 
-    // Win rate assessment
+    // Win rate
     if (metrics.winRate >= 55) {
-      result.push({ type: 'good', text: `Je win rate van ${metrics.winRate.toFixed(1)}% is sterk. Focus op het behouden van deze consistentie.` })
+      result.push({ type: 'good', title: 'Sterke win rate', text: `${metrics.winRate.toFixed(1)}% van je trades is winstgevend. Dit biedt een solide basis.` })
     } else if (metrics.winRate >= 45) {
-      result.push({ type: 'info', text: `Je win rate is ${metrics.winRate.toFixed(1)}%. Dit kan winstgevend zijn mits je R:R goed is.` })
+      result.push({ type: 'info', title: 'Gemiddelde win rate', text: `${metrics.winRate.toFixed(1)}% win rate. Dit kan winstgevend zijn als je gemiddelde winst groter is dan je gemiddeld verlies (goede R:R).` })
     } else {
-      result.push({ type: 'warning', text: `Je win rate van ${metrics.winRate.toFixed(1)}% is laag. Je hebt een hoge R:R nodig om winstgevend te blijven.` })
+      result.push({ type: 'warning', title: 'Lage win rate', text: `${metrics.winRate.toFixed(1)}% win rate is onder gemiddeld. Je hebt minimaal 2:1 R:R nodig om winstgevend te zijn.` })
     }
 
-    // RR assessment
+    // RR
     if (metrics.avgRR > 0) {
       if (metrics.avgRR >= 2) {
-        result.push({ type: 'good', text: `Je gemiddelde R:R van ${metrics.avgRR.toFixed(1)} is uitstekend.` })
+        result.push({ type: 'good', title: 'Uitstekende R:R', text: `Gemiddeld ${metrics.avgRR.toFixed(1)}:1 — je wint meer dan je riskeert per trade.` })
       } else if (metrics.avgRR >= 1.5) {
-        result.push({ type: 'info', text: `Je gemiddelde R:R van ${metrics.avgRR.toFixed(1)} is goed. Probeer het richting 2:1 te brengen.` })
+        result.push({ type: 'info', title: 'Goede R:R', text: `Gemiddeld ${metrics.avgRR.toFixed(1)}:1 risk-reward. Probeer richting 2:1 te verbeteren door je entries of targets te optimaliseren.` })
       } else {
-        result.push({ type: 'warning', text: `Je gemiddelde R:R van ${metrics.avgRR.toFixed(1)} is aan de lage kant. Overweeg betere entries of ruimere targets.` })
+        result.push({ type: 'warning', title: 'Lage R:R', text: `Gemiddeld ${metrics.avgRR.toFixed(1)}:1 — je riskeert relatief veel voor je potentiële winst. Betere entries of ruimere targets kunnen helpen.` })
       }
     }
 
     // Profit factor
     if (metrics.profitFactor >= 2) {
-      result.push({ type: 'good', text: `Profit factor van ${metrics.profitFactor.toFixed(2)} is excellent.` })
+      result.push({ type: 'good', title: 'Excellent profit factor', text: `${metrics.profitFactor.toFixed(2)} — je totale winst is ${metrics.profitFactor.toFixed(1)}x je totale verlies. Dit is een sterke edge.` })
     } else if (metrics.profitFactor >= 1.5) {
-      result.push({ type: 'info', text: `Profit factor van ${metrics.profitFactor.toFixed(2)} is degelijk. Er is ruimte voor verbetering.` })
+      result.push({ type: 'info', title: 'Degelijke profit factor', text: `${metrics.profitFactor.toFixed(2)} — winstgevend maar er is ruimte om je edge te versterken.` })
     } else if (metrics.profitFactor >= 1) {
-      result.push({ type: 'warning', text: `Profit factor van ${metrics.profitFactor.toFixed(2)} is marginaal. Je edge is dun.` })
+      result.push({ type: 'warning', title: 'Marginale profit factor', text: `${metrics.profitFactor.toFixed(2)} — je bent net winstgevend. Commissies of slippage kunnen dit snel omkeren.` })
     } else {
-      result.push({ type: 'danger', text: `Profit factor van ${metrics.profitFactor.toFixed(2)} — je verliest geld. Evalueer je strategie.` })
+      result.push({ type: 'danger', title: 'Negatieve profit factor', text: `${metrics.profitFactor.toFixed(2)} — je verliest structureel geld. Heroverweeg je entry criteria, stop loss plaatsing en trade management.` })
     }
 
     // Drawdown
     if (metrics.maxDrawdownPercent > 30) {
-      result.push({ type: 'danger', text: `Max drawdown van ${metrics.maxDrawdownPercent.toFixed(1)}% is te hoog. Verklein je risico per trade.` })
+      result.push({ type: 'danger', title: 'Te hoge drawdown', text: `${metrics.maxDrawdownPercent.toFixed(1)}% max drawdown. Bij een live account kan dit psychologisch onhoudbaar zijn. Verklein je risico per trade.` })
     } else if (metrics.maxDrawdownPercent > 20) {
-      result.push({ type: 'warning', text: `Max drawdown van ${metrics.maxDrawdownPercent.toFixed(1)}% is hoog. Overweeg position sizing aanpassen.` })
+      result.push({ type: 'warning', title: 'Hoge drawdown', text: `${metrics.maxDrawdownPercent.toFixed(1)}% max drawdown. Overweeg je position sizing te verlagen of strengere trade selectie.` })
+    } else if (metrics.maxDrawdownPercent > 0) {
+      result.push({ type: 'good', title: 'Gezonde drawdown', text: `${metrics.maxDrawdownPercent.toFixed(1)}% max drawdown is beheersbaar. Je risicomanagement werkt.` })
     }
 
     // Consecutive losses
     if (metrics.maxConsecutiveLosses >= 8) {
-      result.push({ type: 'danger', text: `Je hebt ${metrics.maxConsecutiveLosses} opeenvolgende verliezen gehad. Heb je een plan voor losing streaks?` })
+      result.push({ type: 'danger', title: 'Lange losing streak', text: `${metrics.maxConsecutiveLosses} verliezen op rij. Heb je een protocol voor wanneer je stopt met traden na een drawdown?` })
     } else if (metrics.maxConsecutiveLosses >= 5) {
-      result.push({ type: 'warning', text: `${metrics.maxConsecutiveLosses} opeenvolgende verliezen. Zorg voor een duidelijk protocol bij drawdowns.` })
+      result.push({ type: 'warning', title: 'Losing streak', text: `${metrics.maxConsecutiveLosses} opeenvolgende verliezen. Stel een max dagverlies in om tilt te voorkomen.` })
     }
 
     // Session edge
-    const bestSession = Object.entries(metrics.sessionStats)
-      .filter(([, s]) => s.trades >= 5)
-      .sort(([, a], [, b]) => b.pnl - a.pnl)[0]
-    const worstSession = Object.entries(metrics.sessionStats)
-      .filter(([, s]) => s.trades >= 5)
-      .sort(([, a], [, b]) => a.pnl - b.pnl)[0]
+    const sessionEntries = Object.entries(metrics.sessionStats).filter(([, s]) => s.trades >= 5)
+    const bestSession = sessionEntries.sort(([, a], [, b]) => b.pnl - a.pnl)[0]
+    const worstSession = sessionEntries.sort(([, a], [, b]) => a.pnl - b.pnl)[0]
 
-    if (bestSession && worstSession && bestSession[0] !== worstSession[0]) {
-      if (worstSession[1].pnl < 0) {
-        result.push({ type: 'info', text: `Je presteert het best in de ${bestSession[0]} sessie. Overweeg de ${worstSession[0]} sessie te vermijden.` })
-      }
+    if (bestSession && worstSession && bestSession[0] !== worstSession[0] && worstSession[1].pnl < 0) {
+      result.push({ type: 'info', title: 'Sessie voorkeur', text: `Je beste sessie is ${bestSession[0]} (${formatMoney(bestSession[1].pnl)}). Overweeg ${worstSession[0]} (${formatMoney(worstSession[1].pnl)}) te vermijden.` })
     }
 
     // Day edge
-    const bestDay = Object.entries(metrics.dayStats)
-      .filter(([, s]) => s.trades >= 3)
-      .sort(([, a], [, b]) => b.pnl - a.pnl)[0]
-    const worstDay = Object.entries(metrics.dayStats)
-      .filter(([, s]) => s.trades >= 3)
-      .sort(([, a], [, b]) => a.pnl - b.pnl)[0]
+    const dayEntries = Object.entries(metrics.dayStats).filter(([, s]) => s.trades >= 3)
+    const bestDay = dayEntries.sort(([, a], [, b]) => b.pnl - a.pnl)[0]
+    const worstDay = dayEntries.sort(([, a], [, b]) => a.pnl - b.pnl)[0]
 
     if (bestDay && worstDay && bestDay[0] !== worstDay[0] && worstDay[1].pnl < 0) {
-      result.push({ type: 'info', text: `Beste dag: ${bestDay[0]} (${formatMoney(bestDay[1].pnl)}). Slechtste dag: ${worstDay[0]} (${formatMoney(worstDay[1].pnl)}).` })
+      result.push({ type: 'info', title: 'Dag analyse', text: `Beste dag: ${bestDay[0]} (${formatMoney(bestDay[1].pnl)}). Slechtste: ${worstDay[0]} (${formatMoney(worstDay[1].pnl)}). Overweeg aanpassing.` })
     }
 
     // Optimal risk
-    result.push({ type: 'info', text: `Optimaal risico per trade: ${optimal.riskPercent}% (max DD ${optimal.maxDD.toFixed(1)}%, eindbalans $${optimal.finalEquity.toFixed(0)}).` })
+    result.push({ type: 'info', title: 'Optimaal risico', text: `Op basis van je data is ${optimal.riskPercent}% risico per trade optimaal: eindbalans $${optimal.finalEquity.toFixed(0)} met max ${optimal.maxDD.toFixed(1)}% drawdown.` })
 
     return result
   }, [metrics, optimal])
 
   const iconMap = {
     good: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400 shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12" /></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400 shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
     ),
     warning: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400 shrink-0 mt-0.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400 shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
     ),
     danger: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400 shrink-0"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
     ),
     info: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light shrink-0"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
     ),
+  }
+
+  const bgMap = {
+    good: 'bg-green-400/5 border-green-400/15',
+    warning: 'bg-yellow-400/5 border-yellow-400/15',
+    danger: 'bg-red-400/5 border-red-400/15',
+    info: 'bg-accent/5 border-accent/15',
   }
 
   return (
     <div className="space-y-6">
-      {/* Automated Insights */}
+      {/* Intro */}
       <div className="p-5 rounded-xl glass">
-        <div className="flex items-start gap-3 mb-4">
+        <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-lg bg-accent-glow flex items-center justify-center shrink-0">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
               <circle cx="12" cy="12" r="3" />
@@ -184,27 +194,38 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
             </svg>
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-heading">Automatische Analyse</h3>
-            <p className="text-xs text-text-dim mt-1">
-              Op basis van je {trades.length} trades hebben we de volgende inzichten gevonden.
+            <h3 className="text-sm font-semibold text-heading">Automatische Strategie Analyse</h3>
+            <p className="text-xs text-text-dim mt-1 leading-relaxed max-w-2xl">
+              Op basis van je {trades.length} trades analyseren we je strategie op meerdere vlakken: winstgevendheid,
+              risicomanagement, consistentie en optimaal risico per trade. Elke bevinding bevat een concreet advies.
             </p>
           </div>
         </div>
+      </div>
 
-        <div className="space-y-3 mt-4">
-          {insights.map((insight, i) => (
-            <div key={i} className="flex items-start gap-2 text-sm text-text-muted">
-              {iconMap[insight.type]}
-              <span>{insight.text}</span>
+      {/* Automated Insights — card style */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {insights.map((insight, i) => (
+          <div key={i} className={`p-4 rounded-xl border ${bgMap[insight.type]}`}>
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5">
+                {iconMap[insight.type]}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-heading">{insight.title}</p>
+                <p className="text-xs text-text-muted mt-1 leading-relaxed">{insight.text}</p>
+              </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
       {/* Risk Optimization Chart */}
       <div className="p-5 rounded-xl glass">
-        <h3 className="text-sm font-semibold text-heading mb-1">Risico Optimalisatie</h3>
-        <p className="text-xs text-text-dim mb-4">Eindbalans en max drawdown bij verschillende risico niveaus per trade.</p>
+        <SectionHeader
+          title="Risico vs. Rendement"
+          desc="Wat gebeurt er met je eindbalans en drawdown als je meer of minder riskeert per trade? De blauwe lijn toont je eindbalans, de rode stippellijn je maximale drawdown. Het gouden punt markeert het optimale niveau."
+        />
         <div className="h-72">
           <Line
             data={riskReturnData}
@@ -221,7 +242,7 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
               scales: {
                 x: {
                   ...darkThemeDefaults.scales?.x,
-                  title: { display: true, text: 'Risico per trade', color: '#5a6178', font: { size: 10 } },
+                  title: { display: true, text: 'Risico per trade (%)', color: '#5a6178', font: { size: 10 } },
                 },
                 y: {
                   ...darkThemeDefaults.scales?.y,
@@ -242,7 +263,10 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
 
       {/* Expectancy per risk */}
       <div className="p-5 rounded-xl glass">
-        <h3 className="text-sm font-semibold text-heading mb-4">Expectancy per Risico Niveau</h3>
+        <SectionHeader
+          title="Expectancy per Risico Niveau"
+          desc="Expectancy = het gemiddelde bedrag dat je per trade kunt verwachten. Hoe hoger het risico, hoe groter de schommelingen — maar niet altijd meer winst."
+        />
         <div className="h-48">
           <Bar
             data={expectancyData}
@@ -254,7 +278,7 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
                 tooltip: {
                   ...darkThemeDefaults.plugins?.tooltip,
                   callbacks: {
-                    label: (ctx) => `Expectancy: ${formatMoney(ctx.raw as number)}`,
+                    label: (ctx) => `Gem. per trade: ${formatMoney(ctx.raw as number)}`,
                   },
                 },
               },
@@ -265,17 +289,40 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
 
       {/* Comparison table */}
       <div className="p-5 rounded-xl glass">
-        <h3 className="text-sm font-semibold text-heading mb-4">Risico Niveaus Vergelijking</h3>
+        <SectionHeader
+          title="Vergelijking Risico Niveaus"
+          desc="Overzicht van wat elk risicopercentage oplevert. 'Optimaal' is het niveau met de hoogste eindbalans binnen een veilige drawdown (< 25%)."
+        />
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border text-text-dim">
-                <th className="text-left py-2 px-3">Risico %</th>
-                <th className="text-right py-2 px-3">Expectancy</th>
-                <th className="text-right py-2 px-3">Eindbalans</th>
-                <th className="text-right py-2 px-3">Return %</th>
-                <th className="text-right py-2 px-3">Max DD %</th>
-                <th className="text-center py-2 px-3">Status</th>
+              <tr className="border-b border-border">
+                <th className="text-left py-2.5 px-3 text-text-dim font-medium">Risico per trade</th>
+                <th className="text-right py-2.5 px-3 text-text-dim font-medium">
+                  <span className="flex items-center justify-end gap-1">
+                    Expectancy
+                    <span className="group relative cursor-help">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-dim/50"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
+                      <span className="absolute bottom-full right-0 mb-1 hidden group-hover:block z-20 px-2 py-1.5 rounded-lg bg-bg-elevated border border-border shadow-xl text-[10px] text-text-muted w-40 leading-relaxed font-normal">
+                        Gemiddeld verwacht resultaat per trade bij dit risico niveau.
+                      </span>
+                    </span>
+                  </span>
+                </th>
+                <th className="text-right py-2.5 px-3 text-text-dim font-medium">Eindbalans</th>
+                <th className="text-right py-2.5 px-3 text-text-dim font-medium">Return</th>
+                <th className="text-right py-2.5 px-3 text-text-dim font-medium">
+                  <span className="flex items-center justify-end gap-1">
+                    Max DD
+                    <span className="group relative cursor-help">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-dim/50"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
+                      <span className="absolute bottom-full right-0 mb-1 hidden group-hover:block z-20 px-2 py-1.5 rounded-lg bg-bg-elevated border border-border shadow-xl text-[10px] text-text-muted w-44 leading-relaxed font-normal">
+                        Maximale drawdown — de grootste daling van piek tot dal. Onder 20% is veilig, 20-30% is matig, boven 30% is risicovol.
+                      </span>
+                    </span>
+                  </span>
+                </th>
+                <th className="text-center py-2.5 px-3 text-text-dim font-medium">Beoordeling</th>
               </tr>
             </thead>
             <tbody>
@@ -285,35 +332,46 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
                 return (
                   <tr
                     key={i}
-                    className={`border-b border-border/30 ${isOptimal ? 'bg-accent/5' : ''}`}
+                    className={`border-b border-border/30 transition-colors ${isOptimal ? 'bg-gold/[0.04]' : 'hover:bg-white/[0.02]'}`}
                   >
-                    <td className="py-2 px-3">
-                      <span className={`font-medium ${isOptimal ? 'text-gold' : 'text-heading'}`}>
-                        {o.riskPercent}%
-                      </span>
-                      {isOptimal && (
-                        <span className="ml-2 text-[9px] px-1.5 py-0.5 rounded bg-gold-dim text-gold font-semibold">
-                          OPTIMAAL
+                    <td className="py-2.5 px-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-medium ${isOptimal ? 'text-gold' : 'text-heading'}`}>
+                          {o.riskPercent}%
                         </span>
-                      )}
+                        {isOptimal && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-gold-dim text-gold font-semibold">
+                            OPTIMAAL
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className={`py-2 px-3 text-right ${o.expectancy >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    <td className={`py-2.5 px-3 text-right ${o.expectancy >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {formatMoney(o.expectancy)}
                     </td>
-                    <td className="py-2 px-3 text-right text-heading">${o.finalEquity.toFixed(0)}</td>
-                    <td className={`py-2 px-3 text-right ${returnPct >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    <td className="py-2.5 px-3 text-right text-heading font-medium">${o.finalEquity.toFixed(0)}</td>
+                    <td className={`py-2.5 px-3 text-right ${returnPct >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {returnPct >= 0 ? '+' : ''}{returnPct.toFixed(1)}%
                     </td>
-                    <td className={`py-2 px-3 text-right ${o.maxDD > 25 ? 'text-red-400' : o.maxDD > 15 ? 'text-yellow-400' : 'text-green-400'}`}>
+                    <td className={`py-2.5 px-3 text-right font-medium ${o.maxDD > 25 ? 'text-red-400' : o.maxDD > 15 ? 'text-yellow-400' : 'text-green-400'}`}>
                       {o.maxDD.toFixed(1)}%
                     </td>
-                    <td className="py-2 px-3 text-center">
+                    <td className="py-2.5 px-3 text-center">
                       {o.maxDD > 30 ? (
-                        <span className="text-red-400">Risicovol</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-400/10 text-red-400 text-[10px] font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                          Risicovol
+                        </span>
                       ) : o.maxDD > 20 ? (
-                        <span className="text-yellow-400">Matig</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-400/10 text-yellow-400 text-[10px] font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+                          Matig
+                        </span>
                       ) : (
-                        <span className="text-green-400">Veilig</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-400/10 text-green-400 text-[10px] font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                          Veilig
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -321,6 +379,28 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
               })}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Bottom explanation */}
+      <div className="p-5 rounded-xl glass">
+        <SectionHeader
+          title="Hoe lees je deze data?"
+          desc=""
+        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-text-muted leading-relaxed">
+          <div className="p-3 rounded-lg bg-white/[0.02]">
+            <p className="text-heading font-medium mb-1.5">Risico per trade</p>
+            <p>Het percentage van je balans dat je riskeert per trade. Bij 1% en een $10.000 account riskeer je $100 per trade. Hoger risico = meer potentieel rendement, maar ook grotere drawdowns.</p>
+          </div>
+          <div className="p-3 rounded-lg bg-white/[0.02]">
+            <p className="text-heading font-medium mb-1.5">Expectancy</p>
+            <p>Hoeveel je gemiddeld verdient per trade. Berekend als: (win% x gem. winst) - (loss% x gem. verlies). Positief = winstgevend op de lange termijn.</p>
+          </div>
+          <div className="p-3 rounded-lg bg-white/[0.02]">
+            <p className="text-heading font-medium mb-1.5">Max Drawdown</p>
+            <p>De grootste daling van je piek-balans. Een drawdown van 20% betekent dat je account op een gegeven moment 20% lager stond dan het hoogste punt. Onder 20% is gezond.</p>
+          </div>
         </div>
       </div>
     </div>

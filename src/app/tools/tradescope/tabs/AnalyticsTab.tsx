@@ -16,6 +16,15 @@ function formatMoney(n: number): string {
   return prefix + Math.abs(n).toFixed(2)
 }
 
+function SectionHeader({ title, desc }: { title: string; desc: string }) {
+  return (
+    <div className="mb-4">
+      <h3 className="text-sm font-semibold text-heading">{title}</h3>
+      <p className="text-xs text-text-dim mt-0.5 leading-relaxed">{desc}</p>
+    </div>
+  )
+}
+
 export default function AnalyticsTab({ trades, metrics }: Props) {
   // Session analysis
   const sessionData = useMemo(() => ({
@@ -199,7 +208,7 @@ export default function AnalyticsTab({ trades, metrics }: Props) {
       {/* Session & Hourly */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">Performance per Sessie</h3>
+          <SectionHeader title="Performance per Sessie" desc="Resultaat per trading sessie (UTC). Waar heb je de beste edge?" />
           <div className="h-56">
             <Bar
               data={sessionData}
@@ -228,7 +237,7 @@ export default function AnalyticsTab({ trades, metrics }: Props) {
         </div>
 
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">Uur Distributie (UTC)</h3>
+          <SectionHeader title="Uur Distributie (UTC)" desc="Op welke uren open je trades en hoe presteren ze?" />
           <div className="h-56">
             <Bar
               data={hourlyData}
@@ -255,7 +264,7 @@ export default function AnalyticsTab({ trades, metrics }: Props) {
 
       {/* Monthly Performance */}
       <div className="p-5 rounded-xl glass">
-        <h3 className="text-sm font-semibold text-heading mb-4">Maandelijks Resultaat</h3>
+        <SectionHeader title="Maandelijks Resultaat" desc="Winst of verlies per maand. Consistentie is belangrijker dan pieken." />
         <div className="h-56">
           <Bar
             data={monthlyData}
@@ -279,7 +288,7 @@ export default function AnalyticsTab({ trades, metrics }: Props) {
       {/* Cumulative + Frequency */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">Cumulatief P/L</h3>
+          <SectionHeader title="Cumulatief P/L" desc="Totale winst/verlies over tijd. Een stijgende lijn = winstgevende strategie." />
           <div className="h-56">
             <Line
               data={cumulativeData}
@@ -300,7 +309,7 @@ export default function AnalyticsTab({ trades, metrics }: Props) {
         </div>
 
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">Trade Frequentie per Week</h3>
+          <SectionHeader title="Trade Frequentie per Week" desc="Hoeveel trades neem je per week? Overtrading kan je edge verminderen." />
           <div className="h-56">
             <Line
               data={streakData}
@@ -315,7 +324,7 @@ export default function AnalyticsTab({ trades, metrics }: Props) {
 
       {/* Holding Time */}
       <div className="p-5 rounded-xl glass">
-        <h3 className="text-sm font-semibold text-heading mb-4">Gem. P/L per Holding Time</h3>
+        <SectionHeader title="Gem. P/L per Holding Time" desc="Hoe lang houd je trades open en welke duur levert het meeste op?" />
         <div className="h-48">
           <Bar
             data={holdingVsPnl}

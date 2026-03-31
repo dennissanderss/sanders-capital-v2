@@ -22,11 +22,32 @@ interface Props {
   startingBalance: number
 }
 
-function MetricCard({ label, value, color }: { label: string; value: string; color?: string }) {
+function MetricCard({ label, value, color, tooltip }: { label: string; value: string; color?: string; tooltip?: string }) {
   return (
-    <div className="p-4 rounded-xl glass">
-      <p className="text-xs text-text-dim mb-1">{label}</p>
+    <div className="p-4 rounded-xl glass relative group">
+      <p className="text-xs text-text-dim mb-1 flex items-center gap-1">
+        {label}
+        {tooltip && (
+          <span className="cursor-help">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-dim/50">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-20 px-3 py-2 rounded-lg bg-bg-elevated border border-border shadow-xl text-xs text-text-muted max-w-[220px] leading-relaxed whitespace-normal font-normal">
+              {tooltip}
+            </span>
+          </span>
+        )}
+      </p>
       <p className={`text-lg font-semibold ${color || 'text-heading'}`}>{value}</p>
+    </div>
+  )
+}
+
+function SectionHeader({ title, desc }: { title: string; desc: string }) {
+  return (
+    <div className="mb-4">
+      <h3 className="text-sm font-semibold text-heading">{title}</h3>
+      <p className="text-xs text-text-dim mt-0.5 leading-relaxed">{desc}</p>
     </div>
   )
 }
@@ -117,27 +138,31 @@ export default function StrategyTesterTab({ trades, monteCarloData, startingBala
           label="Mediaan Eindbalans"
           value={`$${medianFinal.toFixed(0)}`}
           color={medianFinal > startingBalance ? 'text-green-400' : 'text-red-400'}
+          tooltip="De middelste eindbalans uit alle 1.000 simulaties. 50% eindigt hoger, 50% lager."
         />
         <MetricCard
           label="Mediaan Return"
           value={`${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(1)}%`}
           color={returnPct >= 0 ? 'text-green-400' : 'text-red-400'}
+          tooltip="Het verwachte rendement op je startbalans in het mediaanscenario."
         />
         <MetricCard
           label="Ruin Probability"
           value={`${ruinProbability.toFixed(1)}%`}
           color={ruinProbability > 5 ? 'text-red-400' : ruinProbability > 1 ? 'text-yellow-400' : 'text-green-400'}
+          tooltip="Kans dat je account naar $0 gaat. Onder 1% is uitstekend, boven 5% is zorgelijk."
         />
         <MetricCard
           label="Gem. Max Drawdown"
           value={`${avgMaxDrawdown.toFixed(1)}%`}
           color="text-red-400"
+          tooltip="De gemiddelde maximale drawdown over alle simulaties. Lager = stabieler."
         />
       </div>
 
       {/* Monte Carlo fan chart */}
       <div className="p-5 rounded-xl glass">
-        <h3 className="text-sm font-semibold text-heading mb-4">Simulatie Resultaten</h3>
+        <SectionHeader title="Simulatie Resultaten" desc="Fan chart: de groene band toont gunstige scenario's, de rode band ongunstige. De blauwe lijn is de mediaan." />
         <div className="h-80">
           <Line
             data={chartData}
@@ -170,7 +195,7 @@ export default function StrategyTesterTab({ trades, monteCarloData, startingBala
       {/* Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">Scenario Ranges</h3>
+          <SectionHeader title="Scenario Ranges" desc="Eindbalans per percentiel. P95 = top 5% scenario's, P5 = slechtste 5%." />
           <div className="space-y-4">
             {[
               { label: 'Best case (P95)', value: p95[p95.length - 1], pct: ((p95[p95.length - 1] - startingBalance) / startingBalance * 100) },
@@ -193,7 +218,7 @@ export default function StrategyTesterTab({ trades, monteCarloData, startingBala
         </div>
 
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">Interpretatie</h3>
+          <SectionHeader title="Interpretatie" desc="Wat betekenen deze resultaten voor jouw strategie?" />
           <div className="space-y-3 text-sm text-text-muted">
             {ruinProbability < 1 && (
               <div className="flex items-start gap-2">

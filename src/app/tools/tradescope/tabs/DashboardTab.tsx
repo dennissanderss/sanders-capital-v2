@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
 import type { ParsedTrade } from '../utils/csvParser'
 import type { TradeMetrics } from '../utils/metrics'
@@ -12,12 +12,33 @@ interface Props {
   startingBalance: number
 }
 
-function MetricCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
+function MetricCard({ label, value, sub, color, tooltip }: { label: string; value: string; sub?: string; color?: string; tooltip?: string }) {
   return (
-    <div className="p-4 rounded-xl glass">
-      <p className="text-xs text-text-dim mb-1">{label}</p>
+    <div className="p-4 rounded-xl glass relative group">
+      <p className="text-xs text-text-dim mb-1 flex items-center gap-1">
+        {label}
+        {tooltip && (
+          <span className="cursor-help">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-dim/50">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-20 px-3 py-2 rounded-lg bg-bg-elevated border border-border shadow-xl text-xs text-text-muted max-w-[200px] leading-relaxed whitespace-normal font-normal">
+              {tooltip}
+            </span>
+          </span>
+        )}
+      </p>
       <p className={`text-lg font-semibold ${color || 'text-heading'}`}>{value}</p>
       {sub && <p className="text-xs text-text-dim mt-0.5">{sub}</p>}
+    </div>
+  )
+}
+
+function SectionHeader({ title, desc }: { title: string; desc: string }) {
+  return (
+    <div className="mb-4">
+      <h3 className="text-sm font-semibold text-heading">{title}</h3>
+      <p className="text-xs text-text-dim mt-0.5">{desc}</p>
     </div>
   )
 }
@@ -136,10 +157,44 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
     ],
   }), [metrics])
 
-  // Profit calendar
-  const calendarData = useMemo(() => {
+  // ── Profit Calendar: grouped by month ──
+  const calendarMonths = useMemo(() => {
     const entries = Object.entries(metrics.dailyPnL).sort(([a], [b]) => a.localeCompare(b))
-    return entries
+    if (entries.length === 0) return []
+
+    // Group by month
+    const monthMap = new Map<string, { dateStr: string; pnl: number }[]>()
+    entries.forEach(([dateStr, pnl]) => {
+      const key = dateStr.slice(0, 7) // "2023-03"
+      if (!monthMap.has(key)) monthMap.set(key, [])
+      monthMap.get(key)!.push({ dateStr, pnl })
+    })
+
+    return Array.from(monthMap.entries()).map(([monthKey, days]) => {
+      const [year, month] = monthKey.split('-').map(Number)
+      const monthName = new Date(year, month - 1).toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' })
+      const totalPnL = days.reduce((s, d) => s + d.pnl, 0)
+      const winDays = days.filter((d) => d.pnl > 0).length
+      const lossDays = days.filter((d) => d.pnl < 0).length
+
+      // Build full month grid
+      const firstDay = new Date(year, month - 1, 1)
+      const daysInMonth = new Date(year, month, 0).getDate()
+      // Monday = 0 start
+      let startCol = firstDay.getDay() - 1
+      if (startCol < 0) startCol = 6
+
+      const dayMap = new Map(days.map((d) => [d.dateStr, d.pnl]))
+      const maxPnl = Math.max(...days.map((d) => Math.abs(d.pnl)), 1)
+
+      const gridCells: { day: number; pnl: number | null; dateStr: string }[] = []
+      for (let d = 1; d <= daysInMonth; d++) {
+        const ds = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+        gridCells.push({ day: d, pnl: dayMap.has(ds) ? dayMap.get(ds)! : null, dateStr: ds })
+      }
+
+      return { monthKey, monthName, totalPnL, winDays, lossDays, startCol, gridCells, maxPnl }
+    })
   }, [metrics])
 
   const pnlColor = metrics.totalPnL >= 0 ? 'text-green-400' : 'text-red-400'
@@ -148,18 +203,47 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
     <div className="space-y-6">
       {/* Top metrics bar */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <MetricCard label="Totaal P/L" value={formatMoney(metrics.totalPnL)} color={pnlColor} />
-        <MetricCard label="Win Rate" value={formatPct(metrics.winRate)} sub={`${metrics.wins}W / ${metrics.losses}L`} />
-        <MetricCard label="Profit Factor" value={metrics.profitFactor === Infinity ? '∞' : metrics.profitFactor.toFixed(2)} />
-        <MetricCard label="Expectancy" value={formatMoney(metrics.expectancy)} color={metrics.expectancy >= 0 ? 'text-green-400' : 'text-red-400'} />
-        <MetricCard label="Max Drawdown" value={formatPct(metrics.maxDrawdownPercent)} sub={`$${metrics.maxDrawdown.toFixed(2)}`} color="text-red-400" />
-        <MetricCard label="Sharpe Ratio" value={metrics.sharpeRatio.toFixed(2)} />
+        <MetricCard
+          label="Totaal P/L"
+          value={formatMoney(metrics.totalPnL)}
+          color={pnlColor}
+          tooltip="De totale winst of verlies over alle trades heen."
+        />
+        <MetricCard
+          label="Win Rate"
+          value={formatPct(metrics.winRate)}
+          sub={`${metrics.wins}W / ${metrics.losses}L`}
+          tooltip="Percentage winstgevende trades. Boven 50% is goed, maar hangt af van je R:R."
+        />
+        <MetricCard
+          label="Profit Factor"
+          value={metrics.profitFactor === Infinity ? '∞' : metrics.profitFactor.toFixed(2)}
+          tooltip="Totale winst gedeeld door totaal verlies. Boven 1.5 is degelijk, boven 2.0 is sterk."
+        />
+        <MetricCard
+          label="Expectancy"
+          value={formatMoney(metrics.expectancy)}
+          color={metrics.expectancy >= 0 ? 'text-green-400' : 'text-red-400'}
+          tooltip="Het gemiddelde bedrag dat je per trade kunt verwachten te verdienen."
+        />
+        <MetricCard
+          label="Max Drawdown"
+          value={formatPct(metrics.maxDrawdownPercent)}
+          sub={`$${metrics.maxDrawdown.toFixed(2)}`}
+          color="text-red-400"
+          tooltip="De grootste daling vanaf een piek in je equity. Onder 20% is gezond."
+        />
+        <MetricCard
+          label="Sharpe Ratio"
+          value={metrics.sharpeRatio.toFixed(2)}
+          tooltip="Risico-gecorrigeerd rendement. Boven 1.0 is goed, boven 2.0 is uitstekend."
+        />
       </div>
 
       {/* Equity curve + Drawdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">Equity Curve</h3>
+          <SectionHeader title="Equity Curve" desc="Verloop van je balans per trade. Stijgend = winstgevend." />
           <div className="h-64">
             <Line
               data={equityData}
@@ -179,7 +263,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
           </div>
         </div>
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">Drawdown</h3>
+          <SectionHeader title="Drawdown" desc="Hoe ver je balans zakt vanaf de hoogste piek. Hoe dichter bij 0%, hoe beter." />
           <div className="h-64">
             <Line
               data={drawdownData}
@@ -202,7 +286,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
 
       {/* PnL per trade */}
       <div className="p-5 rounded-xl glass">
-        <h3 className="text-sm font-semibold text-heading mb-4">P/L per Trade</h3>
+        <SectionHeader title="P/L per Trade" desc="Winst of verlies per individuele trade. Groen = winst, rood = verlies." />
         <div className="h-48">
           <Bar
             data={pnlBarData}
@@ -225,8 +309,8 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
       {/* Win/Loss, Long/Short, RR Distribution, Day PnL */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">Win / Loss</h3>
-          <div className="h-40 flex items-center justify-center">
+          <SectionHeader title="Win / Loss" desc="Verdeling winstgevende vs verliesgevende trades." />
+          <div className="h-36 flex items-center justify-center">
             <Doughnut
               data={winLossData}
               options={{
@@ -238,14 +322,14 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
             />
           </div>
           <div className="flex justify-center gap-4 mt-3 text-xs">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /> {metrics.wins}W</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> {metrics.losses}L</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500" /> {metrics.wins} wins</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500" /> {metrics.losses} losses</span>
           </div>
         </div>
 
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">Long / Short</h3>
-          <div className="h-40 flex items-center justify-center">
+          <SectionHeader title="Long / Short" desc="Verdeling en winrate per richting." />
+          <div className="h-36 flex items-center justify-center">
             <Doughnut
               data={longShortData}
               options={{
@@ -257,13 +341,13 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
             />
           </div>
           <div className="flex justify-center gap-4 mt-3 text-xs">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#3d6ea5]" /> {metrics.totalLongs}L ({formatPct(metrics.longWinRate)})</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#b8935a]" /> {metrics.totalShorts}S ({formatPct(metrics.shortWinRate)})</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#3d6ea5]" /> {metrics.totalLongs}L ({formatPct(metrics.longWinRate)})</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#b8935a]" /> {metrics.totalShorts}S ({formatPct(metrics.shortWinRate)})</span>
           </div>
         </div>
 
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">R:R Distributie</h3>
+          <SectionHeader title="R:R Distributie" desc="Hoe vaak je op welke risk:reward uitkomt." />
           <div className="h-40">
             <Bar
               data={{
@@ -283,7 +367,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
         </div>
 
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">P/L per Dag</h3>
+          <SectionHeader title="P/L per Dag" desc="Op welke weekdag presteer je het best?" />
           <div className="h-40">
             <Bar
               data={dayData}
@@ -299,7 +383,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
       {/* Stats Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">Statistieken</h3>
+          <SectionHeader title="Statistieken" desc="Gedetailleerde cijfers over je performance." />
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-text-dim">Gem. winst</span>
@@ -346,7 +430,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
 
         {/* Pair stats */}
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">Per Paar</h3>
+          <SectionHeader title="Per Paar" desc="Winrate en resultaat per currency pair." />
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {Object.entries(metrics.pairStats)
               .sort(([, a], [, b]) => b.trades - a.trades)
@@ -368,49 +452,115 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
         </div>
       </div>
 
-      {/* Profit Calendar */}
-      {calendarData.length > 0 && (
+      {/* ── Profit Calendar ── */}
+      {calendarMonths.length > 0 && (
         <div className="p-5 rounded-xl glass">
-          <h3 className="text-sm font-semibold text-heading mb-4">Profit Kalender</h3>
-          <div className="grid grid-cols-7 gap-1.5">
-            {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map((d) => (
-              <div key={d} className="text-center text-xs text-text-dim py-1">{d}</div>
-            ))}
-            {calendarData.map(([dateStr, pnl]) => {
-              const date = new Date(dateStr)
-              const dayOfWeek = date.getDay()
-              const adjustedDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // Monday = 0
-              const intensity = Math.min(Math.abs(pnl) / 200, 1) // Normalize
-
-              return (
-                <div
-                  key={dateStr}
-                  className="aspect-square rounded-md flex flex-col items-center justify-center text-xs cursor-default relative group"
-                  style={{
-                    gridColumnStart: adjustedDay + 1,
-                    backgroundColor: pnl >= 0
-                      ? `rgba(34,197,94,${0.15 + intensity * 0.5})`
-                      : `rgba(239,68,68,${0.15 + intensity * 0.5})`,
-                  }}
-                >
-                  <span className="text-[10px] text-text-dim">{date.getDate()}</span>
-                  <span className={`text-[9px] font-medium ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {pnl >= 0 ? '+' : ''}{pnl.toFixed(0)}
-                  </span>
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block z-10 px-2 py-1 rounded bg-bg-elevated text-xs text-heading whitespace-nowrap border border-border shadow-lg">
-                    {dateStr}: {formatMoney(pnl)}
+          <SectionHeader title="Profit Kalender" desc="Dagelijks resultaat per maand. Donkerder = groter bedrag." />
+          <div className="space-y-6">
+            {calendarMonths.map((month) => (
+              <div key={month.monthKey}>
+                {/* Month header */}
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium text-heading capitalize">{month.monthName}</h4>
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="text-green-400/70">{month.winDays} groene dagen</span>
+                    <span className="text-red-400/70">{month.lossDays} rode dagen</span>
+                    <span className={`font-semibold ${month.totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {formatMoney(month.totalPnL)}
+                    </span>
                   </div>
                 </div>
-              )
-            })}
+
+                {/* Day labels */}
+                <div className="grid grid-cols-7 gap-1.5 mb-1">
+                  {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map((d) => (
+                    <div key={d} className="text-center text-[10px] text-text-dim/60 font-medium">{d}</div>
+                  ))}
+                </div>
+
+                {/* Calendar grid */}
+                <div className="grid grid-cols-7 gap-1.5">
+                  {/* Empty cells before first day */}
+                  {Array.from({ length: month.startCol }).map((_, i) => (
+                    <div key={`empty-${i}`} />
+                  ))}
+
+                  {/* Day cells */}
+                  {month.gridCells.map((cell) => {
+                    const hasTrades = cell.pnl !== null
+                    const intensity = hasTrades ? Math.min(Math.abs(cell.pnl!) / month.maxPnl, 1) : 0
+
+                    return (
+                      <div
+                        key={cell.dateStr}
+                        className="relative group"
+                      >
+                        <div
+                          className={`aspect-[4/3] rounded-lg flex flex-col items-center justify-center transition-all ${
+                            hasTrades
+                              ? 'cursor-default'
+                              : 'opacity-30'
+                          }`}
+                          style={hasTrades ? {
+                            backgroundColor: cell.pnl! >= 0
+                              ? `rgba(34,197,94,${0.1 + intensity * 0.45})`
+                              : `rgba(239,68,68,${0.1 + intensity * 0.45})`,
+                          } : {
+                            backgroundColor: 'rgba(255,255,255,0.02)',
+                          }}
+                        >
+                          <span className={`text-[11px] leading-none ${hasTrades ? 'text-text-muted' : 'text-text-dim/40'}`}>
+                            {cell.day}
+                          </span>
+                          {hasTrades && (
+                            <span className={`text-[10px] font-medium leading-none mt-0.5 ${cell.pnl! >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {cell.pnl! >= 0 ? '+' : ''}{cell.pnl!.toFixed(0)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Hover tooltip */}
+                        {hasTrades && (
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-20 px-2.5 py-1.5 rounded-lg bg-bg-elevated border border-border shadow-xl text-xs whitespace-nowrap">
+                            <span className="text-text-dim">{new Date(cell.dateStr).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                            <span className={`ml-2 font-semibold ${cell.pnl! >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {formatMoney(cell.pnl!)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t border-border/30">
+            <div className="flex items-center gap-2 text-xs text-text-dim">
+              <div className="flex items-center gap-0.5">
+                <div className="w-4 h-3 rounded bg-red-400/15" />
+                <div className="w-4 h-3 rounded bg-red-400/35" />
+                <div className="w-4 h-3 rounded bg-red-400/55" />
+              </div>
+              Verlies
+            </div>
+            <div className="flex items-center gap-2 text-xs text-text-dim">
+              <div className="flex items-center gap-0.5">
+                <div className="w-4 h-3 rounded bg-green-400/15" />
+                <div className="w-4 h-3 rounded bg-green-400/35" />
+                <div className="w-4 h-3 rounded bg-green-400/55" />
+              </div>
+              Winst
+            </div>
           </div>
         </div>
       )}
 
       {/* Trade Table */}
       <div className="p-5 rounded-xl glass">
-        <h3 className="text-sm font-semibold text-heading mb-4">Alle Trades</h3>
+        <SectionHeader title="Alle Trades" desc="Chronologisch overzicht van elke trade met details." />
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
