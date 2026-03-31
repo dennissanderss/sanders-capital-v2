@@ -22,7 +22,6 @@ const toolsDropdown = [
   { href: '/tools/marktoverzicht', label: 'Marktoverzicht' },
   { href: '/tools/calculator', label: 'Position Size Calculator' },
   { href: '/tools/kalender', label: 'Economische Kalender' },
-  { href: '/tools/begrippen', label: 'Economische Begrippen', sub: true },
   { href: '/tools/rente', label: 'Rentetarieven' },
 ]
 

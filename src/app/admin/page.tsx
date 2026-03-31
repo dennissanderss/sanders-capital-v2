@@ -118,7 +118,7 @@ function getFileIcon(name: string) {
 }
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<'articles' | 'kennisbank' | 'categories' | 'users' | 'tools' | 'rentes'>('articles')
+  const [tab, setTab] = useState<'articles' | 'kennisbank' | 'categories' | 'users' | 'tools' | 'rentes' | 'status'>('articles')
   const [articles, setArticles] = useState<Article[]>([])
   const [kennisbankItems, setKennisbankItems] = useState<KennisbankItem[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -454,7 +454,7 @@ export default function AdminPage() {
       <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
         <h1 className="text-3xl font-display font-semibold text-heading">Admin Panel</h1>
         <div className="flex gap-2 flex-wrap">
-          {(['articles', 'kennisbank', 'categories', 'users', 'tools', 'rentes'] as const).map((t) => (
+          {(['status', 'articles', 'kennisbank', 'categories', 'users', 'tools', 'rentes'] as const).map((t) => (
             <button
               key={t}
               onClick={() => { setTab(t); setEditing(null); setEditingKb(null); setEditingCat(null); setEditingCb(null) }}
@@ -462,11 +462,126 @@ export default function AdminPage() {
                 tab === t ? 'bg-accent text-white' : 'bg-bg-card border border-border text-text-muted hover:text-heading'
               }`}
             >
-              {t === 'articles' ? 'Artikelen' : t === 'kennisbank' ? 'Kennisbank' : t === 'categories' ? 'Categorieën' : t === 'users' ? 'Gebruikers' : t === 'tools' ? 'Tools' : 'Rentes'}
+              {t === 'status' ? 'Dashboard' : t === 'articles' ? 'Artikelen' : t === 'kennisbank' ? 'Kennisbank' : t === 'categories' ? 'Categorieën' : t === 'users' ? 'Gebruikers' : t === 'tools' ? 'Tools' : 'Rentes'}
             </button>
           ))}
         </div>
       </div>
+
+      {/* ═══════════════════════════════════════════════════════
+          STATUS DASHBOARD TAB
+      ═══════════════════════════════════════════════════════ */}
+      {tab === 'status' && (
+        <>
+          {/* Live / Automated systems */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-heading mb-4 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
+              Live & Geautomatiseerd
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { name: 'Economische Kalender', desc: 'Automatisch opgehaald via FairEconomy/ForexFactory API. Events worden live gefilterd.', status: 'live' },
+                { name: 'FX Koersen (Yahoo)', desc: 'Live valutakoersen worden real-time opgehaald via Yahoo Finance bij het openen van FX tools.', status: 'live' },
+                { name: 'Vergaderdata ophalen', desc: 'Rentevergaderingen worden automatisch uit de economische kalender gehaald (komende 2 weken).', status: 'live' },
+                { name: 'Auth & Premium gating', desc: 'Supabase Auth + RLS regelt automatisch toegang tot premium content en tools.', status: 'live' },
+              ].map(item => (
+                <div key={item.name} className="p-4 rounded-xl glass flex items-start gap-3">
+                  <span className="w-2 h-2 rounded-full bg-green-400 mt-1.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-heading">{item.name}</p>
+                    <p className="text-xs text-text-dim mt-0.5">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Manual / Admin maintained */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-heading mb-4 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
+                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              Handmatig beheer (via Admin Panel)
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { name: 'Rentetarieven & Targets', desc: 'Huidige rente, target, bias en laatste actie per centrale bank. Update na elk CB besluit.', tab: 'rentes' },
+                { name: 'Artikelen & Blog', desc: 'Blog posts schrijven, publiceren en premium content beheren.', tab: 'articles' },
+                { name: 'Kennisbank content', desc: 'Educatieve artikelen en documenten per categorie.', tab: 'kennisbank' },
+                { name: 'Tool instellingen', desc: 'Premium/gratis status en zichtbaarheid van tools.', tab: 'tools' },
+                { name: 'Gebruikers & Rollen', desc: 'Free/premium/admin rollen toekennen aan gebruikers.', tab: 'users' },
+              ].map(item => (
+                <button key={item.name} onClick={() => setTab(item.tab as typeof tab)} className="p-4 rounded-xl glass text-left hover:border-border-light transition-colors flex items-start gap-3">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-heading">{item.name}</p>
+                    <p className="text-xs text-text-dim mt-0.5">{item.desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Weekly tasks */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-heading mb-4 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
+                <polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+              Wekelijkse taken
+            </h2>
+            <div className="space-y-2">
+              {[
+                { task: 'Controleer rentetarieven na CB besluit', freq: 'Na elk rentebesluit', priority: 'hoog', desc: 'Update rente, target, bias en laatste actie in de Rentes tab wanneer een centrale bank een besluit neemt.' },
+                { task: 'Vergaderdata synchroniseren', freq: 'Maandelijks', priority: 'medium', desc: 'Klik "Vergaderingen ophalen" in de Rentes tab om komende CB meetings bij te werken.' },
+                { task: 'Nieuwe blog post publiceren', freq: 'Wekelijks', priority: 'medium', desc: 'Schrijf en publiceer minstens 1 blog post voor SEO en content engagement.' },
+                { task: 'Kennisbank uitbreiden', freq: 'Maandelijks', priority: 'laag', desc: 'Voeg nieuwe educatieve content toe aan de kennisbank categorieën.' },
+                { task: 'Gebruikers reviewen', freq: 'Wekelijks', priority: 'laag', desc: 'Check nieuwe registraties en pas rollen aan waar nodig.' },
+              ].map(item => (
+                <div key={item.task} className="p-4 rounded-xl glass flex items-start gap-4">
+                  <span className={`text-[10px] px-2 py-0.5 rounded border shrink-0 mt-0.5 ${
+                    item.priority === 'hoog' ? 'border-red-500/20 text-red-400 bg-red-500/10' :
+                    item.priority === 'medium' ? 'border-amber-500/20 text-amber-400 bg-amber-500/10' :
+                    'border-border text-text-dim'
+                  }`}>{item.priority}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-heading">{item.task}</p>
+                      <span className="text-[10px] text-text-dim bg-bg px-1.5 py-0.5 rounded">{item.freq}</span>
+                    </div>
+                    <p className="text-xs text-text-dim mt-0.5">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick stats */}
+          <div>
+            <h2 className="text-lg font-semibold text-heading mb-4">Overzicht</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-4 rounded-xl glass text-center">
+                <p className="text-2xl font-display font-semibold text-heading">{articles.length}</p>
+                <p className="text-xs text-text-dim mt-1">Artikelen</p>
+              </div>
+              <div className="p-4 rounded-xl glass text-center">
+                <p className="text-2xl font-display font-semibold text-heading">{kennisbankItems.length}</p>
+                <p className="text-xs text-text-dim mt-1">Kennisbank items</p>
+              </div>
+              <div className="p-4 rounded-xl glass text-center">
+                <p className="text-2xl font-display font-semibold text-heading">{users.length}</p>
+                <p className="text-xs text-text-dim mt-1">Gebruikers</p>
+              </div>
+              <div className="p-4 rounded-xl glass text-center">
+                <p className="text-2xl font-display font-semibold text-heading">{cbRates.length}</p>
+                <p className="text-xs text-text-dim mt-1">Centrale banken</p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ═══════════════════════════════════════════════════════
           ARTICLES TAB — LIST
