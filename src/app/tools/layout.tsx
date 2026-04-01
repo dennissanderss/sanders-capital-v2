@@ -64,7 +64,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
     return userRole === 'premium' || userRole === 'admin'
   }
 
-  const currentSlug = allTools.find(l => pathname === l.href)?.slug
+  const currentSlug = allTools.find(l => pathname === l.href || pathname.startsWith(l.href + '/'))?.slug
   const blockedPage = currentSlug && !hasAccess(currentSlug)
 
   return (
@@ -76,7 +76,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
             {/* Premium tools */}
             <div className="flex items-center">
               {premiumTools.map((link) => {
-                const isActive = pathname === link.href
+                const isActive = pathname === link.href || pathname.startsWith(link.href + '/')
                 const locked = isPremiumTool(link.slug) && !hasAccess(link.slug)
                 return (
                   <Link
@@ -107,7 +107,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
             {/* Free tools */}
             <div className="flex items-center">
               {freeTools.map((link) => {
-                const isActive = pathname === link.href
+                const isActive = pathname === link.href || pathname.startsWith(link.href + '/')
                 return (
                   <Link
                     key={link.href}
