@@ -651,6 +651,47 @@ export default function DailyBriefingDashboard() {
                 </details>
               </div>
             </div>
+
+            {/* Currency Strength mini-bar — hoort bij Regime (fundamentele basis) */}
+            {data.currencyRanking && data.currencyRanking.length > 0 && (
+              <div className="mt-4 p-4 rounded-xl bg-bg-card border border-border">
+                <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider mb-3">Valuta Sterkte: van sterk naar zwak</p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {data.currencyRanking.map((ccy, i) => {
+                    const isStrong = ccy.score > 1
+                    const isWeak = ccy.score < -1
+                    return (
+                      <div
+                        key={ccy.currency}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs ${
+                          isStrong ? 'bg-green-500/[0.08] border-green-500/20 text-green-400' :
+                          isWeak ? 'bg-red-500/[0.08] border-red-500/20 text-red-400' :
+                          'bg-white/[0.03] border-border text-text-dim'
+                        }`}
+                      >
+                        <span className="font-bold text-heading text-[11px]">{i + 1}.</span>
+                        <span className="font-semibold">{ccy.currency}</span>
+                        <span className="font-mono text-[10px]">
+                          {ccy.score > 0 ? '+' : ''}{ccy.score.toFixed(1)}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <details className="mt-2 group">
+                  <summary className="flex items-center gap-2 text-[10px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                    Hoe wordt de score berekend?
+                  </summary>
+                  <p className="mt-2 text-[10px] text-text-dim leading-relaxed">
+                    De score is gebaseerd op centraal bank beleid: hawkish bias = hogere score (sterke valuta), dovish = lagere score (zwakke valuta).
+                    Renteverschil t.o.v. het target telt ook mee. De sterkste tegenover de zwakste geeft de beste trade setups.
+                  </p>
+                </details>
+              </div>
+            )}
           </section>
 
           {/* Bridge: Regime → Intermarket */}
@@ -765,46 +806,6 @@ export default function DailyBriefingDashboard() {
               </div>
             </details>
 
-            {/* Currency Strength mini-bar */}
-            {data.currencyRanking && data.currencyRanking.length > 0 && (
-              <div className="mt-4 p-4 rounded-xl bg-bg-card border border-border">
-                <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider mb-3">Valuta Sterkte: van sterk naar zwak</p>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {data.currencyRanking.map((ccy, i) => {
-                    const isStrong = ccy.score > 1
-                    const isWeak = ccy.score < -1
-                    return (
-                      <div
-                        key={ccy.currency}
-                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs ${
-                          isStrong ? 'bg-green-500/[0.08] border-green-500/20 text-green-400' :
-                          isWeak ? 'bg-red-500/[0.08] border-red-500/20 text-red-400' :
-                          'bg-white/[0.03] border-border text-text-dim'
-                        }`}
-                      >
-                        <span className="font-bold text-heading text-[11px]">{i + 1}.</span>
-                        <span className="font-semibold">{ccy.currency}</span>
-                        <span className="font-mono text-[10px]">
-                          {ccy.score > 0 ? '+' : ''}{ccy.score.toFixed(1)}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-                <details className="mt-2 group">
-                  <summary className="flex items-center gap-2 text-[10px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                    Hoe wordt de score berekend?
-                  </summary>
-                  <p className="mt-2 text-[10px] text-text-dim leading-relaxed">
-                    De score is gebaseerd op centraal bank beleid: hawkish bias = hogere score (sterke valuta), dovish = lagere score (zwakke valuta).
-                    Renteverschil t.o.v. het target telt ook mee. De sterkste tegenover de zwakste geeft de beste trade setups.
-                  </p>
-                </details>
-              </div>
-            )}
           </section>
 
           {/* Bridge: Intermarket → Trade Focus */}
