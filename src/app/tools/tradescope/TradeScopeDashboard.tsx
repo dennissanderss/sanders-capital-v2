@@ -232,7 +232,7 @@ export default function TradeScopeDashboard() {
             <select
               value={filters.accountId || ''}
               onChange={(e) => setFilters(f => ({ ...f, accountId: e.target.value || undefined }))}
-              className="px-3 py-1.5 rounded-lg text-xs text-heading bg-transparent border border-border focus:border-accent/50 focus:outline-none cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-xs text-heading border border-border focus:border-accent/50 focus:outline-none cursor-pointer"
             >
               <option value="">Alle accounts</option>
               {accounts.map(a => (

@@ -146,6 +146,14 @@ function AccountsSection() {
               <label className="block text-[10px] text-text-dim mb-1">Startbalans</label>
               <input type="number" value={form.starting_balance} onChange={(e) => setForm(f => ({ ...f, starting_balance: e.target.value }))} className="form-input w-full" />
             </div>
+            <div>
+              <label className="block text-[10px] text-text-dim mb-1">Valuta</label>
+              <select value={form.currency} onChange={(e) => setForm(f => ({ ...f, currency: e.target.value }))} className="form-input w-full">
+                {['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD'].map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="mt-3">
             <label className="block text-[10px] text-text-dim mb-1">Notities</label>

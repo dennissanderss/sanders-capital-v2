@@ -53,6 +53,17 @@ function formatPct(n: number): string {
 }
 
 export default function DashboardTab({ trades, metrics, startingBalance }: Props) {
+  const [calMonth, setCalMonth] = useState(() => {
+    // Default to latest month with trades, or current month
+    const entries = Object.keys(metrics.dailyPnL).sort()
+    if (entries.length > 0) {
+      const last = entries[entries.length - 1]
+      return last.slice(0, 7) // "2023-03"
+    }
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  })
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
   // Equity chart data
   const equityData = useMemo(() => ({
     labels: metrics.equityCurve.map((_, i) => (i === 0 ? 'Start' : `#${i}`)),
@@ -157,45 +168,55 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
     ],
   }), [metrics])
 
-  // ── Profit Calendar: grouped by month ──
-  const calendarMonths = useMemo(() => {
-    const entries = Object.entries(metrics.dailyPnL).sort(([a], [b]) => a.localeCompare(b))
-    if (entries.length === 0) return []
+  // ── Profit Calendar: single month with navigation ──
+  const calendarData = useMemo(() => {
+    const [year, month] = calMonth.split('-').map(Number)
+    const monthName = new Date(year, month - 1).toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' })
 
-    // Group by month
-    const monthMap = new Map<string, { dateStr: string; pnl: number }[]>()
-    entries.forEach(([dateStr, pnl]) => {
-      const key = dateStr.slice(0, 7) // "2023-03"
-      if (!monthMap.has(key)) monthMap.set(key, [])
-      monthMap.get(key)!.push({ dateStr, pnl })
+    // Get daily PnL for this month
+    const days = Object.entries(metrics.dailyPnL)
+      .filter(([dateStr]) => dateStr.startsWith(calMonth))
+      .map(([dateStr, pnl]) => ({ dateStr, pnl }))
+
+    const totalPnL = days.reduce((s, d) => s + d.pnl, 0)
+    const winDays = days.filter((d) => d.pnl > 0).length
+    const lossDays = days.filter((d) => d.pnl < 0).length
+    const tradeDays = days.length
+
+    // Build grid
+    const firstDay = new Date(year, month - 1, 1)
+    const daysInMonth = new Date(year, month, 0).getDate()
+    let startCol = firstDay.getDay() - 1
+    if (startCol < 0) startCol = 6
+
+    const dayMap = new Map(days.map((d) => [d.dateStr, d.pnl]))
+    const maxPnl = Math.max(...days.map((d) => Math.abs(d.pnl)), 1)
+
+    const gridCells: { day: number; pnl: number | null; dateStr: string }[] = []
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ds = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      gridCells.push({ day: d, pnl: dayMap.has(ds) ? dayMap.get(ds)! : null, dateStr: ds })
+    }
+
+    return { monthName, totalPnL, winDays, lossDays, tradeDays, startCol, gridCells, maxPnl }
+  }, [metrics, calMonth])
+
+  const navigateMonth = (dir: -1 | 1) => {
+    const [y, m] = calMonth.split('-').map(Number)
+    const d = new Date(y, m - 1 + dir, 1)
+    setCalMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+    setSelectedDay(null)
+  }
+
+  // Trades for selected day (side panel)
+  const dayTrades = useMemo(() => {
+    if (!selectedDay) return []
+    return trades.filter(t => {
+      const d = t.openDate instanceof Date ? t.openDate : new Date(t.openDate)
+      const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      return ds === selectedDay
     })
-
-    return Array.from(monthMap.entries()).map(([monthKey, days]) => {
-      const [year, month] = monthKey.split('-').map(Number)
-      const monthName = new Date(year, month - 1).toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' })
-      const totalPnL = days.reduce((s, d) => s + d.pnl, 0)
-      const winDays = days.filter((d) => d.pnl > 0).length
-      const lossDays = days.filter((d) => d.pnl < 0).length
-
-      // Build full month grid
-      const firstDay = new Date(year, month - 1, 1)
-      const daysInMonth = new Date(year, month, 0).getDate()
-      // Monday = 0 start
-      let startCol = firstDay.getDay() - 1
-      if (startCol < 0) startCol = 6
-
-      const dayMap = new Map(days.map((d) => [d.dateStr, d.pnl]))
-      const maxPnl = Math.max(...days.map((d) => Math.abs(d.pnl)), 1)
-
-      const gridCells: { day: number; pnl: number | null; dateStr: string }[] = []
-      for (let d = 1; d <= daysInMonth; d++) {
-        const ds = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-        gridCells.push({ day: d, pnl: dayMap.has(ds) ? dayMap.get(ds)! : null, dateStr: ds })
-      }
-
-      return { monthKey, monthName, totalPnL, winDays, lossDays, startCol, gridCells, maxPnl }
-    })
-  }, [metrics])
+  }, [selectedDay, trades])
 
   const pnlColor = metrics.totalPnL >= 0 ? 'text-green-400' : 'text-red-400'
 
@@ -453,109 +474,194 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
       </div>
 
       {/* ── Profit Calendar ── */}
-      {calendarMonths.length > 0 && (
-        <div className="p-5 rounded-xl glass">
-          <SectionHeader title="Profit Kalender" desc="Dagelijks resultaat per maand. Donkerder = groter bedrag." />
-          <div className="space-y-6">
-            {calendarMonths.map((month) => (
-              <div key={month.monthKey}>
-                {/* Month header */}
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-medium text-heading capitalize">{month.monthName}</h4>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="text-green-400/70">{month.winDays} groene dagen</span>
-                    <span className="text-red-400/70">{month.lossDays} rode dagen</span>
-                    <span className={`font-semibold ${month.totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {formatMoney(month.totalPnL)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Day labels */}
-                <div className="grid grid-cols-7 gap-1.5 mb-1">
-                  {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map((d) => (
-                    <div key={d} className="text-center text-[10px] text-text-dim/60 font-medium">{d}</div>
-                  ))}
-                </div>
-
-                {/* Calendar grid */}
-                <div className="grid grid-cols-7 gap-1.5">
-                  {/* Empty cells before first day */}
-                  {Array.from({ length: month.startCol }).map((_, i) => (
-                    <div key={`empty-${i}`} />
-                  ))}
-
-                  {/* Day cells */}
-                  {month.gridCells.map((cell) => {
-                    const hasTrades = cell.pnl !== null
-                    const intensity = hasTrades ? Math.min(Math.abs(cell.pnl!) / month.maxPnl, 1) : 0
-
-                    return (
-                      <div
-                        key={cell.dateStr}
-                        className="relative group"
-                      >
-                        <div
-                          className={`aspect-[4/3] rounded-lg flex flex-col items-center justify-center transition-all ${
-                            hasTrades
-                              ? 'cursor-default'
-                              : 'opacity-30'
-                          }`}
-                          style={hasTrades ? {
-                            backgroundColor: cell.pnl! >= 0
-                              ? `rgba(34,197,94,${0.1 + intensity * 0.45})`
-                              : `rgba(239,68,68,${0.1 + intensity * 0.45})`,
-                          } : {
-                            backgroundColor: 'rgba(255,255,255,0.02)',
-                          }}
-                        >
-                          <span className={`text-[11px] leading-none ${hasTrades ? 'text-text-muted' : 'text-text-dim/40'}`}>
-                            {cell.day}
-                          </span>
-                          {hasTrades && (
-                            <span className={`text-[10px] font-medium leading-none mt-0.5 ${cell.pnl! >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                              {cell.pnl! >= 0 ? '+' : ''}{cell.pnl!.toFixed(0)}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Hover tooltip */}
-                        {hasTrades && (
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-20 px-2.5 py-1.5 rounded-lg bg-bg-elevated border border-border shadow-xl text-xs whitespace-nowrap">
-                            <span className="text-text-dim">{new Date(cell.dateStr).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-                            <span className={`ml-2 font-semibold ${cell.pnl! >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                              {formatMoney(cell.pnl!)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
+      <div className="p-5 rounded-xl glass">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-heading">Profit Kalender</h3>
+            <p className="text-xs text-text-dim mt-0.5">Klik op een dag om trades te bekijken</p>
           </div>
-
-          {/* Legend */}
-          <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t border-border/30">
-            <div className="flex items-center gap-2 text-xs text-text-dim">
-              <div className="flex items-center gap-0.5">
-                <div className="w-4 h-3 rounded bg-red-400/15" />
-                <div className="w-4 h-3 rounded bg-red-400/35" />
-                <div className="w-4 h-3 rounded bg-red-400/55" />
-              </div>
-              Verlies
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 text-xs text-text-dim">
+              <span className="text-green-400/70">{calendarData.winDays}W</span>
+              <span className="text-text-dim/40">/</span>
+              <span className="text-red-400/70">{calendarData.lossDays}L</span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-text-dim">
-              <div className="flex items-center gap-0.5">
-                <div className="w-4 h-3 rounded bg-green-400/15" />
-                <div className="w-4 h-3 rounded bg-green-400/35" />
-                <div className="w-4 h-3 rounded bg-green-400/55" />
-              </div>
-              Winst
-            </div>
+            <span className={`text-sm font-semibold ${calendarData.totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {formatMoney(calendarData.totalPnL)}
+            </span>
           </div>
         </div>
+
+        {/* Month navigation */}
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={() => navigateMonth(-1)} className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim"><polyline points="15 18 9 12 15 6" /></svg>
+          </button>
+          <h4 className="text-sm font-medium text-heading capitalize">{calendarData.monthName}</h4>
+          <button onClick={() => navigateMonth(1)} className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim"><polyline points="9 18 15 12 9 6" /></svg>
+          </button>
+        </div>
+
+        {/* Day labels */}
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map((d) => (
+            <div key={d} className="text-center text-[10px] text-text-dim/60 font-medium py-1">{d}</div>
+          ))}
+        </div>
+
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7 gap-1">
+          {Array.from({ length: calendarData.startCol }).map((_, i) => (
+            <div key={`empty-${i}`} />
+          ))}
+
+          {calendarData.gridCells.map((cell) => {
+            const hasTrades = cell.pnl !== null
+            const intensity = hasTrades ? Math.min(Math.abs(cell.pnl!) / calendarData.maxPnl, 1) : 0
+            const isSelected = selectedDay === cell.dateStr
+
+            return (
+              <div key={cell.dateStr} className="relative group">
+                <button
+                  type="button"
+                  onClick={() => hasTrades && setSelectedDay(isSelected ? null : cell.dateStr)}
+                  className={`w-full aspect-square rounded-lg flex flex-col items-center justify-center transition-all text-center ${
+                    hasTrades ? 'cursor-pointer hover:ring-1 hover:ring-accent/40' : 'opacity-30 cursor-default'
+                  } ${isSelected ? 'ring-2 ring-accent' : ''}`}
+                  style={hasTrades ? {
+                    backgroundColor: cell.pnl! >= 0
+                      ? `rgba(34,197,94,${0.1 + intensity * 0.45})`
+                      : `rgba(239,68,68,${0.1 + intensity * 0.45})`,
+                  } : {
+                    backgroundColor: 'rgba(255,255,255,0.02)',
+                  }}
+                >
+                  <span className={`text-[11px] leading-none ${hasTrades ? 'text-text-muted' : 'text-text-dim/40'}`}>
+                    {cell.day}
+                  </span>
+                  {hasTrades && (
+                    <span className={`text-[9px] font-medium leading-none mt-0.5 ${cell.pnl! >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {cell.pnl! >= 0 ? '+' : ''}{cell.pnl!.toFixed(0)}
+                    </span>
+                  )}
+                </button>
+
+                {/* Hover tooltip */}
+                {hasTrades && !isSelected && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-20 px-2.5 py-1.5 rounded-lg bg-bg-elevated border border-border shadow-xl text-xs whitespace-nowrap pointer-events-none">
+                    <span className="text-text-dim">{new Date(cell.dateStr + 'T12:00:00').toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                    <span className={`ml-2 font-semibold ${cell.pnl! >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {formatMoney(cell.pnl!)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center justify-center gap-6 mt-4 pt-3 border-t border-border/30">
+          <div className="flex items-center gap-2 text-[10px] text-text-dim">
+            <div className="flex items-center gap-0.5">
+              <div className="w-3 h-2.5 rounded bg-red-400/15" />
+              <div className="w-3 h-2.5 rounded bg-red-400/35" />
+              <div className="w-3 h-2.5 rounded bg-red-400/55" />
+            </div>
+            Verlies
+          </div>
+          <div className="flex items-center gap-2 text-[10px] text-text-dim">
+            <div className="flex items-center gap-0.5">
+              <div className="w-3 h-2.5 rounded bg-green-400/15" />
+              <div className="w-3 h-2.5 rounded bg-green-400/35" />
+              <div className="w-3 h-2.5 rounded bg-green-400/55" />
+            </div>
+            Winst
+          </div>
+        </div>
+      </div>
+
+      {/* ── Day Detail Side Panel ── */}
+      {selectedDay && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setSelectedDay(null)} />
+          <div className="fixed top-0 right-0 z-50 h-full w-full max-w-sm overflow-y-auto transition-transform duration-300 ease-out"
+            style={{ background: 'rgba(10, 12, 16, 0.99)', backdropFilter: 'blur(40px)', borderLeft: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            {/* Panel header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+              <div>
+                <h3 className="text-sm font-semibold text-heading">
+                  {new Date(selectedDay + 'T12:00:00').toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </h3>
+                <p className="text-xs text-text-dim mt-0.5">
+                  {dayTrades.length} trade{dayTrades.length !== 1 ? 's' : ''}
+                  {dayTrades.length > 0 && (
+                    <span className={`ml-2 font-medium ${dayTrades.reduce((s, t) => s + t.profitLoss, 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {formatMoney(dayTrades.reduce((s, t) => s + t.profitLoss, 0))}
+                    </span>
+                  )}
+                </p>
+              </div>
+              <button onClick={() => setSelectedDay(null)} className="p-2 rounded-lg hover:bg-white/[0.06] transition-colors">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            </div>
+
+            {/* Trade list */}
+            <div className="p-4 space-y-3">
+              {dayTrades.length === 0 ? (
+                <p className="text-xs text-text-dim text-center py-8">Geen trades op deze dag</p>
+              ) : (
+                dayTrades.map((t, i) => (
+                  <div key={i} className="p-3 rounded-xl border border-white/[0.06] bg-white/[0.02] space-y-2">
+                    {/* Trade header */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-heading">{t.symbol}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${t.action === 'buy' ? 'bg-[#3d6ea5]/20 text-[#5a8ec4]' : 'bg-[#b8935a]/20 text-[#b8935a]'}`}>
+                          {t.action === 'buy' ? 'LONG' : 'SHORT'}
+                        </span>
+                      </div>
+                      <span className={`text-sm font-semibold ${t.profitLoss >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {formatMoney(t.profitLoss)}
+                      </span>
+                    </div>
+
+                    {/* Trade details grid */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-text-dim">Entry</span>
+                        <span className="text-text-muted">{t.openPrice}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-text-dim">Exit</span>
+                        <span className="text-text-muted">{t.closePrice}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-text-dim">Pips</span>
+                        <span className={t.pips >= 0 ? 'text-green-400' : 'text-red-400'}>{t.pips.toFixed(1)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-text-dim">R:R</span>
+                        <span className="text-text-muted">{t.riskReward?.toFixed(1) ?? '-'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-text-dim">Lot</span>
+                        <span className="text-text-muted">{t.lotSize}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-text-dim">Sessie</span>
+                        <span className="text-text-muted">{t.session}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
       )}
 
       {/* Trade Table */}

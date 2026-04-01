@@ -99,7 +99,7 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
           <select
             value={filters.symbol || ''}
             onChange={(e) => onFiltersChange({ ...filters, symbol: e.target.value || undefined })}
-            className="px-3 py-1.5 rounded-lg text-xs text-heading bg-transparent border border-border focus:border-accent/50 focus:outline-none cursor-pointer"
+            className="px-3 py-1.5 rounded-lg text-xs text-heading border border-border focus:border-accent/50 focus:outline-none cursor-pointer"
           >
             <option value="">Alle paren</option>
             {symbols.map(s => <option key={s} value={s}>{s}</option>)}
@@ -109,7 +109,7 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
           <select
             value={filters.isWin === undefined ? '' : filters.isWin ? 'win' : 'loss'}
             onChange={(e) => onFiltersChange({ ...filters, isWin: e.target.value === '' ? undefined : e.target.value === 'win' })}
-            className="px-3 py-1.5 rounded-lg text-xs text-heading bg-transparent border border-border focus:border-accent/50 focus:outline-none cursor-pointer"
+            className="px-3 py-1.5 rounded-lg text-xs text-heading border border-border focus:border-accent/50 focus:outline-none cursor-pointer"
           >
             <option value="">Win + Loss</option>
             <option value="win">Alleen wins</option>
@@ -121,14 +121,14 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
             type="date"
             value={filters.dateFrom || ''}
             onChange={(e) => onFiltersChange({ ...filters, dateFrom: e.target.value || undefined })}
-            className="px-3 py-1.5 rounded-lg text-xs text-heading bg-transparent border border-border focus:border-accent/50 focus:outline-none"
+            className="px-3 py-1.5 rounded-lg text-xs text-heading border border-border focus:border-accent/50 focus:outline-none"
           />
           <span className="text-text-dim text-xs">-</span>
           <input
             type="date"
             value={filters.dateTo || ''}
             onChange={(e) => onFiltersChange({ ...filters, dateTo: e.target.value || undefined })}
-            className="px-3 py-1.5 rounded-lg text-xs text-heading bg-transparent border border-border focus:border-accent/50 focus:outline-none"
+            className="px-3 py-1.5 rounded-lg text-xs text-heading border border-border focus:border-accent/50 focus:outline-none"
           />
         </div>
 

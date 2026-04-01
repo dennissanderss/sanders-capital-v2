@@ -170,14 +170,14 @@ export default function StrategyAnalysisTab({ trades, strategies, setups, accoun
           <select
             value={dimension}
             onChange={(e) => setDimension(e.target.value as Dimension)}
-            className="px-3 py-1.5 rounded-lg text-xs text-heading bg-transparent border border-border focus:border-accent/50 focus:outline-none cursor-pointer"
+            className="px-3 py-1.5 rounded-lg text-xs text-heading border border-border focus:border-accent/50 focus:outline-none cursor-pointer"
           >
             {DIMENSIONS.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}
           </select>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="px-3 py-1.5 rounded-lg text-xs text-heading bg-transparent border border-border focus:border-accent/50 focus:outline-none cursor-pointer"
+            className="px-3 py-1.5 rounded-lg text-xs text-heading border border-border focus:border-accent/50 focus:outline-none cursor-pointer"
           >
             <option value="totalPnl">Sorteer: P&L</option>
             <option value="winRate">Sorteer: Win Rate</option>
