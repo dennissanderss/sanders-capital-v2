@@ -483,6 +483,7 @@ export async function POST(request: Request) {
             confidence: simulatedConfidence,
             intermarketAlignment,
             newsHeadlines: [] as string[],
+            callTime: `${date}T07:00:00.000Z`,
             entryTime: `${date}T16:00:00.000Z`,
             exitTime: `${exitDate}T16:00:00.000Z`,
             newsSimulated: true,

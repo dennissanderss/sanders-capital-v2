@@ -103,6 +103,7 @@ interface TrackRecordMetadata {
   newsInfluence?: number
   confidence?: number
   newsHeadlines?: string[]
+  callTime?: string
   entryTime?: string
   exitTime?: string
   newsSimulated?: boolean
@@ -1780,6 +1781,7 @@ export default function BriefingV2Dashboard() {
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {trackRecords.slice(0, 40).map(record => {
                         const meta = record.metadata
+                        const callTime = formatCET(meta?.callTime || record.created_at)
                         const entryTime = formatCET(meta?.entryTime || record.created_at)
                         const exitTime = formatCET(meta?.exitTime || record.resolved_at)
                         return (
@@ -1806,20 +1808,24 @@ export default function BriefingV2Dashboard() {
                             </div>
                             {/* Detail row: entry, exit, pips, timestamps */}
                             <div className="px-3 py-2 border-t border-white/[0.03]">
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
+                              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[10px]">
+                                <div>
+                                  <span className="text-text-dim/60 block">Call tijdstip</span>
+                                  <span className="font-mono text-accent-light/80 font-semibold">
+                                    {callTime || '—'}
+                                  </span>
+                                </div>
                                 <div>
                                   <span className="text-text-dim/60 block">Entry prijs</span>
                                   <span className="font-mono text-text-muted font-semibold">
                                     {record.entry_price !== null ? record.entry_price : '—'}
                                   </span>
-                                  {entryTime && <span className="block text-[9px] text-text-dim/50">{entryTime}</span>}
                                 </div>
                                 <div>
-                                  <span className="text-text-dim/60 block">Exit prijs</span>
+                                  <span className="text-text-dim/60 block">Exit prijs <span className="text-text-dim/40">({exitTime || '—'})</span></span>
                                   <span className="font-mono text-text-muted font-semibold">
                                     {record.exit_price !== null ? record.exit_price : '—'}
                                   </span>
-                                  {exitTime && <span className="block text-[9px] text-text-dim/50">{exitTime}</span>}
                                 </div>
                                 <div>
                                   <span className="text-text-dim/60 block">Pips</span>
