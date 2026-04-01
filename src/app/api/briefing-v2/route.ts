@@ -79,6 +79,7 @@ function rateTargetScore(rate: number | null, target: number | null): number {
 
 // ─── News Sentiment Analysis ────────────────────────────────
 // Analyze recent news articles for sentiment impact per currency
+// V2.1: Improved keyword matching with negation detection + phrase priority
 function analyzeNewsSentiment(articles: NewsArticle[]): Record<string, { score: number; headlines: string[]; sentiment: string }> {
   const sentiments: Record<string, { score: number; headlines: string[]; bullishCount: number; bearishCount: number }> = {}
 
@@ -86,18 +87,30 @@ function analyzeNewsSentiment(articles: NewsArticle[]): Record<string, { score: 
     sentiments[ccy] = { score: 0, headlines: [], bullishCount: 0, bearishCount: 0 }
   }
 
-  // Bullish keywords (strengthen currency)
-  const bullishKeywords = [
-    'hawkish', 'rate hike', 'rate increase', 'strong', 'surge', 'rally', 'beat',
-    'exceeded', 'higher than expected', 'tightening', 'restrictive', 'robust',
-    'record high', 'growth', 'booming', 'upbeat', 'positive',
+  // Negation phrases that INVERT the signal (e.g. "no rate hike" = bearish)
+  const negationPrefixes = ['no ', 'not ', 'without ', 'failed to ', 'unlikely ', 'ruled out ', 'avoided ']
+
+  // Bullish PHRASES first (multi-word = higher confidence), then single words
+  const bullishPhrases = [
+    'rate hike', 'rate increase', 'higher than expected', 'beat expectations',
+    'exceeded expectations', 'stronger than expected', 'record high', 'hawkish surprise',
+    'hawkish hold', 'tightening cycle', 'above consensus',
+  ]
+  const bullishWords = [
+    'hawkish', 'tightening', 'restrictive', 'robust', 'surge', 'rally',
+    'booming', 'upbeat', 'outperform', 'accelerat',
   ]
 
-  // Bearish keywords (weaken currency)
-  const bearishKeywords = [
-    'dovish', 'rate cut', 'rate decrease', 'weak', 'decline', 'fall', 'miss',
-    'below expected', 'easing', 'accommodative', 'recession', 'slowdown',
-    'contraction', 'crisis', 'warning', 'negative', 'downgrade', 'stagflation',
+  // Bearish PHRASES first, then single words
+  const bearishPhrases = [
+    'rate cut', 'rate decrease', 'lower than expected', 'missed expectations',
+    'below expected', 'weaker than expected', 'dovish surprise', 'dovish pivot',
+    'easing cycle', 'below consensus', 'hard landing', 'debt crisis',
+  ]
+  const bearishWords = [
+    'dovish', 'easing', 'accommodative', 'recession', 'slowdown',
+    'contraction', 'crisis', 'warning', 'downgrade', 'stagflation',
+    'deteriorat', 'plunge', 'crash',
   ]
 
   for (const article of articles) {
@@ -108,12 +121,34 @@ function analyzeNewsSentiment(articles: NewsArticle[]): Record<string, { score: 
 
     let isBullish = 0
     let isBearish = 0
-    for (const kw of bullishKeywords) {
-      if (text.includes(kw)) isBullish++
+
+    // Check phrases first (higher weight: 1.5x per match)
+    for (const phrase of bullishPhrases) {
+      if (text.includes(phrase)) {
+        // Check for negation
+        const negated = negationPrefixes.some(neg => text.includes(neg + phrase))
+        if (negated) isBearish += 1.5
+        else isBullish += 1.5
+      }
     }
-    for (const kw of bearishKeywords) {
-      if (text.includes(kw)) isBearish++
+    for (const phrase of bearishPhrases) {
+      if (text.includes(phrase)) {
+        const negated = negationPrefixes.some(neg => text.includes(neg + phrase))
+        if (negated) isBullish += 1.5
+        else isBearish += 1.5
+      }
     }
+
+    // Single keywords (lower weight: 0.5x to reduce noise)
+    for (const kw of bullishWords) {
+      if (text.includes(kw)) isBullish += 0.5
+    }
+    for (const kw of bearishWords) {
+      if (text.includes(kw)) isBearish += 0.5
+    }
+
+    // Skip articles with no clear signal (noise filter)
+    if (Math.abs(isBullish - isBearish) < 0.5) continue
 
     // Weight by relevance score
     const weight = Math.min(article.relevance_score / 5, 1.5)
@@ -121,7 +156,7 @@ function analyzeNewsSentiment(articles: NewsArticle[]): Record<string, { score: 
     const hoursAgo = (Date.now() - new Date(article.published_at).getTime()) / 3600000
     const recencyWeight = hoursAgo < 12 ? 1.5 : hoursAgo < 24 ? 1.2 : hoursAgo < 48 ? 1.0 : 0.7
 
-    const netSentiment = (isBullish - isBearish) * weight * recencyWeight * 0.3
+    const netSentiment = (isBullish - isBearish) * weight * recencyWeight * 0.25
 
     for (const ccy of currencies) {
       if (sentiments[ccy]) {
@@ -141,10 +176,11 @@ function analyzeNewsSentiment(articles: NewsArticle[]): Record<string, { score: 
     const s = sentiments[ccy]
     const score = Math.round(s.score * 10) / 10
     let sentiment = 'neutraal'
-    if (score > 0.5) sentiment = 'positief'
-    else if (score > 1.5) sentiment = 'sterk positief'
-    else if (score < -0.5) sentiment = 'negatief'
+    // FIX: Check "sterk" FIRST (was unreachable before)
+    if (score > 1.5) sentiment = 'sterk positief'
+    else if (score > 0.5) sentiment = 'positief'
     else if (score < -1.5) sentiment = 'sterk negatief'
+    else if (score < -0.5) sentiment = 'negatief'
 
     result[ccy] = { score, headlines: s.headlines, sentiment }
   }
@@ -353,6 +389,8 @@ export async function GET() {
     }).sort((a, b) => Math.abs(b.score) - Math.abs(a.score))
 
     // ── 3. Macro Regime ──
+    // NOTE: We determine regime FIRST, then apply intermarket confirmation
+    // which can UPGRADE or DOWNGRADE conviction levels.
     const usdScore = currencyScores['USD']?.score || 0
     const jpyScore = currencyScores['JPY']?.score || 0
     const chfScore = currencyScores['CHF']?.score || 0
@@ -469,6 +507,35 @@ export async function GET() {
     const newsAlignment = calculateNewsAlignment(newsSentiment, regime)
     const overallConfidence = Math.round((intermarketAlignment + newsAlignment) / 2)
 
+    // ── 9. V2.1 ENHANCEMENT: Intermarket Regime Filter ──────────
+    // If intermarket signals CONTRADICT the regime, downgrade "sterk" to "matig"
+    // If they CONFIRM, upgrade "matig" to "sterk" (only for pairs aligned with regime)
+    // This is the key improvement: intermarket signals now influence trade selection
+    const regimeConfirmed = intermarketAlignment >= 65
+    const regimeContradicted = intermarketAlignment <= 35
+
+    // Also check for high-impact events today that add uncertainty
+    const highImpactToday = todayEvents.length >= 2
+
+    for (const pair of pairBiases) {
+      // Check if pair direction aligns with regime
+      const pairAligned = isAlignedWithRegime(pair, regime)
+
+      if (regimeContradicted && pair.conviction === 'sterk') {
+        // Intermarket contradicts regime → downgrade strong to moderate
+        pair.conviction = 'matig'
+      } else if (regimeConfirmed && pair.conviction === 'matig' && pairAligned) {
+        // Intermarket confirms regime AND pair aligns → upgrade to strong
+        pair.conviction = 'sterk'
+      }
+
+      // High-impact events add uncertainty → never allow "sterk" on those days
+      // unless confidence is very high (>75%)
+      if (highImpactToday && pair.conviction === 'sterk' && overallConfidence < 75) {
+        pair.conviction = 'matig'
+      }
+    }
+
     return NextResponse.json({
       version: 'v2',
       regime,
@@ -490,6 +557,41 @@ export async function GET() {
     console.error('Briefing V2 API error:', e)
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
+}
+
+// ─── Regime-Pair Alignment Check ────────────────────────────
+// Does this pair's direction make sense given the macro regime?
+function isAlignedWithRegime(pair: { pair: string; direction: string; base: string; quote: string }, regime: string): boolean {
+  const safeHavens = ['JPY', 'CHF']
+  const highYield = ['AUD', 'NZD', 'CAD']
+  const isBullish = pair.direction.includes('bullish')
+
+  if (regime === 'Risk-Off') {
+    // In risk-off: safe-havens should be strong (base=safe bullish, or quote=safe bearish)
+    if (isBullish && safeHavens.includes(pair.base)) return true
+    if (!isBullish && safeHavens.includes(pair.quote)) return true
+    if (!isBullish && highYield.includes(pair.base)) return true
+    if (isBullish && highYield.includes(pair.quote)) return true
+  }
+  if (regime === 'Risk-On') {
+    // In risk-on: high-yield should be strong
+    if (isBullish && highYield.includes(pair.base)) return true
+    if (!isBullish && highYield.includes(pair.quote)) return true
+    if (!isBullish && safeHavens.includes(pair.base)) return true
+    if (isBullish && safeHavens.includes(pair.quote)) return true
+  }
+  if (regime === 'USD Dominant') {
+    // USD should be strong
+    if (isBullish && pair.base === 'USD') return true
+    if (!isBullish && pair.quote === 'USD') return true
+  }
+  if (regime === 'USD Zwak') {
+    if (!isBullish && pair.base === 'USD') return true
+    if (isBullish && pair.quote === 'USD') return true
+  }
+  // Gemengd: any direction is fine
+  if (regime === 'Gemengd') return true
+  return false
 }
 
 // ─── Confidence Calculations ────────────────────────────────

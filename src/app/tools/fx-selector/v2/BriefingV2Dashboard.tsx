@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 // ─── Types ──────────────────────────────────────────────────
 interface CurrencyRank {
@@ -95,6 +96,17 @@ interface BriefingV2Data {
   error?: string
 }
 
+interface TrackRecordMetadata {
+  source?: string
+  scoreWithoutNews?: number
+  newsInfluence?: number
+  confidence?: number
+  newsHeadlines?: string[]
+  entryTime?: string
+  exitTime?: string
+  newsSimulated?: boolean
+}
+
 interface TrackRecord {
   id: string
   date: string
@@ -107,6 +119,9 @@ interface TrackRecord {
   result: 'pending' | 'correct' | 'incorrect'
   pips_moved: number | null
   regime: string
+  created_at?: string
+  resolved_at?: string
+  metadata?: TrackRecordMetadata
 }
 
 interface TrackStats {
@@ -116,9 +131,24 @@ interface TrackStats {
   pending: number
   winRate: number
   startDate: string | null
+  newsInfluenced?: {
+    total: number
+    correct: number
+    winRate: number
+  }
 }
 
 // ─── Helpers ────────────────────────────────────────────────
+function formatCET(isoStr: string | undefined): string {
+  if (!isoStr) return ''
+  try {
+    return new Date(isoStr).toLocaleString('nl-NL', {
+      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+      timeZone: 'Europe/Amsterdam',
+    }) + ' CET'
+  } catch { return '' }
+}
+
 function flagEmoji(code: string) {
   if (!code || code.length !== 2) return ''
   return code.toUpperCase().split('').map(c => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65)).join('')
@@ -224,13 +254,43 @@ function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: Currenc
 
 const MAJORS = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD']
 
-const INTERMARKET_HOW_TO_READ: Record<string, string> = {
-  us10y: 'Stijgende yields = USD sterker, risk-off druk. Dalende yields = USD zwakker, risk-on. Het gaat niet om het niveau maar de richting.',
-  sp500: 'Stijgend = risk-on (AUD, NZD, CAD sterk). Dalend = risk-off (JPY, CHF sterk). De ultieme risk barometer.',
-  vix: 'Onder 15 = kalm. 15-20 = normaal. 20-25 = stress. 25-30 = angst. Boven 30 = paniek. VIX is mean-reverting.',
-  gold: 'Stijgt bij onzekerheid en dalende reele rente. Goud + dalende aandelen = sterke risk-off bevestiging.',
-  oil: 'Direct: CAD sterker bij stijgende olie (export), JPY zwakker (import). Indirect: hogere olie = meer inflatie = hawkisher beleid.',
-  dxy: 'Dollar Index meet USD tegen een mandje van 6 valuta&apos;s. Stijgend = USD breed sterker. Dalend = USD breed zwakker.',
+const INTERMARKET_HOW_TO_READ: Record<string, { summary: string; detail: string; levels: string; fxImpact: string }> = {
+  us10y: {
+    summary: 'De rente op 10-jarige Amerikaanse staatsobligaties. Dit is het belangrijkste rentesignaal ter wereld.',
+    detail: 'Stijgende yields betekenen dat beleggers hogere vergoeding eisen voor het uitlenen van geld aan de overheid. Dit kan komen door inflatieverwachtingen, hawkish Fed-beleid, of sterk economisch vertrouwen. Dalende yields wijzen op het tegenovergestelde: beleggers vluchten naar de veiligheid van staatsobligaties (risk-off).',
+    levels: 'Boven 4.5% = zeer restrictief, drukt aandelen en high-yield valuta\'s. 3.5-4.5% = normaal. Onder 3.5% = accommoderend, ondersteunt risk-on.',
+    fxImpact: 'Stijgend → USD sterker (hogere rente trekt kapitaal aan). Dalend → USD zwakker. JPY paren zeer gevoelig: hogere US yields = USD/JPY stijgt.',
+  },
+  sp500: {
+    summary: 'De S&P 500 is de ultieme barometer voor het mondiale risicosentiment.',
+    detail: 'De S&P 500 volgt de 500 grootste Amerikaanse bedrijven en wordt wereldwijd als maatstaf gebruikt. Als de S&P stijgt, willen beleggers risico nemen (risk-on). Ze kopen aandelen en high-yield valuta\'s. Als de S&P daalt, vluchten ze naar veilige havens. De correlatie met FX is niet 1:1 maar geeft de richting van het sentiment.',
+    levels: 'Dagelijkse beweging >1% = significant. >2% = hoge volatiliteit. De trend (5-daags gemiddelde) is belangrijker dan de dagbeweging.',
+    fxImpact: 'Stijgend → AUD, NZD, CAD sterker (carry trades aantrekkelijk). Dalend → JPY, CHF sterker (veilige havens). EUR en GBP reageren minder direct.',
+  },
+  vix: {
+    summary: 'De VIX (Fear Index) meet de verwachte volatiliteit van de S&P 500 over de komende 30 dagen.',
+    detail: 'De VIX wordt berekend uit optieprijzen. Een hoge VIX betekent dat beleggers veel betalen voor bescherming tegen koersdalingen — ze zijn bang. Een lage VIX betekent rust. Belangrijk: de VIX is mean-reverting. Na een piek keert hij altijd terug naar gemiddeld niveau. Extremen zijn daarom ook potentiële keerpunten.',
+    levels: 'Onder 15 = markt is kalm, risk-on. 15-20 = normaal. 20-25 = verhoogde stress. 25-30 = angst, risk-off. Boven 30 = paniek (zeldzaam, grote kans op snap-back rally).',
+    fxImpact: 'VIX stijgt → JPY en CHF sterker, AUD en NZD zwakker. VIX daalt → omgekeerd. VIX boven 25 versterkt het risk-off signaal significant.',
+  },
+  gold: {
+    summary: 'Goud is de oudste veilige haven. Het stijgt bij onzekerheid, inflatie en dalende reële rentes.',
+    detail: 'Goud heeft geen rente of dividend, dus het wordt aantrekkelijker als reële rentes (nominale rente minus inflatie) dalen. Bij geopolitieke spanningen en financiële onzekerheid vluchten beleggers naar goud. Goud + dalende aandelen = sterke risk-off bevestiging. Goud + stijgende aandelen = mogelijk inflatiezorgen.',
+    levels: 'De absolute prijs is minder belangrijk dan de dagelijkse verandering. Een stijging van >1% op een dag is significant.',
+    fxImpact: 'Goud stijgt → vaak JPY en CHF mee sterker (alle veilige havens). Goud daalt → beleggers verlaten veilige havens → AUD (goud-exporteur) kan profiteren.',
+  },
+  oil: {
+    summary: 'Olie (WTI) beïnvloedt specifieke valuta\'s direct via import/export relaties.',
+    detail: 'Canada is een grote olie-exporteur: hogere olieprijzen = meer export-inkomsten = sterker CAD. Japan importeert bijna alle olie: hogere olieprijzen = hogere importkosten = zwakker JPY. Indirect: hogere olieprijzen → hogere inflatie → centrale banken worden hawkisher. Dit kan EUR en GBP beïnvloeden.',
+    levels: 'Boven $80/vat = bullish voor CAD en inflatoir. $60-80 = normaal. Onder $60 = deflatoir, bearish CAD.',
+    fxImpact: 'Stijgend → CAD sterker, JPY zwakker. Dalend → CAD zwakker, JPY minder onder druk. Extreme olieprijzen beïnvloeden het bredere regime.',
+  },
+  dxy: {
+    summary: 'De Dollar Index meet de USD tegen een mandje van 6 valuta\'s (EUR 57.6%, JPY 13.6%, GBP 11.9%, CAD 9.1%, SEK 4.2%, CHF 3.6%).',
+    detail: 'Omdat EUR het grootste gewicht heeft (57.6%), beweegt de DXY grotendeels invers aan EUR/USD. Een stijgende DXY bevestigt brede USD-sterkte, niet alleen tegen één valuta. Dit is nuttig om te checken of een USD-move breed gedragen is of geïsoleerd tot één paar.',
+    levels: 'Boven 105 = sterke USD. 100-105 = neutraal. Onder 100 = zwakke USD. Extremen (>108 of <95) zijn zeldzaam en wijzen op sterke regimes.',
+    fxImpact: 'DXY stijgt → bevestigt USD Dominant regime. DXY daalt → bevestigt USD Zwak regime. Kijk of DXY-beweging consistent is met individuele paarbewegingen.',
+  },
 }
 
 // ─── Step Header Component ─────────────────────────────────
@@ -982,7 +1042,7 @@ export default function BriefingV2Dashboard() {
                 </details>
               </div>
 
-              {/* Expandable: Per-signal explanation */}
+              {/* Expandable: Per-signal explanation — RICH like V1 */}
               <div className="px-5 sm:px-6 pb-4">
                 <details className="mt-3 group">
                   <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
@@ -991,38 +1051,58 @@ export default function BriefingV2Dashboard() {
                     </svg>
                     Per signaal uitleg bekijken
                   </summary>
-                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                    <div className="space-y-2">
-                      {data.intermarketSignals.map(signal => {
-                        const isUp = signal.direction === 'up'
-                        const isDown = signal.direction === 'down'
-                        const howToRead = INTERMARKET_HOW_TO_READ[signal.key] || ''
-                        return (
-                          <div key={signal.key} className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-semibold text-heading">{signal.name}</span>
-                              <div className="flex items-center gap-2">
-                                {signal.current !== null && (
-                                  <span className="text-[10px] font-mono text-text-muted">
-                                    {signal.unit === '$' ? '$' : ''}{signal.current}{signal.unit === '%' ? '%' : ''}
-                                  </span>
-                                )}
-                                <span className={`text-xs font-mono font-semibold ${isUp ? 'text-green-400' : isDown ? 'text-red-400' : 'text-text-dim'}`}>
-                                  {isUp ? '\u25B2' : isDown ? '\u25BC' : '\u2014'}
+                  <div className="mt-3 space-y-3">
+                    {data.intermarketSignals.map(signal => {
+                      const isUp = signal.direction === 'up'
+                      const isDown = signal.direction === 'down'
+                      const info = INTERMARKET_HOW_TO_READ[signal.key]
+                      return (
+                        <div key={signal.key} className="rounded-xl bg-white/[0.02] border border-border/50 overflow-hidden">
+                          <div className="px-4 py-2.5 bg-white/[0.02] border-b border-border/30 flex items-center justify-between">
+                            <p className="text-sm font-semibold text-heading">{signal.name}</p>
+                            <div className="flex items-center gap-2">
+                              {signal.current !== null && (
+                                <span className="text-xs font-mono text-text-muted">
+                                  {signal.unit === '$' ? '$' : ''}{signal.current}{signal.unit === '%' ? '%' : ''}
                                 </span>
-                              </div>
+                              )}
+                              {signal.changePct !== null && (
+                                <span className={`text-[10px] font-mono ${signal.changePct > 0 ? 'text-green-400' : signal.changePct < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                                  {signal.changePct > 0 ? '+' : ''}{signal.changePct}%
+                                </span>
+                              )}
+                              <span className={`text-xs font-mono font-semibold ${isUp ? 'text-green-400' : isDown ? 'text-red-400' : 'text-text-dim'}`}>
+                                {isUp ? '\u25B2' : isDown ? '\u25BC' : '\u2014'}
+                              </span>
                             </div>
-                            {howToRead && (
-                              <p className="text-[10px] text-text-dim leading-relaxed mb-1">{howToRead}</p>
-                            )}
-                            {signal.context && <p className="text-[10px] text-text-dim leading-relaxed">{signal.context}</p>}
-                            <p className="text-[10px] text-accent-light/70 mt-1">
-                              <strong>Regime impact:</strong> {signal.regimeImpact}
-                            </p>
                           </div>
-                        )
-                      })}
-                    </div>
+                          <div className="px-4 py-3 space-y-2">
+                            {info && (
+                              <>
+                                <p className="text-[11px] text-text-dim leading-relaxed">{info.summary}</p>
+                                <p className="text-[11px] text-text-dim leading-relaxed">{info.detail}</p>
+                                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                                  <p className="text-[10px] text-text-dim leading-relaxed">
+                                    <strong className="text-text-muted">Niveaus:</strong> {info.levels}
+                                  </p>
+                                </div>
+                                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                                  <p className="text-[10px] text-text-dim leading-relaxed">
+                                    <strong className="text-text-muted">FX Impact:</strong> {info.fxImpact}
+                                  </p>
+                                </div>
+                              </>
+                            )}
+                            {signal.context && !info && <p className="text-[10px] text-text-dim leading-relaxed">{signal.context}</p>}
+                            <div className="mt-2 p-2.5 rounded-lg bg-accent-glow/10 border border-accent-dim/20">
+                              <p className="text-[11px] text-text-dim leading-relaxed">
+                                <strong className="text-accent-light">Regime impact:</strong> {signal.regimeImpact}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </details>
 
@@ -1419,20 +1499,48 @@ export default function BriefingV2Dashboard() {
 
               {showTrackRecord && (
                 <div className="px-5 pb-5 border-t border-white/[0.04]">
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-4 gap-3 mt-4 mb-4">
+                  {/* Tracking since + Stats Grid */}
+                  {trackStats.startDate && (
+                    <div className="mt-3 mb-2 flex items-center gap-2 text-[10px] text-text-dim">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      <span>Tracking actief sinds <strong className="text-text-muted">{trackStats.startDate}</strong></span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-5 gap-2 mt-3 mb-4">
                     {[
                       { label: 'Totaal', value: trackStats.total, color: 'text-heading' },
                       { label: 'Correct', value: trackStats.correct, color: 'text-green-400' },
                       { label: 'Incorrect', value: trackStats.incorrect, color: 'text-red-400' },
                       { label: 'Pending', value: trackStats.pending, color: 'text-amber-400' },
+                      { label: 'Win Rate', value: `${trackStats.winRate}%`, color: trackStats.winRate >= 55 ? 'text-green-400' : trackStats.winRate >= 45 ? 'text-amber-400' : 'text-red-400' },
                     ].map(stat => (
-                      <div key={stat.label} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
-                        <p className={`text-xl font-mono font-bold ${stat.color}`}>{stat.value}</p>
-                        <p className="text-[10px] text-text-dim">{stat.label}</p>
+                      <div key={stat.label} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+                        <p className={`text-lg font-mono font-bold ${stat.color}`}>{stat.value}</p>
+                        <p className="text-[9px] text-text-dim">{stat.label}</p>
                       </div>
                     ))}
                   </div>
+
+                  {/* News influence stats */}
+                  {trackStats.newsInfluenced && trackStats.newsInfluenced.total > 0 && (
+                    <div className="mb-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                      <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Nieuws Impact Analyse</p>
+                      <div className="flex items-center gap-4 text-xs">
+                        <span className="text-text-muted">
+                          Trades met nieuws invloed: <strong className="text-heading">{trackStats.newsInfluenced.total}</strong>
+                        </span>
+                        <span className={`font-mono font-bold ${trackStats.newsInfluenced.winRate >= 55 ? 'text-green-400' : trackStats.newsInfluenced.winRate >= 45 ? 'text-amber-400' : 'text-red-400'}`}>
+                          {trackStats.newsInfluenced.winRate}% win rate
+                        </span>
+                        <span className="text-text-dim text-[10px]">
+                          (vs {trackStats.winRate}% totaal)
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Backfill Button */}
                   <div className="mb-4 flex items-center gap-3">
@@ -1462,51 +1570,87 @@ export default function BriefingV2Dashboard() {
                     )}
                   </div>
 
-                  {/* Historical Records Table - DETAILED */}
+                  {/* Historical Records — DETAILED with timestamps */}
                   {trackRecords.length > 0 && (
-                    <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
-                      {trackRecords.slice(0, 30).map(record => (
-                        <div key={record.id} className="px-3 py-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04] text-xs">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-text-dim font-mono text-[10px]">{record.date}</span>
-                              <span className="font-semibold text-heading font-mono">{record.pair}</span>
-                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                record.direction.includes('bullish') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                    <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                      {trackRecords.slice(0, 40).map(record => {
+                        const meta = record.metadata
+                        const entryTime = formatCET(meta?.entryTime || record.created_at)
+                        const exitTime = formatCET(meta?.exitTime || record.resolved_at)
+                        return (
+                          <div key={record.id} className="rounded-xl bg-white/[0.02] border border-white/[0.04] overflow-hidden">
+                            {/* Header row */}
+                            <div className="px-3 py-2 flex items-center justify-between bg-white/[0.01]">
+                              <div className="flex items-center gap-2">
+                                <span className="text-text-dim font-mono text-[10px]">{record.date}</span>
+                                <span className="font-semibold text-heading font-mono text-xs">{record.pair}</span>
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                  record.direction.includes('bullish') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                                }`}>
+                                  {record.direction.includes('bullish') ? 'LONG' : 'SHORT'}
+                                </span>
+                                <span className="text-[9px] font-mono text-text-dim">score: {record.score}</span>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                                record.result === 'correct' ? 'bg-green-500/10 text-green-400' :
+                                record.result === 'incorrect' ? 'bg-red-500/10 text-red-400' :
+                                'bg-amber-500/10 text-amber-400'
                               }`}>
-                                {record.direction.includes('bullish') ? 'LONG' : 'SHORT'}
+                                {record.result === 'correct' ? '\u2713 Correct' : record.result === 'incorrect' ? '\u2717 Incorrect' : '\u23F3 Pending'}
                               </span>
-                              {record.entry_price !== null && (
-                                <span className="text-text-dim">
-                                  <span className="text-[9px] text-text-dim/60 mr-0.5">entry</span>
-                                  <span className="font-mono text-text-muted">{record.entry_price}</span>
-                                </span>
-                              )}
-                              {record.exit_price !== null && (
-                                <span className="text-text-dim">
-                                  <span className="text-[9px] text-text-dim/60 mr-0.5">exit</span>
-                                  <span className="font-mono text-text-muted">{record.exit_price}</span>
-                                </span>
-                              )}
-                              {record.pips_moved !== null && (
-                                <span className={`font-mono text-[10px] ${record.pips_moved > 0 ? 'text-green-400' : record.pips_moved < 0 ? 'text-red-400' : 'text-text-dim'}`}>
-                                  {record.pips_moved > 0 ? '+' : ''}{record.pips_moved} pips
-                                </span>
-                              )}
-                              {record.regime && (
-                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.04] text-text-dim">{record.regime}</span>
+                            </div>
+                            {/* Detail row: entry, exit, pips, timestamps */}
+                            <div className="px-3 py-2 border-t border-white/[0.03]">
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
+                                <div>
+                                  <span className="text-text-dim/60 block">Entry prijs</span>
+                                  <span className="font-mono text-text-muted font-semibold">
+                                    {record.entry_price !== null ? record.entry_price : '—'}
+                                  </span>
+                                  {entryTime && <span className="block text-[9px] text-text-dim/50">{entryTime}</span>}
+                                </div>
+                                <div>
+                                  <span className="text-text-dim/60 block">Exit prijs</span>
+                                  <span className="font-mono text-text-muted font-semibold">
+                                    {record.exit_price !== null ? record.exit_price : '—'}
+                                  </span>
+                                  {exitTime && <span className="block text-[9px] text-text-dim/50">{exitTime}</span>}
+                                </div>
+                                <div>
+                                  <span className="text-text-dim/60 block">Pips</span>
+                                  {record.pips_moved !== null ? (
+                                    <span className={`font-mono font-semibold ${record.pips_moved > 0 ? 'text-green-400' : record.pips_moved < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                                      {record.pips_moved > 0 ? '+' : ''}{record.pips_moved}
+                                    </span>
+                                  ) : <span className="text-text-dim">—</span>}
+                                </div>
+                                <div>
+                                  <span className="text-text-dim/60 block">Regime</span>
+                                  <span className="text-text-dim">{record.regime || '—'}</span>
+                                </div>
+                              </div>
+                              {/* V2 metadata: news influence */}
+                              {meta && meta.newsInfluence !== undefined && Math.abs(meta.newsInfluence) > 0.1 && (
+                                <div className="mt-1.5 flex items-center gap-2 text-[9px]">
+                                  <span className="text-text-dim/50">Nieuws invloed:</span>
+                                  <span className={`font-mono ${meta.newsInfluence > 0 ? 'text-green-400/70' : 'text-red-400/70'}`}>
+                                    {meta.newsInfluence > 0 ? '+' : ''}{meta.newsInfluence}
+                                  </span>
+                                  {meta.confidence !== undefined && (
+                                    <>
+                                      <span className="text-text-dim/30">|</span>
+                                      <span className="text-text-dim/50">Confidence: {meta.confidence}%</span>
+                                    </>
+                                  )}
+                                  {meta.newsSimulated && (
+                                    <span className="px-1 py-0.5 rounded bg-amber-500/10 text-amber-400/60 text-[8px]">gesimuleerd</span>
+                                  )}
+                                </div>
                               )}
                             </div>
-                            <span className={`px-2 py-0.5 rounded font-semibold shrink-0 ${
-                              record.result === 'correct' ? 'bg-green-500/10 text-green-400' :
-                              record.result === 'incorrect' ? 'bg-red-500/10 text-red-400' :
-                              'bg-white/[0.06] text-text-dim'
-                            }`}>
-                              {record.result === 'correct' ? 'Correct' : record.result === 'incorrect' ? 'Incorrect' : 'Pending'}
-                            </span>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
 
@@ -1525,25 +1669,29 @@ export default function BriefingV2Dashboard() {
                     <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
                       <div className="space-y-2 text-[10px] text-text-dim leading-relaxed">
                         <p>
-                          Het trackrecord meet hoe nauwkeurig de dagelijkse trade focus suggesties zijn door ze te vergelijken met de werkelijke prijsbeweging.
+                          Het V2 trackrecord meet hoe nauwkeurig de dagelijkse trade focus suggesties zijn, met specifieke aandacht voor de toegevoegde waarde van nieuwssentiment.
                         </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-accent-light font-semibold mb-1">Entry</p>
-                            <p>De prijs op het moment dat de daily briefing wordt gegenereerd (begin Europese sessie).</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-accent-light font-semibold mb-1">Entry &amp; Timing</p>
+                            <p>De entry prijs wordt vastgelegd op het moment dat de daily briefing wordt gegenereerd (Europese sessie opening). Het exacte tijdstip (CET) wordt opgeslagen in de metadata zodat je kunt terugzoeken in de chart.</p>
                           </div>
-                          <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-accent-light font-semibold mb-1">Exit</p>
-                            <p>De prijs op de volgende handelsdag op hetzelfde tijdstip. Elke trade heeft een looptijd van 1 handelsdag.</p>
+                          <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-accent-light font-semibold mb-1">Exit &amp; Resolutie</p>
+                            <p>De exit prijs wordt opgehaald op de volgende handelsdag op hetzelfde tijdstip. Elke trade heeft een looptijd van 1 handelsdag (daily close to daily close).</p>
                           </div>
-                          <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-accent-light font-semibold mb-1">Richting</p>
-                            <p>Gebaseerd op de fundamentele divergentie score: bullish paren worden als LONG geteld, bearish als SHORT.</p>
+                          <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-accent-light font-semibold mb-1">V2 Filtering</p>
+                            <p>V2 selecteert alleen trades met <strong className="text-text-muted">&quot;sterke&quot; overtuiging</strong> (score &ge;3.5 of &le;-3.5). Nieuw: intermarket signalen moeten het regime bevestigen, anders wordt de conviction verlaagd.</p>
+                          </div>
+                          <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-accent-light font-semibold mb-1">Nieuws Analyse</p>
+                            <p>Per trade wordt de nieuwsinvloed apart gemeten. De &quot;Nieuws Impact Analyse&quot; vergelijkt de winrate van trades met/zonder nieuwsinvloed zodat we de echte toegevoegde waarde kunnen meten.</p>
                           </div>
                         </div>
                         <p>
                           Een trade is &quot;correct&quot; als de prijs in de verwachte richting bewoog (LONG = prijs steeg, SHORT = prijs daalde).
-                          Het totale trackrecord geeft de win rate als percentage correcte calls over alle afgeronde trades.
+                          Scores zijn een combinatie van CB beleid (basis) + nieuws sentiment (bonus, max &plusmn;1.5), gefilterd door intermarket confirmatie.
                         </p>
                       </div>
                     </div>
@@ -1553,15 +1701,42 @@ export default function BriefingV2Dashboard() {
             </div>
           </section>
 
+          {/* ── Tool Navigation Links (like V1) ── */}
+          <div className="flex flex-wrap gap-3 mb-6">
+            <Link href="/tools/fx-analyse" className="px-4 py-2.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading hover:border-border-light transition-colors">
+              Macro Fundamentals &rarr;
+              <span className="block text-[10px] text-text-dim">Leer hoe valutaparen werken</span>
+            </Link>
+            <Link href="/tools/kalender" className="px-4 py-2.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading hover:border-border-light transition-colors">
+              Economische Kalender &rarr;
+              <span className="block text-[10px] text-text-dim">Volledige eventkalender</span>
+            </Link>
+            <Link href="/tools/rente" className="px-4 py-2.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading hover:border-border-light transition-colors">
+              Rentetarieven &rarr;
+              <span className="block text-[10px] text-text-dim">Alle centrale bank rentes</span>
+            </Link>
+            <Link href="/nieuws" className="px-4 py-2.5 rounded-lg border border-accent/20 text-sm text-accent-light/80 hover:text-accent-light hover:border-accent/40 transition-colors">
+              Nieuws Feed &rarr;
+              <span className="block text-[10px] text-text-dim">Live FX nieuws met vertalingen</span>
+            </Link>
+          </div>
+
           {/* ── Methodology Footer ── */}
-          <div className="mt-6 rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
             <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium mb-2">V2 Methode &amp; Databronnen</p>
             <p className="text-xs text-text-dim leading-relaxed">{data.regimeMethodology}</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {['CB Beleid (basis)', 'Rente vs Target', 'Intermarket Signalen', 'Nieuws Sentiment (v2)', 'Economische Kalender'].map(tag => (
+              {['CB Beleid (basis)', 'Rente vs Target', 'Intermarket Signalen', 'Nieuws Sentiment (v2)', 'Intermarket Filter (v2.1)', 'Economische Kalender'].map(tag => (
                 <span key={tag} className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">{tag}</span>
               ))}
             </div>
+          </div>
+
+          <div className="mt-4 p-4 rounded-xl border border-border bg-bg-card/30 text-center">
+            <p className="text-xs text-text-dim leading-relaxed">
+              Deze briefing is puur educatief en geen financieel advies. Data wordt automatisch opgehaald.
+              Fundamentals geven de richting, je technische analyse (structure breaks) bepaalt de timing en entry.
+            </p>
           </div>
         </>
       )}
