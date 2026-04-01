@@ -12,7 +12,9 @@
       "Bash(node convert-to-html.mjs)",
       "Bash(npm run:*)",
       "Bash(node migrate-categories.mjs)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(ls src/app/blog/[slug]/)",
+      "Bash(node --experimental-fetch -e \":*)"
     ]
   }
 }
