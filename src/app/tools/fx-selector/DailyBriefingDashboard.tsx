@@ -876,10 +876,30 @@ export default function DailyBriefingDashboard() {
                       )}
                     </div>
                     {/* Explanation block */}
-                    <div className="text-[11px] text-text-muted leading-relaxed space-y-1 bg-white/[0.03] rounded-lg px-3 py-2.5 border border-white/[0.05]">
-                      <p><strong className="text-heading">Wat meten we?</strong> Het model berekent per valutapaar een score op basis van centrale-bank beleid (rente, bias, targets). Alleen paren met <span className="text-accent-light font-semibold">sterke overtuiging</span> (score ≥ 3.5 of ≤ −3.5) worden bijgehouden.</p>
-                      <p><strong className="text-heading">Hoe?</strong> De <span className="text-accent-light">entry price</span> is de sluiting van de daily candle op de dag van de call. De <span className="text-accent-light">exit price</span> is de sluiting van de volgende daily candle. Bewoog de prijs in de richting van de call → <span className="text-green-400">correct</span>. Tegen de richting → <span className="text-red-400">incorrect</span>.</p>
-                      <p className="text-text-dim text-[10px]">Laatste 30 dagen · Daily close → daily close · Dit meet de fundamentele bias — niet je entry of structure break.</p>
+                    <div className="text-[11px] text-text leading-relaxed space-y-2.5 bg-white/[0.03] rounded-lg px-3.5 py-3 border border-white/[0.05]">
+                      <div>
+                        <p className="text-heading font-semibold mb-0.5">Hoe wordt de score berekend?</p>
+                        <p>Per valuta wordt een score bepaald op basis van <span className="text-accent-light">het officiële beleid van de centrale bank</span>. De data komt uit persconferenties, policy statements en forward guidance na rentevergaderingen. Dit wordt handmatig bijgewerkt bij elke rentevergadering.</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-white/[0.03] rounded px-2.5 py-1.5 border border-white/[0.04]">
+                          <p className="text-[10px] text-accent-light font-semibold uppercase tracking-wider mb-0.5">Hawkish = sterke valuta</p>
+                          <p className="text-text-muted text-[10px]">Rente hoog houden of verhogen. Toon: inflatiebestrijding prioriteit. Voorbeeld: &quot;We blijven verkrappen tot inflatie op target is.&quot;</p>
+                        </div>
+                        <div className="bg-white/[0.03] rounded px-2.5 py-1.5 border border-white/[0.04]">
+                          <p className="text-[10px] text-red-400/90 font-semibold uppercase tracking-wider mb-0.5">Dovish = zwakke valuta</p>
+                          <p className="text-text-muted text-[10px]">Rente verlagen of verruimen. Toon: groei stimuleren. Voorbeeld: &quot;We zien ruimte om het beleid te versoepelen.&quot;</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-heading font-semibold mb-0.5">Score berekening</p>
+                        <p>CB bias: hawkish <span className="font-mono text-green-400">+4</span>, voorzichtig hawkish <span className="font-mono text-green-400/70">+3</span>, afwachtend <span className="font-mono text-text-muted">0</span>, voorzichtig dovish <span className="font-mono text-red-400/70">−2</span>, dovish <span className="font-mono text-red-400">−4</span>. Daar bovenop: rente boven target <span className="font-mono text-green-400/70">+0.5 tot +1</span>, rente onder target <span className="font-mono text-red-400/70">−0.5 tot −1</span>. De pair score = base valuta score − quote valuta score.</p>
+                      </div>
+                      <div>
+                        <p className="text-heading font-semibold mb-0.5">Wat meten we?</p>
+                        <p>Alleen paren met <span className="text-accent-light font-semibold">sterke overtuiging</span> (score ≥ 3.5 of ≤ −3.5) worden bijgehouden. De <span className="text-accent-light">entry</span> is de sluiting van de daily candle op de dag van de call. De <span className="text-accent-light">exit</span> is de sluiting van de volgende daily candle. Bewoog de prijs in de richting van de call → <span className="text-green-400 font-semibold">correct</span>. Ertegen → <span className="text-red-400 font-semibold">incorrect</span>.</p>
+                      </div>
+                      <p className="text-text-muted text-[10px] pt-0.5 border-t border-white/[0.04]">Laatste 30 dagen · Daily close → daily close · Databron: officiële CB statements, handmatig bijgewerkt bij elke vergadering · Dit meet de fundamentele bias — niet je entry of structure break.</p>
                     </div>
                   </div>
                   <div className="px-5 py-4 bg-bg-card">
