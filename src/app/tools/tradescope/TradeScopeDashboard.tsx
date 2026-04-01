@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef, useMemo } from 'react'
-import { parseCSV, type ParsedTrade } from './utils/csvParser'
+import { parseCSV, type ParsedTrade, type ParseResult } from './utils/csvParser'
 import { calculateMetrics, runMonteCarlo, optimizeRiskReward, type TradeMetrics } from './utils/metrics'
 import DashboardTab from './tabs/DashboardTab'
 import AnalyticsTab from './tabs/AnalyticsTab'
@@ -59,10 +59,22 @@ export default function TradeScopeDashboard() {
   const [trades, setTrades] = useState<ParsedTrade[]>([])
   const [metrics, setMetrics] = useState<TradeMetrics | null>(null)
   const [startingBalance, setStartingBalance] = useState(10000)
+  const [backtestBalance, setBacktestBalance] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const addFileInputRef = useRef<HTMLInputElement>(null)
+
+  // Scale P&L from backtest balance to user's starting balance
+  const scaleTrades = useCallback((rawTrades: ParsedTrade[], origBalance: number | null, targetBalance: number): ParsedTrade[] => {
+    if (!origBalance || origBalance === targetBalance || origBalance === 0) return rawTrades
+    const scale = targetBalance / origBalance
+    return rawTrades.map(t => ({
+      ...t,
+      profitLoss: +(t.profitLoss * scale).toFixed(2),
+      // Keep pips and riskReward unchanged — those are price-based, not balance-based
+    }))
+  }, [])
 
   const processFiles = useCallback(
     (files: FileList, append: boolean) => {
@@ -70,6 +82,7 @@ export default function TradeScopeDashboard() {
       const fileArray = Array.from(files)
       let processed = 0
       let allNewTrades: ParsedTrade[] = []
+      let detectedBal: number | null = null
       const newFileNames: UploadedFile[] = []
 
       fileArray.forEach((file) => {
@@ -77,20 +90,31 @@ export default function TradeScopeDashboard() {
         reader.onload = (event) => {
           try {
             const csvText = event.target?.result as string
-            const parsed = parseCSV(csvText)
-            allNewTrades = [...allNewTrades, ...parsed]
-            newFileNames.push({ name: file.name, tradeCount: parsed.length })
+            const result: ParseResult = parseCSV(csvText)
+            allNewTrades = [...allNewTrades, ...result.trades]
+            newFileNames.push({ name: file.name, tradeCount: result.trades.length })
+            // Use detected balance from first file that has it
+            if (result.detectedBalance && !detectedBal) {
+              detectedBal = result.detectedBalance
+            }
           } catch (err) {
             console.error(`CSV parse error (${file.name}):`, err)
           }
 
           processed++
           if (processed === fileArray.length) {
-            // All files done — merge & deduplicate by openDate + symbol + profitLoss
+            // Store detected backtest balance
+            const origBal = append ? backtestBalance : detectedBal
+            if (detectedBal && !append) {
+              setBacktestBalance(detectedBal)
+              // Auto-set starting balance to detected value if it's the first upload
+              setStartingBalance(detectedBal)
+            }
+
+            // Merge & deduplicate
             const existingTrades = append ? trades : []
             const combined = [...existingTrades, ...allNewTrades]
 
-            // Deduplicate
             const seen = new Set<string>()
             const unique = combined.filter((t) => {
               const key = `${t.openDate.getTime()}-${t.symbol}-${t.profitLoss}-${t.action}`
@@ -99,14 +123,13 @@ export default function TradeScopeDashboard() {
               return true
             })
 
-            // Sort by date
             unique.sort((a, b) => a.openDate.getTime() - b.openDate.getTime())
-
-            // Re-number trades
             unique.forEach((t, i) => { t.tradeNumber = i + 1 })
 
+            // Use the detected balance (or fallback) for initial metrics calc
+            const bal = detectedBal || startingBalance
             setTrades(unique)
-            setMetrics(calculateMetrics(unique, startingBalance))
+            setMetrics(calculateMetrics(unique, bal))
             setUploadedFiles((prev) => append ? [...prev, ...newFileNames] : newFileNames)
             setIsLoading(false)
           }
@@ -114,7 +137,7 @@ export default function TradeScopeDashboard() {
         reader.readAsText(file)
       })
     },
-    [trades, startingBalance]
+    [trades, startingBalance, backtestBalance, scaleTrades]
   )
 
   const handleFileUpload = useCallback(
@@ -140,11 +163,16 @@ export default function TradeScopeDashboard() {
   const handleBalanceChange = useCallback(
     (newBalance: number) => {
       setStartingBalance(newBalance)
-      if (trades.length > 0) {
+      if (trades.length > 0 && backtestBalance && backtestBalance !== newBalance) {
+        // Scale all P&L values from the original backtest balance to the new balance
+        const scaled = scaleTrades(trades, backtestBalance, newBalance)
+        setTrades(scaled)
+        setMetrics(calculateMetrics(scaled, newBalance))
+      } else if (trades.length > 0) {
         setMetrics(calculateMetrics(trades, newBalance))
       }
     },
-    [trades]
+    [trades, backtestBalance, scaleTrades]
   )
 
   const removeFile = useCallback(
@@ -323,8 +351,18 @@ export default function TradeScopeDashboard() {
               type="number"
               value={startingBalance}
               onChange={(e) => handleBalanceChange(Math.max(100, parseInt(e.target.value) || 10000))}
-              className="w-24 px-2 py-1.5 rounded-lg text-xs text-heading bg-transparent border border-border focus:border-accent/50 focus:outline-none transition-colors"
+              className="w-28 px-2 py-1.5 rounded-lg text-xs text-heading bg-transparent border border-border focus:border-accent/50 focus:outline-none transition-colors"
             />
+            {backtestBalance && backtestBalance !== startingBalance && (
+              <span className="text-[10px] text-amber-400/80 bg-amber-500/10 px-1.5 py-0.5 rounded" title={`CSV was gebacktest op $${backtestBalance.toLocaleString()}. P&L wordt geschaald naar jouw balans.`}>
+                geschaald
+              </span>
+            )}
+            {backtestBalance && backtestBalance === startingBalance && (
+              <span className="text-[10px] text-green-400/70 bg-green-500/10 px-1.5 py-0.5 rounded" title={`Backtest balance automatisch gedetecteerd uit CSV.`}>
+                auto
+              </span>
+            )}
           </div>
           <button
             onClick={() => addFileInputRef.current?.click()}
@@ -348,6 +386,8 @@ export default function TradeScopeDashboard() {
               setTrades([])
               setMetrics(null)
               setUploadedFiles([])
+              setBacktestBalance(null)
+              setStartingBalance(10000)
               if (fileInputRef.current) fileInputRef.current.value = ''
               if (addFileInputRef.current) addFileInputRef.current.value = ''
             }}

@@ -83,7 +83,12 @@ function calcPips(entryPrice: number, closePrice: number, side: string, symbol: 
   return +(diff * multiplier).toFixed(1)
 }
 
-export function parseCSV(csvText: string): ParsedTrade[] {
+export interface ParseResult {
+  trades: ParsedTrade[]
+  detectedBalance: number | null  // Original backtest balance from CSV
+}
+
+export function parseCSV(csvText: string): ParseResult {
   const result = Papa.parse<FXReplayRow>(csvText, {
     header: true,
     skipEmptyLines: true,
@@ -100,11 +105,16 @@ export function parseCSV(csvText: string): ParsedTrade[] {
   const isFXReplay = headers.includes('dateStart') || headers.includes('rPnL')
 
   if (isFXReplay) {
-    return parseFXReplay(result.data as FXReplayRow[])
+    const rows = result.data as FXReplayRow[]
+    const trades = parseFXReplay(rows)
+    // Detect original backtest balance from first row
+    const firstRow = rows.find(r => r.initialBalance)
+    const detectedBalance = firstRow ? parseFloat(firstRow.initialBalance) : null
+    return { trades, detectedBalance: detectedBalance && !isNaN(detectedBalance) ? detectedBalance : null }
   }
 
   // Fallback: try generic format
-  return parseGeneric(result.data as Record<string, string>[])
+  return { trades: parseGeneric(result.data as Record<string, string>[]), detectedBalance: null }
 }
 
 function parseFXReplay(data: FXReplayRow[]): ParsedTrade[] {
