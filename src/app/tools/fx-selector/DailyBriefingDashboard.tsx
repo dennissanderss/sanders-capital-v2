@@ -909,50 +909,81 @@ export default function DailyBriefingDashboard() {
                           </div>
                         )}
 
-                        {/* Correct trades */}
-                        {trackRecords.filter(r => r.result === 'correct').length > 0 && (
+                        {/* All resolved trades — detailed view */}
+                        {trackRecords.filter(r => r.result !== 'pending').length > 0 && (
                           <div className="mb-3">
-                            <p className="text-[10px] font-semibold text-green-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                              Correct ({trackRecords.filter(r => r.result === 'correct').length})
+                            <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-2">
+                              Afgeronde calls ({trackRecords.filter(r => r.result !== 'pending').length})
                             </p>
-                            <div className="space-y-1">
-                              {trackRecords.filter(r => r.result === 'correct').slice(0, 5).map(record => (
-                                <div key={record.id} className="flex items-center gap-3 py-1.5 px-3 rounded-lg bg-green-500/[0.04] border border-green-500/10 text-xs">
-                                  <span className="text-text-dim font-mono w-16 shrink-0">{record.date}</span>
-                                  <span className="font-bold text-heading w-16 shrink-0">{record.pair}</span>
-                                  <span className={record.direction.includes('bullish') ? 'text-green-400' : 'text-red-400'}>
-                                    {record.direction.includes('bullish') ? '↑ LONG' : '↓ SHORT'}
-                                  </span>
-                                  <span className="ml-auto font-mono text-green-400 font-semibold">
-                                    {record.pips_moved != null ? `+${Math.abs(record.pips_moved)} pips` : '✓'}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                            <div className="space-y-2">
+                              {trackRecords.filter(r => r.result !== 'pending').map(record => {
+                                const isCorrect = record.result === 'correct'
+                                const isBullish = record.direction.includes('bullish')
+                                const isJpy = record.pair.includes('JPY')
+                                const digits = isJpy ? 3 : 5
+                                const nextDate = new Date(record.date)
+                                nextDate.setDate(nextDate.getDate() + 1)
+                                const exitDateStr = nextDate.toISOString().split('T')[0]
 
-                        {/* Incorrect trades */}
-                        {trackRecords.filter(r => r.result === 'incorrect').length > 0 && (
-                          <div className="mb-3">
-                            <p className="text-[10px] font-semibold text-red-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                              Incorrect ({trackRecords.filter(r => r.result === 'incorrect').length})
-                            </p>
-                            <div className="space-y-1">
-                              {trackRecords.filter(r => r.result === 'incorrect').slice(0, 5).map(record => (
-                                <div key={record.id} className="flex items-center gap-3 py-1.5 px-3 rounded-lg bg-red-500/[0.04] border border-red-500/10 text-xs">
-                                  <span className="text-text-dim font-mono w-16 shrink-0">{record.date}</span>
-                                  <span className="font-bold text-heading w-16 shrink-0">{record.pair}</span>
-                                  <span className={record.direction.includes('bullish') ? 'text-green-400' : 'text-red-400'}>
-                                    {record.direction.includes('bullish') ? '↑ LONG' : '↓ SHORT'}
-                                  </span>
-                                  <span className="ml-auto font-mono text-red-400 font-semibold">
-                                    {record.pips_moved != null ? `${record.pips_moved} pips` : '✗'}
-                                  </span>
-                                </div>
-                              ))}
+                                return (
+                                  <div key={record.id} className={`rounded-lg border text-xs overflow-hidden ${
+                                    isCorrect
+                                      ? 'bg-green-500/[0.03] border-green-500/15'
+                                      : 'bg-red-500/[0.03] border-red-500/15'
+                                  }`}>
+                                    {/* Header row */}
+                                    <div className="flex items-center gap-2 px-3 py-2">
+                                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                                        isCorrect ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                                      }`}>
+                                        {isCorrect ? '✓' : '✗'}
+                                      </span>
+                                      <span className="font-bold text-heading">{record.pair}</span>
+                                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                                        isBullish ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                                      }`}>
+                                        {isBullish ? '↑ LONG' : '↓ SHORT'}
+                                      </span>
+                                      <span className="text-[10px] text-text-dim">score {record.score}</span>
+                                      <span className={`ml-auto font-mono font-bold ${
+                                        isCorrect ? 'text-green-400' : 'text-red-400'
+                                      }`}>
+                                        {record.pips_moved != null
+                                          ? `${record.pips_moved > 0 ? '+' : ''}${record.pips_moved} pips`
+                                          : isCorrect ? '✓' : '✗'}
+                                      </span>
+                                    </div>
+                                    {/* Detail row */}
+                                    <div className="px-3 py-1.5 bg-white/[0.02] border-t border-white/[0.04] flex items-center gap-4 text-[10px] text-text-dim">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-text-dim/60">Call:</span>
+                                        <span className="font-mono text-text-muted">{record.date}</span>
+                                        <span className="text-text-dim/40">close</span>
+                                        <span className="font-mono font-semibold text-heading">
+                                          {record.entry_price != null ? record.entry_price.toFixed(digits) : '—'}
+                                        </span>
+                                      </div>
+                                      <span className="text-text-dim/30">→</span>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-text-dim/60">Exit:</span>
+                                        <span className="font-mono text-text-muted">{exitDateStr}</span>
+                                        <span className="text-text-dim/40">close</span>
+                                        <span className="font-mono font-semibold text-heading">
+                                          {record.exit_price != null ? record.exit_price.toFixed(digits) : '—'}
+                                        </span>
+                                      </div>
+                                      <div className="ml-auto flex items-center gap-1">
+                                        <span className="text-text-dim/60">Δ</span>
+                                        <span className={`font-mono font-semibold ${isCorrect ? 'text-green-400/80' : 'text-red-400/80'}`}>
+                                          {record.entry_price != null && record.exit_price != null
+                                            ? `${(record.exit_price - record.entry_price) >= 0 ? '+' : ''}${(record.exit_price - record.entry_price).toFixed(digits)}`
+                                            : '—'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                              })}
                             </div>
                           </div>
                         )}
@@ -964,17 +995,39 @@ export default function DailyBriefingDashboard() {
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                               Pending ({trackRecords.filter(r => r.result === 'pending').length})
                             </p>
-                            <div className="space-y-1">
-                              {trackRecords.filter(r => r.result === 'pending').slice(0, 5).map(record => (
-                                <div key={record.id} className="flex items-center gap-3 py-1.5 px-3 rounded-lg bg-amber-500/[0.04] border border-amber-500/10 text-xs">
-                                  <span className="text-text-dim font-mono w-16 shrink-0">{record.date}</span>
-                                  <span className="font-bold text-heading w-16 shrink-0">{record.pair}</span>
-                                  <span className={record.direction.includes('bullish') ? 'text-green-400' : 'text-red-400'}>
-                                    {record.direction.includes('bullish') ? '↑ LONG' : '↓ SHORT'}
-                                  </span>
-                                  <span className="ml-auto font-mono text-amber-400">afwachten...</span>
-                                </div>
-                              ))}
+                            <div className="space-y-2">
+                              {trackRecords.filter(r => r.result === 'pending').map(record => {
+                                const isBullish = record.direction.includes('bullish')
+                                const isJpy = record.pair.includes('JPY')
+                                const digits = isJpy ? 3 : 5
+                                return (
+                                  <div key={record.id} className="rounded-lg border bg-amber-500/[0.03] border-amber-500/15 text-xs overflow-hidden">
+                                    <div className="flex items-center gap-2 px-3 py-2">
+                                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 bg-amber-500/20 text-amber-400">⏳</span>
+                                      <span className="font-bold text-heading">{record.pair}</span>
+                                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                                        isBullish ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                                      }`}>
+                                        {isBullish ? '↑ LONG' : '↓ SHORT'}
+                                      </span>
+                                      <span className="text-[10px] text-text-dim">score {record.score}</span>
+                                      <span className="ml-auto font-mono text-amber-400 text-[10px]">afwachten...</span>
+                                    </div>
+                                    <div className="px-3 py-1.5 bg-white/[0.02] border-t border-white/[0.04] flex items-center gap-4 text-[10px] text-text-dim">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-text-dim/60">Call:</span>
+                                        <span className="font-mono text-text-muted">{record.date}</span>
+                                        <span className="text-text-dim/40">close</span>
+                                        <span className="font-mono font-semibold text-heading">
+                                          {record.entry_price != null ? record.entry_price.toFixed(digits) : '—'}
+                                        </span>
+                                      </div>
+                                      <span className="text-text-dim/30">→</span>
+                                      <span className="font-mono text-amber-400/60">volgende close</span>
+                                    </div>
+                                  </div>
+                                )
+                              })}
                             </div>
                           </div>
                         )}
