@@ -550,6 +550,36 @@ export default function DailyBriefingDashboard() {
               <div className="px-5 sm:px-6 py-4 bg-bg-card">
                 <p className="text-sm text-text-muted leading-relaxed">{data.regimeExplain}</p>
 
+                {/* Educational: Why is this risk-on/off? */}
+                <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                  <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider mb-2">Waarom Risk-On of Risk-Off?</p>
+                  {data.regime === 'Risk-Off' && (
+                    <p className="text-[11px] text-text-dim leading-relaxed">
+                      In een <strong className="text-red-400">Risk-Off</strong> omgeving zijn beleggers bang voor economische onzekerheid. Ze verkopen risicovolle beleggingen (aandelen, high-yield valuta&apos;s zoals AUD, NZD, CAD) en vluchten naar &quot;veilige havens&quot; (JPY, CHF, goud, staatsobligaties). Dit gebeurt wanneer centrale banken van veilige-haven landen een hawkish beleid voeren of wanneer er geopolitieke spanningen zijn. Het resultaat: JPY en CHF worden sterker, AUD en NZD worden zwakker.
+                    </p>
+                  )}
+                  {data.regime === 'Risk-On' && (
+                    <p className="text-[11px] text-text-dim leading-relaxed">
+                      In een <strong className="text-green-400">Risk-On</strong> omgeving hebben beleggers vertrouwen in de economie. Ze kopen risicovolle beleggingen (aandelen, high-yield valuta&apos;s) omdat die hogere rendementen bieden. Valuta&apos;s van landen met hoge rentes (AUD, NZD, CAD) worden sterker doordat beleggers &quot;carry trades&quot; openen: ze lenen in een lage-rente valuta (JPY) en beleggen in een hoge-rente valuta. Het resultaat: AUD, NZD en CAD stijgen, JPY daalt.
+                    </p>
+                  )}
+                  {data.regime === 'USD Dominant' && (
+                    <p className="text-[11px] text-text-dim leading-relaxed">
+                      De <strong className="text-blue-400">USD domineert</strong> wanneer de Federal Reserve een strak (hawkish) beleid voert. Hogere rentes in de VS trekken internationaal kapitaal aan, want beleggers krijgen meer rendement op USD-obligaties. Dit maakt de dollar sterker tegen bijna alle andere valuta&apos;s. Daarnaast fungeert de dollar als veilige haven in tijden van onzekerheid, wat de dominantie versterkt.
+                    </p>
+                  )}
+                  {data.regime === 'USD Zwak' && (
+                    <p className="text-[11px] text-text-dim leading-relaxed">
+                      De <strong className="text-amber-400">USD is zwak</strong> wanneer de markt verwacht dat de Fed de rente gaat verlagen (dovish signalen). Lagere rentes maken USD-obligaties minder aantrekkelijk, waardoor kapitaal wegstroomt naar valuta&apos;s met betere rendementen. Andere valuta&apos;s worden relatief sterker, vooral die van landen waar de centrale bank juist hawkish is.
+                    </p>
+                  )}
+                  {data.regime === 'Gemengd' && (
+                    <p className="text-[11px] text-text-dim leading-relaxed">
+                      Een <strong className="text-text-muted">gemengd</strong> regime betekent dat er geen duidelijke richting is. De fundamentele scores van safe-haven en high-yield valuta&apos;s liggen dicht bij elkaar. Dit kan komen doordat centrale banken vergelijkbaar beleid voeren, of doordat tegenstrijdige factoren (bijv. hawkish Fed maar ook sterke Australische economie) elkaar opheffen. In deze situatie focussen we op individuele paar-divergenties.
+                    </p>
+                  )}
+                </div>
+
                 {/* Regime drivers — welke cijfers leiden tot dit regime */}
                 <details className="mt-4 group">
                   <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
@@ -761,6 +791,38 @@ export default function DailyBriefingDashboard() {
                 <p className="text-sm text-text-muted leading-relaxed">{intermarketConclusion.text}</p>
               </div>
             )}
+
+            {/* Educational: Why do these combinations signal risk-on/off? */}
+            <details className="mt-3 group">
+              <summary className="flex items-center gap-2 text-[11px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+                Waarom leiden deze combinaties tot Risk-On of Risk-Off?
+              </summary>
+              <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] space-y-3">
+                <p className="text-[11px] text-text-dim leading-relaxed">
+                  Intermarket signalen zijn verbonden door kapitaalstromen. Grote beleggers (pensioenfondsen, hedgefunds) verschuiven miljarden tussen aandelen, obligaties, grondstoffen en valuta&apos;s. Deze verschuivingen laten een herkenbaar patroon achter:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="p-2.5 rounded-lg bg-red-500/[0.04] border border-red-500/10">
+                    <p className="text-[10px] font-semibold text-red-400 mb-1">Risk-Off patroon:</p>
+                    <p className="text-[10px] text-text-dim leading-relaxed">
+                      Beleggers worden angstig &rarr; verkopen aandelen (S&amp;P daalt) &rarr; kopen bescherming via opties (VIX stijgt) &rarr; vluchten naar goud en staatsobligaties (goud stijgt, yields dalen of stijgen door inflatie-angst) &rarr; kopen veilige valuta&apos;s (JPY, CHF). Dit is een zelfversterkende cyclus.
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-green-500/[0.04] border border-green-500/10">
+                    <p className="text-[10px] font-semibold text-green-400 mb-1">Risk-On patroon:</p>
+                    <p className="text-[10px] text-text-dim leading-relaxed">
+                      Beleggers hebben vertrouwen &rarr; kopen aandelen (S&amp;P stijgt) &rarr; verkopen bescherming (VIX daalt) &rarr; verlaten goud (goud daalt) &rarr; zoeken rendement in high-yield valuta&apos;s (AUD, NZD, CAD). Carry trades worden weer aantrekkelijk.
+                    </p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-text-dim leading-relaxed">
+                  <strong className="text-accent-light">Belangrijk:</strong> het gaat om de combinatie van signalen, niet om individuele bewegingen. Een VIX die stijgt terwijl de S&amp;P ook stijgt is minder verontrustend dan wanneer beide in dezelfde &quot;angst-richting&quot; bewegen. Hoe meer signalen op dezelfde richting wijzen, hoe sterker het regime-signaal.
+                </p>
+              </div>
+            </details>
 
             <details className="mt-3 group">
               <summary className="flex items-center gap-2 text-[11px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
