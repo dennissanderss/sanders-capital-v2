@@ -21,7 +21,7 @@ function StepCard({
   problem: string
   solution: string
   details: string[]
-  color: 'blue' | 'green' | 'gold'
+  color: 'blue' | 'green' | 'gold' | 'purple' | 'amber'
 }) {
   const colorMap = {
     blue: {
@@ -41,6 +41,18 @@ function StepCard({
       border: 'border-gold/15 hover:border-gold/25',
       glow: 'from-gold/5',
       dot: 'bg-gold',
+    },
+    purple: {
+      badge: 'bg-purple-500/15 text-purple-400 border-purple-500/25',
+      border: 'border-purple-500/15 hover:border-purple-500/25',
+      glow: 'from-purple-500/5',
+      dot: 'bg-purple-400',
+    },
+    amber: {
+      badge: 'bg-amber-500/15 text-amber-400 border-amber-500/25',
+      border: 'border-amber-500/15 hover:border-amber-500/25',
+      glow: 'from-amber-500/5',
+      dot: 'bg-amber-400',
     },
   }
   const c = colorMap[color]
@@ -116,7 +128,8 @@ export default function DailyBriefingIntroPage() {
           </h1>
           <p className="text-lg sm:text-xl text-text-muted max-w-2xl mx-auto leading-relaxed">
             Elke dag in 60 seconden weten waar de markt staat, welke valuta sterk of zwak is,
-            en waar jouw beste trade setups liggen, volledig gebaseerd op fundamentele data.
+            en waar jouw beste trade setups liggen. Fundamentele analyse, nieuws sentiment,
+            intermarket bevestiging en mean reversion timing — in één overzicht.
           </p>
           <div className="mt-8">
             <Link
@@ -159,13 +172,13 @@ export default function DailyBriefingIntroPage() {
               wat vandaag de markt kan bewegen.
             </p>
             <p className="text-accent-light font-medium">
-              De Daily Macro Briefing lost dit op in drie stappen.
+              De Daily Macro Briefing lost dit op in vijf stappen.
             </p>
           </div>
         </div>
       </FadeIn>
 
-      {/* Three Steps */}
+      {/* Five Steps */}
       <div className="space-y-6 sm:space-y-8 mb-10 sm:mb-14">
         <FadeIn>
           <StepCard
@@ -193,7 +206,8 @@ export default function DailyBriefingIntroPage() {
               'Score is gebaseerd op het officiële beleid van de centrale bank: hawkish bias = hogere score (sterke valuta), dovish = lagere score (zwakke valuta).',
               'De bias wordt bepaald uit persconferenties, policy statements en forward guidance na rentevergaderingen. Handmatig bijgewerkt na elke vergadering.',
               'Rente t.o.v. het target telt mee: rente boven target = extra hawkish signaal, rente onder target = extra dovish.',
-              'Per valuta zie je de redenering: welke bank, welk beleid, waarom die score.',
+              'Nieuws sentiment wordt als bonus meegewogen: actuele headlines die hawkish of dovish zijn passen de score aan (max ±1.5 punt).',
+              'Per valuta zie je de redenering: welke bank, welk beleid, waarom die score. Klik op een valuta voor de volledige onderbouwing.',
             ]}
           />
         </FadeIn>
@@ -201,20 +215,120 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <StepCard
             step={3}
+            title="Nieuws Sentiment"
+            color="purple"
+            problem="Je leest tientallen nieuwsartikelen maar weet niet welke headlines écht impact hebben op valuta's. Ruis versus signaal is niet te onderscheiden."
+            solution="Het model scant actuele financiële headlines en bepaalt per valuta of het sentiment hawkish, dovish of neutraal is — inclusief een impactscore."
+            details={[
+              'Headlines worden automatisch geanalyseerd op relevantie voor elke major valuta (USD, EUR, GBP, JPY, etc.).',
+              'Per headline zie je welke valuta geraakt wordt, de richting (hawkish/dovish) en de impactsterkte.',
+              'Het sentiment wordt als bonus (max ±1.5 punt) meegewogen in de currency score — zodat actueel nieuws de fundamentele analyse versterkt.',
+              'Klik op het sentiment-icoon bij een valuta om de specifieke headlines te zien die de score beïnvloeden.',
+              'Neutraal sentiment (geen relevante headlines) is ook informatie: het betekent dat de fundamentele bias onveranderd geldig is.',
+            ]}
+          />
+        </FadeIn>
+
+        <FadeIn>
+          <StepCard
+            step={4}
+            title="Intermarket Bevestiging"
+            color="amber"
+            problem="Je tradet forex in isolatie zonder te kijken of de bredere markten je analyse bevestigen. Je gaat short USD terwijl de dollar-index juist stijgt."
+            solution="Het model toont live intermarket signalen (DXY, US10Y, goud, S&P 500, VIX) en checkt of deze het macro regime en de currency scores bevestigen."
+            details={[
+              'DXY (Dollar Index): stijgende DXY bevestigt USD-sterkte, dalend bevestigt USD-zwakte.',
+              'US10Y (rente op 10-jaars staatsobligaties): stijgende yields = hawkish signaal voor USD.',
+              'Goud: stijgend goud = risk-off / vlucht naar veiligheid. Bevestigt JPY/CHF sterkte.',
+              'S&P 500 + VIX: hoge VIX + dalende S&P = risk-off omgeving. Lage VIX = risk-on.',
+              'Wanneer intermarket data het regime bevestigt, heb je meer vertrouwen in je trade. Bij tegenspraak: extra voorzichtigheid.',
+            ]}
+          />
+        </FadeIn>
+
+        <FadeIn>
+          <StepCard
+            step={5}
             title="Trade Focus"
             color="gold"
             problem="Je opent TradingView en zoekt willekeurig door 28 forex paren. Je weet niet waar je moet focussen en mist de beste setups."
-            solution="Het model selecteert automatisch de sterkste divergenties: de sterkste valuta tegenover de zwakste. Daar liggen de beste trade setups."
+            solution="Het model selecteert automatisch de sterkste divergenties: de sterkste valuta tegenover de zwakste, gefilterd door mean reversion timing."
             details={[
               'Pair score = score van de base valuta minus de quote valuta. Hoe groter het verschil, hoe sterker de bias.',
-              'Sterke overtuiging: score ≥ 3.5 of ≤ −3.5. Matige overtuiging: score ≥ 2.0 of ≤ −2.0.',
-              'Bij elk paar zie je de richting (bullish/bearish), overtuiging, renteverschil en de achterliggende redenering.',
-              'Het trackrecord meet of de fundamentele bias klopte via een mean reversion strategie: daily close → 2 dagen later daily close. Alleen signalen met score ≥ 3.0 worden getrackt.',
+              'Sterke overtuiging: score ≥ 3.5. Matige overtuiging: score ≥ 3.0. Alleen deze worden getrackt.',
+              'Mean reversion filter: een signaal wordt pas actief als de prijs de afgelopen 2 dagen tégen de fundamentele richting is bewogen — je koopt de dip, niet de top.',
+              'Bij elk paar zie je de richting (bullish/bearish), overtuiging, entry (dagkoers vandaag) en exit (dagkoers 2 handelsdagen later).',
+              'Het trackrecord meet of de fundamentele bias klopte: dagkoers op signaaldag vs. dagkoers 2 handelsdagen later. Volledig transparant, geen cherry-picking.',
               'Dit geeft je niet je entry, het geeft je de richting. Jij past vervolgens je eigen strategie toe in de richting van de bias.',
             ]}
           />
         </FadeIn>
       </div>
+
+      {/* Mean Reversion Visual */}
+      <FadeIn>
+        <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-b from-purple-500/[0.04] to-transparent px-6 sm:px-8 py-6 sm:py-8 mb-10 sm:mb-14 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/[0.04] rounded-full blur-3xl" />
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+              </span>
+              <h2 className="text-xl sm:text-2xl font-display font-bold text-heading">
+                Mean Reversion — de kern van het model
+              </h2>
+            </div>
+            <p className="text-sm text-text-muted leading-relaxed mb-6">
+              De Daily Macro Briefing gebruikt geen momentum strategie (kopen omdat de prijs stijgt).
+              In plaats daarvan past het model <strong className="text-heading">mean reversion</strong> toe:
+              het wacht tot de prijs tijdelijk <em>tegen</em> de fundamentele richting ingaat en tradet dan de terugkeer.
+            </p>
+
+            {/* Visual diagram */}
+            <div className="flex flex-col items-center mb-6">
+              <p className="text-[10px] uppercase tracking-[0.15em] text-text-dim font-medium mb-4">Visueel voorbeeld</p>
+              <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+                <div className="p-3 sm:p-4 rounded-xl bg-green-500/10 border border-green-500/15 text-center min-w-[90px]">
+                  <p className="text-[10px] text-text-dim mb-1">Fundamenteel</p>
+                  <p className="text-base sm:text-lg font-bold text-green-400">Bullish</p>
+                  <p className="text-[9px] text-text-dim mt-0.5">CB = hawkish</p>
+                </div>
+                <span className="text-2xl text-text-dim font-mono">+</span>
+                <div className="p-3 sm:p-4 rounded-xl bg-red-500/10 border border-red-500/15 text-center min-w-[90px]">
+                  <p className="text-[10px] text-text-dim mb-1">Prijs (2 dagen)</p>
+                  <p className="text-base sm:text-lg font-bold text-red-400">↓ Dalend</p>
+                  <p className="text-[9px] text-text-dim mt-0.5">korte dip</p>
+                </div>
+                <span className="text-2xl text-text-dim font-mono">=</span>
+                <div className="p-3 sm:p-4 rounded-xl bg-accent/10 border border-accent/20 text-center min-w-[90px]">
+                  <p className="text-[10px] text-text-dim mb-1">Actie</p>
+                  <p className="text-base sm:text-lg font-bold text-accent-light">LONG</p>
+                  <p className="text-[9px] text-green-400 mt-0.5">koop de dip</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-sm text-text-muted leading-relaxed">
+              <p>
+                <strong className="text-heading">Gedachtegang:</strong> Centrale bank beleid bepaalt de langetermijnrichting van een valuta.
+                Als de prijs tijdelijk tegen die richting ingaat, is dat een <em>reversal-kans</em>.
+                Je koopt niet wanneer iedereen al koopt — je koopt wanneer de markt een dip maakt.
+              </p>
+              <p>
+                <strong className="text-heading">Waarom werkt dit?</strong> Optimalisatie over 94 scenario&apos;s toonde aan dat mean reversion
+                met een 2-daagse holding periode de beste resultaten geeft. Momentum (kopen omdat het stijgt)
+                scoorde het slechtst. De markt keert terug naar de fundamentele richting — en daar speelt dit model op in.
+              </p>
+              <p>
+                <strong className="text-heading">Holding periode:</strong> 2 handelsdagen. De entry is de dagkoers op de signaaldag,
+                de exit is de dagkoers 2 handelsdagen later. Dit geeft de mean reversion voldoende tijd om te werken.
+              </p>
+            </div>
+          </div>
+        </div>
+      </FadeIn>
 
       {/* Connection to Macro Fundamentals */}
       <FadeIn>
@@ -296,14 +410,19 @@ export default function DailyBriefingIntroPage() {
               desc="High-impact events van ForexFactory/FairEconomy. CPI, NFP, rentebeslissingen — met forecast, previous en context per event."
             />
             <SourceCard
+              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" /></svg>}
+              title="Nieuws Sentiment"
+              desc="Actuele financiële headlines worden geanalyseerd op impact per valuta. Hawkish of dovish sentiment wordt als bonus (max ±1.5) meegewogen in de currency score."
+            />
+            <SourceCard
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>}
               title="Intermarket Data"
               desc="DXY, US10Y, goud, S&P 500 en VIX via Yahoo Finance. Bevestigt of het macro regime klopt met wat de markten doen."
             />
             <SourceCard
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>}
-              title="Yahoo Finance"
-              desc="Daily close prices voor het trackrecord. Meet of de fundamentele bias klopt door entry close vs. exit close te vergelijken."
+              title="Yahoo Finance (Dagkoers)"
+              desc="Dagkoersen voor het trackrecord. Meet of de bias klopte: dagkoers op signaaldag vs. dagkoers 2 handelsdagen later."
             />
           </div>
         </div>
@@ -332,21 +451,28 @@ export default function DailyBriefingIntroPage() {
               <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">2</span>
               <div>
                 <p className="text-sm font-semibold text-heading">Bekijk de Currency Scorecard</p>
-                <p className="text-sm text-text-muted mt-0.5">Welke valuta is fundamenteel het sterkst? Welke het zwakst? De ranking geeft je een duidelijk beeld.</p>
+                <p className="text-sm text-text-muted mt-0.5">Welke valuta is fundamenteel het sterkst? Welke het zwakst? Klik op een valuta voor de volledige onderbouwing inclusief nieuws sentiment.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">3</span>
               <div>
-                <p className="text-sm font-semibold text-heading">Focus op de Trade Focus paren</p>
-                <p className="text-sm text-text-muted mt-0.5">Open alleen de charts van de paren met sterke bias en pas je eigen strategie toe in de richting van de fundamentele bias.</p>
+                <p className="text-sm font-semibold text-heading">Check het Nieuws Sentiment</p>
+                <p className="text-sm text-text-muted mt-0.5">Welke headlines bewegen de markt vandaag? Klik op het sentiment-icoon om te zien welke headlines de score beïnvloeden.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">4</span>
               <div>
-                <p className="text-sm font-semibold text-heading">Check de kalender</p>
-                <p className="text-sm text-text-muted mt-0.5">Staan er high-impact events gepland? Als er high-impact events zijn, wacht de release af of trade met kleiner risico.</p>
+                <p className="text-sm font-semibold text-heading">Bevestig met Intermarket Data</p>
+                <p className="text-sm text-text-muted mt-0.5">Bevestigen DXY, yields, goud en de S&amp;P 500 het regime? Bij tegenspraak: extra voorzichtigheid.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">5</span>
+              <div>
+                <p className="text-sm font-semibold text-heading">Focus op de Trade Focus paren</p>
+                <p className="text-sm text-text-muted mt-0.5">Open alleen de charts van de paren met sterke bias en mean reversion timing. Pas je eigen strategie toe in de richting van de fundamentele bias.</p>
               </div>
             </div>
           </div>
@@ -378,7 +504,7 @@ export default function DailyBriefingIntroPage() {
               onverwachte renteverlaging kan de markt tegen de fundamentele bias in bewegen. Check altijd de kalender.
             </p>
             <p>
-              <strong className="text-heading">Het trackrecord is transparant.</strong> We meten of de bias klopte via een mean reversion model (entry daily close → exit 2 dagen later).
+              <strong className="text-heading">Het trackrecord is transparant.</strong> We meten of de bias klopte via een mean reversion model (dagkoers op signaaldag → dagkoers 2 handelsdagen later).
               Dit geeft je een eerlijk beeld van de nauwkeurigheid. Geen cherry-picking.
             </p>
           </div>
