@@ -1013,11 +1013,27 @@ export default function AdminPage() {
             <label className="block text-sm text-text-muted mb-1">Content</label>
             <RichEditor value={editing.content} onChange={(html) => setEditing({ ...editing, content: html })} supabase={supabase} />
           </div>
-          <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
-              <input type="checkbox" checked={editing.is_premium} onChange={(e) => setEditing({ ...editing, is_premium: e.target.checked })} className="rounded border-border" />
-              Premium
-            </label>
+          <div className="flex items-center gap-6 flex-wrap">
+            <div>
+              <label className="block text-xs text-text-dim mb-1.5">Toegang</label>
+              <div className="flex rounded-lg border border-border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setEditing({ ...editing, is_premium: false })}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${!editing.is_premium ? 'bg-accent/15 text-accent-light' : 'text-text-dim hover:text-text-muted'}`}
+                >
+                  Geregistreerd
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditing({ ...editing, is_premium: true })}
+                  className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors border-l border-border ${editing.is_premium ? 'bg-gold-dim text-gold' : 'text-text-dim hover:text-text-muted'}`}
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                  Premium
+                </button>
+              </div>
+            </div>
             <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
               <input type="checkbox" checked={editing.published} onChange={(e) => setEditing({ ...editing, published: e.target.checked })} className="rounded border-border" />
               Gepubliceerd
@@ -1201,10 +1217,26 @@ export default function AdminPage() {
             <p className="text-xs text-text-dim mt-1">PDF, Word, Excel, PowerPoint, ZIP — lezers kunnen deze downloaden op de pagina</p>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
-            <input type="checkbox" checked={editingKb.is_premium} onChange={(e) => setEditingKb({ ...editingKb, is_premium: e.target.checked })} className="rounded border-border" />
-            Premium
-          </label>
+          <div>
+            <label className="block text-sm text-text-muted mb-2">Toegangsniveau</label>
+            <div className="flex rounded-lg border border-border overflow-hidden w-fit">
+              <button
+                type="button"
+                onClick={() => setEditingKb({ ...editingKb, is_premium: false })}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${!editingKb.is_premium ? 'bg-accent/15 text-accent-light' : 'text-text-dim hover:text-text-muted'}`}
+              >
+                Geregistreerd
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingKb({ ...editingKb, is_premium: true })}
+                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors border-l border-border ${editingKb.is_premium ? 'bg-gold-dim text-gold' : 'text-text-dim hover:text-text-muted'}`}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                Premium
+              </button>
+            </div>
+          </div>
 
           <button onClick={saveKbItem} className="px-6 py-2.5 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors">
             Opslaan
@@ -1218,7 +1250,7 @@ export default function AdminPage() {
       {tab === 'categories' && !editingCat && (
         <>
           <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-text-muted">Schakel premium in per categorie — bezoekers zien dan "Ontdek Premium" met een slot.</p>
+            <p className="text-sm text-text-muted">Kies per categorie het toegangsniveau. <span className="text-text-dim">Geregistreerd = gratis account nodig. Premium = betaald account nodig.</span></p>
             <button onClick={() => setEditingCat(newCategory())} className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors shrink-0 ml-4">
               + Nieuwe categorie
             </button>
@@ -1237,12 +1269,21 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0 ml-4">
-                  <button onClick={() => toggleCategoryPremium(cat)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${cat.is_premium ? 'border-gold/40 bg-gold-dim text-gold hover:bg-gold/20' : 'border-border text-text-muted hover:text-heading'}`}>
-                    {cat.is_premium ? (
-                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>Premium</>
-                    ) : 'Gratis'}
-                  </button>
+                  <div className="flex rounded-lg border border-border overflow-hidden">
+                    <button
+                      onClick={() => cat.is_premium && toggleCategoryPremium(cat)}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${!cat.is_premium ? 'bg-accent/15 text-accent-light border-r border-accent/20' : 'text-text-dim hover:text-text-muted border-r border-border'}`}
+                    >
+                      Geregistreerd
+                    </button>
+                    <button
+                      onClick={() => !cat.is_premium && toggleCategoryPremium(cat)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${cat.is_premium ? 'bg-gold-dim text-gold' : 'text-text-dim hover:text-text-muted'}`}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                      Premium
+                    </button>
+                  </div>
                   <button onClick={() => setEditingCat(cat)} className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors">Bewerken</button>
                   <button onClick={() => deleteCategory(cat.id, cat.slug)} className="px-3 py-1.5 rounded-lg border border-border text-xs text-red-400 hover:bg-red-400/10 transition-colors">Verwijderen</button>
                 </div>
@@ -1292,10 +1333,27 @@ export default function AdminPage() {
               />
             </div>
           </div>
-          <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
-            <input type="checkbox" checked={editingCat.is_premium} onChange={(e) => setEditingCat({ ...editingCat, is_premium: e.target.checked })} className="rounded border-border" />
-            Premium categorie (toont "Ontdek Premium" overlay op kennisbank)
-          </label>
+          <div>
+            <label className="block text-sm text-text-muted mb-2">Toegangsniveau</label>
+            <div className="flex rounded-lg border border-border overflow-hidden w-fit">
+              <button
+                type="button"
+                onClick={() => setEditingCat({ ...editingCat, is_premium: false })}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${!editingCat.is_premium ? 'bg-accent/15 text-accent-light' : 'text-text-dim hover:text-text-muted'}`}
+              >
+                Geregistreerd
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingCat({ ...editingCat, is_premium: true })}
+                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors border-l border-border ${editingCat.is_premium ? 'bg-gold-dim text-gold' : 'text-text-dim hover:text-text-muted'}`}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                Premium
+              </button>
+            </div>
+            <p className="text-xs text-text-dim mt-1.5">Geregistreerd = gratis account. Premium = betaald account nodig.</p>
+          </div>
           <button onClick={saveCategory} className="px-6 py-2.5 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors">Opslaan</button>
         </div>
       )}
