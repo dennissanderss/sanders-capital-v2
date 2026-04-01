@@ -21,8 +21,8 @@ const blogDropdown = [
 ]
 
 const toolsDropdown = [
+  { href: '/tools/fx-analyse', slug: 'fx-analyse', label: 'Macro Fundamentals', desc: 'Valutaparen analyseren op fundamentals', icon: 'layers', defaultPremium: true },
   { href: '/tools/fx-selector', slug: 'fx-selector', label: 'Daily Macro Briefing', desc: 'Dagelijkse marktanalyse & bias', icon: 'compass', defaultPremium: true },
-  { href: '/tools/fx-analyse', slug: 'fx-analyse', label: 'Macro Fundamentals', desc: 'Leer valutaparen analyseren', icon: 'layers', defaultPremium: true },
   { href: '/tools/tradescope', slug: 'tradescope', label: 'TradeScope', desc: 'Analyseer je trades & performance', icon: 'activity', defaultPremium: true },
   { href: '/tools/calculator', slug: 'calculator', label: 'Position Size Calculator', desc: 'Bereken je positiegrootte', icon: 'calculator' },
   { href: '/tools/kalender', slug: 'kalender', label: 'Economische Kalender', desc: 'Aankomende events & data', icon: 'calendar' },
@@ -115,7 +115,7 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
         scrolled
           ? 'glass-elevated border-b border-white/[0.07]'
           : 'bg-transparent'
@@ -347,7 +347,7 @@ export default function Header() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <nav className="md:hidden glass-elevated border-b border-white/[0.07]">
+        <nav className="md:hidden glass-elevated border-b border-white/[0.07] overflow-y-auto" style={{ maxHeight: 'calc(100vh - 4rem)' }}>
           <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col gap-3">
             <Link href="/" className={`text-sm py-2 transition-colors ${pathname === '/' ? 'text-heading' : 'text-text-muted'}`}>
               Home

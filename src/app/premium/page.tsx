@@ -44,7 +44,7 @@ const tools = [
     name: 'Macro Fundamentals',
     description: 'Rentetarieven, inflatiecijfers en centrale bank beleid per valuta. De data achter de scores, inclusief trackrecord.',
     href: '/tools/rentetarieven',
-    value: '61%+ winrate op 14 dagen trackrecord',
+    value: 'LIVE_WIN_RATE winrate op trackrecord',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <line x1="12" y1="1" x2="12" y2="23" />
@@ -101,9 +101,31 @@ const faqItems = [
   },
 ]
 
+async function getLiveWinRate(): Promise<string> {
+  try {
+    const { createClient } = await import('@supabase/supabase-js')
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    const { data } = await sb
+      .from('trade_focus_records')
+      .select('outcome')
+      .not('outcome', 'is', null)
+      .neq('outcome', 'pending')
+    if (!data || data.length < 5) return '61%+'
+    const correct = data.filter((r: { outcome: string }) => r.outcome === 'correct').length
+    const rate = Math.round((correct / data.length) * 100)
+    return `${rate}%`
+  } catch {
+    return '61%+'
+  }
+}
+
 export default async function PremiumPage() {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const liveWinRate = await getLiveWinRate()
   const isLoggedIn = !!user
 
   return (
@@ -162,7 +184,7 @@ export default async function PremiumPage() {
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
-                      {tool.value}
+                      {tool.value.replace('LIVE_WIN_RATE', liveWinRate)}
                     </p>
                   </div>
                 </div>
@@ -313,7 +335,7 @@ export default async function PremiumPage() {
                   <p>
                     <strong className="text-heading">Gezamenlijke marktwaarde: meer dan &euro;1.000 per jaar.</strong>{' '}
                     Daarnaast beschik je over een fundamenteel model met een{' '}
-                    <strong className="text-heading">61%+ winrate trackrecord</strong> dat dagelijks wordt bijgehouden.
+                    <strong className="text-heading">{liveWinRate} winrate trackrecord</strong> dat dagelijks wordt bijgehouden.
                     Dit is geen standaard product dat elders verkrijgbaar is.
                   </p>
                 </div>
