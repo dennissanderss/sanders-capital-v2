@@ -80,6 +80,8 @@ interface TrackRecord {
   result: 'pending' | 'correct' | 'incorrect'
   pips_moved: number | null
   regime: string
+  created_at?: string
+  resolved_at?: string
 }
 
 interface TrackStats {
@@ -921,9 +923,16 @@ export default function DailyBriefingDashboard() {
                                 const isBullish = record.direction.includes('bullish')
                                 const isJpy = record.pair.includes('JPY')
                                 const digits = isJpy ? 3 : 5
-                                const nextDate = new Date(record.date)
-                                nextDate.setDate(nextDate.getDate() + 1)
-                                const exitDateStr = nextDate.toISOString().split('T')[0]
+                                // Format call timestamp
+                                const callTime = record.created_at
+                                  ? new Date(record.created_at).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' })
+                                  : null
+                                const resolvedTime = record.resolved_at
+                                  ? new Date(record.resolved_at).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' })
+                                  : null
+                                const exitDateStr = record.resolved_at
+                                  ? new Date(record.resolved_at).toISOString().split('T')[0]
+                                  : (() => { const d = new Date(record.date); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0] })()
 
                                 return (
                                   <div key={record.id} className={`rounded-lg border text-xs overflow-hidden ${
@@ -944,7 +953,7 @@ export default function DailyBriefingDashboard() {
                                       }`}>
                                         {isBullish ? '↑ LONG' : '↓ SHORT'}
                                       </span>
-                                      <span className="text-[10px] text-text-dim">score {record.score}</span>
+                                      <span className="text-[10px] text-text-muted">score {record.score}</span>
                                       <span className={`ml-auto font-mono font-bold ${
                                         isCorrect ? 'text-green-400' : 'text-red-400'
                                       }`}>
@@ -953,28 +962,34 @@ export default function DailyBriefingDashboard() {
                                           : isCorrect ? '✓' : '✗'}
                                       </span>
                                     </div>
-                                    {/* Detail row */}
-                                    <div className="px-3 py-1.5 bg-white/[0.02] border-t border-white/[0.04] flex items-center gap-4 text-[10px] text-text-dim">
+                                    {/* Detail row — entry */}
+                                    <div className="px-3 py-1.5 bg-white/[0.02] border-t border-white/[0.04] flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px]">
                                       <div className="flex items-center gap-1.5">
-                                        <span className="text-text-dim/60">Call:</span>
+                                        <span className="text-accent-light/60 font-semibold">Entry</span>
                                         <span className="font-mono text-text-muted">{record.date}</span>
-                                        <span className="text-text-dim/40">close</span>
+                                        {callTime && (
+                                          <span className="font-mono text-accent-light/80">{callTime} CET</span>
+                                        )}
+                                        <span className="text-text-dim">@</span>
                                         <span className="font-mono font-semibold text-heading">
                                           {record.entry_price != null ? record.entry_price.toFixed(digits) : '—'}
                                         </span>
                                       </div>
-                                      <span className="text-text-dim/30">→</span>
+                                      <span className="text-text-dim/40">→</span>
                                       <div className="flex items-center gap-1.5">
-                                        <span className="text-text-dim/60">Exit:</span>
+                                        <span className="text-accent-light/60 font-semibold">Exit</span>
                                         <span className="font-mono text-text-muted">{exitDateStr}</span>
-                                        <span className="text-text-dim/40">close</span>
+                                        {resolvedTime && (
+                                          <span className="font-mono text-accent-light/80">{resolvedTime} CET</span>
+                                        )}
+                                        <span className="text-text-dim">@</span>
                                         <span className="font-mono font-semibold text-heading">
                                           {record.exit_price != null ? record.exit_price.toFixed(digits) : '—'}
                                         </span>
                                       </div>
                                       <div className="ml-auto flex items-center gap-1">
-                                        <span className="text-text-dim/60">Δ</span>
-                                        <span className={`font-mono font-semibold ${isCorrect ? 'text-green-400/80' : 'text-red-400/80'}`}>
+                                        <span className="text-text-muted">Δ</span>
+                                        <span className={`font-mono font-bold ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
                                           {record.entry_price != null && record.exit_price != null
                                             ? `${(record.exit_price - record.entry_price) >= 0 ? '+' : ''}${(record.exit_price - record.entry_price).toFixed(digits)}`
                                             : '—'}
@@ -1000,6 +1015,9 @@ export default function DailyBriefingDashboard() {
                                 const isBullish = record.direction.includes('bullish')
                                 const isJpy = record.pair.includes('JPY')
                                 const digits = isJpy ? 3 : 5
+                                const callTime = record.created_at
+                                  ? new Date(record.created_at).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' })
+                                  : null
                                 return (
                                   <div key={record.id} className="rounded-lg border bg-amber-500/[0.03] border-amber-500/15 text-xs overflow-hidden">
                                     <div className="flex items-center gap-2 px-3 py-2">
@@ -1010,20 +1028,23 @@ export default function DailyBriefingDashboard() {
                                       }`}>
                                         {isBullish ? '↑ LONG' : '↓ SHORT'}
                                       </span>
-                                      <span className="text-[10px] text-text-dim">score {record.score}</span>
+                                      <span className="text-[10px] text-text-muted">score {record.score}</span>
                                       <span className="ml-auto font-mono text-amber-400 text-[10px]">afwachten...</span>
                                     </div>
-                                    <div className="px-3 py-1.5 bg-white/[0.02] border-t border-white/[0.04] flex items-center gap-4 text-[10px] text-text-dim">
+                                    <div className="px-3 py-1.5 bg-white/[0.02] border-t border-white/[0.04] flex items-center gap-x-4 gap-y-1 text-[10px]">
                                       <div className="flex items-center gap-1.5">
-                                        <span className="text-text-dim/60">Call:</span>
+                                        <span className="text-accent-light/60 font-semibold">Entry</span>
                                         <span className="font-mono text-text-muted">{record.date}</span>
-                                        <span className="text-text-dim/40">close</span>
+                                        {callTime && (
+                                          <span className="font-mono text-accent-light/80">{callTime} CET</span>
+                                        )}
+                                        <span className="text-text-dim">@</span>
                                         <span className="font-mono font-semibold text-heading">
                                           {record.entry_price != null ? record.entry_price.toFixed(digits) : '—'}
                                         </span>
                                       </div>
-                                      <span className="text-text-dim/30">→</span>
-                                      <span className="font-mono text-amber-400/60">volgende close</span>
+                                      <span className="text-text-dim/40">→</span>
+                                      <span className="font-mono text-amber-400/70">volgende close</span>
                                     </div>
                                   </div>
                                 )
