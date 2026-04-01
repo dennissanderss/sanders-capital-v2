@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import FadeIn from '@/components/FadeIn'
+import { createServerSupabaseClient } from '@/lib/supabase-server'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -8,17 +9,21 @@ export const metadata: Metadata = {
 }
 
 const freeFeatures = [
-  'Basis artikelen (zonder account)',
-  'Kennisbank basis modules',
+  'Basis artikelen & kennisbank',
+  'Economische kalender',
+  'Position Size Calculator',
   'Community toegang',
 ]
 
 const premiumFeatures = [
-  'Alle basis features',
+  'Daily Macro Briefing',
+  'Macro Fundamentals dashboard',
+  'TradeScope backtest analyse',
+  'TradeMind trading journal',
   'Premium artikelen & analyses',
   'Verdiepende kennisbank modules',
   'Exclusieve community kanalen',
-  'Volledige toegang tot alle tools',
+  'Persoonlijke ondersteuning',
 ]
 
 const tools = [
@@ -26,6 +31,7 @@ const tools = [
     name: 'Daily Macro Briefing',
     description: 'Dagelijks overzicht van macro regime, currency scores en trade focus — gebaseerd op centrale bank beleid en rentedata.',
     href: '/tools/fx-selector',
+    value: 'Bespaart 1-2 uur dagelijkse research',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
@@ -33,49 +39,49 @@ const tools = [
         <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
       </svg>
     ),
-    tags: ['Macro', 'Currencies', 'Dagelijks'],
   },
   {
     name: 'Macro Fundamentals',
-    description: 'Rentetarieven, inflatiecijfers en centrale bank beleid per valuta — de data achter de scores.',
+    description: 'Rentetarieven, inflatiecijfers en centrale bank beleid per valuta — de data achter de scores. Inclusief trackrecord.',
     href: '/tools/rentetarieven',
+    value: '61%+ winrate op 14 dagen trackrecord',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <line x1="12" y1="1" x2="12" y2="23" />
         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
       </svg>
     ),
-    tags: ['Rentes', 'Inflatie', 'CB Beleid'],
   },
   {
     name: 'TradeScope',
-    description: 'Upload je backtest CSV en krijg direct inzicht in je performance — winrate, drawdown, sessie-analyse en meer.',
+    description: 'Upload je backtest CSV en krijg direct inzicht in je performance — winrate, drawdown, sessie-analyse, Monte Carlo en meer.',
     href: '/tools/tradescope',
+    value: 'Vergelijkbaar met tools van +$200/jaar',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
       </svg>
     ),
-    tags: ['Backtest', 'Statistieken', 'Performance'],
   },
   {
     name: 'TradeMind',
     description: 'Je persoonlijke trading journal — log trades, analyseer patronen in je gedrag en verbeter je edge structureel.',
     href: '/tools',
+    value: 'Vervangt Edgewonk ($170/jaar)',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
       </svg>
     ),
-    tags: ['Journal', 'Psychologie', 'Binnenkort'],
+    comingSoon: true,
   },
 ]
 
 const faqItems = [
   {
     q: 'Wat is het verschil tussen gratis en premium?',
-    a: 'Gratis leden hebben toegang tot basis artikelen en de kennisbank basis modules. Premium leden krijgen volledige toegang tot alle tools, verdiepende analyses en exclusieve community features.',
+    a: 'Gratis leden hebben toegang tot basis artikelen, de kennisbank en gratis tools (kalender, calculator). Premium leden krijgen volledige toegang tot alle professionele tools, verdiepende analyses en exclusieve community features.',
   },
   {
     q: 'Is dit financieel advies?',
@@ -87,11 +93,20 @@ const faqItems = [
   },
   {
     q: 'Hoe krijg ik toegang tot de tools?',
-    a: 'Maak eerst een gratis account aan. Zodra premium beschikbaar is, kun je upgraden via je dashboard en krijg je direct toegang tot alle tools.',
+    a: 'Maak eerst een gratis account aan. Daarna kun je upgraden naar premium via de contactpagina en krijg je direct toegang tot alle tools.',
+  },
+  {
+    q: 'Waarom jaarlijks in plaats van maandelijks?',
+    a: 'Onze tools bouwen over tijd meer waarde op — het fundamentele trackrecord wordt sterker, je journal-data groeit, en je analyses worden beter. Een jaarabonnement past bij die langetermijnvisie en houdt de prijs toegankelijk.',
   },
 ]
 
-export default function PremiumPage() {
+export default async function PremiumPage() {
+  // Check if user is logged in to show pricing
+  const supabase = await createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const isLoggedIn = !!user
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-24">
       <FadeIn>
@@ -113,10 +128,10 @@ export default function PremiumPage() {
               Gebouwd voor traders
             </span>
             <h2 className="text-2xl md:text-3xl font-display font-semibold text-heading mb-3">
-              Premium Tools
+              Wat zit erin?
             </h2>
             <p className="text-text-muted max-w-xl mx-auto">
-              Elke tool lost een specifiek probleem op. Geen ruis, geen overbodige features — alleen wat je nodig hebt.
+              Elke tool lost een specifiek probleem op. Samen vormen ze een compleet systeem voor serieuze traders.
             </p>
           </div>
         </FadeIn>
@@ -126,8 +141,13 @@ export default function PremiumPage() {
             <FadeIn key={tool.name} delay={i * 100} className="h-full">
               <Link
                 href={tool.href}
-                className="block h-full p-6 rounded-xl bg-bg-card border border-border hover:border-accent-dim/40 transition-all group"
+                className="block h-full p-6 rounded-xl bg-bg-card border border-border hover:border-accent-dim/40 transition-all group relative overflow-hidden"
               >
+                {'comingSoon' in tool && (
+                  <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded bg-accent/15 text-accent-light border border-accent/20">
+                    Binnenkort
+                  </span>
+                )}
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-lg bg-accent-glow flex items-center justify-center text-accent-light shrink-0 group-hover:bg-accent-dim/20 transition-colors">
                     {tool.icon}
@@ -136,16 +156,15 @@ export default function PremiumPage() {
                     <h3 className="font-display font-semibold text-heading mb-1.5 group-hover:text-accent-light transition-colors">
                       {tool.name}
                     </h3>
-                    <p className="text-sm text-text-muted leading-relaxed mb-3">
+                    <p className="text-sm text-text-muted leading-relaxed mb-2">
                       {tool.description}
                     </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {tool.tags.map(tag => (
-                        <span key={tag} className="text-[10px] px-2 py-0.5 rounded bg-white/[0.04] text-text-dim border border-white/[0.06]">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
+                    <p className="text-xs text-accent-light/80 flex items-center gap-1.5">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      {tool.value}
+                    </p>
                   </div>
                 </div>
               </Link>
@@ -154,72 +173,162 @@ export default function PremiumPage() {
         </div>
       </div>
 
-      {/* Pricing tiers */}
-      <div className="grid md:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto mb-24">
-        <FadeIn delay={100}>
-          <div className="p-8 rounded-xl bg-bg-card border border-border h-full">
-            <div className="mb-6">
-              <h2 className="text-xl font-display font-semibold text-heading mb-1">Gratis</h2>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-display font-bold text-heading">&euro;0</span>
-                <span className="text-sm text-text-muted">/maand</span>
-              </div>
+      {/* Pricing — only visible to logged-in users */}
+      {isLoggedIn ? (
+        <div className="max-w-5xl mx-auto mb-24">
+          <FadeIn>
+            <div className="text-center mb-12">
+              <span className="text-xs tracking-[0.2em] uppercase text-gold mb-3 block font-body">
+                Investeer in je groei
+              </span>
+              <h2 className="text-2xl md:text-3xl font-display font-semibold text-heading mb-3">
+                Pricing
+              </h2>
             </div>
-            <ul className="space-y-3 mb-8">
-              {freeFeatures.map((f) => (
-                <li key={f} className="flex items-center gap-3 text-sm">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light shrink-0">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  <span className="text-text">{f}</span>
-                </li>
-              ))}
-              {premiumFeatures.slice(1).map((f) => (
-                <li key={f} className="flex items-center gap-3 text-sm opacity-40">
-                  <span className="w-4 text-center text-text-dim">—</span>
-                  <span className="text-text-muted">{f}</span>
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/register"
-              className="block text-center px-6 py-3 rounded-lg border border-border text-heading text-sm font-medium hover:bg-bg-hover transition-colors"
-            >
-              Gratis aanmelden
-            </Link>
-          </div>
-        </FadeIn>
+          </FadeIn>
 
-        <FadeIn delay={200}>
-          <div className="p-8 rounded-xl bg-bg-card border border-accent/30 h-full relative overflow-hidden">
-            <div className="absolute top-0 right-0 px-3 py-1 bg-accent/20 text-accent-light text-xs rounded-bl-lg">
-              Binnenkort
-            </div>
-            <div className="mb-6">
-              <h2 className="text-xl font-display font-semibold text-heading mb-1">Premium</h2>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-display font-bold text-heading">Binnenkort</span>
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {/* Free tier */}
+            <FadeIn delay={100}>
+              <div className="p-8 rounded-xl bg-bg-card border border-border h-full flex flex-col">
+                <div className="mb-6">
+                  <h3 className="text-xl font-display font-semibold text-heading mb-1">Gratis</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-display font-bold text-heading">&euro;0</span>
+                  </div>
+                  <p className="text-xs text-text-dim mt-1">Voor altijd gratis</p>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {freeFeatures.map((f) => (
+                    <li key={f} className="flex items-center gap-3 text-sm">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light shrink-0">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      <span className="text-text">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="px-6 py-3 rounded-lg border border-border text-center text-sm text-text-dim">
+                  Actief
+                </div>
+              </div>
+            </FadeIn>
+
+            {/* Premium tier */}
+            <FadeIn delay={200}>
+              <div className="p-8 rounded-xl bg-bg-card border border-gold/30 h-full relative overflow-hidden flex flex-col">
+                <div className="absolute top-0 right-0 px-3 py-1 bg-gold/15 text-gold text-xs rounded-bl-lg font-medium">
+                  Aanbevolen
+                </div>
+                <div className="mb-6">
+                  <h3 className="text-xl font-display font-semibold text-heading mb-1">Premium</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-display font-bold text-heading">&euro;699</span>
+                    <span className="text-sm text-text-muted">/jaar</span>
+                  </div>
+                  <p className="text-xs text-text-dim mt-1">&euro;58,25/maand &middot; Jaarlijks gefactureerd</p>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {premiumFeatures.map((f) => (
+                    <li key={f} className="flex items-center gap-3 text-sm">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold shrink-0">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      <span className="text-text">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/contact"
+                  className="block text-center px-6 py-3 rounded-lg bg-gold/20 border border-gold/30 text-gold text-sm font-medium hover:bg-gold/30 transition-colors"
+                >
+                  Neem contact op
+                </Link>
+              </div>
+            </FadeIn>
+          </div>
+
+          {/* Price justification */}
+          <FadeIn delay={300}>
+            <div className="max-w-3xl mx-auto mt-12 rounded-2xl border border-border bg-bg-card/50 px-6 sm:px-8 py-6 sm:py-8">
+              <h3 className="text-lg font-display font-semibold text-heading mb-5 flex items-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold">
+                  <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                Waarom &euro;699?
+              </h3>
+              <div className="space-y-4 text-sm text-text-muted leading-relaxed">
+                <p>
+                  Laten we het uitrekenen. Dit is wat je krijgt — en wat het je zou kosten als je het apart koopt:
+                </p>
+
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {[
+                    { label: 'Trading Journal (Edgewonk)', price: '~$170/jaar', desc: 'TradeMind vervangt dit volledig' },
+                    { label: 'Backtest Analytics tools', price: '~$200+/jaar', desc: 'TradeScope met Monte Carlo & optimalisatie' },
+                    { label: 'Fundamentele data services', price: '~$500+/jaar', desc: 'Daily Macro Briefing + Macro Fundamentals' },
+                    { label: 'Trading community & mentoring', price: 'Onbetaalbaar', desc: 'Directe ondersteuning van een ervaren trader' },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-lg bg-white/[0.02] border border-white/[0.06] px-4 py-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-heading font-medium">{item.label}</span>
+                        <span className="text-xs text-gold font-mono">{item.price}</span>
+                      </div>
+                      <p className="text-xs text-text-dim">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-3 border-t border-white/[0.06]">
+                  <p>
+                    <strong className="text-heading">Samen &gt; &euro;1.000+ aan waarde per jaar.</strong>{' '}
+                    En dan hebben we het nog niet over het fundamentele model met een{' '}
+                    <strong className="text-heading">61%+ winrate trackrecord</strong> dat dagelijks wordt bijgehouden
+                    — iets wat je nergens kant-en-klaar kunt kopen.
+                  </p>
+                </div>
+
+                <p>
+                  Dit platform is gebouwd door iemand die zelf jarenlang heeft gezocht naar de juiste tools, frameworks
+                  en data. Geen marketing-praatjes — alles is transparant, met publiek trackrecord en open databronnen.
+                  Je betaalt voor een compleet systeem dat over tijd alleen maar waardevoller wordt.
+                </p>
               </div>
             </div>
-            <ul className="space-y-3 mb-8">
-              {premiumFeatures.map((f) => (
-                <li key={f} className="flex items-center gap-3 text-sm">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light shrink-0">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  <span className="text-text">{f}</span>
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/contact"
-              className="block text-center px-6 py-3 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors"
-            >
-              Neem contact op
-            </Link>
+          </FadeIn>
+        </div>
+      ) : (
+        /* Not logged in — show teaser + register prompt */
+        <FadeIn>
+          <div className="max-w-2xl mx-auto mb-24 p-8 rounded-2xl bg-bg-card border border-border text-center">
+            <div className="w-14 h-14 rounded-2xl bg-gold-dim flex items-center justify-center mx-auto mb-5">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-display font-semibold text-heading mb-2">
+              Pricing beschikbaar na registratie
+            </h3>
+            <p className="text-text-muted mb-6 max-w-md mx-auto">
+              Maak een gratis account aan om de volledige pricing, vergelijking en onderbouwing te bekijken.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href="/register"
+                className="px-6 py-3 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors"
+              >
+                Gratis registreren
+              </Link>
+              <Link
+                href="/login"
+                className="px-6 py-3 rounded-lg border border-border text-heading text-sm font-medium hover:bg-bg-hover transition-colors"
+              >
+                Inloggen
+              </Link>
+            </div>
           </div>
         </FadeIn>
-      </div>
+      )}
 
       {/* How it works */}
       <FadeIn>
@@ -229,9 +338,9 @@ export default function PremiumPage() {
           </h2>
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {[
-              { step: '1', title: 'Maak een account', desc: 'Registreer gratis en krijg direct toegang tot basis content.' },
-              { step: '2', title: 'Verken de tools', desc: 'Ontdek de tools, lees artikelen en vind wat bij je trading past.' },
-              { step: '3', title: 'Upgrade naar premium', desc: 'Krijg volledige toegang tot alle tools en exclusieve content.' },
+              { step: '1', title: 'Maak een account', desc: 'Registreer gratis en krijg direct toegang tot basis content en tools.' },
+              { step: '2', title: 'Verken de tools', desc: 'Ontdek wat bij je trading past. Gratis tools zijn direct beschikbaar.' },
+              { step: '3', title: 'Upgrade naar premium', desc: 'Neem contact op en krijg volledige toegang tot alle tools en content.' },
             ].map((item, i) => (
               <FadeIn key={i} delay={i * 150}>
                 <div className="text-center">
@@ -272,10 +381,10 @@ export default function PremiumPage() {
       <FadeIn>
         <div className="text-center mt-24">
           <Link
-            href="/register"
+            href={isLoggedIn ? '/contact' : '/register'}
             className="inline-block px-8 py-3.5 rounded-lg bg-accent hover:bg-accent-light text-white font-medium transition-colors"
           >
-            Gratis aanmelden
+            {isLoggedIn ? 'Neem contact op' : 'Gratis aanmelden'}
           </Link>
         </div>
       </FadeIn>

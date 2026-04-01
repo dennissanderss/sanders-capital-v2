@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { createClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import Breadcrumb from '@/components/Breadcrumb'
 import BegrippenContent from './BegrippenContent'
@@ -11,11 +12,32 @@ export const metadata: Metadata = {
 export default async function BegrippenPage() {
   const supabase = await createServerSupabaseClient()
 
+  // Check if the "fundamentals" category is actually marked as premium
+  const publicSupabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const { data: category } = await publicSupabase
+    .from('kennisbank_categories')
+    .select('is_premium')
+    .eq('slug', 'fundamentals')
+    .single()
+
+  // Also check the item itself
+  const { data: item } = await publicSupabase
+    .from('kennisbank_items')
+    .select('is_premium')
+    .eq('slug', 'economische-begrippen')
+    .maybeSingle()
+
+  const isPremium = (item?.is_premium ?? false) || (category?.is_premium ?? false)
+
   // Check user access
   const { data: { user } } = await supabase.auth.getUser()
 
-  let hasAccess = false
-  if (user) {
+  // If not premium, any logged-in user has access
+  let hasAccess = !isPremium
+  if (isPremium && user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
