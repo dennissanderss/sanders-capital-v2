@@ -820,7 +820,7 @@ export default function BriefingV2Dashboard() {
                       <div className="pt-2 border-t border-white/[0.04]">
                         {ccy.reasons.map((r, j) => (
                           <p key={j} className="text-[10px] text-text-dim leading-relaxed flex items-start gap-1">
-                            <span className="text-accent-light mt-0.5 shrink-0">></span> {r}
+                            <span className="text-accent-light mt-0.5 shrink-0">&gt;</span> {r}
                           </p>
                         ))}
                       </div>
