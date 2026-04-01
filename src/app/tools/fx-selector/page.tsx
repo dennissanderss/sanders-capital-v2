@@ -210,7 +210,7 @@ export default function DailyBriefingIntroPage() {
               'Sterke overtuiging: score ≥ 3.5 of ≤ −3.5. Matige overtuiging: score ≥ 2.0 of ≤ −2.0.',
               'Bij elk paar zie je de richting (bullish/bearish), overtuiging, renteverschil en de achterliggende redenering.',
               'Het trackrecord meet dagelijks of de fundamentele bias klopte: daily close → volgende daily close. Alleen sterke overtuiging wordt gemeten.',
-              'Dit geeft je niet je entry — het geeft je de richting. Jij zoekt vervolgens je structure break of technische bevestiging.',
+              'Dit geeft je niet je entry — het geeft je de richting. Jij past vervolgens je eigen strategie toe in de richting van de bias.',
             ]}
           />
         </FadeIn>
@@ -285,14 +285,14 @@ export default function DailyBriefingIntroPage() {
               <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">3</span>
               <div>
                 <p className="text-sm font-semibold text-heading">Focus op de Trade Focus paren</p>
-                <p className="text-sm text-text-muted mt-0.5">Open alleen de charts van de paren met sterke bias. Zoek daar je technische entry: structure break, liquidity sweep, order block — whatever jouw strategie is.</p>
+                <p className="text-sm text-text-muted mt-0.5">Open alleen de charts van de paren met sterke bias en pas je eigen strategie toe in de richting van de fundamentele bias.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">4</span>
               <div>
                 <p className="text-sm font-semibold text-heading">Check de kalender</p>
-                <p className="text-sm text-text-muted mt-0.5">Staan er high-impact events gepland? Bij een CPI-release of rentebeslissing kan de bias tijdelijk onderbroken worden. De tool toont welke events eraan komen en wat de verwachting is.</p>
+                <p className="text-sm text-text-muted mt-0.5">Staan er high-impact events gepland? Als er high-impact events zijn, wacht de release af of trade met kleiner risico.</p>
               </div>
             </div>
           </div>

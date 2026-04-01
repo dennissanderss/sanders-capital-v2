@@ -511,12 +511,13 @@ export default function AdminPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
-                { name: 'Economische Kalender', desc: 'Automatisch opgehaald via FairEconomy/ForexFactory API. Events worden live gefilterd.', status: 'live' },
-                { name: 'FX Koersen (Yahoo)', desc: 'Live valutakoersen worden real-time opgehaald via Yahoo Finance bij het openen van FX tools.', status: 'live' },
-                { name: 'Vergaderdata ophalen', desc: 'Rentevergaderingen worden automatisch uit de economische kalender gehaald (komende 2 weken).', status: 'live' },
-                { name: 'Daily Macro Briefing', desc: 'Regime, currency scores, pair biases en trade focus worden automatisch berekend o.b.v. CB data + intermarket.', status: 'live' },
-                { name: 'Intermarket Data (Yahoo)', desc: 'VIX, S&P 500, US 10Y Yields, Goud en Olie worden live opgehaald via Yahoo Finance (5 min cache).', status: 'live' },
-                { name: 'Auth & Premium gating', desc: 'Supabase Auth + RLS regelt automatisch toegang tot premium content en tools.', status: 'live' },
+                { name: 'Economische Kalender', desc: 'Events automatisch opgehaald via FairEconomy/ForexFactory API. Klik-uitleg per event. Geen actuele data (API biedt dit niet).', status: 'live' },
+                { name: 'Daily Macro Briefing', desc: 'Regime, currency scores, pair biases en trade focus automatisch berekend o.b.v. CB data + intermarket + kalender.', status: 'live' },
+                { name: 'Trade Focus Trackrecord', desc: 'Meet dagelijks of de fundamentele bias klopt (daily close → close). Bouwt op over maanden/jaren. Backfill beschikbaar.', status: 'live' },
+                { name: 'Intermarket Data (Yahoo)', desc: 'DXY, VIX, S&P 500, US 10Y Yields, Goud en Olie live via Yahoo Finance (5 min cache).', status: 'live' },
+                { name: 'FX Koersen (Yahoo)', desc: 'Live valutakoersen real-time opgehaald via Yahoo Finance.', status: 'live' },
+                { name: 'Vergaderdata', desc: 'CB meetings automatisch uit economische kalender (komende 2 weken).', status: 'live' },
+                { name: 'Auth & Premium gating', desc: 'Supabase Auth + RLS regelt toegang tot premium content en tools.', status: 'live' },
               ].map(item => (
                 <div key={item.name} className="p-4 rounded-xl glass flex items-start gap-3">
                   <span className="w-2 h-2 rounded-full bg-green-400 mt-1.5 shrink-0" />
@@ -539,11 +540,11 @@ export default function AdminPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
-                { name: 'Rentetarieven & Targets', desc: 'Huidige rente, target, bias en laatste actie per centrale bank. Update na elk CB besluit.', tab: 'rentes' },
+                { name: 'Rentetarieven & CB Bias', desc: 'Rente, target, bias en laatste actie per centrale bank. Update via Claude na elk CB besluit. Dit stuurt de hele Daily Macro Briefing aan.', tab: 'rentes' },
                 { name: 'Artikelen & Blog', desc: 'Blog posts schrijven, publiceren en premium content beheren.', tab: 'articles' },
                 { name: 'Kennisbank content', desc: 'Educatieve artikelen en documenten per categorie.', tab: 'kennisbank' },
                 { name: 'Tool instellingen', desc: 'Premium/gratis status en zichtbaarheid van tools.', tab: 'tools' },
-                { name: 'Gebruikers & Rollen', desc: 'Free/premium/admin rollen toekennen aan gebruikers.', tab: 'users' },
+                { name: 'Gebruikers & Rollen', desc: 'Free/premium/admin rollen toekennen.', tab: 'users' },
               ].map(item => (
                 <button key={item.name} onClick={() => setTab(item.tab as typeof tab)} className="p-4 rounded-xl glass text-left hover:border-border-light transition-colors flex items-start gap-3">
                   <span className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 shrink-0" />

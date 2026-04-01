@@ -390,7 +390,6 @@ export default function KalenderPage() {
                   <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Valuta</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Event</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider hidden sm:table-cell">Impact</th>
-                  <th className="text-right px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Actueel</th>
                   <th className="text-right px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Verwacht</th>
                   <th className="text-right px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Vorig</th>
                 </tr>
@@ -399,7 +398,7 @@ export default function KalenderPage() {
                 {Object.entries(groupedEvents).map(([dateKey, events]) => (
                   <Fragment key={dateKey}>
                     <tr className="bg-bg/50">
-                      <td colSpan={8} className="px-3 sm:px-4 py-2">
+                      <td colSpan={7} className="px-3 sm:px-4 py-2">
                         <span className="text-xs font-semibold text-accent-light uppercase tracking-wider">{dateKey}</span>
                       </td>
                     </tr>
@@ -408,22 +407,6 @@ export default function KalenderPage() {
                       const isNext = nextEventId !== null && eventId === nextEventId
                       const isExpanded = expandedEvent === eventId
                       const explanation = getEventExplanation(event)
-
-                      // Determine if actual is better/worse than forecast
-                      let actualColor = 'text-text-muted'
-                      if (event.actual && event.forecast) {
-                        const a = parseFloat(event.actual.replace(/[%KkMmBb,]/g, ''))
-                        const f = parseFloat(event.forecast.replace(/[%KkMmBb,]/g, ''))
-                        if (!isNaN(a) && !isNaN(f)) {
-                          // For claims/unemployment, lower is better
-                          const isInverse = event.title.toLowerCase().includes('claim') || event.title.toLowerCase().includes('unemployment') || event.title.toLowerCase().includes('jobless')
-                          if (isInverse) {
-                            actualColor = a < f ? 'text-green-400' : a > f ? 'text-red-400' : 'text-text-muted'
-                          } else {
-                            actualColor = a > f ? 'text-green-400' : a < f ? 'text-red-400' : 'text-text-muted'
-                          }
-                        }
-                      }
 
                       return (
                         <Fragment key={eventId}>
@@ -461,11 +444,6 @@ export default function KalenderPage() {
                               <ImpactBadge impact={event.impact} />
                             </td>
                             <td className="px-3 sm:px-4 py-2.5 text-right">
-                              <span className={`text-sm font-mono font-semibold ${event.actual ? actualColor : 'text-text-dim/30'}`}>
-                                {event.actual || '—'}
-                              </span>
-                            </td>
-                            <td className="px-3 sm:px-4 py-2.5 text-right">
                               <span className="text-sm text-text-muted font-mono">{event.forecast || '—'}</span>
                             </td>
                             <td className="px-3 sm:px-4 py-2.5 text-right">
@@ -475,7 +453,7 @@ export default function KalenderPage() {
                           {/* Expanded explanation */}
                           {isExpanded && (
                             <tr className="bg-white/[0.02]">
-                              <td colSpan={8} className="px-4 sm:px-6 py-3">
+                              <td colSpan={7} className="px-4 sm:px-6 py-3">
                                 <div className="grid sm:grid-cols-3 gap-3 text-[11px]">
                                   <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-2.5">
                                     <p className="text-accent-light font-semibold mb-1 uppercase tracking-wider text-[10px]">Wat is dit?</p>
@@ -524,20 +502,12 @@ export default function KalenderPage() {
           <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
           <span className="text-xs text-text-muted">Lage impact</span>
         </div>
-        <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
-          <span className="text-xs text-green-400 font-mono font-bold">2.1%</span>
-          <span className="text-xs text-text-dim">Beter</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-red-400 font-mono font-bold">1.8%</span>
-          <span className="text-xs text-text-dim">Slechter</span>
-        </div>
       </div>
 
       <div className="mt-6 p-4 rounded-xl bg-bg-card border border-border">
         <p className="text-xs text-text-dim text-center">
           Data bron: <a href="https://www.forexfactory.com/calendar" target="_blank" rel="noopener noreferrer" className="text-accent-light/60 hover:text-accent-light">ForexFactory / FairEconomy</a>.
-          Klik op een event voor uitleg over de impact. Actuele data wordt groen (beter) of rood (slechter) gekleurd t.o.v. verwachting. Dit is geen financieel advies.
+          Klik op een event voor uitleg over de impact en wat er gebeurt bij een verrassing. Dit is geen financieel advies.
         </p>
       </div>
     </div>
