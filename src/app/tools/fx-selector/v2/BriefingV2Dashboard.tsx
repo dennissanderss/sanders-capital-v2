@@ -512,16 +512,6 @@ export default function BriefingV2Dashboard() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
       {/* ── Test Banner ── */}
-      <div className="mb-6 px-4 py-2.5 rounded-lg bg-amber-500/[0.08] border border-amber-500/20 flex items-center gap-2">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400 shrink-0">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-          <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-        </svg>
-        <p className="text-xs text-amber-300">
-          <strong>TEST OMGEVING</strong> - Enhanced Daily Macro Briefing met nieuws-integratie. Niet live, alleen voor evaluatie.
-        </p>
-      </div>
-
       {/* ── Header ── */}
       <div className="mb-8">
         <div className="flex items-start justify-between flex-wrap gap-4">
