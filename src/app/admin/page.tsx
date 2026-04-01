@@ -389,6 +389,7 @@ export default function AdminPage() {
       }
       setEditingCat(null)
       loadData()
+      notifyHeaderRefresh()
     } catch (e) {
       alert('Fout bij opslaan: ' + (e as Error).message)
     }
@@ -406,10 +407,16 @@ export default function AdminPage() {
     }
   }
 
+  // Notify header to refresh nav badges
+  const notifyHeaderRefresh = () => {
+    window.dispatchEvent(new Event('admin-settings-updated'))
+  }
+
   const toggleCategoryPremium = async (cat: Category) => {
     try {
       await adminWrite('update', 'kennisbank_categories', { is_premium: !cat.is_premium }, cat.id)
       setCategories((prev) => prev.map((c) => c.id === cat.id ? { ...c, is_premium: !c.is_premium } : c))
+      notifyHeaderRefresh()
     } catch (e) {
       alert('Fout: ' + (e as Error).message)
     }
@@ -1509,6 +1516,7 @@ export default function AdminPage() {
                       try {
                         await adminWrite('update', 'tool_settings', { is_premium: !tool.is_premium }, tool.id)
                         setTools((prev) => prev.map((t) => t.id === tool.id ? { ...t, is_premium: !t.is_premium } : t))
+                        notifyHeaderRefresh()
                       } catch (e) {
                         alert('Fout: ' + (e as Error).message)
                       }

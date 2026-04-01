@@ -20,12 +20,12 @@ const blogDropdown = [
 ]
 
 const toolsDropdown = [
-  { href: '/tools/fx-selector', label: 'Daily Macro Briefing', desc: 'Dagelijkse marktanalyse & bias', icon: 'compass', premium: true },
-  { href: '/tools/fx-analyse', label: 'Macro Fundamentals', desc: 'Leer valutaparen analyseren', icon: 'layers', premium: true },
-  { href: '/tools/tradescope', label: 'TradeScope', desc: 'Analyseer je trades & performance', icon: 'activity', premium: true },
-  { href: '/tools/calculator', label: 'Position Size Calculator', desc: 'Bereken je positiegrootte', icon: 'calculator' },
-  { href: '/tools/kalender', label: 'Economische Kalender', desc: 'Aankomende events & data', icon: 'calendar' },
-  { href: '/tools/rente', label: 'Rentetarieven', desc: 'Centrale bank rentes', icon: 'percent' },
+  { href: '/tools/fx-selector', slug: 'fx-selector', label: 'Daily Macro Briefing', desc: 'Dagelijkse marktanalyse & bias', icon: 'compass', defaultPremium: true },
+  { href: '/tools/fx-analyse', slug: 'fx-analyse', label: 'Macro Fundamentals', desc: 'Leer valutaparen analyseren', icon: 'layers', defaultPremium: true },
+  { href: '/tools/tradescope', slug: 'tradescope', label: 'TradeScope', desc: 'Analyseer je trades & performance', icon: 'activity', defaultPremium: true },
+  { href: '/tools/calculator', slug: 'calculator', label: 'Position Size Calculator', desc: 'Bereken je positiegrootte', icon: 'calculator' },
+  { href: '/tools/kalender', slug: 'kalender', label: 'Economische Kalender', desc: 'Aankomende events & data', icon: 'calendar' },
+  { href: '/tools/rente', slug: 'rente', label: 'Rentetarieven', desc: 'Centrale bank rentes', icon: 'percent' },
 ]
 
 interface KbCategory {
@@ -65,6 +65,22 @@ export default function Header() {
   const [user, setUser] = useState<User | null>(null)
   const [scrolled, setScrolled] = useState(false)
   const [kbCategories, setKbCategories] = useState<KbCategory[]>([])
+  const [toolPremiumMap, setToolPremiumMap] = useState<Record<string, boolean>>({})
+
+  // Fetch categories & tool settings from DB
+  const fetchData = () => {
+    const supabase = createClient()
+    supabase.from('kennisbank_categories').select('name, slug, icon, is_premium').order('order_index').then(({ data }) => {
+      if (data) setKbCategories(data)
+    })
+    supabase.from('tool_settings').select('slug, is_premium').then(({ data }) => {
+      if (data) {
+        const map: Record<string, boolean> = {}
+        data.forEach((t: { slug: string; is_premium: boolean }) => { map[t.slug] = t.is_premium })
+        setToolPremiumMap(map)
+      }
+    })
+  }
 
   useEffect(() => {
     const supabase = createClient()
@@ -74,11 +90,16 @@ export default function Header() {
       setUser(session?.user ?? null)
     })
 
-    supabase.from('kennisbank_categories').select('name, slug, icon, is_premium').order('order_index').then(({ data }) => {
-      if (data) setKbCategories(data)
-    })
+    fetchData()
 
-    return () => subscription.unsubscribe()
+    // Listen for admin changes to refresh nav badges
+    const handleAdminUpdate = () => fetchData()
+    window.addEventListener('admin-settings-updated', handleAdminUpdate)
+
+    return () => {
+      subscription.unsubscribe()
+      window.removeEventListener('admin-settings-updated', handleAdminUpdate)
+    }
   }, [])
 
   useEffect(() => {
@@ -250,7 +271,7 @@ export default function Header() {
                           <span className={`text-sm font-medium ${pathname === item.href ? 'text-heading' : 'text-text-muted'} transition-colors`}>
                             {item.label}
                           </span>
-                          {item.premium && (
+                          {(item.slug in toolPremiumMap ? toolPremiumMap[item.slug] : item.defaultPremium) && (
                             <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/10 text-accent-light leading-none">
                               Pro
                             </span>
@@ -360,7 +381,7 @@ export default function Header() {
                 }`}
               >
                 {item.label}
-                {item.premium && (
+                {(item.slug in toolPremiumMap ? toolPremiumMap[item.slug] : item.defaultPremium) && (
                   <span className="text-[9px] font-semibold uppercase tracking-wider px-1 py-0.5 rounded bg-accent/10 text-accent-light leading-none">
                     Pro
                   </span>
