@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import AuthGate from '@/components/AuthGate'
 
 interface ToolSetting {
   slug: string
@@ -68,6 +69,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
   const blockedPage = currentSlug && !hasAccess(currentSlug)
 
   return (
+    <AuthGate sectionName="de tools">
     <div>
       {/* Tools sub-navigation */}
       <div className="border-b border-border bg-bg-elevated/50">
@@ -127,7 +129,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
         </div>
       </div>
 
-      {/* Premium lock overlay */}
+      {/* Premium lock overlay (separate from auth gate — this checks premium access) */}
       {blockedPage ? (
         <div className="max-w-2xl mx-auto px-6 py-24 text-center">
           <div className="p-8 rounded-2xl bg-bg-card border border-gold/20">
@@ -159,5 +161,6 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
         </div>
       ) : children}
     </div>
+    </AuthGate>
   )
 }

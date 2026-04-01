@@ -45,15 +45,22 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Admin-only routes
-  if (request.nextUrl.pathname.startsWith('/admin') && user) {
+  // Admin-only routes + banned check
+  if ((request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.startsWith('/dashboard')) && user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, banned_at')
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') {
+    // Banned users get signed out
+    if (profile?.banned_at) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+
+    if (request.nextUrl.pathname.startsWith('/admin') && profile?.role !== 'admin') {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       return NextResponse.redirect(url)

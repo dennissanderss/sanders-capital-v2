@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useMemo } from 'react'
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { parseCSV, type ParsedTrade, type ParseResult } from './utils/csvParser'
 import { calculateMetrics, runMonteCarlo, optimizeRiskReward, type TradeMetrics } from './utils/metrics'
 import DashboardTab from './tabs/DashboardTab'
@@ -59,17 +59,20 @@ export default function TradeScopeDashboard() {
   const [trades, setTrades] = useState<ParsedTrade[]>([])
   const [metrics, setMetrics] = useState<TradeMetrics | null>(null)
   const [startingBalance, setStartingBalance] = useState(10000)
+  const [balanceInput, setBalanceInput] = useState('10000')
   const [backtestBalance, setBacktestBalance] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const addFileInputRef = useRef<HTMLInputElement>(null)
+  // Store original unscaled trades — always scale from these to avoid compound scaling
+  const rawTradesRef = useRef<ParsedTrade[]>([])
 
   // Scale P&L from backtest balance to user's starting balance
-  const scaleTrades = useCallback((rawTrades: ParsedTrade[], origBalance: number | null, targetBalance: number): ParsedTrade[] => {
-    if (!origBalance || origBalance === targetBalance || origBalance === 0) return rawTrades
+  const scaleTrades = useCallback((originalTrades: ParsedTrade[], origBalance: number | null, targetBalance: number): ParsedTrade[] => {
+    if (!origBalance || origBalance === targetBalance || origBalance === 0) return originalTrades
     const scale = targetBalance / origBalance
-    return rawTrades.map(t => ({
+    return originalTrades.map(t => ({
       ...t,
       profitLoss: +(t.profitLoss * scale).toFixed(2),
       // Keep pips and riskReward unchanged — those are price-based, not balance-based
@@ -104,16 +107,16 @@ export default function TradeScopeDashboard() {
           processed++
           if (processed === fileArray.length) {
             // Store detected backtest balance
-            const origBal = append ? backtestBalance : detectedBal
             if (detectedBal && !append) {
               setBacktestBalance(detectedBal)
               // Auto-set starting balance to detected value if it's the first upload
               setStartingBalance(detectedBal)
+              setBalanceInput(detectedBal.toString())
             }
 
-            // Merge & deduplicate
-            const existingTrades = append ? trades : []
-            const combined = [...existingTrades, ...allNewTrades]
+            // Merge & deduplicate (always merge with raw/unscaled trades)
+            const existingRaw = append ? rawTradesRef.current : []
+            const combined = [...existingRaw, ...allNewTrades]
 
             const seen = new Set<string>()
             const unique = combined.filter((t) => {
@@ -126,6 +129,9 @@ export default function TradeScopeDashboard() {
             unique.sort((a, b) => a.openDate.getTime() - b.openDate.getTime())
             unique.forEach((t, i) => { t.tradeNumber = i + 1 })
 
+            // Store unscaled trades as the source of truth
+            rawTradesRef.current = unique.map(t => ({ ...t }))
+
             // Use the detected balance (or fallback) for initial metrics calc
             const bal = detectedBal || startingBalance
             setTrades(unique)
@@ -137,7 +143,7 @@ export default function TradeScopeDashboard() {
         reader.readAsText(file)
       })
     },
-    [trades, startingBalance, backtestBalance, scaleTrades]
+    [startingBalance, backtestBalance]
   )
 
   const handleFileUpload = useCallback(
@@ -160,20 +166,37 @@ export default function TradeScopeDashboard() {
     [processFiles]
   )
 
-  const handleBalanceChange = useCallback(
+  // Apply balance change: always scale from raw (unscaled) trades to avoid compound scaling
+  const applyBalance = useCallback(
     (newBalance: number) => {
       setStartingBalance(newBalance)
-      if (trades.length > 0 && backtestBalance && backtestBalance !== newBalance) {
-        // Scale all P&L values from the original backtest balance to the new balance
-        const scaled = scaleTrades(trades, backtestBalance, newBalance)
+      if (rawTradesRef.current.length > 0 && backtestBalance && backtestBalance !== newBalance) {
+        // Always scale from the ORIGINAL raw trades, never from already-scaled trades
+        const scaled = scaleTrades(rawTradesRef.current, backtestBalance, newBalance)
         setTrades(scaled)
         setMetrics(calculateMetrics(scaled, newBalance))
-      } else if (trades.length > 0) {
-        setMetrics(calculateMetrics(trades, newBalance))
+      } else if (rawTradesRef.current.length > 0) {
+        // No scaling needed — use raw trades directly
+        const raw = rawTradesRef.current.map(t => ({ ...t }))
+        setTrades(raw)
+        setMetrics(calculateMetrics(raw, newBalance))
       }
     },
-    [trades, backtestBalance, scaleTrades]
+    [backtestBalance, scaleTrades]
   )
+
+  // Commit balance input on blur or Enter — prevents glitching while typing
+  const commitBalanceInput = useCallback(() => {
+    const parsed = parseInt(balanceInput)
+    if (!parsed || parsed < 100 || isNaN(parsed)) {
+      // Invalid input: reset to current balance
+      setBalanceInput(startingBalance.toString())
+      return
+    }
+    if (parsed !== startingBalance) {
+      applyBalance(parsed)
+    }
+  }, [balanceInput, startingBalance, applyBalance])
 
   const removeFile = useCallback(
     (fileIndex: number) => {
@@ -274,9 +297,15 @@ export default function TradeScopeDashboard() {
             <div className="flex items-center gap-2">
               <span className="text-sm text-text-muted">$</span>
               <input
-                type="number"
-                value={startingBalance}
-                onChange={(e) => setStartingBalance(Math.max(100, parseInt(e.target.value) || 10000))}
+                type="text"
+                inputMode="numeric"
+                value={balanceInput}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9]/g, '')
+                  setBalanceInput(val)
+                  const parsed = parseInt(val)
+                  if (parsed && parsed >= 100) setStartingBalance(parsed)
+                }}
                 className="flex-1 px-3 py-2 rounded-lg glass text-sm text-heading bg-transparent border border-border focus:border-accent/50 focus:outline-none transition-colors"
               />
             </div>
@@ -348,9 +377,12 @@ export default function TradeScopeDashboard() {
           <div className="flex items-center gap-2">
             <label className="text-xs text-text-dim">Balans:</label>
             <input
-              type="number"
-              value={startingBalance}
-              onChange={(e) => handleBalanceChange(Math.max(100, parseInt(e.target.value) || 10000))}
+              type="text"
+              inputMode="numeric"
+              value={balanceInput}
+              onChange={(e) => setBalanceInput(e.target.value.replace(/[^0-9]/g, ''))}
+              onBlur={commitBalanceInput}
+              onKeyDown={(e) => { if (e.key === 'Enter') commitBalanceInput() }}
               className="w-28 px-2 py-1.5 rounded-lg text-xs text-heading bg-transparent border border-border focus:border-accent/50 focus:outline-none transition-colors"
             />
             {backtestBalance && backtestBalance !== startingBalance && (
@@ -388,6 +420,8 @@ export default function TradeScopeDashboard() {
               setUploadedFiles([])
               setBacktestBalance(null)
               setStartingBalance(10000)
+              setBalanceInput('10000')
+              rawTradesRef.current = []
               if (fileInputRef.current) fileInputRef.current.value = ''
               if (addFileInputRef.current) addFileInputRef.current.value = ''
             }}

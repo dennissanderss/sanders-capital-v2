@@ -52,6 +52,7 @@ interface Profile {
   full_name: string
   role: 'free' | 'premium' | 'admin'
   created_at: string
+  banned_at: string | null
 }
 
 interface ToolSetting {
@@ -420,6 +421,50 @@ export default function AdminPage() {
     try {
       await adminWrite('update', 'profiles', { role: newRole }, userId)
       setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: newRole } : u))
+    } catch (e) {
+      alert('Fout: ' + (e as Error).message)
+    }
+  }
+
+  const banUser = async (userId: string, userName: string) => {
+    if (!confirm(`Weet je zeker dat je "${userName}" wilt blokkeren? De gebruiker kan niet meer inloggen of content bekijken.`)) return
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'ban_user', table: 'profiles', id: userId }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error)
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, banned_at: new Date().toISOString() } : u))
+    } catch (e) {
+      alert('Fout: ' + (e as Error).message)
+    }
+  }
+
+  const unbanUser = async (userId: string) => {
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'unban_user', table: 'profiles', id: userId }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error)
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, banned_at: null } : u))
+    } catch (e) {
+      alert('Fout: ' + (e as Error).message)
+    }
+  }
+
+  const deleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`DEFINITIEF VERWIJDEREN: "${userName}"?\n\nDit verwijdert het account, profiel en alle data. Dit kan NIET ongedaan worden gemaakt.`)) return
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_user', table: 'profiles', id: userId }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error)
+      setUsers((prev) => prev.filter((u) => u.id !== userId))
     } catch (e) {
       alert('Fout: ' + (e as Error).message)
     }
@@ -1261,45 +1306,117 @@ export default function AdminPage() {
       {tab === 'users' && (
         <>
           <div className="mb-6">
-            <p className="text-sm text-text-muted">Beheer gebruikersrollen. Premium leden kunnen premium artikelen en kennisbank items zien.</p>
-            <div className="flex items-center gap-4 mt-3 text-xs">
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-text-dim" />Free: {users.filter(u => u.role === 'free').length}</span>
+            <p className="text-sm text-text-muted">Beheer gebruikers, rollen, blokkeren en verwijderen. Een account is verplicht om content te bekijken.</p>
+            <div className="flex items-center gap-4 mt-3 text-xs flex-wrap">
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-text-dim" />Free: {users.filter(u => u.role === 'free' && !u.banned_at).length}</span>
               <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gold" />Premium: {users.filter(u => u.role === 'premium').length}</span>
               <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-accent" />Admin: {users.filter(u => u.role === 'admin').length}</span>
+              {users.filter(u => u.banned_at).length > 0 && (
+                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500" />Geblokkeerd: {users.filter(u => u.banned_at).length}</span>
+              )}
               <span className="text-text-dim">Totaal: {users.length}</span>
             </div>
           </div>
           <div className="space-y-3">
-            {users.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-4 rounded-xl glass">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-semibold text-heading truncate">{user.full_name || 'Geen naam'}</h3>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${user.role === 'admin' ? 'bg-accent/20 text-accent-light' : user.role === 'premium' ? 'bg-gold-dim text-gold' : 'bg-bg-hover text-text-dim'}`}>
-                      {user.role === 'admin' ? 'Admin' : user.role === 'premium' ? 'Premium' : 'Free'}
-                    </span>
+            {users.map((u) => {
+              const isBanned = !!u.banned_at
+              const isAdmin = u.role === 'admin'
+              return (
+                <div key={u.id} className={`p-4 rounded-xl glass ${isBanned ? 'opacity-60 border border-red-500/20' : ''}`}>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 className="text-sm font-semibold text-heading truncate">{u.full_name || 'Geen naam'}</h3>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${u.role === 'admin' ? 'bg-accent/20 text-accent-light' : u.role === 'premium' ? 'bg-gold-dim text-gold' : 'bg-bg-hover text-text-dim'}`}>
+                          {u.role === 'admin' ? 'Admin' : u.role === 'premium' ? 'Premium' : 'Free'}
+                        </span>
+                        {isBanned && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-red-500/15 text-red-400">
+                            Geblokkeerd
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-text-dim flex-wrap">
+                        <span>{u.email}</span>
+                        <span>Lid sinds {new Date(u.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        {isBanned && u.banned_at && (
+                          <span className="text-red-400/70">Geblokkeerd op {new Date(u.banned_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-text-dim">
-                    <span>{user.email}</span>
-                    <span>Lid sinds {new Date(user.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                  </div>
+                  {/* Action buttons */}
+                  {!isAdmin && (
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.04] flex-wrap">
+                      {/* Role buttons */}
+                      {!isBanned && (
+                        <>
+                          {u.role === 'free' && (
+                            <button onClick={() => changeUserRole(u.id, 'premium')} className="px-3 py-1.5 rounded-lg border border-gold/40 bg-gold-dim text-xs text-gold font-medium hover:bg-gold/20 transition-colors">
+                              Maak Premium
+                            </button>
+                          )}
+                          {u.role === 'premium' && (
+                            <>
+                              <button onClick={() => changeUserRole(u.id, 'free')} className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors">
+                                Terug naar Free
+                              </button>
+                              <button onClick={() => changeUserRole(u.id, 'admin')} className="px-3 py-1.5 rounded-lg border border-accent/40 bg-accent/10 text-xs text-accent-light font-medium hover:bg-accent/20 transition-colors">
+                                Maak Admin
+                              </button>
+                            </>
+                          )}
+                        </>
+                      )}
+
+                      {/* Spacer */}
+                      <div className="flex-1" />
+
+                      {/* Ban / Unban */}
+                      {isBanned ? (
+                        <button
+                          onClick={() => unbanUser(u.id)}
+                          className="px-3 py-1.5 rounded-lg border border-green-500/30 text-xs text-green-400 hover:bg-green-500/10 transition-colors flex items-center gap-1.5"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          Deblokkeer
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => banUser(u.id, u.full_name || u.email)}
+                          className="px-3 py-1.5 rounded-lg border border-amber-500/30 text-xs text-amber-400 hover:bg-amber-500/10 transition-colors flex items-center gap-1.5"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                          </svg>
+                          Blokkeer
+                        </button>
+                      )}
+
+                      {/* Delete */}
+                      <button
+                        onClick={() => deleteUser(u.id, u.full_name || u.email)}
+                        className="px-3 py-1.5 rounded-lg border border-red-500/30 text-xs text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-1.5"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
+                        </svg>
+                        Verwijder
+                      </button>
+                    </div>
+                  )}
+                  {isAdmin && (
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.04]">
+                      <button onClick={() => changeUserRole(u.id, 'premium')} className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors">
+                        Verwijder Admin
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div className="flex gap-2 shrink-0 ml-4">
-                  {user.role === 'free' && (
-                    <button onClick={() => changeUserRole(user.id, 'premium')} className="px-3 py-1.5 rounded-lg border border-gold/40 bg-gold-dim text-xs text-gold font-medium hover:bg-gold/20 transition-colors">Maak Premium</button>
-                  )}
-                  {user.role === 'premium' && (
-                    <>
-                      <button onClick={() => changeUserRole(user.id, 'free')} className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors">Terug naar Free</button>
-                      <button onClick={() => changeUserRole(user.id, 'admin')} className="px-3 py-1.5 rounded-lg border border-accent/40 bg-accent/10 text-xs text-accent-light font-medium hover:bg-accent/20 transition-colors">Maak Admin</button>
-                    </>
-                  )}
-                  {user.role === 'admin' && (
-                    <button onClick={() => changeUserRole(user.id, 'premium')} className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors">Verwijder Admin</button>
-                  )}
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </>
       )}

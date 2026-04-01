@@ -63,6 +63,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true })
     }
 
+    // Ban user: set banned_at timestamp on profile
+    if (action === 'ban_user') {
+      const { error: profileError } = await adminSupabase
+        .from('profiles')
+        .update({ banned_at: new Date().toISOString() })
+        .eq('id', id)
+      if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+
+    // Unban user: clear banned_at
+    if (action === 'unban_user') {
+      const { error: profileError } = await adminSupabase
+        .from('profiles')
+        .update({ banned_at: null })
+        .eq('id', id)
+      if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+
+    // Delete user: remove profile + auth user
+    if (action === 'delete_user') {
+      // Delete profile first
+      await adminSupabase.from('profiles').delete().eq('id', id)
+      // Delete auth user
+      const { error: authError } = await adminSupabase.auth.admin.deleteUser(id)
+      if (authError) return NextResponse.json({ error: authError.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })

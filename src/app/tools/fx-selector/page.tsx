@@ -216,6 +216,60 @@ export default function DailyBriefingIntroPage() {
         </FadeIn>
       </div>
 
+      {/* Connection to Macro Fundamentals */}
+      <FadeIn>
+        <div className="rounded-2xl border border-accent/20 bg-gradient-to-r from-accent/[0.06] via-bg-card to-accent/[0.03] px-6 sm:px-8 py-6 sm:py-8 mb-10 sm:mb-14 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-accent/[0.04] rounded-full blur-3xl" />
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
+                  <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </span>
+              <h2 className="text-xl sm:text-2xl font-display font-bold text-heading">
+                De rode draad: Macro Fundamentals
+              </h2>
+            </div>
+            <div className="space-y-3 text-sm text-text-muted leading-relaxed">
+              <p>
+                De Daily Macro Briefing is <strong className="text-heading">direct gekoppeld</strong> aan de{' '}
+                <Link href="/tools/rentetarieven" className="text-accent-light hover:underline font-medium">
+                  Macro Fundamentals
+                </Link>{' '}
+                tool. Alle rentetarieven, inflatiecijfers en centrale bank bias die je daar ziet, vormen de{' '}
+                <strong className="text-heading">databron</strong> achter de currency scores in deze tool.
+              </p>
+              <p>
+                Wanneer een centrale bank haar beleid wijzigt (bijv. een renteverhoging of hawkish toonverandering),
+                wordt dit eerst bijgewerkt in Macro Fundamentals. De Daily Macro Briefing pakt deze data automatisch op
+                en herberekent de scores. Zo werken beide tools als <strong className="text-heading">één systeem</strong>.
+              </p>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href="/tools/rentetarieven"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-sm text-heading hover:bg-white/[0.08] transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
+                  <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                Bekijk Macro Fundamentals
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+                </svg>
+              </Link>
+              <div className="flex items-center gap-2 text-[11px] text-text-dim">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light/50">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+                Macro Fundamentals → Currency Scores → Trade Focus
+              </div>
+            </div>
+          </div>
+        </div>
+      </FadeIn>
+
       {/* Data Sources */}
       <FadeIn>
         <div className="mb-10 sm:mb-14">
