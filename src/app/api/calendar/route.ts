@@ -7,6 +7,7 @@ interface RawEvent {
   impact: string
   forecast: string
   previous: string
+  actual: string
 }
 
 const IMPACT_MAP: Record<string, string> = {
@@ -50,6 +51,7 @@ export async function GET(req: Request) {
       impact: IMPACT_MAP[e.impact] || e.impact || '',
       forecast: e.forecast || '',
       previous: e.previous || '',
+      actual: e.actual || '',
       flag: FLAGS[e.country?.toUpperCase()] || '',
       countryName: COUNTRY_NAMES[e.country?.toUpperCase()] || e.country || '',
     }))

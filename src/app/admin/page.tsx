@@ -556,6 +556,66 @@ export default function AdminPage() {
             </div>
           </div>
 
+          {/* CB Meeting Reminders */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-heading mb-4 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              Aankomende CB Vergaderingen
+            </h2>
+            <p className="text-xs text-text-muted mb-3">Na elke vergadering: vraag Claude om de rente, target, bias en laatste actie bij te werken in het admin panel → Rentes tab.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              {cbRates
+                .filter(r => r.next_meeting)
+                .sort((a, b) => {
+                  const da = new Date(a.next_meeting).getTime()
+                  const db = new Date(b.next_meeting).getTime()
+                  return (isNaN(da) ? Infinity : da) - (isNaN(db) ? Infinity : db)
+                })
+                .map(rate => {
+                  const meetDate = new Date(rate.next_meeting)
+                  const isValid = !isNaN(meetDate.getTime())
+                  const now = new Date()
+                  const daysUntil = isValid ? Math.ceil((meetDate.getTime() - now.getTime()) / 86400000) : null
+                  const isPast = daysUntil !== null && daysUntil < 0
+                  const isSoon = daysUntil !== null && daysUntil >= 0 && daysUntil <= 7
+                  const isThisWeek = daysUntil !== null && daysUntil >= 0 && daysUntil <= 3
+
+                  return (
+                    <div
+                      key={rate.currency}
+                      className={`p-3 rounded-lg border flex items-center gap-3 ${
+                        isPast ? 'border-red-500/30 bg-red-500/[0.05]' :
+                        isThisWeek ? 'border-gold/40 bg-gold-dim' :
+                        isSoon ? 'border-amber-500/20 bg-amber-500/[0.05]' :
+                        'border-border bg-bg-card'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-heading">{rate.currency}</span>
+                          <span className="text-[10px] text-text-dim">{rate.bank?.split('(')[0]?.trim()}</span>
+                        </div>
+                        <p className="text-[11px] font-mono text-text-muted mt-0.5">
+                          {isValid ? meetDate.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }) : rate.next_meeting}
+                        </p>
+                      </div>
+                      {isPast ? (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 font-semibold shrink-0">UPDATE!</span>
+                      ) : isThisWeek ? (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold-dim text-gold font-semibold shrink-0">{daysUntil}d</span>
+                      ) : isSoon ? (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-semibold shrink-0">{daysUntil}d</span>
+                      ) : daysUntil !== null ? (
+                        <span className="text-[10px] text-text-dim font-mono shrink-0">{daysUntil}d</span>
+                      ) : null}
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+
           {/* Recurring tasks with completion tracking */}
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-heading mb-4 flex items-center gap-2">
@@ -567,12 +627,9 @@ export default function AdminPage() {
             <p className="text-xs text-text-dim mb-3">Taken worden automatisch gereset na hun periode. Vink af als voltooid — ze komen terug.</p>
             <div className="space-y-2">
               {[
-                { id: 'cb_rates', task: 'Controleer rentetarieven na CB besluit', freq: 'Na elk rentebesluit', resetDays: 30, priority: 'hoog', desc: 'Update rente, target, bias en laatste actie in de Rentes tab wanneer een centrale bank een besluit neemt.', tab: 'rentes' },
-                { id: 'meetings', task: 'Vergaderdata synchroniseren', freq: 'Maandelijks', resetDays: 30, priority: 'medium', desc: 'Klik "Vergaderingen ophalen" in de Rentes tab om komende CB meetings bij te werken.', tab: 'rentes' },
-                { id: 'blog', task: 'Nieuwe blog post publiceren', freq: 'Wekelijks', resetDays: 7, priority: 'medium', desc: 'Schrijf en publiceer minstens 1 blog post voor SEO en content engagement.', tab: 'articles' },
-                { id: 'kennisbank', task: 'Kennisbank uitbreiden', freq: 'Maandelijks', resetDays: 30, priority: 'laag', desc: 'Voeg nieuwe educatieve content toe aan de kennisbank categorieën.', tab: 'kennisbank' },
-                { id: 'users', task: 'Gebruikers reviewen', freq: 'Wekelijks', resetDays: 7, priority: 'laag', desc: 'Check nieuwe registraties en pas rollen aan waar nodig.', tab: 'users' },
-                { id: 'trade_track', task: 'Trade Focus trackrecord controleren', freq: 'Wekelijks', resetDays: 7, priority: 'medium', desc: 'Bekijk de resultaten van de Trade Focus aanbevelingen in de Daily Macro Briefing.', tab: 'status' },
+                { id: 'cb_rates', task: 'Rentetarieven updaten via Claude', freq: 'Na elk CB besluit', resetDays: 30, priority: 'hoog', desc: 'Vraag Claude om rente, target, bias en laatste actie bij te werken na een centraal bank besluit. De data in Rentes tab wordt via het admin panel aangepast.', tab: 'rentes' },
+                { id: 'blog', task: 'Blog post publiceren', freq: 'Wekelijks', resetDays: 7, priority: 'medium', desc: 'Schrijf en publiceer minstens 1 blog post voor SEO en engagement.', tab: 'articles' },
+                { id: 'kennisbank', task: 'Kennisbank uitbreiden', freq: 'Maandelijks', resetDays: 30, priority: 'laag', desc: 'Voeg nieuwe educatieve content toe aan categorieën.', tab: 'kennisbank' },
               ].map(item => {
                 const completedAt = taskCompletions[item.id]
                 const msElapsed = completedAt ? Date.now() - new Date(completedAt).getTime() : null

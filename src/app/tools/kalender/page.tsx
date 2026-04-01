@@ -9,6 +9,7 @@ interface CalendarEvent {
   impact: string
   forecast: string
   previous: string
+  actual: string
   flag: string
   countryName: string
 }
@@ -42,6 +43,89 @@ function ImpactBadge({ impact }: { impact: string }) {
   return <span className={`text-[10px] px-1.5 py-0.5 rounded border ${color} capitalize`}>{impact}</span>
 }
 
+/* ─── Event explanation generator ────────────────────────── */
+function getEventExplanation(event: CalendarEvent): { what: string; betterThanExpected: string; worseThanExpected: string } {
+  const t = event.title.toLowerCase()
+  const ccy = event.currency
+
+  if (t.includes('cpi') || t.includes('inflation') || t.includes('price index')) {
+    return {
+      what: `Meet de verandering in consumentenprijzen in ${ccy}. Dit is de belangrijkste indicator voor inflatie en beïnvloedt direct het rentebeleid van de centrale bank.`,
+      betterThanExpected: `Hoger dan verwacht = inflatiedruk = hawkish voor ${ccy} (rente langer hoog). ${ccy} wordt sterker.`,
+      worseThanExpected: `Lager dan verwacht = inflatie daalt = dovish voor ${ccy} (ruimte voor renteverlaging). ${ccy} wordt zwakker.`,
+    }
+  }
+  if (t.includes('employment') || t.includes('payroll') || t.includes('nfp') || t.includes('non-farm')) {
+    return {
+      what: `Meet het aantal nieuwe banen (excl. landbouw) in ${ccy}. Een sterke arbeidsmarkt geeft de centrale bank minder reden om rente te verlagen.`,
+      betterThanExpected: `Meer banen dan verwacht = sterke economie = hawkish. ${ccy} wordt sterker, rente langer hoog.`,
+      worseThanExpected: `Minder banen dan verwacht = zwakkere economie = dovish. ${ccy} wordt zwakker, renteverlaging waarschijnlijker.`,
+    }
+  }
+  if (t.includes('gdp') || t.includes('gross domestic')) {
+    return {
+      what: `Meet de totale economische output (groei) van ${ccy}. Hogere groei = sterkere economie = meer ruimte om rente hoog te houden.`,
+      betterThanExpected: `Hogere groei dan verwacht = hawkish. ${ccy} wordt sterker.`,
+      worseThanExpected: `Lagere groei dan verwacht = dovish. ${ccy} wordt zwakker, recessierisico stijgt.`,
+    }
+  }
+  if (t.includes('pmi') || t.includes('purchasing manager')) {
+    return {
+      what: `Enquête onder inkoopmanagers. Boven 50 = groei in de sector, onder 50 = krimp. Voorlopende indicator voor economische activiteit.`,
+      betterThanExpected: `Hoger dan verwacht (zeker boven 50) = economie groeit = hawkish voor ${ccy}.`,
+      worseThanExpected: `Lager dan verwacht (zeker onder 50) = economie krimpt = dovish voor ${ccy}.`,
+    }
+  }
+  if (t.includes('rate') || t.includes('interest') || t.includes('monetary policy')) {
+    return {
+      what: `Rentebeslissing! Dit is het belangrijkste event. De centrale bank bepaalt de beleidsrente. Let ook op het bijbehorende statement en persconferentie.`,
+      betterThanExpected: `Rente hoger dan verwacht of hawkish statement = ${ccy} sterker. Markt prijst hogere rente in.`,
+      worseThanExpected: `Rente lager dan verwacht of dovish statement = ${ccy} zwakker. Markt prijst versoepeling in.`,
+    }
+  }
+  if (t.includes('retail') || t.includes('sales') || t.includes('consumer')) {
+    return {
+      what: `Meet de consumptieve bestedingen. Consumptie is ~70% van het BBP — sterke retail sales = sterke economie.`,
+      betterThanExpected: `Hogere verkopen dan verwacht = sterke consument = hawkish voor ${ccy}.`,
+      worseThanExpected: `Lagere verkopen dan verwacht = zwakke consument = dovish voor ${ccy}.`,
+    }
+  }
+  if (t.includes('claim') || t.includes('unemployment') || t.includes('jobless')) {
+    return {
+      what: `Wekelijks aantal werkloosheidsaanvragen in ${ccy}. Lager = sterkere arbeidsmarkt. Hoger = meer ontslagen.`,
+      betterThanExpected: `Minder claims dan verwacht = sterke arbeidsmarkt = hawkish voor ${ccy}.`,
+      worseThanExpected: `Meer claims dan verwacht = zwakkere arbeidsmarkt = dovish voor ${ccy}.`,
+    }
+  }
+  if (t.includes('speak') || t.includes('press conference') || t.includes('testimony')) {
+    return {
+      what: `Toespraak van een centrale bank official. Let op hints over toekomstig rentebeleid — de toon is belangrijker dan specifieke data.`,
+      betterThanExpected: `Hawkish toon (inflatiezorgen, geen haast om te verlagen) = ${ccy} sterker.`,
+      worseThanExpected: `Dovish toon (groeivertraging, openstaan voor verlaging) = ${ccy} zwakker.`,
+    }
+  }
+  if (t.includes('trade balance') || t.includes('export') || t.includes('import')) {
+    return {
+      what: `Het verschil tussen export en import. Een handelsoverschot (meer export) is positief voor de valuta.`,
+      betterThanExpected: `Groter overschot of kleiner tekort dan verwacht = positief voor ${ccy}.`,
+      worseThanExpected: `Groter tekort dan verwacht = negatief voor ${ccy}.`,
+    }
+  }
+  if (t.includes('ism') || t.includes('manufacturing')) {
+    return {
+      what: `ISM Manufacturing index — meet de gezondheid van de productiesector. Boven 50 = expansie, onder 50 = krimp.`,
+      betterThanExpected: `Hoger dan verwacht = economie groeit = hawkish voor ${ccy}.`,
+      worseThanExpected: `Lager dan verwacht = economie krimpt = dovish voor ${ccy}.`,
+    }
+  }
+  // Generic fallback
+  return {
+    what: `Economisch datapunt voor ${ccy}. Het verschil tussen de actuele waarde en de verwachting bepaalt de marktreactie.`,
+    betterThanExpected: `Beter dan verwacht = positief/hawkish voor ${ccy}. Valuta wordt sterker.`,
+    worseThanExpected: `Slechter dan verwacht = negatief/dovish voor ${ccy}. Valuta wordt zwakker.`,
+  }
+}
+
 function useCountdown(targetDate: Date | null) {
   const [timeLeft, setTimeLeft] = useState('')
   useEffect(() => {
@@ -64,7 +148,6 @@ function useCountdown(targetDate: Date | null) {
 }
 
 function NextEventCountdown({ events }: { events: CalendarEvent[] }) {
-  // Find next upcoming high-impact event
   const now = new Date()
   const upcoming = events
     .filter(e => e.impact === 'hoog' && new Date(e.date).getTime() > now.getTime())
@@ -120,6 +203,7 @@ export default function KalenderPage() {
   const [error, setError] = useState<string | null>(null)
   const [impactFilter, setImpactFilter] = useState<'all' | 'high' | 'medium'>('medium')
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([])
+  const [expandedEvent, setExpandedEvent] = useState<string | null>(null)
 
   const fetchCalendar = async () => {
     setLoading(true)
@@ -150,7 +234,6 @@ export default function KalenderPage() {
   const groupedEvents: Record<string, CalendarEvent[]> = {}
   if (data) {
     for (const event of data.events) {
-      // Parse date and create readable key
       let dateKey = 'Onbekend'
       try {
         const d = new Date(event.date)
@@ -166,7 +249,7 @@ export default function KalenderPage() {
     }
   }
 
-  // Find the next upcoming event to highlight in the table
+  // Find next upcoming event
   let nextEventId: string | null = null
   if (data) {
     const now = new Date().getTime()
@@ -191,11 +274,10 @@ export default function KalenderPage() {
           Economische Kalender
         </h1>
         <p className="text-sm sm:text-base text-text-muted max-w-lg mx-auto">
-          Aankomende economische events en data releases die de markten beïnvloeden.
+          Aankomende economische events en data releases die de markten beïnvloeden. Klik op een event voor uitleg.
         </p>
       </div>
 
-      {/* Live countdown to next event */}
       {data && <NextEventCountdown events={data.events} />}
 
       {/* CB Meetings highlight */}
@@ -308,6 +390,7 @@ export default function KalenderPage() {
                   <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Valuta</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Event</th>
                   <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider hidden sm:table-cell">Impact</th>
+                  <th className="text-right px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Actueel</th>
                   <th className="text-right px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Verwacht</th>
                   <th className="text-right px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Vorig</th>
                 </tr>
@@ -316,42 +399,101 @@ export default function KalenderPage() {
                 {Object.entries(groupedEvents).map(([dateKey, events]) => (
                   <Fragment key={dateKey}>
                     <tr className="bg-bg/50">
-                      <td colSpan={7} className="px-3 sm:px-4 py-2">
+                      <td colSpan={8} className="px-3 sm:px-4 py-2">
                         <span className="text-xs font-semibold text-accent-light uppercase tracking-wider">{dateKey}</span>
                       </td>
                     </tr>
                     {events.map((event, i) => {
-                      const isNext = nextEventId !== null && `${dateKey}-${i}` === nextEventId
+                      const eventId = `${dateKey}-${i}`
+                      const isNext = nextEventId !== null && eventId === nextEventId
+                      const isExpanded = expandedEvent === eventId
+                      const explanation = getEventExplanation(event)
+
+                      // Determine if actual is better/worse than forecast
+                      let actualColor = 'text-text-muted'
+                      if (event.actual && event.forecast) {
+                        const a = parseFloat(event.actual.replace(/[%KkMmBb,]/g, ''))
+                        const f = parseFloat(event.forecast.replace(/[%KkMmBb,]/g, ''))
+                        if (!isNaN(a) && !isNaN(f)) {
+                          // For claims/unemployment, lower is better
+                          const isInverse = event.title.toLowerCase().includes('claim') || event.title.toLowerCase().includes('unemployment') || event.title.toLowerCase().includes('jobless')
+                          if (isInverse) {
+                            actualColor = a < f ? 'text-green-400' : a > f ? 'text-red-400' : 'text-text-muted'
+                          } else {
+                            actualColor = a > f ? 'text-green-400' : a < f ? 'text-red-400' : 'text-text-muted'
+                          }
+                        }
+                      }
+
                       return (
-                        <tr key={`${dateKey}-${i}`} className={`border-b border-border/30 hover:bg-bg-hover transition-colors ${isNext ? 'bg-accent/[0.06] relative' : ''}`} style={isNext ? { boxShadow: 'inset 3px 0 0 0 var(--color-accent, #3b82f6)' } : undefined}>
-                          <td className="px-3 sm:px-4 py-2.5">
-                            <ImpactDot impact={event.impact} />
-                          </td>
-                          <td className="px-3 sm:px-4 py-2.5">
-                            <span className="text-xs font-mono text-text-dim whitespace-nowrap">
-                              {(() => { try { const d = new Date(event.date); return !isNaN(d.getTime()) ? d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '—' } catch { return '—' } })()}
-                            </span>
-                          </td>
-                          <td className="px-3 sm:px-4 py-2.5">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm">{flagEmoji(event.flag)}</span>
-                              <span className="text-xs font-mono text-heading">{event.currency}</span>
-                            </div>
-                          </td>
-                          <td className="px-3 sm:px-4 py-2.5">
-                            <span className="text-sm text-heading">{event.title}</span>
-                            {isNext && <span className="ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-accent/15 text-accent-light uppercase tracking-wider">Volgende</span>}
-                          </td>
-                          <td className="px-3 sm:px-4 py-2.5 hidden sm:table-cell">
-                            <ImpactBadge impact={event.impact} />
-                          </td>
-                          <td className="px-3 sm:px-4 py-2.5 text-right">
-                            <span className="text-sm text-text-muted font-mono">{event.forecast || '—'}</span>
-                          </td>
-                          <td className="px-3 sm:px-4 py-2.5 text-right">
-                            <span className="text-sm text-text-dim font-mono">{event.previous || '—'}</span>
-                          </td>
-                        </tr>
+                        <Fragment key={eventId}>
+                          <tr
+                            className={`border-b border-border/30 hover:bg-bg-hover transition-colors cursor-pointer ${isNext ? 'bg-accent/[0.06] relative' : ''}`}
+                            style={isNext ? { boxShadow: 'inset 3px 0 0 0 var(--color-accent, #3b82f6)' } : undefined}
+                            onClick={() => setExpandedEvent(isExpanded ? null : eventId)}
+                          >
+                            <td className="px-3 sm:px-4 py-2.5">
+                              <ImpactDot impact={event.impact} />
+                            </td>
+                            <td className="px-3 sm:px-4 py-2.5">
+                              <span className="text-xs font-mono text-text-dim whitespace-nowrap">
+                                {(() => { try { const d = new Date(event.date); return !isNaN(d.getTime()) ? d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '—' } catch { return '—' } })()}
+                              </span>
+                            </td>
+                            <td className="px-3 sm:px-4 py-2.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm">{flagEmoji(event.flag)}</span>
+                                <span className="text-xs font-mono text-heading">{event.currency}</span>
+                              </div>
+                            </td>
+                            <td className="px-3 sm:px-4 py-2.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm text-heading">{event.title}</span>
+                                {isNext && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-accent/15 text-accent-light uppercase tracking-wider shrink-0">Volgende</span>}
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                  className={`text-text-dim/40 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                >
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </div>
+                            </td>
+                            <td className="px-3 sm:px-4 py-2.5 hidden sm:table-cell">
+                              <ImpactBadge impact={event.impact} />
+                            </td>
+                            <td className="px-3 sm:px-4 py-2.5 text-right">
+                              <span className={`text-sm font-mono font-semibold ${event.actual ? actualColor : 'text-text-dim/30'}`}>
+                                {event.actual || '—'}
+                              </span>
+                            </td>
+                            <td className="px-3 sm:px-4 py-2.5 text-right">
+                              <span className="text-sm text-text-muted font-mono">{event.forecast || '—'}</span>
+                            </td>
+                            <td className="px-3 sm:px-4 py-2.5 text-right">
+                              <span className="text-sm text-text-dim font-mono">{event.previous || '—'}</span>
+                            </td>
+                          </tr>
+                          {/* Expanded explanation */}
+                          {isExpanded && (
+                            <tr className="bg-white/[0.02]">
+                              <td colSpan={8} className="px-4 sm:px-6 py-3">
+                                <div className="grid sm:grid-cols-3 gap-3 text-[11px]">
+                                  <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-2.5">
+                                    <p className="text-accent-light font-semibold mb-1 uppercase tracking-wider text-[10px]">Wat is dit?</p>
+                                    <p className="text-text-muted leading-relaxed">{explanation.what}</p>
+                                  </div>
+                                  <div className="rounded-lg bg-green-500/[0.03] border border-green-500/10 px-3 py-2.5">
+                                    <p className="text-green-400 font-semibold mb-1 uppercase tracking-wider text-[10px]">Beter dan verwacht</p>
+                                    <p className="text-text-muted leading-relaxed">{explanation.betterThanExpected}</p>
+                                  </div>
+                                  <div className="rounded-lg bg-red-500/[0.03] border border-red-500/10 px-3 py-2.5">
+                                    <p className="text-red-400 font-semibold mb-1 uppercase tracking-wider text-[10px]">Slechter dan verwacht</p>
+                                    <p className="text-text-muted leading-relaxed">{explanation.worseThanExpected}</p>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
                       )
                     })}
                   </Fragment>
@@ -382,12 +524,20 @@ export default function KalenderPage() {
           <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
           <span className="text-xs text-text-muted">Lage impact</span>
         </div>
+        <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
+          <span className="text-xs text-green-400 font-mono font-bold">2.1%</span>
+          <span className="text-xs text-text-dim">Beter</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-red-400 font-mono font-bold">1.8%</span>
+          <span className="text-xs text-text-dim">Slechter</span>
+        </div>
       </div>
 
       <div className="mt-6 p-4 rounded-xl bg-bg-card border border-border">
         <p className="text-xs text-text-dim text-center">
           Data bron: <a href="https://www.forexfactory.com/calendar" target="_blank" rel="noopener noreferrer" className="text-accent-light/60 hover:text-accent-light">ForexFactory / FairEconomy</a>.
-          Tijden zijn in lokale servertijd. Dit is geen financieel advies.
+          Klik op een event voor uitleg over de impact. Actuele data wordt groen (beter) of rood (slechter) gekleurd t.o.v. verwachting. Dit is geen financieel advies.
         </p>
       </div>
     </div>
