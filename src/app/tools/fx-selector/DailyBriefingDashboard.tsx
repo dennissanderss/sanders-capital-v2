@@ -90,6 +90,7 @@ interface TrackStats {
   incorrect: number
   pending: number
   winRate: number
+  startDate: string | null
 }
 
 function flagEmoji(code: string) {
@@ -323,7 +324,7 @@ export default function DailyBriefingDashboard() {
   const [showRegimeDetails, setShowRegimeDetails] = useState(false)
   const [expandedPairs, setExpandedPairs] = useState<Set<string>>(new Set())
   const [trackRecords, setTrackRecords] = useState<TrackRecord[]>([])
-  const [trackStats, setTrackStats] = useState<TrackStats>({ total: 0, correct: 0, incorrect: 0, pending: 0, winRate: 0 })
+  const [trackStats, setTrackStats] = useState<TrackStats>({ total: 0, correct: 0, incorrect: 0, pending: 0, winRate: 0, startDate: null })
   const [showTrackRecord, setShowTrackRecord] = useState(false)
 
   const fetchBriefing = async () => {
@@ -346,7 +347,7 @@ export default function DailyBriefingDashboard() {
       const res = await fetch('/api/trackrecord')
       const json = await res.json()
       setTrackRecords(json.records || [])
-      setTrackStats(json.stats || { total: 0, correct: 0, incorrect: 0, pending: 0, winRate: 0 })
+      setTrackStats(json.stats || { total: 0, correct: 0, incorrect: 0, pending: 0, winRate: 0, startDate: null })
     } catch {
       // Track record table might not exist yet
     }
@@ -864,6 +865,9 @@ export default function DailyBriefingDashboard() {
                     <div className="flex items-center justify-between mb-2.5">
                       <div>
                         <p className="text-xs text-heading font-semibold uppercase tracking-wider">Trade Focus Trackrecord</p>
+                        {trackStats.startDate && (
+                          <p className="text-[10px] text-text-dim mt-0.5">Meting loopt sinds {new Date(trackStats.startDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                        )}
                       </div>
                       {trackStats.total > 0 && (
                         <div className="text-right">
@@ -879,7 +883,7 @@ export default function DailyBriefingDashboard() {
                     <div className="text-[11px] text-text leading-relaxed space-y-2.5 bg-white/[0.03] rounded-lg px-3.5 py-3 border border-white/[0.05]">
                       <div>
                         <p className="text-heading font-semibold mb-0.5">Hoe wordt de score berekend?</p>
-                        <p>Per valuta wordt een score bepaald op basis van <span className="text-accent-light">het officiële beleid van de centrale bank</span>. De data komt uit persconferenties, policy statements en forward guidance na rentevergaderingen. Dit wordt handmatig bijgewerkt bij elke rentevergadering.</p>
+                        <p>Per valuta wordt een score bepaald op basis van <span className="text-accent-light">het officiële beleid van de centrale bank</span>. De data komt uit persconferenties, policy statements en forward guidance na rentevergaderingen. Deze data staat in <a href="/tools/rente" className="text-accent-light underline underline-offset-2 hover:text-accent-light/80">Tools → Rentetarieven</a> en wordt handmatig bijgewerkt bij elke vergadering.</p>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="bg-white/[0.03] rounded px-2.5 py-1.5 border border-white/[0.04]">
@@ -899,7 +903,7 @@ export default function DailyBriefingDashboard() {
                         <p className="text-heading font-semibold mb-0.5">Wat meten we?</p>
                         <p>Alleen paren met <span className="text-accent-light font-semibold">sterke overtuiging</span> (score ≥ 3.5 of ≤ −3.5) worden bijgehouden. De <span className="text-accent-light">entry</span> is de sluiting van de daily candle op de dag van de call. De <span className="text-accent-light">exit</span> is de sluiting van de volgende daily candle. Bewoog de prijs in de richting van de call → <span className="text-green-400 font-semibold">correct</span>. Ertegen → <span className="text-red-400 font-semibold">incorrect</span>.</p>
                       </div>
-                      <p className="text-text-muted text-[10px] pt-0.5 border-t border-white/[0.04]">Laatste 30 dagen · Daily close → daily close · Databron: officiële CB statements, handmatig bijgewerkt bij elke vergadering · Dit meet de fundamentele bias — niet je entry of structure break.</p>
+                      <p className="text-text-muted text-[10px] pt-0.5 border-t border-white/[0.04]">{trackStats.startDate ? `Meting loopt sinds ${new Date(trackStats.startDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}` : 'Trackrecord wordt opgebouwd'} · Daily close → daily close · Databron: <a href="/tools/rente" className="text-accent-light/70 underline underline-offset-2">Rentetarieven</a>, handmatig bijgewerkt bij elke CB vergadering · Dit meet de fundamentele bias — niet je entry of structure break.</p>
                     </div>
                   </div>
                   <div className="px-5 py-4 bg-bg-card">
@@ -1112,48 +1116,77 @@ export default function DailyBriefingDashboard() {
                 </div>
               )}
 
-              <div className="space-y-3">
+              {/* Direction context — explain why all same direction */}
+              {tradeFocus.length > 0 && (() => {
+                const bullCount = tradeFocus.filter(tf => tf.isBullish).length
+                const bearCount = tradeFocus.filter(tf => tf.isBearish).length
+                const allSameDir = bullCount === tradeFocus.length || bearCount === tradeFocus.length
+                if (!allSameDir) return null
+                const dir = bullCount > bearCount ? 'long' : 'short'
+                return (
+                  <div className="mb-3 px-3.5 py-2.5 rounded-lg bg-accent/[0.05] border border-accent/15 text-[11px] text-text-muted leading-relaxed">
+                    <strong className="text-heading">Waarom alleen {dir}s?</strong> {dir === 'short'
+                      ? 'Het model ziet momenteel geen valuta met een sterk bullish fundamenteel voordeel tegenover een andere. Alle sterke divergenties wijzen dezelfde kant op — dat betekent dat het macro-plaatje duidelijk is. Dit is normaal wanneer één of twee valuta\'s (vaak JPY of USD) duidelijk sterker of zwakker zijn dan de rest.'
+                      : 'Het model ziet momenteel geen valuta met een sterk bearish fundamenteel nadeel. Alle divergenties wijzen omhoog — er is een duidelijk fundamenteel voordeel voor de base valuta\'s in deze paren.'}
+                  </div>
+                )
+              })()}
+
+              <div className="space-y-2.5">
                 {tradeFocus.map(tf => {
                   const isExpanded = expandedPairs.has(tf.pair)
+                  const dirColor = tf.isBullish ? 'green' : tf.isBearish ? 'red' : 'gray'
                   return (
                     <div
                       key={tf.pair}
-                      className={`rounded-xl overflow-hidden border ${
-                        tf.isBullish ? 'border-green-500/30' : tf.isBearish ? 'border-red-500/30' : 'border-border'
-                      }`}
+                      className="rounded-xl overflow-hidden border border-border hover:border-border-light bg-bg-card transition-all"
                     >
-                      {/* Pair header */}
-                      <div className={`px-5 py-3 flex items-center justify-between ${
-                        tf.isBullish ? 'bg-green-500/[0.08]' : tf.isBearish ? 'bg-red-500/[0.08]' : 'bg-white/[0.03]'
-                      }`}>
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg font-display font-bold text-heading">{tf.pair}</span>
-                          <span className={`text-sm font-semibold capitalize ${
-                            tf.isBullish ? 'text-green-400' : tf.isBearish ? 'text-red-400' : 'text-text-dim'
+                      {/* Compact header */}
+                      <div className="px-4 sm:px-5 py-3 flex items-center gap-3">
+                        {/* Direction indicator */}
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                          dirColor === 'green' ? 'bg-green-500/10' : dirColor === 'red' ? 'bg-red-500/10' : 'bg-white/[0.05]'
+                        }`}>
+                          <span className={`text-base font-bold ${
+                            dirColor === 'green' ? 'text-green-400' : dirColor === 'red' ? 'text-red-400' : 'text-text-dim'
                           }`}>
-                            {tf.isBullish ? '↑' : tf.isBearish ? '↓' : '→'} {tf.direction}
-                          </span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                            tf.conviction === 'sterk' ? 'bg-accent/15 text-accent-light' : 'bg-white/10 text-text-dim'
-                          }`}>
-                            {tf.conviction}
+                            {tf.isBullish ? '↑' : tf.isBearish ? '↓' : '→'}
                           </span>
                         </div>
-                        <span className={`text-sm font-mono font-semibold ${
+
+                        {/* Pair + direction */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-base font-display font-bold text-heading">{tf.pair}</span>
+                            <span className={`text-xs font-semibold capitalize ${
+                              dirColor === 'green' ? 'text-green-400' : dirColor === 'red' ? 'text-red-400' : 'text-text-dim'
+                            }`}>
+                              {tf.direction}
+                            </span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                              tf.conviction === 'sterk' ? 'bg-accent/15 text-accent-light' : 'bg-white/[0.07] text-text-dim'
+                            }`}>
+                              {tf.conviction}
+                            </span>
+                          </div>
+                          <p className="text-xs text-text-muted mt-0.5 truncate">{tf.why}</p>
+                        </div>
+
+                        {/* Score */}
+                        <span className={`text-sm font-mono font-bold shrink-0 ${
                           tf.score > 0 ? 'text-green-400' : tf.score < 0 ? 'text-red-400' : 'text-text-dim'
                         }`}>
                           {tf.score > 0 ? '+' : ''}{tf.score}
                         </span>
                       </div>
 
-                      {/* Action body */}
-                      <div className="px-5 py-4 bg-bg-card">
+                      {/* Action + details */}
+                      <div className="px-4 sm:px-5 pb-3 pt-0">
                         <p className="text-sm text-heading font-medium mb-2">{tf.action}</p>
-                        <p className="text-xs text-text-dim mb-3">{tf.why}</p>
 
                         {tf.eventWarning && (
-                          <div className="p-2.5 rounded-lg bg-amber-500/[0.06] border border-amber-500/20 mb-3">
-                            <p className="text-xs text-amber-400/90">⚠ {tf.eventWarning}</p>
+                          <div className="p-2 rounded-lg bg-amber-500/[0.05] border border-amber-500/15 mb-2">
+                            <p className="text-[11px] text-amber-400/90">⚠ {tf.eventWarning}</p>
                           </div>
                         )}
 
@@ -1161,23 +1194,23 @@ export default function DailyBriefingDashboard() {
                         {tf.explanation && tf.explanation.length > 0 && (
                           <button
                             onClick={() => togglePairExpanded(tf.pair)}
-                            className="flex items-center gap-2 text-[11px] text-accent-light/60 hover:text-accent-light transition-colors w-full text-left"
+                            className="flex items-center gap-1.5 text-[11px] text-accent-light/60 hover:text-accent-light transition-colors"
                           >
                             <svg
-                              width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                              width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                              strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                               className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}
                             >
                               <polyline points="9 18 15 12 9 6" />
                             </svg>
-                            Waarom {tf.isBullish ? 'bullish' : tf.isBearish ? 'bearish' : 'neutraal'}? — fundamentele onderbouwing
+                            Fundamentele onderbouwing
                           </button>
                         )}
 
                         {isExpanded && tf.explanation && tf.explanation.length > 0 && (
-                          <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-1.5">
+                          <div className="mt-2 p-3 rounded-lg bg-white/[0.02] border border-white/[0.05] space-y-1.5">
                             {tf.explanation.map((line: string, i: number) => (
-                              <p key={i} className="text-[11px] text-text-dim leading-relaxed">
+                              <p key={i} className="text-[11px] text-text-muted leading-relaxed">
                                 {line}
                               </p>
                             ))}

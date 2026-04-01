@@ -40,14 +40,10 @@ async function fetchPrice(symbol: string): Promise<number | null> {
 // ─── GET: Retrieve trackrecord ──────────────────────────────
 export async function GET() {
   try {
-    // Get records from last 30 days
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
+    // Get ALL records (no date limit — build up trackrecord over months/years)
     const { data: records, error } = await supabase
       .from('trade_focus_records')
       .select('*')
-      .gte('date', thirtyDaysAgo.toISOString().split('T')[0])
       .order('date', { ascending: false })
 
     if (error) {
@@ -56,19 +52,26 @@ export async function GET() {
     }
 
     // Calculate stats
-    const resolved = (records || []).filter(r => r.result !== 'pending')
+    const allRecords = records || []
+    const resolved = allRecords.filter(r => r.result !== 'pending')
     const correct = resolved.filter(r => r.result === 'correct').length
     const incorrect = resolved.filter(r => r.result === 'incorrect').length
-    const pending = (records || []).filter(r => r.result === 'pending').length
+    const pending = allRecords.filter(r => r.result === 'pending').length
+
+    // Find earliest record date
+    const startDate = allRecords.length > 0
+      ? allRecords.reduce((min, r) => r.date < min ? r.date : min, allRecords[0].date)
+      : null
 
     return NextResponse.json({
-      records: records || [],
+      records: allRecords,
       stats: {
         total: resolved.length,
         correct,
         incorrect,
         pending,
         winRate: resolved.length > 0 ? Math.round((correct / resolved.length) * 100) : 0,
+        startDate,
       },
     })
   } catch (e) {
