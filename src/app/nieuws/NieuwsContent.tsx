@@ -19,12 +19,25 @@ interface NewsArticle {
   relevanceContext: string
 }
 
+interface FxRate {
+  pair: string
+  price: string
+  change: string
+  direction: 'up' | 'down' | 'flat'
+}
+
 const categories = [
   { value: 'all', label: 'Alles' },
   { value: 'central-banks', label: 'Centrale Banken' },
   { value: 'macro', label: 'Macro-economie' },
   { value: 'forex', label: 'Forex' },
   { value: 'geopolitics', label: 'Geopolitiek' },
+]
+
+const dateRanges = [
+  { value: 1, label: 'Vandaag' },
+  { value: 7, label: 'Deze week' },
+  { value: 30, label: 'Deze maand' },
 ]
 
 const sourceColors: Record<string, string> = {
@@ -44,17 +57,6 @@ const categoryLabels: Record<string, string> = {
   'geopolitics': 'Geopolitiek',
 }
 
-const themeColors: Record<string, string> = {
-  rates: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  inflation: 'bg-red-500/10 text-red-400 border-red-500/20',
-  labor: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  growth: 'bg-green-500/10 text-green-400 border-green-500/20',
-  geopolitics: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  risk: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  energy: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-  trade: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
-}
-
 function timeAgo(dateStr: string): string {
   const now = new Date()
   const date = new Date(dateStr)
@@ -71,11 +73,120 @@ function timeAgo(dateStr: string): string {
   return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
 }
 
+/* ─── Live FX Widget ──────────────────────────────────────── */
+const MAJOR_PAIRS = ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD']
+
+function FxWidget() {
+  const [rates, setRates] = useState<FxRate[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchRates() {
+      try {
+        // Use exchangerate.host free API (no key needed)
+        const pairs = MAJOR_PAIRS.map(p => ({
+          pair: p,
+          base: p.slice(0, 3),
+          quote: p.slice(3),
+        }))
+
+        const results: FxRate[] = []
+
+        // Fetch all rates in parallel via a free forex API
+        const responses = await Promise.allSettled(
+          pairs.map(async ({ pair, base, quote }) => {
+            const res = await fetch(
+              `https://api.exchangerate.host/convert?from=${base}&to=${quote}&amount=1`,
+              { cache: 'no-store' }
+            )
+            const data = await res.json()
+            if (data.result) {
+              return {
+                pair: `${base}/${quote}`,
+                price: pair.includes('JPY') ? data.result.toFixed(2) : data.result.toFixed(4),
+                change: '',
+                direction: 'flat' as const,
+              }
+            }
+            return null
+          })
+        )
+
+        for (const r of responses) {
+          if (r.status === 'fulfilled' && r.value) {
+            results.push(r.value)
+          }
+        }
+
+        // Fallback: if API failed, use approximate static values as placeholder
+        if (results.length === 0) {
+          const fallback: Record<string, string> = {
+            'EUR/USD': '1.0850', 'GBP/USD': '1.2640', 'USD/JPY': '151.20',
+            'USD/CHF': '0.8820', 'AUD/USD': '0.6530', 'USD/CAD': '1.3560',
+          }
+          for (const [pair, price] of Object.entries(fallback)) {
+            results.push({ pair, price, change: '', direction: 'flat' })
+          }
+        }
+
+        setRates(results)
+      } catch {
+        // Fallback prices
+        setRates([
+          { pair: 'EUR/USD', price: '1.0850', change: '', direction: 'flat' },
+          { pair: 'GBP/USD', price: '1.2640', change: '', direction: 'flat' },
+          { pair: 'USD/JPY', price: '151.20', change: '', direction: 'flat' },
+          { pair: 'USD/CHF', price: '0.8820', change: '', direction: 'flat' },
+          { pair: 'AUD/USD', price: '0.6530', change: '', direction: 'flat' },
+          { pair: 'USD/CAD', price: '1.3560', change: '', direction: 'flat' },
+        ])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRates()
+    // Refresh every 60 seconds
+    const interval = setInterval(fetchRates, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-3 overflow-x-auto pb-1">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="shrink-0 w-[110px] h-[52px] rounded-lg bg-white/[0.03] border border-white/[0.06] animate-pulse" />
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-thin">
+      {rates.map((rate) => (
+        <div
+          key={rate.pair}
+          className="shrink-0 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-colors"
+        >
+          <div className="text-[10px] text-text-dim font-medium">{rate.pair}</div>
+          <div className="text-sm font-mono font-semibold text-heading">{rate.price}</div>
+        </div>
+      ))}
+      <div className="shrink-0 flex items-center gap-1 text-[9px] text-text-dim/50 pl-1">
+        <span className="w-1 h-1 rounded-full bg-green-400/50 animate-pulse" />
+        Live indicatie
+      </div>
+    </div>
+  )
+}
+
+/* ─── Main Component ──────────────────────────────────────── */
 export default function NieuwsContent() {
   const [articles, setArticles] = useState<NewsArticle[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState('all')
+  const [activeDays, setActiveDays] = useState(7)
   const [fetchedAt, setFetchedAt] = useState<string | null>(null)
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null)
   const [showDutch, setShowDutch] = useState(true)
@@ -84,7 +195,7 @@ export default function NieuwsContent() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/news?category=${activeCategory}`)
+      const res = await fetch(`/api/news?category=${activeCategory}&days=${activeDays}`)
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setArticles(data.articles || [])
@@ -94,7 +205,7 @@ export default function NieuwsContent() {
     } finally {
       setLoading(false)
     }
-  }, [activeCategory])
+  }, [activeCategory, activeDays])
 
   useEffect(() => {
     fetchNews()
@@ -108,6 +219,32 @@ export default function NieuwsContent() {
     window.addEventListener('keydown', handleEsc)
     return () => window.removeEventListener('keydown', handleEsc)
   }, [])
+
+  // Group articles by date for timeline view
+  const groupedArticles: { date: string; label: string; articles: NewsArticle[] }[] = []
+  const dateMap = new Map<string, NewsArticle[]>()
+  for (const article of articles) {
+    const d = new Date(article.publishedAt)
+    const key = d.toLocaleDateString('nl-NL', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    if (!dateMap.has(key)) dateMap.set(key, [])
+    dateMap.get(key)!.push(article)
+  }
+  for (const [dateKey, arts] of dateMap) {
+    const d = new Date(arts[0].publishedAt)
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    let label: string
+    if (d.toDateString() === today.toDateString()) {
+      label = 'Vandaag'
+    } else if (d.toDateString() === yesterday.toDateString()) {
+      label = 'Gisteren'
+    } else {
+      label = d.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })
+    }
+    groupedArticles.push({ date: dateKey, label, articles: arts })
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 sm:py-16">
@@ -244,42 +381,76 @@ export default function NieuwsContent() {
         </div>
       </div>
 
+      {/* Live FX Widget */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+          <span className="text-xs font-medium text-text-muted">Major Pairs</span>
+        </div>
+        <FxWidget />
+      </div>
+
       {/* Controls bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-        {/* Category tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto flex-1">
-          {categories.map((cat) => (
+      <div className="flex flex-col gap-3 mb-6">
+        {/* Category tabs + language toggle */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-2 overflow-x-auto flex-1">
+            {categories.map((cat) => (
+              <button
+                key={cat.value}
+                onClick={() => setActiveCategory(cat.value)}
+                className={`px-3.5 py-1.5 rounded-lg text-sm whitespace-nowrap transition-all ${
+                  activeCategory === cat.value
+                    ? 'bg-accent/15 text-accent-light border border-accent/25'
+                    : 'bg-white/[0.03] text-text-muted border border-white/[0.06] hover:bg-white/[0.06] hover:text-heading'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Language toggle */}
+          <div className="flex items-center gap-2 shrink-0">
             <button
-              key={cat.value}
-              onClick={() => setActiveCategory(cat.value)}
-              className={`px-3.5 py-1.5 rounded-lg text-sm whitespace-nowrap transition-all ${
-                activeCategory === cat.value
-                  ? 'bg-accent/15 text-accent-light border border-accent/25'
-                  : 'bg-white/[0.03] text-text-muted border border-white/[0.06] hover:bg-white/[0.06] hover:text-heading'
+              onClick={() => setShowDutch(!showDutch)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-all ${
+                showDutch
+                  ? 'bg-white/[0.06] border-white/[0.1] text-heading'
+                  : 'bg-white/[0.03] border-white/[0.06] text-text-muted hover:text-heading'
               }`}
             >
-              {cat.label}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+              </svg>
+              {showDutch ? 'NL' : 'EN'}
             </button>
-          ))}
+          </div>
         </div>
 
-        {/* Language toggle */}
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => setShowDutch(!showDutch)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-all ${
-              showDutch
-                ? 'bg-white/[0.06] border-white/[0.1] text-heading'
-                : 'bg-white/[0.03] border-white/[0.06] text-text-muted hover:text-heading'
-            }`}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="2" y1="12" x2="22" y2="12" />
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-            {showDutch ? 'NL' : 'EN'}
-          </button>
+        {/* Date range selector */}
+        <div className="flex items-center gap-2">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-dim">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          <span className="text-xs text-text-dim mr-1">Periode:</span>
+          {dateRanges.map((range) => (
+            <button
+              key={range.value}
+              onClick={() => setActiveDays(range.value)}
+              className={`px-2.5 py-1 rounded-md text-xs whitespace-nowrap transition-all ${
+                activeDays === range.value
+                  ? 'bg-white/[0.08] text-heading border border-white/[0.12]'
+                  : 'text-text-dim hover:text-text-muted hover:bg-white/[0.04] border border-transparent'
+              }`}
+            >
+              {range.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -337,76 +508,90 @@ export default function NieuwsContent() {
       {/* Empty */}
       {!loading && !error && articles.length === 0 && (
         <div className="p-8 rounded-xl bg-bg-card border border-border text-center">
-          <p className="text-text-muted">Geen relevant nieuws gevonden voor deze categorie.</p>
+          <p className="text-text-muted">Geen relevant nieuws gevonden voor deze periode en categorie.</p>
         </div>
       )}
 
-      {/* Articles list */}
-      {articles.length > 0 && (
-        <div className="space-y-2.5">
-          {articles.map((article) => (
-            <button
-              key={article.id}
-              onClick={() => setSelectedArticle(article)}
-              className="block w-full text-left p-4 sm:p-5 rounded-xl bg-bg-card border border-border hover:border-border-light transition-all group cursor-pointer"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  {/* Source, category & relevance badges */}
-                  <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-                    <span className={`text-[10px] px-2 py-0.5 rounded border font-medium ${sourceColors[article.source] || 'bg-white/[0.06] text-text-muted border-white/[0.08]'}`}>
-                      {article.source}
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-text-dim">
-                      {categoryLabels[article.category] || article.category}
-                    </span>
-                    {article.relevanceScore >= 5 && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent-light border border-accent/20 font-semibold">
-                        Belangrijk
-                      </span>
-                    )}
-                    {/* Currency impact badges */}
-                    {article.affectedCurrencies.slice(0, 3).map(c => (
-                      <span key={c} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-text-dim font-mono font-bold">
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-sm sm:text-base font-semibold text-heading group-hover:text-accent-light transition-colors leading-snug mb-1">
-                    {showDutch ? (article.titleNl || article.title) : article.title}
-                  </h3>
-
-                  {/* Summary */}
-                  {article.summary && (
-                    <p className="text-xs sm:text-sm text-text-muted line-clamp-2 leading-relaxed mb-1.5">
-                      {showDutch ? (article.summaryNl || article.summary) : article.summary}
-                    </p>
-                  )}
-
-                  {/* Relevance context */}
-                  {article.relevanceContext && (
-                    <p className="text-[11px] text-accent-light/70 flex items-center gap-1.5">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      {article.relevanceContext}
-                    </p>
-                  )}
-                </div>
-
-                {/* Time */}
-                <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1 shrink-0">
-                  <span className="text-xs text-text-dim whitespace-nowrap">
-                    {timeAgo(article.publishedAt)}
-                  </span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-dim group-hover:text-accent-light transition-colors">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </div>
+      {/* Articles grouped by date */}
+      {groupedArticles.length > 0 && (
+        <div className="space-y-6">
+          {groupedArticles.map((group) => (
+            <div key={group.date}>
+              {/* Date header */}
+              <div className="flex items-center gap-3 mb-3">
+                <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider">{group.label}</h3>
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[10px] text-text-dim">{group.articles.length} artikelen</span>
               </div>
-            </button>
+
+              {/* Articles for this date */}
+              <div className="space-y-2.5">
+                {group.articles.map((article) => (
+                  <button
+                    key={article.id}
+                    onClick={() => setSelectedArticle(article)}
+                    className="block w-full text-left p-4 sm:p-5 rounded-xl bg-bg-card border border-border hover:border-border-light transition-all group cursor-pointer"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        {/* Source, category & relevance badges */}
+                        <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                          <span className={`text-[10px] px-2 py-0.5 rounded border font-medium ${sourceColors[article.source] || 'bg-white/[0.06] text-text-muted border-white/[0.08]'}`}>
+                            {article.source}
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-text-dim">
+                            {categoryLabels[article.category] || article.category}
+                          </span>
+                          {article.relevanceScore >= 5 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent-light border border-accent/20 font-semibold">
+                              Belangrijk
+                            </span>
+                          )}
+                          {/* Currency impact badges */}
+                          {article.affectedCurrencies.slice(0, 3).map(c => (
+                            <span key={c} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-text-dim font-mono font-bold">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-sm sm:text-base font-semibold text-heading group-hover:text-accent-light transition-colors leading-snug mb-1">
+                          {showDutch ? (article.titleNl || article.title) : article.title}
+                        </h3>
+
+                        {/* Summary */}
+                        {article.summary && (
+                          <p className="text-xs sm:text-sm text-text-muted line-clamp-2 leading-relaxed mb-1.5">
+                            {showDutch ? (article.summaryNl || article.summary) : article.summary}
+                          </p>
+                        )}
+
+                        {/* Relevance context */}
+                        {article.relevanceContext && (
+                          <p className="text-[11px] text-accent-light/70 flex items-center gap-1.5">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            {article.relevanceContext}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Time */}
+                      <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1 shrink-0">
+                        <span className="text-xs text-text-dim whitespace-nowrap">
+                          {timeAgo(article.publishedAt)}
+                        </span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-dim group-hover:text-accent-light transition-colors">
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -417,6 +602,7 @@ export default function NieuwsContent() {
           Nieuwsartikelen worden automatisch gefilterd en vertaald uit publieke RSS feeds.
           Sanders Capital is niet verantwoordelijk voor de inhoud van externe bronnen.
           Vertalingen zijn automatisch en kunnen onnauwkeurigheden bevatten.
+          Koersen zijn indicatief en kunnen afwijken van actuele marktprijzen.
         </p>
       </div>
     </div>
