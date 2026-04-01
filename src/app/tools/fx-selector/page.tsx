@@ -209,7 +209,7 @@ export default function DailyBriefingIntroPage() {
               'Pair score = score van de base valuta minus de quote valuta. Hoe groter het verschil, hoe sterker de bias.',
               'Sterke overtuiging: score ≥ 3.5 of ≤ −3.5. Matige overtuiging: score ≥ 2.0 of ≤ −2.0.',
               'Bij elk paar zie je de richting (bullish/bearish), overtuiging, renteverschil en de achterliggende redenering.',
-              'Het trackrecord meet dagelijks of de fundamentele bias klopte: daily close → volgende daily close. Alleen sterke overtuiging wordt gemeten.',
+              'Het trackrecord meet of de fundamentele bias klopte via een mean reversion strategie: daily close → 2 dagen later daily close. Alleen signalen met score ≥ 3.0 worden getrackt.',
               'Dit geeft je niet je entry, het geeft je de richting. Jij past vervolgens je eigen strategie toe in de richting van de bias.',
             ]}
           />
@@ -378,7 +378,7 @@ export default function DailyBriefingIntroPage() {
               onverwachte renteverlaging kan de markt tegen de fundamentele bias in bewegen. Check altijd de kalender.
             </p>
             <p>
-              <strong className="text-heading">Het trackrecord is transparant.</strong> We meten dagelijks of de bias klopte (daily close → daily close).
+              <strong className="text-heading">Het trackrecord is transparant.</strong> We meten of de bias klopte via een mean reversion model (entry daily close → exit 2 dagen later).
               Dit geeft je een eerlijk beeld van de nauwkeurigheid. Geen cherry-picking.
             </p>
           </div>

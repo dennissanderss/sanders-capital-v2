@@ -1,10 +1,10 @@
 import BriefingV2Dashboard from './BriefingV2Dashboard'
 
 export const metadata = {
-  title: 'Daily Macro Briefing V2 + Nieuws | Sanders Capital',
-  description: 'Enhanced macro-analyse met nieuws sentiment integratie. Macro regime, intermarket signalen en recent nieuws vertaald naar concrete trade focus.',
+  title: 'Daily Macro Briefing | Sanders Capital',
+  description: 'Dagelijkse macro-analyse met nieuws sentiment, intermarket signalen, mean reversion strategie en transparant trackrecord.',
 }
 
-export default function BriefingV2TestPage() {
+export default function DailyBriefingPage() {
   return <BriefingV2Dashboard />
 }

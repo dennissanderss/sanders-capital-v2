@@ -5,8 +5,7 @@ import { usePathname } from 'next/navigation'
 
 const subPages = [
   { href: '/tools/fx-selector', label: 'Introductie', icon: 'info' },
-  { href: '/tools/fx-selector/tool', label: 'V1 Briefing', icon: 'play' },
-  { href: '/tools/fx-selector/v2', label: 'V2 + Nieuws', icon: 'play' },
+  { href: '/tools/fx-selector/tool', label: 'Daily Macro Briefing', icon: 'play' },
 ]
 
 function SubIcon({ icon }: { icon: string }) {

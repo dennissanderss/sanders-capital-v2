@@ -150,7 +150,7 @@ function formatCET(isoStr: string | undefined): string {
     return new Date(isoStr).toLocaleString('nl-NL', {
       day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
       timeZone: 'Europe/Amsterdam',
-    }) + ' CET'
+    }) + ' NL'
   } catch { return '' }
 }
 
@@ -518,7 +518,7 @@ export default function BriefingV2Dashboard() {
           <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
         </svg>
         <p className="text-xs text-amber-300">
-          <strong>TEST OMGEVING</strong> - Enhanced Daily Macro Briefing v2 met nieuws-integratie. Niet live, alleen voor evaluatie.
+          <strong>TEST OMGEVING</strong> - Enhanced Daily Macro Briefing met nieuws-integratie. Niet live, alleen voor evaluatie.
         </p>
       </div>
 
@@ -526,7 +526,7 @@ export default function BriefingV2Dashboard() {
       <div className="mb-8">
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
-            <p className="text-[10px] tracking-[0.25em] uppercase text-accent-light/60 mb-2 font-medium">V2 Enhanced</p>
+            <p className="text-[10px] tracking-[0.25em] uppercase text-accent-light/60 mb-2 font-medium">Daily Macro Briefing</p>
             <h1 className="text-2xl sm:text-3xl font-display font-bold text-heading mb-1">
               Daily Macro Briefing
             </h1>
@@ -865,13 +865,13 @@ export default function BriefingV2Dashboard() {
           />
 
           {/* ════════════════════════════════════════════════════════
-              STAP 2: NIEUWS SENTIMENT (NIEUW in v2)
+              STAP 2: NIEUWS SENTIMENT
               ════════════════════════════════════════════════════════ */}
           <section className="mb-2">
             <StepHeader
               step={2}
               title="Nieuws Sentiment"
-              subtitle="NIEUW in v2 - Wat vertelt recent nieuws ons over elke valuta?"
+              subtitle="Wat vertelt recent nieuws ons over elke valuta?"
             />
 
             <div className="rounded-2xl border border-border bg-bg-card overflow-hidden">
@@ -1175,7 +1175,7 @@ export default function BriefingV2Dashboard() {
                 </details>
               </div>
 
-              {/* Expandable: Per-signal explanation — RICH like V1 */}
+              {/* Expandable: Per-signal explanation */}
               <div className="px-5 sm:px-6 pb-4">
                 <details className="mt-3 group">
                   <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
@@ -1347,6 +1347,26 @@ export default function BriefingV2Dashboard() {
                     {/* Score breakdown + warnings */}
                     <div className="px-5 py-3 border-t border-white/[0.04]">
                       {/* Score breakdown: base vs news */}
+                      {/* Call info bar */}
+                      <div className="flex flex-wrap items-center gap-3 mb-2 p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] text-text-dim uppercase tracking-wider">Call:</span>
+                          <span className="text-[10px] font-mono font-semibold text-accent-light/80">
+                            {new Date().toLocaleString('nl-NL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' })} NL
+                          </span>
+                        </div>
+                        <span className="text-text-dim/20">|</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] text-text-dim uppercase tracking-wider">Entry:</span>
+                          <span className="text-[10px] font-mono text-text-muted">daily close (18:00 NL)</span>
+                        </div>
+                        <span className="text-text-dim/20">|</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] text-text-dim uppercase tracking-wider">Exit:</span>
+                          <span className="text-[10px] font-mono text-text-muted">+2 dagen daily close</span>
+                        </div>
+                      </div>
+
                       <div className="flex items-center gap-3 mb-2">
                         <div className="flex items-center gap-1.5">
                           <span className="text-[9px] text-text-dim uppercase tracking-wider">Basis:</span>
@@ -1550,9 +1570,9 @@ export default function BriefingV2Dashboard() {
 
                     {/* V2.2 Mean Reversion explanation */}
                     <div className="p-3 rounded-lg bg-accent/5 border border-accent/10">
-                      <p className="text-[10px] font-semibold text-accent-light mb-2">V2.2: Mean Reversion Strategie</p>
+                      <p className="text-[10px] font-semibold text-accent-light mb-2">Mean Reversion Strategie</p>
                       <p className="text-[9px] text-text-dim leading-relaxed mb-2">
-                        Het V2.2 model combineert fundamentele analyse met <strong className="text-text-muted">mean reversion timing</strong>.
+                        Het model combineert fundamentele analyse met <strong className="text-text-muted">mean reversion timing</strong>.
                         Een signaal wordt pas geactiveerd als de prijs de afgelopen 2 dagen <em>tegen</em> de fundamentele richting is bewogen.
                       </p>
                       <div className="flex items-center justify-center gap-2 text-xs my-2">
@@ -1581,7 +1601,7 @@ export default function BriefingV2Dashboard() {
                     </div>
 
                     <p>
-                      <strong className="text-text-muted">V2.1 filters:</strong> Intermarket signalen moeten het regime bevestigen. Als aandelen, VIX en goud het regime tegenspreken, wordt &quot;sterk&quot; verlaagd naar &quot;matig&quot;. Cross-pair contradicties worden ook gefilterd.
+                      <strong className="text-text-muted">Filters:</strong> Intermarket signalen moeten het regime bevestigen. Als aandelen, VIX en goud het regime tegenspreken, wordt &quot;sterk&quot; verlaagd naar &quot;matig&quot;. Cross-pair contradicties worden ook gefilterd.
                     </p>
                   </div>
                 </div>
@@ -1840,7 +1860,7 @@ export default function BriefingV2Dashboard() {
                                   <span className="text-text-dim">{record.regime || '—'}</span>
                                 </div>
                               </div>
-                              {/* V2 metadata: news influence */}
+                              {/* Metadata: news influence */}
                               {meta && meta.newsInfluence !== undefined && Math.abs(meta.newsInfluence) > 0.1 && (
                                 <div className="mt-1.5 flex items-center gap-2 text-[9px]">
                                   <span className="text-text-dim/50">Nieuws invloed:</span>
@@ -1889,7 +1909,7 @@ export default function BriefingV2Dashboard() {
                     <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
                       <div className="space-y-2 text-[10px] text-text-dim leading-relaxed">
                         <p>
-                          Het V2.2 trackrecord meet hoe nauwkeurig het mean reversion model is: fundamentele richting + timing via prijsactie. Holding periode: 2 handelsdagen.
+                          Het trackrecord meet hoe nauwkeurig het mean reversion model is: fundamentele richting + timing via prijsactie. Holding periode: 2 handelsdagen.
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
@@ -1901,7 +1921,7 @@ export default function BriefingV2Dashboard() {
                             <p>De exit prijs wordt opgehaald <strong className="text-text-muted">2 handelsdagen later</strong> op hetzelfde tijdstip. De 2-daagse holding periode geeft de mean reversion voldoende tijd om te werken.</p>
                           </div>
                           <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-accent-light font-semibold mb-1">V2.2 Mean Reversion</p>
+                            <p className="text-accent-light font-semibold mb-1">Mean Reversion</p>
                             <p>Het model handelt alleen wanneer de 2-daagse prijsactie <strong className="text-text-muted">tegen</strong> de fundamentele richting ingaat. Score &ge;3.0 vereist. Intermarket+regime+cross-pair filters actief.</p>
                           </div>
                           <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
@@ -1921,7 +1941,7 @@ export default function BriefingV2Dashboard() {
             </div>
           </section>
 
-          {/* ── Tool Navigation Links (like V1) ── */}
+          {/* ── Tool Navigation Links ── */}
           <div className="flex flex-wrap gap-3 mb-6">
             <Link href="/tools/fx-analyse" className="px-4 py-2.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading hover:border-border-light transition-colors">
               Macro Fundamentals &rarr;
@@ -1943,10 +1963,10 @@ export default function BriefingV2Dashboard() {
 
           {/* ── Methodology Footer ── */}
           <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium mb-2">V2 Methode &amp; Databronnen</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium mb-2">Methode &amp; Databronnen</p>
             <p className="text-xs text-text-dim leading-relaxed">{data.regimeMethodology}</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {['CB Beleid (basis)', 'Rente vs Target', 'Intermarket Signalen', 'Nieuws Sentiment (v2)', 'Intermarket Filter (v2.1)', 'Economische Kalender'].map(tag => (
+              {['CB Beleid (basis)', 'Rente vs Target', 'Intermarket Signalen', 'Nieuws Sentiment', 'Intermarket Filter', 'Mean Reversion', 'Economische Kalender'].map(tag => (
                 <span key={tag} className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">{tag}</span>
               ))}
             </div>
