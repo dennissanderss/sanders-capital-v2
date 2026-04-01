@@ -210,6 +210,11 @@
 .form-input::placeholder {
   color: var(--color-text-dim);
 }
+select.form-input option,
+select option {
+  background: #10141c;
+  color: var(--color-heading);
+}
 
 /* Scrollbar hide utility */
 .scrollbar-hide {

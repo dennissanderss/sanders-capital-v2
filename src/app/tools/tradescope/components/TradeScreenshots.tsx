@@ -19,6 +19,35 @@ export default function TradeScreenshots({ tradeId, screenshots: initial, onUpda
 
   useEffect(() => { setScreenshots(initial) }, [initial])
 
+  // Clipboard paste support (Ctrl+V)
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      const imageFiles: File[] = []
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const blob = item.getAsFile()
+          if (blob) {
+            const ext = item.type.split('/')[1] || 'png'
+            imageFiles.push(new File([blob], `paste_${Date.now()}.${ext}`, { type: item.type }))
+          }
+        }
+      }
+
+      if (imageFiles.length > 0) {
+        e.preventDefault()
+        const dt = new DataTransfer()
+        imageFiles.forEach(f => dt.items.add(f))
+        handleUpload(dt.files)
+      }
+    }
+
+    document.addEventListener('paste', handlePaste)
+    return () => document.removeEventListener('paste', handlePaste)
+  }, [handleUpload])
+
   const getPublicUrl = (path: string) => {
     const sb = createClient()
     const { data } = sb.storage.from('trade-screenshots').getPublicUrl(path)
@@ -173,7 +202,7 @@ export default function TradeScreenshots({ tradeId, screenshots: initial, onUpda
                 <circle cx="8.5" cy="8.5" r="1.5" />
                 <polyline points="21 15 16 10 5 21" />
               </svg>
-              <p className="text-xs text-text-dim">Sleep screenshots hierheen of klik om te uploaden</p>
+              <p className="text-xs text-text-dim">Sleep screenshots hierheen, klik om te uploaden, of plak met Ctrl+V</p>
             </>
           )}
         </div>

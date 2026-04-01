@@ -399,9 +399,9 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
       trade_quality: null,
       execution_quality: null,
       rules_followed: null,
-      was_impulsive: false,
-      was_revenge: false,
-      was_overtrading: false,
+      was_impulsive: null,
+      was_revenge: null,
+      was_overtrading: null,
       htf_bias_respected: null,
       news_checked: null,
       tags: [],
@@ -617,9 +617,9 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
               <ToggleChip label="Regels gevolgd" value={form.rules_followed as boolean | null} onChange={(v) => set('rules_followed', v)} colorYes="green" colorNo="red" />
               <ToggleChip label="HTF bias gevolgd" value={form.htf_bias_respected as boolean | null} onChange={(v) => set('htf_bias_respected', v)} colorYes="green" colorNo="red" />
               <ToggleChip label="Nieuws gecheckt" value={form.news_checked as boolean | null} onChange={(v) => set('news_checked', v)} colorYes="green" colorNo="amber" />
-              <ToggleChip label="Impulsief" value={form.was_impulsive as boolean} onChange={(v) => set('was_impulsive', v === true)} colorYes="red" colorNo="green" invert />
-              <ToggleChip label="Revenge trade" value={form.was_revenge as boolean} onChange={(v) => set('was_revenge', v === true)} colorYes="red" colorNo="green" invert />
-              <ToggleChip label="Overtrading" value={form.was_overtrading as boolean} onChange={(v) => set('was_overtrading', v === true)} colorYes="red" colorNo="green" invert />
+              <ToggleChip label="Impulsief" value={form.was_impulsive as boolean | null} onChange={(v) => set('was_impulsive', v)} colorYes="red" colorNo="green" invert />
+              <ToggleChip label="Revenge trade" value={form.was_revenge as boolean | null} onChange={(v) => set('was_revenge', v)} colorYes="red" colorNo="green" invert />
+              <ToggleChip label="Overtrading" value={form.was_overtrading as boolean | null} onChange={(v) => set('was_overtrading', v)} colorYes="red" colorNo="green" invert />
             </div>
           </div>
 
@@ -643,6 +643,18 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
                 <textarea value={(form.lessons as string) || ''} onChange={(e) => set('lessons', e.target.value)} rows={2} className="form-input resize-none" placeholder="Wat heb je geleerd?" />
               </FormField>
             </div>
+          </div>
+
+          {/* Screenshots */}
+          <div>
+            <h3 className="text-xs font-semibold text-heading uppercase tracking-wider mb-3">Screenshots</h3>
+            {trade ? (
+              <TradeScreenshots tradeId={trade.id} screenshots={trade.screenshots || []} onUpdate={() => {}} />
+            ) : (
+              <div className="border border-dashed border-border rounded-lg p-6 text-center">
+                <p className="text-xs text-text-dim">Sla de trade eerst op om screenshots toe te voegen</p>
+              </div>
+            )}
           </div>
 
           {/* Submit */}
