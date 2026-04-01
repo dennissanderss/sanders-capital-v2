@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Premium',
-  description: 'Krijg toegang tot exclusieve educatieve content en verdiepende analyses.',
+  description: 'Krijg toegang tot professionele trading tools, exclusieve content en verdiepende analyses.',
 }
 
 const freeFeatures = [
@@ -18,26 +18,76 @@ const premiumFeatures = [
   'Premium artikelen & analyses',
   'Verdiepende kennisbank modules',
   'Exclusieve community kanalen',
-  'Maandelijkse live sessies',
-  'Persoonlijke leerroutekaart',
+  'Volledige toegang tot alle tools',
+]
+
+const tools = [
+  {
+    name: 'Daily Macro Briefing',
+    description: 'Dagelijks overzicht van macro regime, currency scores en trade focus — gebaseerd op centrale bank beleid en rentedata.',
+    href: '/tools/fx-selector',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </svg>
+    ),
+    tags: ['Macro', 'Currencies', 'Dagelijks'],
+  },
+  {
+    name: 'Macro Fundamentals',
+    description: 'Rentetarieven, inflatiecijfers en centrale bank beleid per valuta — de data achter de scores.',
+    href: '/tools/rentetarieven',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23" />
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+      </svg>
+    ),
+    tags: ['Rentes', 'Inflatie', 'CB Beleid'],
+  },
+  {
+    name: 'TradeScope',
+    description: 'Upload je backtest CSV en krijg direct inzicht in je performance — winrate, drawdown, sessie-analyse en meer.',
+    href: '/tools/tradescope',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+      </svg>
+    ),
+    tags: ['Backtest', 'Statistieken', 'Performance'],
+  },
+  {
+    name: 'TradeMind',
+    description: 'Je persoonlijke trading journal — log trades, analyseer patronen in je gedrag en verbeter je edge structureel.',
+    href: '/tools',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+      </svg>
+    ),
+    tags: ['Journal', 'Psychologie', 'Binnenkort'],
+  },
 ]
 
 const faqItems = [
   {
     q: 'Wat is het verschil tussen gratis en premium?',
-    a: 'Gratis leden hebben toegang tot basis artikelen en de kennisbank basis modules. Premium leden krijgen toegang tot alle content, inclusief verdiepende analyses, exclusieve modules en community features.',
+    a: 'Gratis leden hebben toegang tot basis artikelen en de kennisbank basis modules. Premium leden krijgen volledige toegang tot alle tools, verdiepende analyses en exclusieve community features.',
   },
   {
     q: 'Is dit financieel advies?',
-    a: 'Nee. Alle content is puur educatief. Sanders Capital geeft geen financieel advies en is niet verantwoordelijk voor beslissingen die op basis van onze content worden genomen.',
+    a: 'Nee. Alle content en tools zijn puur educatief. Sanders Capital geeft geen financieel advies en is niet verantwoordelijk voor beslissingen die op basis van onze content worden genomen.',
   },
   {
     q: 'Kan ik mijn abonnement opzeggen?',
     a: 'Ja, je kunt je premium abonnement op elk moment opzeggen. Je houdt toegang tot het einde van de betaalperiode.',
   },
   {
-    q: 'Hoe krijg ik toegang tot premium content?',
-    a: 'Maak eerst een gratis account aan. Zodra premium beschikbaar is, kun je upgraden via je dashboard.',
+    q: 'Hoe krijg ik toegang tot de tools?',
+    a: 'Maak eerst een gratis account aan. Zodra premium beschikbaar is, kun je upgraden via je dashboard en krijg je direct toegang tot alle tools.',
   },
 ]
 
@@ -50,10 +100,59 @@ export default function PremiumPage() {
             Premium
           </h1>
           <p className="text-text-muted max-w-2xl mx-auto">
-            Krijg toegang tot exclusieve educatieve content, verdiepende analyses en een community van gemotiveerde traders.
+            Professionele tools, exclusieve content en verdiepende analyses — alles wat je nodig hebt om data-gedreven te handelen.
           </p>
         </div>
       </FadeIn>
+
+      {/* Premium Tools */}
+      <div className="max-w-5xl mx-auto mb-24">
+        <FadeIn>
+          <div className="text-center mb-12">
+            <span className="text-xs tracking-[0.2em] uppercase text-accent-light mb-3 block font-body">
+              Gebouwd voor traders
+            </span>
+            <h2 className="text-2xl md:text-3xl font-display font-semibold text-heading mb-3">
+              Premium Tools
+            </h2>
+            <p className="text-text-muted max-w-xl mx-auto">
+              Elke tool lost een specifiek probleem op. Geen ruis, geen overbodige features — alleen wat je nodig hebt.
+            </p>
+          </div>
+        </FadeIn>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          {tools.map((tool, i) => (
+            <FadeIn key={tool.name} delay={i * 100}>
+              <Link
+                href={tool.href}
+                className="block p-6 rounded-xl bg-bg-card border border-border hover:border-accent-dim/40 transition-all group"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-accent-glow flex items-center justify-center text-accent-light shrink-0 group-hover:bg-accent-dim/20 transition-colors">
+                    {tool.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-display font-semibold text-heading mb-1.5 group-hover:text-accent-light transition-colors">
+                      {tool.name}
+                    </h3>
+                    <p className="text-sm text-text-muted leading-relaxed mb-3">
+                      {tool.description}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {tool.tags.map(tag => (
+                        <span key={tag} className="text-[10px] px-2 py-0.5 rounded bg-white/[0.04] text-text-dim border border-white/[0.06]">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </FadeIn>
+          ))}
+        </div>
+      </div>
 
       {/* Pricing tiers */}
       <div className="grid md:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto mb-24">
@@ -131,8 +230,8 @@ export default function PremiumPage() {
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {[
               { step: '1', title: 'Maak een account', desc: 'Registreer gratis en krijg direct toegang tot basis content.' },
-              { step: '2', title: 'Verken de content', desc: 'Lees artikelen, verken de kennisbank en ontdek wat bij jou past.' },
-              { step: '3', title: 'Upgrade naar premium', desc: 'Krijg toegang tot alle content en exclusieve community features.' },
+              { step: '2', title: 'Verken de tools', desc: 'Ontdek de tools, lees artikelen en vind wat bij je trading past.' },
+              { step: '3', title: 'Upgrade naar premium', desc: 'Krijg volledige toegang tot alle tools en exclusieve content.' },
             ].map((item, i) => (
               <FadeIn key={i} delay={i * 150}>
                 <div className="text-center">

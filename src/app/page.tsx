@@ -285,6 +285,123 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Premium Tools */}
+      <section className="py-24 bg-bg-elevated/30">
+        <div className="max-w-6xl mx-auto px-6">
+          <FadeIn>
+            <div className="text-center mb-4">
+              <span className="text-xs tracking-[0.2em] uppercase text-accent-light mb-3 block font-body">
+                Premium Tools
+              </span>
+              <h2 className="text-3xl md:text-4xl font-display font-semibold text-heading mb-4">
+                Ontdek de tools
+              </h2>
+              <p className="text-text-muted max-w-2xl mx-auto mb-12">
+                De meeste traders missen geen strategie — ze missen structuur. Geen overzicht van macro data,
+                geen objectieve currency bias, geen inzicht in hun eigen performance. Deze tools lossen dat op.
+              </p>
+            </div>
+          </FadeIn>
+
+          <div className="grid md:grid-cols-2 gap-4 max-w-5xl mx-auto mb-10">
+            {[
+              {
+                name: 'Daily Macro Briefing',
+                problem: 'Elke dag macro data verzamelen kost uren en je mist altijd iets.',
+                solution: 'Dagelijks overzicht met macro regime, currency scores en trade focus — automatisch bijgewerkt.',
+                href: '/tools/fx-selector',
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="2" y1="12" x2="22" y2="12" />
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </svg>
+                ),
+              },
+              {
+                name: 'Macro Fundamentals',
+                problem: 'Rentetarieven en CB beleid zijn verspreid over tientallen bronnen.',
+                solution: 'Alle rentedata, inflatiecijfers en centrale bank bias per valuta op één plek.',
+                href: '/tools/rentetarieven',
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23" />
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                ),
+              },
+              {
+                name: 'TradeScope',
+                problem: 'Je hebt backtest data maar geen manier om patronen te zien.',
+                solution: 'Upload je CSV en krijg direct winrate, drawdown, sessie- en dag-analyse.',
+                href: '/tools/tradescope',
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  </svg>
+                ),
+              },
+              {
+                name: 'TradeMind',
+                problem: 'Je weet niet waarom je verliest omdat je trades niet structureel logt.',
+                solution: 'Persoonlijk trading journal — log trades, herken patronen en verbeter je edge.',
+                href: '/tools',
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                  </svg>
+                ),
+                comingSoon: true,
+              },
+            ].map((tool, i) => (
+              <FadeIn key={tool.name} delay={i * 100}>
+                <Link
+                  href={tool.href}
+                  className="block p-6 rounded-xl bg-bg-card border border-border hover:border-accent-dim/40 transition-all group relative overflow-hidden"
+                >
+                  {'comingSoon' in tool && tool.comingSoon && (
+                    <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded bg-accent/15 text-accent-light border border-accent/20">
+                      Binnenkort
+                    </span>
+                  )}
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-accent-glow flex items-center justify-center text-accent-light shrink-0 group-hover:bg-accent-dim/20 transition-colors">
+                      {tool.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-display font-semibold text-heading mb-2 group-hover:text-accent-light transition-colors">
+                        {tool.name}
+                      </h3>
+                      <p className="text-xs text-text-dim mb-1">
+                        <span className="text-red-400/70">Probleem:</span> {tool.problem}
+                      </p>
+                      <p className="text-sm text-text-muted">
+                        <span className="text-accent-light/70">Oplossing:</span> {tool.solution}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              </FadeIn>
+            ))}
+          </div>
+
+          <FadeIn delay={400}>
+            <div className="text-center">
+              <Link
+                href="/premium"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors group"
+              >
+                Bekijk alle premium features
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-0.5 transition-transform">
+                  <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-24">
         <div className="max-w-3xl mx-auto px-6 text-center">
@@ -293,7 +410,7 @@ export default async function HomePage() {
               Klaar om te beginnen?
             </h2>
             <p className="text-text-muted mb-8 max-w-lg mx-auto">
-              Krijg toegang tot premium educatieve content, verdiepende analyses en exclusieve community features.
+              Krijg toegang tot professionele tools, verdiepende analyses en een community van gemotiveerde traders.
             </p>
             <Link
               href="/premium"
