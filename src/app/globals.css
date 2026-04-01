@@ -192,6 +192,34 @@
   font-style: italic;
 }
 
+/* Form inputs */
+.form-input {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-heading);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.form-input:focus {
+  border-color: rgba(61, 110, 165, 0.5);
+}
+.form-input::placeholder {
+  color: var(--color-text-dim);
+}
+
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Premium blur overlay */
 .premium-blur {
   position: relative;
