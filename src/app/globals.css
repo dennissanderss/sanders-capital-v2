@@ -192,68 +192,6 @@
   font-style: italic;
 }
 
-/* Markdown content styles (legacy) */
-.prose-sc h2 {
-  font-family: var(--font-display) !important;
-  color: var(--color-heading) !important;
-  font-size: 2rem !important;
-  font-weight: 700 !important;
-  line-height: 1.2 !important;
-  margin-top: 3rem !important;
-  margin-bottom: 1rem !important;
-  padding-bottom: 0.5rem !important;
-  border-bottom: 1px solid var(--color-border) !important;
-}
-
-.prose-sc h3 {
-  font-family: var(--font-display) !important;
-  color: var(--color-heading) !important;
-  font-size: 1.5rem !important;
-  font-weight: 600 !important;
-  line-height: 1.3 !important;
-  margin-top: 2.25rem !important;
-  margin-bottom: 0.75rem !important;
-}
-
-.prose-sc p {
-  margin-bottom: 1.25rem;
-  line-height: 1.85;
-  color: var(--color-text);
-}
-
-.prose-sc strong {
-  color: var(--color-heading);
-  font-weight: 600;
-}
-
-.prose-sc em {
-  color: var(--color-accent-light);
-  font-style: italic;
-}
-
-.prose-sc ul, .prose-sc ol {
-  padding-left: 1.75rem;
-  margin-bottom: 1.25rem;
-  margin-top: 0.5rem;
-}
-
-.prose-sc li {
-  margin-bottom: 0.6rem;
-  line-height: 1.75;
-}
-
-.prose-sc ul li::marker {
-  color: var(--color-accent);
-}
-
-.prose-sc blockquote {
-  border-left: 3px solid var(--color-accent-dim);
-  padding-left: 1rem;
-  margin: 1.5rem 0;
-  color: var(--color-text-muted);
-  font-style: italic;
-}
-
 /* Premium blur overlay */
 .premium-blur {
   position: relative;
