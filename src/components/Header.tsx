@@ -67,6 +67,7 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [kbCategories, setKbCategories] = useState<KbCategory[]>([])
   const [toolPremiumMap, setToolPremiumMap] = useState<Record<string, boolean>>({})
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
 
   // Fetch categories & tool settings from DB
   const fetchData = () => {
@@ -111,15 +112,26 @@ export default function Header() {
 
   useEffect(() => {
     setMobileOpen(false)
+    setOpenDropdown(null)
   }, [pathname])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setOpenDropdown(null)
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
-        scrolled
-          ? 'glass-elevated border-b border-white/[0.07]'
-          : 'bg-transparent'
-      }`}
+      className="fixed top-0 left-0 right-0 z-50"
+      style={{
+        background: scrolled ? 'rgba(13, 16, 22, 0.85)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(24px)' : 'none',
+        WebkitBackdropFilter: scrolled ? 'blur(24px)' : 'none',
+        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
+        transition: 'background 0.4s ease, border-bottom 0.4s ease, backdrop-filter 0.4s ease',
+      }}
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 group">
@@ -165,10 +177,10 @@ export default function Header() {
               className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading flex items-center gap-1 cursor-pointer ${
                 pathname.startsWith('/blog') ? 'text-heading' : 'text-text-muted'
               }`}
-              onClick={() => window.location.href = '/blog'}
+              onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'blog' ? null : 'blog') }}
             >
               Blog
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className="mt-0.5 transition-transform duration-200 group-hover/blog:rotate-180">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className={`mt-0.5 transition-transform duration-200 ${openDropdown === 'blog' ? 'rotate-180' : ''} group-hover/blog:rotate-180`}>
                 <path d="M2.5 4 5 6.5 7.5 4" />
               </svg>
               {pathname.startsWith('/blog') && (
@@ -176,7 +188,7 @@ export default function Header() {
               )}
             </button>
 
-            <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover/blog:opacity-100 group-hover/blog:visible transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent">
+            <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent ${openDropdown === 'blog' ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/blog:opacity-100 group-hover/blog:visible'}`}>
               <div className="rounded-xl shadow-2xl border border-white/[0.12] py-2 min-w-[260px]" style={{ background: 'rgba(13, 14, 20, 0.97)', backdropFilter: 'blur(24px)' }}>
                 {blogDropdown.map((item) => (
                   <Link
@@ -207,10 +219,10 @@ export default function Header() {
               className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading flex items-center gap-1 cursor-pointer ${
                 pathname.startsWith('/kennisbank') ? 'text-heading' : 'text-text-muted'
               }`}
-              onClick={() => window.location.href = '/kennisbank'}
+              onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'kb' ? null : 'kb') }}
             >
               Kennisbank
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className="mt-0.5 transition-transform duration-200 group-hover/kb:rotate-180">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className={`mt-0.5 transition-transform duration-200 ${openDropdown === 'kb' ? 'rotate-180' : ''} group-hover/kb:rotate-180`}>
                 <path d="M2.5 4 5 6.5 7.5 4" />
               </svg>
               {pathname.startsWith('/kennisbank') && (
@@ -218,7 +230,7 @@ export default function Header() {
               )}
             </button>
 
-            <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover/kb:opacity-100 group-hover/kb:visible transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent">
+            <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent ${openDropdown === 'kb' ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/kb:opacity-100 group-hover/kb:visible'}`}>
               <div className="rounded-xl shadow-2xl border border-white/[0.12] py-2 min-w-[280px]" style={{ background: 'rgba(13, 14, 20, 0.97)', backdropFilter: 'blur(24px)' }}>
                 {kbCategories.map((cat) => (
                   <Link
@@ -253,10 +265,10 @@ export default function Header() {
               className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading flex items-center gap-1 cursor-pointer ${
                 pathname.startsWith('/tools') ? 'text-heading' : 'text-text-muted'
               }`}
-              onClick={() => window.location.href = '/tools'}
+              onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'tools' ? null : 'tools') }}
             >
               Tools
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className="mt-0.5 transition-transform duration-200 group-hover/tools:rotate-180">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className={`mt-0.5 transition-transform duration-200 ${openDropdown === 'tools' ? 'rotate-180' : ''} group-hover/tools:rotate-180`}>
                 <path d="M2.5 4 5 6.5 7.5 4" />
               </svg>
               {pathname.startsWith('/tools') && (
@@ -264,7 +276,7 @@ export default function Header() {
               )}
             </button>
 
-            <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover/tools:opacity-100 group-hover/tools:visible transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent">
+            <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent ${openDropdown === 'tools' ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/tools:opacity-100 group-hover/tools:visible'}`}>
               <div className="rounded-xl shadow-2xl border border-white/[0.12] py-2 min-w-[280px]" style={{ background: 'rgba(13, 14, 20, 0.97)', backdropFilter: 'blur(24px)' }}>
                 {toolsDropdown.map((item, i) => (
                   <div key={item.href}>
