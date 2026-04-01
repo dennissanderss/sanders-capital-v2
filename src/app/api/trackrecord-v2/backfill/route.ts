@@ -1,14 +1,14 @@
-// ─── V2 Track Record Backfill API ──────────────────────────
+// ─── V2.1 Track Record Backfill API ─────────────────────────
 // Backfills up to 30 days of historical v2 records using
-// CB rates + simulated news bonus (since historical news
-// sentiment cannot be retroactively fetched).
+// CB rates + simulated news bonus + V2.1 FILTERS:
+//   - Regime determination (safe-haven vs high-yield)
+//   - Regime alignment check (pair direction must match regime)
+//   - Cross-pair contradiction filter
+//   - Historical intermarket data for regime confirmation
+//   - Non-aligned pairs never "sterk"
 //
-// IMPORTANT: Requires a JSONB `metadata` column. Run this SQL:
-//
-//   ALTER TABLE trade_focus_records ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}';
-//
-// Records created by backfill have metadata.newsSimulated = true
-// to distinguish them from live v2 records.
+// DELETE: Clears all v2 backfill records (newsSimulated = true)
+// POST:   Backfills with new filters
 // ────────────────────────────────────────────────────────────
 
 import { createClient } from '@supabase/supabase-js'
@@ -32,6 +32,13 @@ const PAIR_SYMBOLS: Record<string, string> = {
   'GBP/JPY': 'GBPJPY=X',
 }
 
+const INTERMARKET_SYMBOLS: Record<string, string> = {
+  sp500: '%5EGSPC',
+  vix: '%5EVIX',
+  gold: 'GC%3DF',
+  us10y: '%5ETNX',
+}
+
 const PAIRS = [
   'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'NZD/USD',
   'USD/CAD', 'USD/CHF', 'EUR/GBP', 'EUR/JPY', 'GBP/JPY',
@@ -39,7 +46,7 @@ const PAIRS = [
 
 const MAJORS = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'NZD', 'CAD', 'CHF']
 
-// ─── Scoring Functions (same as v1 backfill) ───────────────
+// ─── Scoring Functions ────────────────────────────────────
 function biasScore(bias: string): number {
   const b = (bias || '').toLowerCase()
   if (b.includes('verkrappend') || b.includes('hawkish')) return 2
@@ -60,7 +67,7 @@ function rateTargetScore(rate: number | null, target: number | null): number {
   return 0
 }
 
-// ─── Fetch historical daily closes from Yahoo Finance ──────
+// ─── Fetch historical daily closes ────────────────────────
 async function fetchHistoricalPrices(symbol: string, days: number): Promise<{ date: string; close: number }[]> {
   try {
     const res = await fetch(
@@ -84,26 +91,108 @@ async function fetchHistoricalPrices(symbol: string, days: number): Promise<{ da
   }
 }
 
-// ─── Simulated news bonus ──────────────────────────────────
-// Since we cannot get historical news sentiment, we apply a
-// small deterministic pseudo-random bonus based on the date
-// and currency. This keeps backfilled scores slightly different
-// from v1 (as v2 would be in production) while being honest
-// about the simulation via newsSimulated = true.
+// ─── Simulated news bonus ─────────────────────────────────
 function simulatedNewsBonus(date: string, currency: string): number {
-  // Simple hash from date + currency to get a stable pseudo-random value
   let hash = 0
   const str = `${date}-${currency}`
   for (let i = 0; i < str.length; i++) {
     hash = ((hash << 5) - hash) + str.charCodeAt(i)
-    hash |= 0 // Convert to 32-bit int
+    hash |= 0
   }
-  // Map to range [-0.8, +0.8] -- smaller than live news cap of +-1.5
-  // to reflect that simulated data should be more conservative
   return Math.round(((hash % 100) / 100) * 1.6 * 10 - 8) / 10
 }
 
-// ─── Check if metadata column exists ───────────────────────
+// ─── V2.1: Regime Determination ───────────────────────────
+function determineRegime(scores: Record<string, { total: number }>): string {
+  const usd = scores['USD']?.total || 0
+  const jpy = scores['JPY']?.total || 0
+  const highYieldAvg = (['AUD', 'NZD', 'CAD'] as const)
+    .reduce((sum, c) => sum + (scores[c]?.total || 0), 0) / 3
+
+  if (jpy > 1 && highYieldAvg < 0) return 'Risk-Off'
+  if (highYieldAvg > 1 && jpy < 0) return 'Risk-On'
+  if (usd > 2) return 'USD Dominant'
+  if (usd < -2) return 'USD Zwak'
+  return 'Gemengd'
+}
+
+// ─── V2.1: Is pair aligned with regime? ───────────────────
+function isAlignedWithRegime(base: string, quote: string, isBullish: boolean, regime: string): boolean {
+  const safeHavens = ['JPY', 'CHF']
+  const highYield = ['AUD', 'NZD', 'CAD']
+
+  if (regime === 'Risk-Off') {
+    if (isBullish && safeHavens.includes(base)) return true
+    if (!isBullish && safeHavens.includes(quote)) return true
+    if (!isBullish && highYield.includes(base)) return true
+    if (isBullish && highYield.includes(quote)) return true
+  }
+  if (regime === 'Risk-On') {
+    if (isBullish && highYield.includes(base)) return true
+    if (!isBullish && highYield.includes(quote)) return true
+    if (!isBullish && safeHavens.includes(base)) return true
+    if (isBullish && safeHavens.includes(quote)) return true
+  }
+  if (regime === 'USD Dominant') {
+    if (isBullish && base === 'USD') return true
+    if (!isBullish && quote === 'USD') return true
+  }
+  if (regime === 'USD Zwak') {
+    if (!isBullish && base === 'USD') return true
+    if (isBullish && quote === 'USD') return true
+  }
+  if (regime === 'Gemengd') return true
+  return false
+}
+
+// ─── V2.1: Intermarket alignment for a date ───────────────
+function getIntermarketAlignment(
+  date: string,
+  regime: string,
+  intermarketHistory: Record<string, { date: string; close: number }[]>
+): number {
+  // For each signal, check direction (comparing today vs yesterday)
+  const getDir = (key: string): 'up' | 'down' | 'flat' => {
+    const prices = intermarketHistory[key] || []
+    const idx = prices.findIndex(p => p.date === date)
+    if (idx <= 0) return 'flat'
+    const today = prices[idx].close
+    const yesterday = prices[idx - 1].close
+    if (today > yesterday * 1.001) return 'up'
+    if (today < yesterday * 0.999) return 'down'
+    return 'flat'
+  }
+
+  const sp = getDir('sp500')
+  const vix = getDir('vix')
+  const gold = getDir('gold')
+  const yields = getDir('us10y')
+
+  let aligned = 0
+  let total = 0
+
+  if (regime === 'Risk-Off') {
+    if (sp === 'down') aligned++; total++
+    if (vix === 'up') aligned++; total++
+    if (gold === 'up') aligned++; total++
+    if (yields === 'up') aligned++; total++
+  } else if (regime === 'Risk-On') {
+    if (sp === 'up') aligned++; total++
+    if (vix === 'down') aligned++; total++
+    if (gold === 'down') aligned++; total++
+  } else if (regime === 'USD Dominant') {
+    if (yields === 'up') aligned++; total++
+    if (sp !== 'up') aligned++; total++
+  } else if (regime === 'USD Zwak') {
+    if (yields === 'down') aligned++; total++
+    if (sp === 'up') aligned++; total++
+  }
+
+  if (total === 0) return 50
+  return Math.round((aligned / total) * 100)
+}
+
+// ─── Check metadata column ────────────────────────────────
 async function checkMetadataColumn(): Promise<boolean> {
   try {
     const { error } = await supabase
@@ -116,21 +205,70 @@ async function checkMetadataColumn(): Promise<boolean> {
   }
 }
 
-// ─── POST: Backfill v2 track record ────────────────────────
+// ─── DELETE: Clear all v2 backfill records ─────────────────
+export async function DELETE() {
+  try {
+    // Delete all records where metadata.newsSimulated = true (backfill records)
+    const { data: records, error: fetchError } = await supabase
+      .from('trade_focus_records')
+      .select('id, metadata')
+      .eq('metadata->>source', 'v2')
+
+    if (fetchError) {
+      return NextResponse.json({ error: fetchError.message }, { status: 500 })
+    }
+
+    // Filter to only simulated (backfill) records
+    const backfillIds = (records || [])
+      .filter(r => {
+        const meta = r.metadata as { newsSimulated?: boolean } | null
+        return meta?.newsSimulated === true
+      })
+      .map(r => r.id)
+
+    if (backfillIds.length === 0) {
+      return NextResponse.json({
+        message: 'No backfill records found to delete',
+        deleted: 0,
+      })
+    }
+
+    // Delete in batches
+    let deleted = 0
+    for (let i = 0; i < backfillIds.length; i += 50) {
+      const batch = backfillIds.slice(i, i + 50)
+      const { error } = await supabase
+        .from('trade_focus_records')
+        .delete()
+        .in('id', batch)
+      if (!error) deleted += batch.length
+    }
+
+    return NextResponse.json({
+      message: `Deleted ${deleted} v2 backfill records`,
+      deleted,
+      version: 'v2',
+    })
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
+}
+
+// ─── POST: Backfill v2.1 track record ─────────────────────
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}))
-    const days = Math.min(body.days || 14, 30) // max 30 days for v2
+    const days = Math.min(body.days || 14, 30)
     const hasMetadata = await checkMetadataColumn()
 
     if (!hasMetadata) {
       return NextResponse.json({
-        error: 'metadata column not found on trade_focus_records table. Run: ALTER TABLE trade_focus_records ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT \'{}\';',
+        error: 'metadata column not found. Run: ALTER TABLE trade_focus_records ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT \'{}\';',
         version: 'v2',
       }, { status: 400 })
     }
 
-    // 1. Fetch CB rates from database (relatively stable over backfill period)
+    // 1. Fetch CB rates
     const { data: cbRates } = await supabase
       .from('central_bank_rates')
       .select('currency, bank, rate, target, bias')
@@ -140,7 +278,7 @@ export async function POST(request: Request) {
       ratesMap[r.currency] = { bank: r.bank, rate: r.rate, target: r.target, bias: r.bias }
     }
 
-    // 2. Calculate base currency scores (CB-based, stable over short period)
+    // 2. Base currency scores (CB-based)
     const baseCurrencyScores: Record<string, number> = {}
     for (const ccy of MAJORS) {
       const rate = ratesMap[ccy]
@@ -152,13 +290,13 @@ export async function POST(request: Request) {
       baseCurrencyScores[ccy] = score
     }
 
-    // 3. For each backfill date, calculate pair biases WITH simulated news
+    // 3. Date range
     const today = new Date().toISOString().split('T')[0]
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
     const startDateStr = startDate.toISOString().split('T')[0]
 
-    // 4. Check which dates already have v2 records
+    // 4. Existing records check
     const { data: existingRecords } = await supabase
       .from('trade_focus_records')
       .select('date, pair')
@@ -169,7 +307,7 @@ export async function POST(request: Request) {
       (existingRecords || []).map(r => `${r.date}-${r.pair}`)
     )
 
-    // 5. Fetch historical prices for all pairs
+    // 5. Fetch historical prices for all pairs + intermarket
     const historicalData: Record<string, { date: string; close: number }[]> = {}
     for (const pair of PAIRS) {
       const symbol = PAIR_SYMBOLS[pair]
@@ -178,35 +316,46 @@ export async function POST(request: Request) {
       }
     }
 
-    // 6. Build records for each past day
-    const allRecords: Record<string, unknown>[] = []
+    // 5b. V2.1: Fetch historical intermarket data
+    const intermarketHistory: Record<string, { date: string; close: number }[]> = {}
+    for (const [key, symbol] of Object.entries(INTERMARKET_SYMBOLS)) {
+      intermarketHistory[key] = await fetchHistoricalPrices(symbol, days)
+    }
 
-    // Generate dates array for the backfill period
+    // 6. Build records with V2.1 FILTERS
+    const allRecords: Record<string, unknown>[] = []
     const dates: string[] = []
     for (let d = new Date(startDate); d.toISOString().split('T')[0] < today; d.setDate(d.getDate() + 1)) {
       dates.push(d.toISOString().split('T')[0])
     }
 
+    let filteredByRegime = 0
+    let filteredByContradiction = 0
+    let filteredByIntermarket = 0
+
     for (const date of dates) {
-      // Calculate v2 currency scores for this date (base + simulated news)
+      // Currency scores for this date
       const currencyScores: Record<string, { total: number; base: number; newsBonus: number }> = {}
       for (const ccy of MAJORS) {
         const base = baseCurrencyScores[ccy]
         const newsBonus = simulatedNewsBonus(date, ccy)
-        currencyScores[ccy] = {
-          total: base + newsBonus,
-          base,
-          newsBonus,
-        }
+        currencyScores[ccy] = { total: base + newsBonus, base, newsBonus }
       }
 
-      // Calculate pair biases for this date
+      // Determine regime for this date
+      const regime = determineRegime(currencyScores)
+
+      // V2.1: Check intermarket alignment for this date
+      const intermarketAlignment = getIntermarketAlignment(date, regime, intermarketHistory)
+      const regimeConfirmed = intermarketAlignment >= 65
+      const regimeContradicted = intermarketAlignment <= 35
+
+      // Calculate pair biases
       const pairBiases = PAIRS.map(pair => {
         const [baseCcy, quoteCcy] = pair.split('/')
         const baseTotal = currencyScores[baseCcy]?.total || 0
         const quoteTotal = currencyScores[quoteCcy]?.total || 0
         const diff = baseTotal - quoteTotal
-
         const baseOnly = (currencyScores[baseCcy]?.base || 0) - (currencyScores[quoteCcy]?.base || 0)
         const newsInfluence = Math.round((diff - baseOnly) * 10) / 10
 
@@ -221,26 +370,64 @@ export async function POST(request: Request) {
         else { direction = 'neutraal'; conviction = 'geen' }
 
         return {
-          pair, direction, conviction,
+          pair, baseCcy, quoteCcy, direction, conviction,
           score: +diff.toFixed(2),
           scoreWithoutNews: +baseOnly.toFixed(2),
           newsInfluence,
         }
       }).sort((a, b) => Math.abs(b.score) - Math.abs(a.score))
 
-      // Pick top "sterk" pairs for this date
+      // ─── V2.1 FILTERS ───────────────────────────────────
+      for (const pair of pairBiases) {
+        const isBullish = pair.direction.includes('bullish')
+        const aligned = isAlignedWithRegime(pair.baseCcy, pair.quoteCcy, isBullish, regime)
+
+        // Filter 1: Non-aligned pairs can never be "sterk"
+        if (!aligned && regime !== 'Gemengd' && pair.conviction === 'sterk') {
+          pair.conviction = 'matig'
+          filteredByRegime++
+        }
+
+        // Filter 2: Intermarket contradiction downgrades sterk
+        if (regimeContradicted && pair.conviction === 'sterk') {
+          pair.conviction = 'matig'
+          filteredByIntermarket++
+        }
+
+        // Filter 3: Intermarket confirmation upgrades aligned matig
+        if (regimeConfirmed && pair.conviction === 'matig' && aligned) {
+          pair.conviction = 'sterk'
+        }
+      }
+
+      // Filter 4: Cross-pair contradiction
+      const sterkPairs = pairBiases.filter(p => p.conviction === 'sterk')
+      for (const pair of sterkPairs) {
+        const currencies = pair.pair.split('/')
+        const pairImpliesStrong = pair.direction.includes('bullish') ? currencies[0] : currencies[1]
+        const contradicts = sterkPairs.some(other => {
+          if (other.pair === pair.pair) return false
+          const otherCurrencies = other.pair.split('/')
+          const otherImpliesWeak = other.direction.includes('bullish') ? otherCurrencies[1] : otherCurrencies[0]
+          return pairImpliesStrong === otherImpliesWeak
+        })
+        if (contradicts) {
+          pair.conviction = 'matig'
+          filteredByContradiction++
+        }
+      }
+
+      // Pick top "sterk" pairs after all filters
       const topPairs = pairBiases
         .filter(p => p.conviction === 'sterk')
         .slice(0, 3)
 
       if (topPairs.length === 0) continue
 
-      // Simulated confidence based on how many strong pairs we have
       const simulatedConfidence = Math.min(80, 40 + topPairs.length * 15)
 
       for (const p of topPairs) {
         const prices = historicalData[p.pair] || []
-        // Find the entry price (close of this date) and exit price (close of next trading day)
         const entryIdx = prices.findIndex(px => px.date === date)
         if (entryIdx < 0 || entryIdx >= prices.length - 1) continue
 
@@ -259,17 +446,6 @@ export async function POST(request: Request) {
         if (p.direction.includes('bullish') && priceDiff > 0) result = 'correct'
         if (p.direction.includes('bearish') && priceDiff < 0) result = 'correct'
 
-        const metadata = {
-          source: 'v2' as const,
-          scoreWithoutNews: p.scoreWithoutNews,
-          newsInfluence: p.newsInfluence,
-          confidence: simulatedConfidence,
-          newsHeadlines: [] as string[], // No historical headlines available
-          entryTime: `${date}T16:00:00.000Z`, // Simulated: 4pm UTC entry
-          exitTime: `${exitDate}T16:00:00.000Z`, // Simulated: 4pm UTC exit
-          newsSimulated: true,
-        }
-
         allRecords.push({
           date,
           pair: p.pair,
@@ -279,15 +455,25 @@ export async function POST(request: Request) {
           entry_price: entryPrice,
           exit_price: exitPrice,
           pips_moved: pips * (result === 'correct' ? 1 : -1),
-          regime: 'Backfill V2',
+          regime,
           result,
           resolved_at: new Date().toISOString(),
-          metadata,
+          metadata: {
+            source: 'v2' as const,
+            scoreWithoutNews: p.scoreWithoutNews,
+            newsInfluence: p.newsInfluence,
+            confidence: simulatedConfidence,
+            intermarketAlignment,
+            newsHeadlines: [] as string[],
+            entryTime: `${date}T16:00:00.000Z`,
+            exitTime: `${exitDate}T16:00:00.000Z`,
+            newsSimulated: true,
+          },
         })
       }
     }
 
-    // 7. Deduplicate (same date + pair)
+    // 7. Deduplicate
     const insertKeys = new Set<string>()
     const deduped = allRecords.filter(r => {
       const key = `${r.date}-${r.pair}`
@@ -306,13 +492,13 @@ export async function POST(request: Request) {
       }
     }
 
-    // 8. Calculate quick stats on what was backfilled
+    // 8. Stats
     const correctCount = deduped.filter(r => r.result === 'correct').length
     const totalCount = deduped.length
 
     return NextResponse.json({
-      version: 'v2',
-      message: `Backfilled ${deduped.length} v2 records over ${days} days`,
+      version: 'v2.1',
+      message: `Backfilled ${deduped.length} v2.1 records over ${days} days`,
       records: deduped.length,
       skippedExisting: existingKeys.size,
       stats: {
@@ -321,7 +507,13 @@ export async function POST(request: Request) {
         incorrect: totalCount - correctCount,
         winRate: totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0,
       },
-      note: 'All backfilled records have metadata.newsSimulated = true since historical news sentiment is not available.',
+      filters: {
+        filteredByRegimeAlignment: filteredByRegime,
+        filteredByIntermarket: filteredByIntermarket,
+        filteredByContradiction: filteredByContradiction,
+        totalFiltered: filteredByRegime + filteredByIntermarket + filteredByContradiction,
+      },
+      note: 'V2.1 backfill with regime alignment, intermarket confirmation, and cross-pair contradiction filters.',
     })
   } catch (e) {
     return NextResponse.json({ error: String(e), version: 'v2' }, { status: 500 })
