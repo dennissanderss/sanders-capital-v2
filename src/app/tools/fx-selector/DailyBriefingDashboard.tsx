@@ -456,19 +456,51 @@ export default function DailyBriefingDashboard() {
                 </svg>
                 <span className="text-xs font-semibold text-heading tracking-wide uppercase">High Impact Vandaag &amp; Morgen</span>
               </div>
-              <div className="px-4 py-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
-                {data.todayEvents.map((evt, i) => (
-                  <div key={i} className="flex items-center gap-1.5 text-xs">
-                    <span className="text-sm leading-none">{flagEmoji(evt.flag)}</span>
-                    <span className="font-mono font-bold text-heading">{evt.time}</span>
-                    <span className="text-text-muted">{evt.title}</span>
-                    {evt.forecast && (
-                      <span className="text-text-dim">
-                        ({evt.forecast}{evt.previous ? ` / vorig ${evt.previous}` : ''})
-                      </span>
-                    )}
-                  </div>
-                ))}
+              <div className="px-4 py-2.5 space-y-2">
+                {/* Group by today / tomorrow */}
+                {(() => {
+                  const todayStr = new Date().toISOString().split('T')[0]
+                  const todayEvts = data.todayEvents.filter(e => (e.date?.split('T')[0] || '') === todayStr)
+                  const tomorrowEvts = data.todayEvents.filter(e => (e.date?.split('T')[0] || '') !== todayStr)
+                  return (
+                    <>
+                      {todayEvts.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-accent-light bg-accent/10 px-2 py-0.5 rounded">Vandaag</span>
+                          {todayEvts.map((evt, i) => (
+                            <div key={i} className="flex items-center gap-1.5 text-xs">
+                              <span className="text-sm leading-none">{flagEmoji(evt.flag)}</span>
+                              <span className="font-mono font-bold text-heading">{evt.time}</span>
+                              <span className="text-text-muted">{evt.title}</span>
+                              {evt.forecast && (
+                                <span className="text-text-dim">
+                                  ({evt.forecast}{evt.previous ? ` / vorig ${evt.previous}` : ''})
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {tomorrowEvts.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-text-dim bg-white/[0.04] px-2 py-0.5 rounded">Morgen</span>
+                          {tomorrowEvts.map((evt, i) => (
+                            <div key={i} className="flex items-center gap-1.5 text-xs">
+                              <span className="text-sm leading-none">{flagEmoji(evt.flag)}</span>
+                              <span className="font-mono font-bold text-heading">{evt.time}</span>
+                              <span className="text-text-muted">{evt.title}</span>
+                              {evt.forecast && (
+                                <span className="text-text-dim">
+                                  ({evt.forecast}{evt.previous ? ` / vorig ${evt.previous}` : ''})
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
             </div>
           )}
