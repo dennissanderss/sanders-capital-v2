@@ -827,17 +827,21 @@ export default function DailyBriefingDashboard() {
                   title="Trade Focus"
                   subtitle="De sterkste divergenties vertaald naar concrete paren. Zoek hier je structure breaks."
                 />
-                {/* Track record link */}
+                {/* Track record toggle */}
                 <button
                   onClick={() => setShowTrackRecord(!showTrackRecord)}
-                  className="flex items-center gap-1.5 text-xs text-accent-light/70 hover:text-accent-light transition-colors shrink-0"
+                  className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                    showTrackRecord
+                      ? 'bg-accent/15 border-accent/30 text-accent-light'
+                      : 'bg-accent/[0.06] border-accent/15 text-accent-light/80 hover:bg-accent/10 hover:border-accent/25'
+                  }`}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                   </svg>
-                  Trackrecord
+                  <span className="font-semibold">Trackrecord bekijken</span>
                   {trackStats.total > 0 && (
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
                       trackStats.winRate >= 60 ? 'bg-green-500/15 text-green-400' :
                       trackStats.winRate >= 40 ? 'bg-amber-500/15 text-amber-400' :
                       'bg-red-500/15 text-red-400'
@@ -845,6 +849,11 @@ export default function DailyBriefingDashboard() {
                       {trackStats.winRate}%
                     </span>
                   )}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                    className={`transition-transform duration-200 ${showTrackRecord ? 'rotate-180' : ''}`}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
                 </button>
               </div>
 
@@ -852,10 +861,9 @@ export default function DailyBriefingDashboard() {
               {showTrackRecord && (
                 <div className="mb-5 rounded-xl border border-accent/20 overflow-hidden">
                   <div className="px-5 py-3 bg-gradient-to-r from-accent/10 to-accent/5 border-b border-accent/20">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-2.5">
                       <div>
-                        <p className="text-xs text-text-dim uppercase tracking-wider">Trade Focus Trackrecord</p>
-                        <p className="text-[10px] text-text-dim mt-0.5">Laatste 30 dagen — daily close → daily close. Alleen sterke overtuiging.</p>
+                        <p className="text-xs text-heading font-semibold uppercase tracking-wider">Trade Focus Trackrecord</p>
                       </div>
                       {trackStats.total > 0 && (
                         <div className="text-right">
@@ -866,6 +874,12 @@ export default function DailyBriefingDashboard() {
                           <p className="text-[10px] text-text-dim">win rate</p>
                         </div>
                       )}
+                    </div>
+                    {/* Explanation block */}
+                    <div className="text-[11px] text-text-muted leading-relaxed space-y-1 bg-white/[0.03] rounded-lg px-3 py-2.5 border border-white/[0.05]">
+                      <p><strong className="text-heading">Wat meten we?</strong> Het model berekent per valutapaar een score op basis van centrale-bank beleid (rente, bias, targets). Alleen paren met <span className="text-accent-light font-semibold">sterke overtuiging</span> (score ≥ 3.5 of ≤ −3.5) worden bijgehouden.</p>
+                      <p><strong className="text-heading">Hoe?</strong> De <span className="text-accent-light">entry price</span> is de sluiting van de daily candle op de dag van de call. De <span className="text-accent-light">exit price</span> is de sluiting van de volgende daily candle. Bewoog de prijs in de richting van de call → <span className="text-green-400">correct</span>. Tegen de richting → <span className="text-red-400">incorrect</span>.</p>
+                      <p className="text-text-dim text-[10px]">Laatste 30 dagen · Daily close → daily close · Dit meet de fundamentele bias — niet je entry of structure break.</p>
                     </div>
                   </div>
                   <div className="px-5 py-4 bg-bg-card">
