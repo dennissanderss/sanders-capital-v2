@@ -17,6 +17,18 @@ interface NewsArticle {
   relevanceTags: string[]
   affectedCurrencies: string[]
   relevanceContext: string
+  hasTranslation?: boolean
+}
+
+// Helper: get the best available title/summary for display language
+function getDisplayTitle(article: NewsArticle, dutch: boolean): string {
+  if (dutch && article.titleNl) return article.titleNl
+  return article.title
+}
+
+function getDisplaySummary(article: NewsArticle, dutch: boolean): string {
+  if (dutch && article.summaryNl) return article.summaryNl
+  return article.summary
 }
 
 interface FxRate {
@@ -331,7 +343,10 @@ export default function NieuwsContent() {
             {/* Reader content */}
             <div className="px-6 py-6">
               <h2 className="text-xl font-display font-semibold text-heading mb-3 leading-snug">
-                {showDutch ? selectedArticle.titleNl : selectedArticle.title}
+                {getDisplayTitle(selectedArticle, showDutch)}
+                {showDutch && !selectedArticle.titleNl && (
+                  <span className="ml-2 text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400/60 font-normal align-middle">Vertaling niet beschikbaar</span>
+                )}
               </h2>
 
               {/* Relevance context */}
@@ -358,7 +373,7 @@ export default function NieuwsContent() {
 
               {/* Article text */}
               <div className="text-sm text-text leading-relaxed whitespace-pre-line">
-                {showDutch ? selectedArticle.summaryNl : selectedArticle.summary}
+                {getDisplaySummary(selectedArticle, showDutch)}
               </div>
 
               {selectedArticle.fullContent && selectedArticle.fullContent.length > selectedArticle.summary.length + 50 && (
@@ -622,13 +637,16 @@ export default function NieuwsContent() {
 
                         {/* Title */}
                         <h3 className="text-sm sm:text-base font-semibold text-heading group-hover:text-accent-light transition-colors leading-snug mb-1">
-                          {showDutch ? (article.titleNl || article.title) : article.title}
+                          {getDisplayTitle(article, showDutch)}
+                          {showDutch && !article.titleNl && (
+                            <span className="ml-1.5 text-[8px] px-1 py-0.5 rounded bg-amber-500/10 text-amber-400/60 font-normal align-middle">EN</span>
+                          )}
                         </h3>
 
                         {/* Summary */}
                         {article.summary && (
                           <p className="text-xs sm:text-sm text-text-muted line-clamp-2 leading-relaxed mb-1.5">
-                            {showDutch ? (article.summaryNl || article.summary) : article.summary}
+                            {getDisplaySummary(article, showDutch)}
                           </p>
                         )}
 

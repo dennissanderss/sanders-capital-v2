@@ -80,18 +80,51 @@ export default function LanguageSelector() {
     injectHideBarCSS()
 
     if (langCode === 'nl') {
-      // Reset to original: remove Google Translate cookie & reload
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + window.location.hostname
-      window.location.reload()
+      // Reset to original: remove ALL possible Google Translate cookies
+      const hostname = window.location.hostname
+      const paths = ['/', '']
+      const domains = ['', '.' + hostname, hostname]
+      const expires = 'expires=Thu, 01 Jan 1970 00:00:00 UTC'
+      for (const path of paths) {
+        for (const domain of domains) {
+          const domainStr = domain ? `; domain=${domain}` : ''
+          const pathStr = path ? `; path=${path}` : ''
+          document.cookie = `googtrans=${expires}${pathStr}${domainStr}`
+        }
+      }
+      // Also try to reset via the Google Translate combo box first
+      const select = document.querySelector('.goog-te-combo') as HTMLSelectElement
+      if (select) {
+        select.value = 'nl'
+        select.dispatchEvent(new Event('change'))
+      }
+      // Force a clean reload after a tiny delay so Google processes the reset
+      setTimeout(() => window.location.reload(), 100)
       return
     }
 
-    const select = document.querySelector('.goog-te-combo') as HTMLSelectElement
-    if (select) {
-      select.value = langCode
-      select.dispatchEvent(new Event('change'))
+    // Ensure Google Translate is initialized before trying to set
+    if (!loaded) {
+      initTranslate()
+      // Wait for script to load, then retry
+      const interval = setInterval(() => {
+        const select = document.querySelector('.goog-te-combo') as HTMLSelectElement
+        if (select) {
+          clearInterval(interval)
+          select.value = langCode
+          select.dispatchEvent(new Event('change'))
+        }
+      }, 200)
+      // Give up after 5s
+      setTimeout(() => clearInterval(interval), 5000)
+    } else {
+      const select = document.querySelector('.goog-te-combo') as HTMLSelectElement
+      if (select) {
+        select.value = langCode
+        select.dispatchEvent(new Event('change'))
+      }
     }
+
     setActiveLang(langCode)
     setOpen(false)
 
@@ -99,15 +132,19 @@ export default function LanguageSelector() {
     setTimeout(injectHideBarCSS, 100)
     setTimeout(injectHideBarCSS, 500)
     setTimeout(injectHideBarCSS, 1500)
+    setTimeout(injectHideBarCSS, 3000)
   }
 
   // Check current language from cookie on mount
   useEffect(() => {
-    const match = document.cookie.match(/googtrans=\/nl\/(\w+)/)
-    if (match) {
+    // Google Translate cookie can be in format: /nl/en or /auto/en or just /en
+    const match = document.cookie.match(/googtrans=\/[^/]*\/([a-z-]+)/i)
+      || document.cookie.match(/googtrans=\/([a-z-]+)/i)
+    if (match && match[1] && match[1] !== 'nl') {
       setActiveLang(match[1])
       injectHideBarCSS()
     }
+    // If no googtrans cookie or it's nl, keep default 'nl'
   }, [])
 
   // Close on click outside

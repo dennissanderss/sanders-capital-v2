@@ -214,12 +214,26 @@ async function fetchAndStoreFeeds(): Promise<void> {
   }
 
   // Translate new articles that don't have translations yet
-  const { data: untranslated } = await supabase
+  // Also retry articles where title_nl = title (translation might have failed silently)
+  const { data: untranslatedNull } = await supabase
     .from('news_articles')
     .select('id, title, summary, full_content')
     .is('title_nl', null)
     .order('published_at', { ascending: false })
-    .limit(30)
+    .limit(20)
+
+  // Also find articles where title_nl equals title (English = not actually translated)
+  const { data: untranslatedSame } = await supabase
+    .from('news_articles')
+    .select('id, title, summary, full_content')
+    .not('title_nl', 'is', null)
+    .order('published_at', { ascending: false })
+    .limit(50)
+
+  // Filter to only those where title_nl === title (failed translations)
+  const failedTranslations = (untranslatedSame || []).filter(a => a.title_nl === a.title).slice(0, 10)
+
+  const untranslated = [...(untranslatedNull || []), ...failedTranslations]
 
   if (untranslated && untranslated.length > 0) {
     const titles = untranslated.map(a => a.title)
@@ -288,9 +302,9 @@ export async function GET(request: Request) {
     const mapped = (articles || []).map(a => ({
       id: a.id,
       title: a.title,
-      titleNl: a.title_nl || a.title,
+      titleNl: a.title_nl || '',  // Keep empty if not translated — don't fallback to English
       summary: a.summary || '',
-      summaryNl: a.summary_nl || a.summary || '',
+      summaryNl: a.summary_nl || '',  // Keep empty if not translated
       fullContent: a.full_content || '',
       url: a.url,
       source: a.source,
@@ -300,6 +314,7 @@ export async function GET(request: Request) {
       relevanceTags: a.relevance_tags || [],
       affectedCurrencies: a.affected_currencies || [],
       relevanceContext: a.relevance_context || '',
+      hasTranslation: !!(a.title_nl && a.title_nl !== a.title),  // True only if actually translated
     }))
 
     return NextResponse.json({ articles: mapped, fetchedAt: new Date().toISOString() })
