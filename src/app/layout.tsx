@@ -47,8 +47,12 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/assets/images/logo.png',
+    icon: [
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/assets/images/logo.png', type: 'image/png', sizes: '512x512' },
+    ],
     apple: '/assets/images/logo.png',
+    shortcut: '/favicon.png',
   },
   openGraph: {
     title: 'Sanders Capital | Kennis. Discipline. Groei.',

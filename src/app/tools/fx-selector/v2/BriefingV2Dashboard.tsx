@@ -404,6 +404,8 @@ export default function BriefingV2Dashboard() {
   const [trackRecords, setTrackRecords] = useState<TrackRecord[]>([])
   const [trackStats, setTrackStats] = useState<TrackStats>({ total: 0, correct: 0, incorrect: 0, pending: 0, winRate: 0, startDate: null })
   const [showTrackRecord, setShowTrackRecord] = useState(false)
+  const [expandedCurrency, setExpandedCurrency] = useState<string | null>(null)
+  const [expandedSentiment, setExpandedSentiment] = useState<string | null>(null)
   const [expandedPairs, setExpandedPairs] = useState<Set<string>>(new Set())
   const [backfilling, setBackfilling] = useState(false)
   const [backfillMsg, setBackfillMsg] = useState<string | null>(null)
@@ -617,52 +619,66 @@ export default function BriefingV2Dashboard() {
                 </div>
                 <p className="text-xs text-text-muted leading-relaxed mt-3">{data.regimeExplain}</p>
 
-                {/* Educational: Why is this risk-on/off? */}
-                <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                  <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider mb-2">Waarom Risk-On of Risk-Off?</p>
-                  {data.regime === 'Risk-Off' && (
-                    <p className="text-[11px] text-text-dim leading-relaxed">
-                      In een <strong className="text-red-400">Risk-Off</strong> omgeving zijn beleggers bang voor economische onzekerheid. Ze verkopen risicovolle beleggingen (aandelen, high-yield valuta&apos;s zoals AUD, NZD, CAD) en vluchten naar &quot;veilige havens&quot; (JPY, CHF, goud, staatsobligaties). Dit gebeurt wanneer centrale banken van veilige-haven landen een hawkish beleid voeren of wanneer er geopolitieke spanningen zijn. Het resultaat: JPY en CHF worden sterker, AUD en NZD worden zwakker.
-                    </p>
-                  )}
-                  {data.regime === 'Risk-On' && (
-                    <p className="text-[11px] text-text-dim leading-relaxed">
-                      In een <strong className="text-green-400">Risk-On</strong> omgeving hebben beleggers vertrouwen in de economie. Ze kopen risicovolle beleggingen (aandelen, high-yield valuta&apos;s) omdat die hogere rendementen bieden. Valuta&apos;s van landen met hoge rentes (AUD, NZD, CAD) worden sterker doordat beleggers &quot;carry trades&quot; openen: ze lenen in een lage-rente valuta (JPY) en beleggen in een hoge-rente valuta. Het resultaat: AUD, NZD en CAD stijgen, JPY daalt.
-                    </p>
-                  )}
-                  {data.regime === 'USD Dominant' && (
-                    <p className="text-[11px] text-text-dim leading-relaxed">
-                      De <strong className="text-blue-400">USD domineert</strong> wanneer de Federal Reserve een strak (hawkish) beleid voert. Hogere rentes in de VS trekken internationaal kapitaal aan, want beleggers krijgen meer rendement op USD-obligaties. Dit maakt de dollar sterker tegen bijna alle andere valuta&apos;s. Daarnaast fungeert de dollar als veilige haven in tijden van onzekerheid, wat de dominantie versterkt.
-                    </p>
-                  )}
-                  {data.regime === 'USD Zwak' && (
-                    <p className="text-[11px] text-text-dim leading-relaxed">
-                      De <strong className="text-amber-400">USD is zwak</strong> wanneer de markt verwacht dat de Fed de rente gaat verlagen (dovish signalen). Lagere rentes maken USD-obligaties minder aantrekkelijk, waardoor kapitaal wegstroomt naar valuta&apos;s met betere rendementen. Andere valuta&apos;s worden relatief sterker, vooral die van landen waar de centrale bank juist hawkish is.
-                    </p>
-                  )}
-                  {data.regime === 'Gemengd' && (
-                    <p className="text-[11px] text-text-dim leading-relaxed">
-                      Een <strong className="text-text-muted">gemengd</strong> regime betekent dat er geen duidelijke richting is. De fundamentele scores van safe-haven en high-yield valuta&apos;s liggen dicht bij elkaar. Dit kan komen doordat centrale banken vergelijkbaar beleid voeren, of doordat tegenstrijdige factoren (bijv. hawkish Fed maar ook sterke Australische economie) elkaar opheffen. In deze situatie focussen we op individuele paar-divergenties.
-                    </p>
-                  )}
-                </div>
+                {/* Educational: Why is this risk-on/off? — COLLAPSIBLE */}
+                <details className="mt-3 group">
+                  <summary className="flex items-center gap-2 text-[11px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                    Waarom is dit {data.regime}?
+                  </summary>
+                  <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                    {data.regime === 'Risk-Off' && (
+                      <p className="text-[11px] text-text-dim leading-relaxed">
+                        In een <strong className="text-red-400">Risk-Off</strong> omgeving zijn beleggers bang voor economische onzekerheid. Ze verkopen risicovolle beleggingen (aandelen, high-yield valuta&apos;s zoals AUD, NZD, CAD) en vluchten naar &quot;veilige havens&quot; (JPY, CHF, goud, staatsobligaties). Dit gebeurt wanneer centrale banken van veilige-haven landen een hawkish beleid voeren of wanneer er geopolitieke spanningen zijn. Het resultaat: JPY en CHF worden sterker, AUD en NZD worden zwakker.
+                      </p>
+                    )}
+                    {data.regime === 'Risk-On' && (
+                      <p className="text-[11px] text-text-dim leading-relaxed">
+                        In een <strong className="text-green-400">Risk-On</strong> omgeving hebben beleggers vertrouwen in de economie. Ze kopen risicovolle beleggingen (aandelen, high-yield valuta&apos;s) omdat die hogere rendementen bieden. Valuta&apos;s van landen met hoge rentes (AUD, NZD, CAD) worden sterker doordat beleggers &quot;carry trades&quot; openen: ze lenen in een lage-rente valuta (JPY) en beleggen in een hoge-rente valuta. Het resultaat: AUD, NZD en CAD stijgen, JPY daalt.
+                      </p>
+                    )}
+                    {data.regime === 'USD Dominant' && (
+                      <p className="text-[11px] text-text-dim leading-relaxed">
+                        De <strong className="text-blue-400">USD domineert</strong> wanneer de Federal Reserve een strak (hawkish) beleid voert. Hogere rentes in de VS trekken internationaal kapitaal aan, want beleggers krijgen meer rendement op USD-obligaties. Dit maakt de dollar sterker tegen bijna alle andere valuta&apos;s. Daarnaast fungeert de dollar als veilige haven in tijden van onzekerheid, wat de dominantie versterkt.
+                      </p>
+                    )}
+                    {data.regime === 'USD Zwak' && (
+                      <p className="text-[11px] text-text-dim leading-relaxed">
+                        De <strong className="text-amber-400">USD is zwak</strong> wanneer de markt verwacht dat de Fed de rente gaat verlagen (dovish signalen). Lagere rentes maken USD-obligaties minder aantrekkelijk, waardoor kapitaal wegstroomt naar valuta&apos;s met betere rendementen. Andere valuta&apos;s worden relatief sterker, vooral die van landen waar de centrale bank juist hawkish is.
+                      </p>
+                    )}
+                    {data.regime === 'Gemengd' && (
+                      <p className="text-[11px] text-text-dim leading-relaxed">
+                        Een <strong className="text-text-muted">gemengd</strong> regime betekent dat er geen duidelijke richting is. De fundamentele scores van safe-haven en high-yield valuta&apos;s liggen dicht bij elkaar. Dit kan komen doordat centrale banken vergelijkbaar beleid voeren, of doordat tegenstrijdige factoren (bijv. hawkish Fed maar ook sterke Australische economie) elkaar opheffen. In deze situatie focussen we op individuele paar-divergenties.
+                      </p>
+                    )}
+                  </div>
+                </details>
               </div>
 
-              {/* Currency Strength Ranking */}
+              {/* Currency Strength Ranking — CLICKABLE for score breakdown */}
               {data.currencyRanking && data.currencyRanking.length > 0 && (
                 <div className="px-5 sm:px-6 py-4 border-t border-white/[0.06]">
-                  <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider mb-3">Valuta Sterkte: van sterk naar zwak</p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider">Valuta Sterkte: van sterk naar zwak</p>
+                    <span className="text-[8px] text-text-dim/50">(klik voor detail)</span>
+                  </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {data.currencyRanking.map((ccy, i) => {
                       const isStrong = ccy.score > 1
                       const isWeak = ccy.score < -1
+                      const isExpanded = expandedCurrency === ccy.currency
                       return (
-                        <div
+                        <button
                           key={ccy.currency}
-                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs ${
-                            isStrong ? 'bg-green-500/[0.08] border-green-500/20 text-green-400' :
-                            isWeak ? 'bg-red-500/[0.08] border-red-500/20 text-red-400' :
-                            'bg-white/[0.03] border-border text-text-dim'
+                          onClick={() => setExpandedCurrency(isExpanded ? null : ccy.currency)}
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all cursor-pointer ${
+                            isExpanded ? 'ring-1 ring-accent/40 ' : ''
+                          }${
+                            isStrong ? 'bg-green-500/[0.08] border-green-500/20 text-green-400 hover:bg-green-500/[0.12]' :
+                            isWeak ? 'bg-red-500/[0.08] border-red-500/20 text-red-400 hover:bg-red-500/[0.12]' :
+                            'bg-white/[0.03] border-border text-text-dim hover:bg-white/[0.06]'
                           }`}
                         >
                           <span className="font-bold text-heading text-[11px]">{i + 1}.</span>
@@ -670,10 +686,67 @@ export default function BriefingV2Dashboard() {
                           <span className="font-mono text-[10px]">
                             {ccy.score > 0 ? '+' : ''}{ccy.score.toFixed(1)}
                           </span>
-                        </div>
+                        </button>
                       )
                     })}
                   </div>
+                  {/* Expanded score breakdown */}
+                  {expandedCurrency && (() => {
+                    const ccy = data.currencyRanking.find(c => c.currency === expandedCurrency)
+                    if (!ccy) return null
+                    return (
+                      <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] animate-in fade-in duration-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-semibold text-heading">{ccy.currency} — Score Opbouw</p>
+                          <button onClick={() => setExpandedCurrency(null)} className="text-text-dim hover:text-heading">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                          </button>
+                        </div>
+                        <div className="space-y-1.5">
+                          {/* CB Bias */}
+                          <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-white/[0.02]">
+                            <span className="text-text-dim">CB Beleid ({ccy.bank || '—'}): <span className="text-text-muted">{ccy.bias || 'onbekend'}</span></span>
+                            <span className={`font-mono font-bold ${ccy.baseScore > 0 ? 'text-green-400' : ccy.baseScore < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                              {ccy.baseScore > 0 ? '+' : ''}{ccy.baseScore.toFixed(1)}
+                            </span>
+                          </div>
+                          {/* Rate vs Target */}
+                          {ccy.rate !== null && (
+                            <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-white/[0.02]">
+                              <span className="text-text-dim">Rente: <span className="text-text-muted">{ccy.rate}%</span></span>
+                              <span className="text-[10px] text-text-dim">(onderdeel van basis score)</span>
+                            </div>
+                          )}
+                          {/* News bonus */}
+                          {ccy.newsBonus !== 0 && (
+                            <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-white/[0.02]">
+                              <span className="text-text-dim">Nieuws sentiment bonus</span>
+                              <span className={`font-mono font-bold ${ccy.newsBonus > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                {ccy.newsBonus > 0 ? '+' : ''}{ccy.newsBonus.toFixed(1)}
+                              </span>
+                            </div>
+                          )}
+                          {/* Total */}
+                          <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-accent/5 border border-accent/10 font-semibold">
+                            <span className="text-text-muted">Totaal</span>
+                            <span className={`font-mono font-bold ${ccy.score > 0 ? 'text-green-400' : ccy.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                              {ccy.score > 0 ? '+' : ''}{ccy.score.toFixed(1)}
+                            </span>
+                          </div>
+                          {/* Explanation */}
+                          {ccy.reasons && ccy.reasons.length > 0 && (
+                            <div className="mt-1 space-y-0.5">
+                              {ccy.reasons.map((r, ri) => (
+                                <p key={ri} className="text-[10px] text-text-dim flex items-start gap-1">
+                                  <span className="text-accent-light shrink-0">&rsaquo;</span> {r}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
 
@@ -807,21 +880,76 @@ export default function BriefingV2Dashboard() {
                   {MAJORS.map(ccy => {
                     const s = data.newsSentiment?.[ccy]
                     const score = s?.score || 0
+                    const isExpSentiment = expandedSentiment === ccy
                     return (
-                      <div key={ccy} className={`text-center p-2.5 rounded-xl border transition-all ${
-                        score > 0 ? 'bg-green-500/[0.06] border-green-500/15' :
-                        score < 0 ? 'bg-red-500/[0.06] border-red-500/15' :
-                        'bg-white/[0.02] border-white/[0.06]'
-                      }`}>
+                      <button
+                        key={ccy}
+                        onClick={() => setExpandedSentiment(isExpSentiment ? null : ccy)}
+                        className={`text-center p-2.5 rounded-xl border transition-all cursor-pointer ${
+                          isExpSentiment ? 'ring-1 ring-accent/40 ' : ''
+                        }${
+                          score > 0 ? 'bg-green-500/[0.06] border-green-500/15 hover:bg-green-500/[0.1]' :
+                          score < 0 ? 'bg-red-500/[0.06] border-red-500/15 hover:bg-red-500/[0.1]' :
+                          'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]'
+                        }`}
+                      >
                         <p className="text-xs font-bold text-heading mb-1">{ccy}</p>
                         <p className={`text-sm font-mono font-bold ${score > 0 ? 'text-green-400' : score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                           {score > 0 ? '+' : ''}{score}
                         </p>
                         <p className="text-[9px] text-text-dim mt-0.5">{s?.sentiment || 'neutraal'}</p>
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
+                {/* Expanded sentiment detail */}
+                {expandedSentiment && (() => {
+                  const s = data.newsSentiment?.[expandedSentiment]
+                  const ccyRank = data.currencyRanking.find(c => c.currency === expandedSentiment)
+                  if (!s) return null
+                  return (
+                    <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold text-heading">{expandedSentiment} — Nieuws Sentiment Detail</p>
+                        <button onClick={() => setExpandedSentiment(null)} className="text-text-dim hover:text-heading">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3 text-[11px]">
+                          <span className="text-text-dim">Sentiment score:</span>
+                          <span className={`font-mono font-bold ${s.score > 0 ? 'text-green-400' : s.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                            {s.score > 0 ? '+' : ''}{s.score}
+                          </span>
+                          <span className="text-text-dim/60">→</span>
+                          <span className="text-text-muted">{s.sentiment}</span>
+                        </div>
+                        {ccyRank && ccyRank.newsBonus !== 0 && (
+                          <div className="flex items-center gap-3 text-[11px]">
+                            <span className="text-text-dim">Toegepaste bonus (max &plusmn;1.5):</span>
+                            <span className={`font-mono font-bold ${ccyRank.newsBonus > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {ccyRank.newsBonus > 0 ? '+' : ''}{ccyRank.newsBonus.toFixed(1)}
+                            </span>
+                          </div>
+                        )}
+                        {s.headlines && s.headlines.length > 0 && (
+                          <div className="mt-1">
+                            <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Relevante headlines:</p>
+                            {s.headlines.map((h, hi) => (
+                              <p key={hi} className="text-[10px] text-text-muted leading-relaxed flex items-start gap-1">
+                                <span className="text-accent-light shrink-0">&rsaquo;</span> {h}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-[9px] text-text-dim/60 leading-relaxed">
+                          De score wordt berekend op basis van bullish/bearish keywords in recente nieuwsartikelen,
+                          gewogen naar relevantie en hoe recent het artikel is. De bonus wordt gecapt op &plusmn;1.5 om ruis te beperken.
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {/* News boosted / penalized currencies */}
                 {(() => {
@@ -1361,21 +1489,62 @@ export default function BriefingV2Dashboard() {
                   Hoe worden de trade focus paren geselecteerd?
                 </summary>
                 <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                  <div className="space-y-2 text-[10px] text-text-dim leading-relaxed">
+                  <div className="space-y-3 text-[10px] text-text-dim leading-relaxed">
                     <p>
-                      De trade focus paren worden geselecteerd op basis van <strong className="text-accent-light">fundamentele divergentie</strong> tussen de base en quote valuta.
+                      Een valutapaar zoals <strong className="text-text-muted">EUR/USD</strong> bestaat uit twee valuta&apos;s: de <strong className="text-accent-light">base</strong> (EUR, links) en de <strong className="text-accent-light">quote</strong> (USD, rechts). Als je EUR/USD koopt (LONG), koop je EUR en verkoop je USD.
                     </p>
+
+                    {/* Visual example */}
+                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                      <p className="text-[10px] font-semibold text-text-muted mb-2">Voorbeeld berekening:</p>
+                      <div className="flex items-center justify-center gap-2 text-xs mb-2">
+                        <div className="p-2 rounded bg-green-500/10 border border-green-500/15 text-center">
+                          <p className="text-[9px] text-text-dim">Base (EUR)</p>
+                          <p className="text-sm font-mono font-bold text-green-400">+3.0</p>
+                          <p className="text-[8px] text-text-dim">hawkish ECB</p>
+                        </div>
+                        <span className="text-lg text-text-dim font-mono">&minus;</span>
+                        <div className="p-2 rounded bg-red-500/10 border border-red-500/15 text-center">
+                          <p className="text-[9px] text-text-dim">Quote (USD)</p>
+                          <p className="text-sm font-mono font-bold text-red-400">&minus;1.0</p>
+                          <p className="text-[8px] text-text-dim">dovish Fed</p>
+                        </div>
+                        <span className="text-lg text-text-dim font-mono">=</span>
+                        <div className="p-2 rounded bg-accent/10 border border-accent/20 text-center">
+                          <p className="text-[9px] text-text-dim">Paar Score</p>
+                          <p className="text-sm font-mono font-bold text-accent-light">+4.0</p>
+                          <p className="text-[8px] text-green-400">bullish</p>
+                        </div>
+                      </div>
+                      <p className="text-[9px] text-text-dim text-center">
+                        EUR is fundamenteel sterker dan USD &rarr; EUR/USD zou moeten stijgen &rarr; <strong className="text-green-400">LONG</strong>
+                      </p>
+                    </div>
+
                     <p>
-                      Voor elk valutapaar wordt de score berekend als: <span className="font-mono text-text-muted">base_score - quote_score</span>.
-                      Een hoge positieve score betekent dat de base valuta fundamenteel veel sterker is dan de quote valuta (bullish bias).
-                      Een hoge negatieve score betekent het omgekeerde (bearish bias).
+                      <strong className="text-text-muted">Elke valuta krijgt een score</strong> op basis van: (1) het beleid van de centrale bank (hawkish = positief, dovish = negatief), (2) de huidige rente t.o.v. het target, en (3) recent nieuws sentiment (max &plusmn;1.5 bonus).
                     </p>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
+                        <p className="text-accent-light font-semibold text-[10px]">Sterk</p>
+                        <p className="text-[9px]">Score &ge; 3.5</p>
+                        <p className="text-[8px] text-text-dim">Wordt getrackt</p>
+                      </div>
+                      <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
+                        <p className="text-text-muted font-semibold text-[10px]">Matig</p>
+                        <p className="text-[9px]">Score &ge; 2.0</p>
+                        <p className="text-[8px] text-text-dim">Getoond</p>
+                      </div>
+                      <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
+                        <p className="text-text-dim font-semibold text-[10px]">Laag</p>
+                        <p className="text-[9px]">Score &lt; 2.0</p>
+                        <p className="text-[8px] text-text-dim">Te zwak signaal</p>
+                      </div>
+                    </div>
+
                     <p>
-                      Alleen paren met overtuiging &quot;sterk&quot; of &quot;matig&quot; worden opgenomen in de trade focus.
-                      De top 3 paren met de hoogste absolute divergentie worden getoond.
-                    </p>
-                    <p>
-                      De score bestaat uit drie componenten: (1) CB beleid score (basis), (2) renteverschil bonus/malus, en (3) nieuws sentiment correctie (max +-1.5).
+                      <strong className="text-text-muted">V2.1 filter:</strong> Intermarket signalen moeten het regime bevestigen. Als aandelen, VIX en goud het regime tegenspreken, wordt &quot;sterk&quot; verlaagd naar &quot;matig&quot;. Dit filtert valse signalen eruit.
                     </p>
                   </div>
                 </div>

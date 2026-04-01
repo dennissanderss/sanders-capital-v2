@@ -534,6 +534,31 @@ export async function GET() {
       if (highImpactToday && pair.conviction === 'sterk' && overallConfidence < 75) {
         pair.conviction = 'matig'
       }
+
+      // V2.1: Non-aligned pairs should NEVER be "sterk" — they go against the macro
+      if (!pairAligned && regime !== 'Gemengd' && pair.conviction === 'sterk') {
+        pair.conviction = 'matig'
+      }
+    }
+
+    // V2.1: Cross-pair contradiction filter
+    // If pair A says USD strong and pair B says USD weak, downgrade both
+    const sterkPairs = pairBiases.filter(p => p.conviction === 'sterk')
+    for (const pair of sterkPairs) {
+      const currencies = pair.pair.split('/')
+      const pairImpliesStrong = pair.direction.includes('bullish') ? currencies[0] : currencies[1]
+
+      // Check if any other sterk pair implies opposite for same currency
+      const contradicts = sterkPairs.some(other => {
+        if (other.pair === pair.pair) return false
+        const otherCurrencies = other.pair.split('/')
+        const otherImpliesWeak = other.direction.includes('bullish') ? otherCurrencies[1] : otherCurrencies[0]
+        return pairImpliesStrong === otherImpliesWeak
+      })
+
+      if (contradicts) {
+        pair.conviction = 'matig'
+      }
     }
 
     return NextResponse.json({
