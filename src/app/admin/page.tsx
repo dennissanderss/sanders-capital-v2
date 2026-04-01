@@ -569,7 +569,9 @@ export default function AdminPage() {
                 { name: 'Intermarket Data (Yahoo)', desc: 'DXY, VIX, S&P 500, US 10Y Yields, Goud en Olie live via Yahoo Finance (5 min cache).', status: 'live' },
                 { name: 'FX Koersen (Yahoo)', desc: 'Live valutakoersen real-time opgehaald via Yahoo Finance.', status: 'live' },
                 { name: 'Vergaderdata', desc: 'CB meetings automatisch uit economische kalender (komende 2 weken).', status: 'live' },
+                { name: 'Nieuws Aggregatie', desc: 'Automatisch gecureerd FX-relevant nieuws uit 7 bronnen (Fed, ECB, ForexLive, CNBC, Bloomberg, BBC, NYT). 10 min cache, relevantie-filtering.', status: 'live' },
                 { name: 'Auth & Premium gating', desc: 'Supabase Auth + RLS regelt toegang tot premium content en tools.', status: 'live' },
+                { name: 'Homepage statistieken', desc: 'Artikelen- en onderwerpenteller op de homepage worden live uit de database opgehaald.', status: 'live' },
               ].map(item => (
                 <div key={item.name} className="p-4 rounded-xl glass flex items-start gap-3">
                   <span className="w-2 h-2 rounded-full bg-green-400 mt-1.5 shrink-0" />
@@ -748,7 +750,7 @@ export default function AdminPage() {
                         )}
                         {!isCompleted && completedAt && (
                           <span className="text-[10px] text-amber-400/60 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                            Reset — opnieuw nodig
+                            Reset, opnieuw nodig
                           </span>
                         )}
                       </div>

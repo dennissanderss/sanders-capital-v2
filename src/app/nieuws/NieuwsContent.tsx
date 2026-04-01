@@ -105,6 +105,31 @@ export default function NieuwsContent() {
           Alleen het nieuws dat er toe doet: centrale bank beslissingen, rentebeleid, inflatie,
           geopolitieke ontwikkelingen en macro-economische data. Automatisch gefilterd uit betrouwbare bronnen.
         </p>
+
+        {/* Sources disclosure */}
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <span className="text-[11px] text-text-dim">Bronnen:</span>
+          {[
+            { name: 'Federal Reserve', url: 'https://www.federalreserve.gov' },
+            { name: 'ECB', url: 'https://www.ecb.europa.eu' },
+            { name: 'ForexLive', url: 'https://www.forexlive.com' },
+            { name: 'CNBC', url: 'https://www.cnbc.com' },
+            { name: 'Bloomberg', url: 'https://www.bloomberg.com' },
+            { name: 'BBC', url: 'https://www.bbc.co.uk/news/business' },
+            { name: 'NY Times', url: 'https://www.nytimes.com/section/world' },
+          ].map((src, i) => (
+            <a
+              key={src.name}
+              href={src.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-text-dim hover:text-text-muted transition-colors"
+            >
+              {src.name}{i < 6 ? ' ·' : ''}
+            </a>
+          ))}
+          <span className="text-[10px] text-text-dim/60 ml-1">(via publieke RSS feeds)</span>
+        </div>
       </div>
 
       {/* Category tabs */}
