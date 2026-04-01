@@ -402,25 +402,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-24">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <FadeIn>
-            <h2 className="text-3xl md:text-4xl font-display font-semibold text-heading mb-4">
-              Klaar om te beginnen?
-            </h2>
-            <p className="text-text-muted mb-8 max-w-lg mx-auto">
-              Krijg toegang tot professionele tools, verdiepende analyses en een community van gemotiveerde traders.
-            </p>
-            <Link
-              href="/premium"
-              className="inline-block px-8 py-3.5 rounded-lg bg-accent hover:bg-accent-light text-white font-medium transition-colors"
-            >
-              Ontdek Premium
-            </Link>
-          </FadeIn>
-        </div>
-      </section>
     </>
   )
 }
