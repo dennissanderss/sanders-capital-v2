@@ -1357,18 +1357,23 @@ export default function BriefingV2Dashboard() {
                         <div className="flex items-center gap-1.5">
                           <span className="text-[9px] text-text-dim uppercase tracking-wider">Call:</span>
                           <span className="text-[10px] font-mono font-semibold text-accent-light/80">
-                            {new Date().toLocaleString('nl-NL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' })} NL
+                            {new Date().toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', timeZone: 'Europe/Amsterdam' })} (vandaag)
                           </span>
                         </div>
                         <span className="text-text-dim/20">|</span>
                         <div className="flex items-center gap-1.5">
                           <span className="text-[9px] text-text-dim uppercase tracking-wider">Entry:</span>
-                          <span className="text-[10px] font-mono text-text-muted">daily close (18:00 NL)</span>
+                          <span className="text-[10px] font-mono text-text-muted">dagkoers vandaag</span>
                         </div>
                         <span className="text-text-dim/20">|</span>
                         <div className="flex items-center gap-1.5">
                           <span className="text-[9px] text-text-dim uppercase tracking-wider">Exit:</span>
-                          <span className="text-[10px] font-mono text-text-muted">+2 dagen daily close</span>
+                          <span className="text-[10px] font-mono text-text-muted">dagkoers +2 handelsdagen</span>
+                        </div>
+                        <span className="text-text-dim/20">|</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] text-text-dim uppercase tracking-wider">Methode:</span>
+                          <span className="text-[10px] font-mono text-purple-400/70">mean reversion</span>
                         </div>
                       </div>
 
@@ -1806,23 +1811,16 @@ export default function BriefingV2Dashboard() {
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {trackRecords.slice(0, 40).map(record => {
                         const meta = record.metadata
-                        // Call time = signal date at 08:00 NL time (07:00 UTC)
-                        // Entry time = signal date at 18:00 NL time (daily close, 16:00 UTC)
-                        // Exit time = 2 days later at 18:00 NL time
-                        const signalDateStr = record.date // e.g. "2026-03-29"
-                        const callTime = meta?.callTime
-                          ? formatCET(meta.callTime)
-                          : signalDateStr
-                            ? formatCET(`${signalDateStr}T07:00:00.000Z`)
-                            : formatCET(record.created_at)
-                        const entryTime = meta?.entryTime
-                          ? formatCET(meta.entryTime)
-                          : signalDateStr
-                            ? formatCET(`${signalDateStr}T16:00:00.000Z`)
-                            : ''
-                        const exitTime = meta?.exitTime
-                          ? formatCET(meta.exitTime)
-                          : ''
+                        // Format dates as readable Dutch dates (no fake times)
+                        const formatDate = (dateStr: string | undefined) => {
+                          if (!dateStr) return ''
+                          try {
+                            const d = new Date(dateStr)
+                            return d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', timeZone: 'Europe/Amsterdam' })
+                          } catch { return '' }
+                        }
+                        const signalDate = formatDate(record.date + 'T12:00:00Z')
+                        const exitDate = meta?.exitTime ? formatDate(meta.exitTime) : ''
                         return (
                           <div key={record.id} className="rounded-xl bg-white/[0.02] border border-white/[0.04] overflow-hidden">
                             {/* Header row */}
@@ -1849,19 +1847,19 @@ export default function BriefingV2Dashboard() {
                             <div className="px-3 py-2 border-t border-white/[0.03]">
                               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[10px]">
                                 <div>
-                                  <span className="text-text-dim/60 block">Call tijdstip</span>
+                                  <span className="text-text-dim/60 block">Call datum</span>
                                   <span className="font-mono text-accent-light/80 font-semibold">
-                                    {callTime || '—'}
+                                    {signalDate || record.date}
                                   </span>
                                 </div>
                                 <div>
-                                  <span className="text-text-dim/60 block">Entry prijs</span>
+                                  <span className="text-text-dim/60 block">Entry (dagkoers)</span>
                                   <span className="font-mono text-text-muted font-semibold">
                                     {record.entry_price !== null ? record.entry_price : '—'}
                                   </span>
                                 </div>
                                 <div>
-                                  <span className="text-text-dim/60 block">Exit prijs <span className="text-text-dim/40">({exitTime || '—'})</span></span>
+                                  <span className="text-text-dim/60 block">Exit (dagkoers {exitDate || '+2d'})</span>
                                   <span className="font-mono text-text-muted font-semibold">
                                     {record.exit_price !== null ? record.exit_price : '—'}
                                   </span>
@@ -1933,11 +1931,11 @@ export default function BriefingV2Dashboard() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
                             <p className="text-accent-light font-semibold mb-1">Entry &amp; Timing</p>
-                            <p>De entry prijs wordt vastgelegd op het moment dat de daily briefing wordt gegenereerd (Europese sessie). Het exacte tijdstip (CET) wordt opgeslagen zodat je kunt terugzoeken in de chart.</p>
+                            <p>De entry prijs is de <strong className="text-text-muted">dagkoers</strong> (daily close van Yahoo Finance) op de dag dat het signaal wordt gegenereerd. De forex markt draait 24/5, dus &quot;close&quot; is de conventionele NY-sessie sluiting.</p>
                           </div>
                           <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
                             <p className="text-accent-light font-semibold mb-1">Exit &amp; Resolutie</p>
-                            <p>De exit prijs wordt opgehaald <strong className="text-text-muted">2 handelsdagen later</strong> op hetzelfde tijdstip. De 2-daagse holding periode geeft de mean reversion voldoende tijd om te werken.</p>
+                            <p>De exit prijs is de dagkoers <strong className="text-text-muted">2 handelsdagen later</strong>. De 2-daagse holding periode geeft de mean reversion voldoende tijd om te werken.</p>
                           </div>
                           <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
                             <p className="text-accent-light font-semibold mb-1">Mean Reversion</p>
