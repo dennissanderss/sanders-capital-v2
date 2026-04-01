@@ -4,7 +4,7 @@ import FadeIn from '@/components/FadeIn'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'FX Outlook — Sanders Capital',
+  title: 'FX Outlook | Sanders Capital',
   description: 'Wekelijkse marktanalyses, macro outlook en FX verwachtingen.',
 }
 

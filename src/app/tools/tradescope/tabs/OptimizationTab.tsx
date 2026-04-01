@@ -101,23 +101,23 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
     // RR
     if (metrics.avgRR > 0) {
       if (metrics.avgRR >= 2) {
-        result.push({ type: 'good', title: 'Uitstekende R:R', text: `Gemiddeld ${metrics.avgRR.toFixed(1)}:1 — je wint meer dan je riskeert per trade.` })
+        result.push({ type: 'good', title: 'Uitstekende R:R', text: `Gemiddeld ${metrics.avgRR.toFixed(1)}:1, je wint meer dan je riskeert per trade.` })
       } else if (metrics.avgRR >= 1.5) {
         result.push({ type: 'info', title: 'Goede R:R', text: `Gemiddeld ${metrics.avgRR.toFixed(1)}:1 risk-reward. Probeer richting 2:1 te verbeteren door je entries of targets te optimaliseren.` })
       } else {
-        result.push({ type: 'warning', title: 'Lage R:R', text: `Gemiddeld ${metrics.avgRR.toFixed(1)}:1 — je riskeert relatief veel voor je potentiële winst. Betere entries of ruimere targets kunnen helpen.` })
+        result.push({ type: 'warning', title: 'Lage R:R', text: `Gemiddeld ${metrics.avgRR.toFixed(1)}:1, je riskeert relatief veel voor je potentiële winst. Betere entries of ruimere targets kunnen helpen.` })
       }
     }
 
     // Profit factor
     if (metrics.profitFactor >= 2) {
-      result.push({ type: 'good', title: 'Excellent profit factor', text: `${metrics.profitFactor.toFixed(2)} — je totale winst is ${metrics.profitFactor.toFixed(1)}x je totale verlies. Dit is een sterke edge.` })
+      result.push({ type: 'good', title: 'Excellent profit factor', text: `${metrics.profitFactor.toFixed(2)}: je totale winst is ${metrics.profitFactor.toFixed(1)}x je totale verlies. Dit is een sterke edge.` })
     } else if (metrics.profitFactor >= 1.5) {
-      result.push({ type: 'info', title: 'Degelijke profit factor', text: `${metrics.profitFactor.toFixed(2)} — winstgevend maar er is ruimte om je edge te versterken.` })
+      result.push({ type: 'info', title: 'Degelijke profit factor', text: `${metrics.profitFactor.toFixed(2)}, winstgevend maar er is ruimte om je edge te versterken.` })
     } else if (metrics.profitFactor >= 1) {
-      result.push({ type: 'warning', title: 'Marginale profit factor', text: `${metrics.profitFactor.toFixed(2)} — je bent net winstgevend. Commissies of slippage kunnen dit snel omkeren.` })
+      result.push({ type: 'warning', title: 'Marginale profit factor', text: `${metrics.profitFactor.toFixed(2)}, je bent net winstgevend. Commissies of slippage kunnen dit snel omkeren.` })
     } else {
-      result.push({ type: 'danger', title: 'Negatieve profit factor', text: `${metrics.profitFactor.toFixed(2)} — je verliest structureel geld. Heroverweeg je entry criteria, stop loss plaatsing en trade management.` })
+      result.push({ type: 'danger', title: 'Negatieve profit factor', text: `${metrics.profitFactor.toFixed(2)}, je verliest structureel geld. Heroverweeg je entry criteria, stop loss plaatsing en trade management.` })
     }
 
     // Drawdown
@@ -203,7 +203,7 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
         </div>
       </div>
 
-      {/* Automated Insights — card style */}
+      {/* Automated Insights - card style */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {insights.map((insight, i) => (
           <div key={i} className={`p-4 rounded-xl border ${bgMap[insight.type]}`}>
@@ -265,7 +265,7 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
       <div className="p-5 rounded-xl glass">
         <SectionHeader
           title="Expectancy per Risico Niveau"
-          desc="Expectancy = het gemiddelde bedrag dat je per trade kunt verwachten. Hoe hoger het risico, hoe groter de schommelingen — maar niet altijd meer winst."
+          desc="Expectancy = het gemiddelde bedrag dat je per trade kunt verwachten. Hoe hoger het risico, hoe groter de schommelingen, maar niet altijd meer winst."
         />
         <div className="h-48">
           <Bar
@@ -317,7 +317,7 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
                     <span className="group relative cursor-help">
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-dim/50"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
                       <span className="absolute bottom-full right-0 mb-1 hidden group-hover:block z-20 px-2 py-1.5 rounded-lg bg-bg-elevated border border-border shadow-xl text-[10px] text-text-muted w-44 leading-relaxed font-normal">
-                        Maximale drawdown — de grootste daling van piek tot dal. Onder 20% is veilig, 20-30% is matig, boven 30% is risicovol.
+                        Maximale drawdown: de grootste daling van piek tot dal. Onder 20% is veilig, 20-30% is matig, boven 30% is risicovol.
                       </span>
                     </span>
                   </span>

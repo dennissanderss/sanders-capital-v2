@@ -24,7 +24,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 1 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 1 — Definities
+              Artikel 1: Definities
             </h2>
             <div className="space-y-2">
               <p>In deze algemene voorwaarden wordt verstaan onder:</p>
@@ -43,7 +43,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 2 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 2 — Toepasselijkheid
+              Artikel 2: Toepasselijkheid
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>2.1. Deze algemene voorwaarden zijn van toepassing op elk gebruik van het platform, elke registratie en elk abonnement dat via het platform wordt afgesloten. Dit omvat tevens deelname aan de gekoppelde Discord-community van Sanders Capital.</p>
@@ -55,7 +55,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 3 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 3 — Aard van de diensten
+              Artikel 3: Aard van de diensten
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>3.1. Sanders Capital biedt uitsluitend educatieve content aan met betrekking tot financiële markten. De aangeboden content vormt op geen enkel moment financieel advies, beleggingsadvies of een aanbeveling tot het verrichten van transacties.</p>
@@ -67,7 +67,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 4 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 4 — Account en registratie
+              Artikel 4: Account en registratie
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>4.1. Voor toegang tot bepaalde onderdelen van het platform is registratie vereist. De gebruiker garandeert dat de bij registratie verstrekte gegevens juist en volledig zijn.</p>
@@ -80,7 +80,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 5 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 5 — Abonnementen en betaling
+              Artikel 5: Abonnementen en betaling
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>5.1. Sanders Capital biedt zowel gratis als betaalde (premium) toegang aan. De specificaties en prijzen van premium abonnementen worden op het platform vermeld.</p>
@@ -94,7 +94,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 6 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 6 — Herroepingsrecht
+              Artikel 6: Herroepingsrecht
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>6.1. Op grond van de Wet Koop op Afstand heeft de consument het recht om binnen 14 dagen na aankoop van een premium abonnement zonder opgave van redenen de overeenkomst te ontbinden (herroepingsrecht).</p>
@@ -106,7 +106,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 7 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 7 — Intellectueel eigendom
+              Artikel 7: Intellectueel eigendom
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>7.1. Alle content op het platform, inclusief maar niet beperkt tot teksten, afbeeldingen, logo&apos;s, video&apos;s, software en de structuur van de website, is eigendom van Sanders Capital en beschermd door het auteursrecht en andere intellectuele eigendomsrechten.</p>
@@ -118,7 +118,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 8 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 8 — Aansprakelijkheid
+              Artikel 8: Aansprakelijkheid
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>8.1. Sanders Capital is niet aansprakelijk voor enige directe, indirecte, incidentele, bijzondere of gevolgschade die voortvloeit uit het gebruik van het platform of de content, waaronder maar niet beperkt tot financiële verliezen, gederfde winst of verlies van data.</p>
@@ -131,7 +131,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 9 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 9 — Privacy en gegevensbescherming
+              Artikel 9: Privacy en gegevensbescherming
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>9.1. Sanders Capital verwerkt persoonsgegevens in overeenstemming met de Algemene Verordening Gegevensbescherming (AVG/GDPR).</p>
@@ -146,7 +146,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 10 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 10 — Gebruiksregels
+              Artikel 10: Gebruiksregels
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>10.1. De gebruiker verplicht zich het platform uitsluitend te gebruiken voor persoonlijke, niet-commerciële doeleinden, tenzij schriftelijk anders overeengekomen.</p>
@@ -164,7 +164,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 11 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 11 — Beëindiging
+              Artikel 11: Beëindiging
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>11.1. De gebruiker kan op elk moment het account verwijderen via het dashboard of door een verzoek te sturen naar sanderscapital@hotmail.com.</p>
@@ -176,7 +176,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 12 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 12 — Overmacht
+              Artikel 12: Overmacht
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>12.1. Sanders Capital is niet aansprakelijk voor het niet of niet tijdig nakomen van verplichtingen als gevolg van overmacht, waaronder maar niet beperkt tot storingen in internet- of hostingdiensten, stroomuitval, cyberaanvallen of andere omstandigheden buiten de redelijke controle van Sanders Capital.</p>
@@ -186,7 +186,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 13 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 13 — Toepasselijk recht en geschillen
+              Artikel 13: Toepasselijk recht en geschillen
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>13.1. Op deze algemene voorwaarden en alle overeenkomsten tussen Sanders Capital en de gebruiker is uitsluitend Nederlands recht van toepassing.</p>
@@ -198,7 +198,7 @@ export default function VoorwaardenPage() {
           {/* Artikel 14 */}
           <section>
             <h2 className="text-xl font-display font-semibold text-heading mb-3">
-              Artikel 14 — Contactgegevens
+              Artikel 14: Contactgegevens
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>Sanders Capital</p>

@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Over',
-  description: 'Over Dennis Sanders — het verhaal achter Sanders Capital.',
+  description: 'Over Dennis Sanders. Het verhaal achter Sanders Capital.',
 }
 
 const timeline = [

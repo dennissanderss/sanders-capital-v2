@@ -3,7 +3,7 @@ import Link from 'next/link'
 import FadeIn from '@/components/FadeIn'
 
 export const metadata: Metadata = {
-  title: 'Daily Macro Briefing — Introductie — Sanders Capital',
+  title: 'Daily Macro Briefing | Introductie | Sanders Capital',
   description: 'Ontdek hoe de Daily Macro Briefing werkt: van macro regime tot trade focus, volledig transparant uitgelegd.',
 }
 
@@ -116,7 +116,7 @@ export default function DailyBriefingIntroPage() {
           </h1>
           <p className="text-lg sm:text-xl text-text-muted max-w-2xl mx-auto leading-relaxed">
             Elke dag in 60 seconden weten waar de markt staat, welke valuta sterk of zwak is,
-            en waar jouw beste trade setups liggen — volledig gebaseerd op fundamentele data.
+            en waar jouw beste trade setups liggen, volledig gebaseerd op fundamentele data.
           </p>
           <div className="mt-8">
             <Link
@@ -150,7 +150,7 @@ export default function DailyBriefingIntroPage() {
             <p>
               De meeste traders beginnen hun dag met tientallen tabs open: nieuwswebsites,
               economische kalenders, Twitter, en willekeurige YouTube-analyses. Ze proberen een beeld
-              te vormen van &quot;waar de markt naartoe gaat&quot; — maar eindigen met <strong className="text-heading">information overload</strong> en
+              te vormen van &quot;waar de markt naartoe gaat&quot;, maar eindigen met <strong className="text-heading">information overload</strong> en
               tegenstrijdige signalen.
             </p>
             <p>
@@ -191,7 +191,7 @@ export default function DailyBriefingIntroPage() {
             solution="Elke major valuta (USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD) krijgt een fundamentele score, gerangschikt van sterkste naar zwakste."
             details={[
               'Score is gebaseerd op het officiële beleid van de centrale bank: hawkish bias = hogere score (sterke valuta), dovish = lagere score (zwakke valuta).',
-              'De bias wordt bepaald uit persconferenties, policy statements en forward guidance na rentevergaderingen — handmatig bijgewerkt na elke vergadering.',
+              'De bias wordt bepaald uit persconferenties, policy statements en forward guidance na rentevergaderingen. Handmatig bijgewerkt na elke vergadering.',
               'Rente t.o.v. het target telt mee: rente boven target = extra hawkish signaal, rente onder target = extra dovish.',
               'Per valuta zie je de redenering: welke bank, welk beleid, waarom die score.',
             ]}
@@ -210,7 +210,7 @@ export default function DailyBriefingIntroPage() {
               'Sterke overtuiging: score ≥ 3.5 of ≤ −3.5. Matige overtuiging: score ≥ 2.0 of ≤ −2.0.',
               'Bij elk paar zie je de richting (bullish/bearish), overtuiging, renteverschil en de achterliggende redenering.',
               'Het trackrecord meet dagelijks of de fundamentele bias klopte: daily close → volgende daily close. Alleen sterke overtuiging wordt gemeten.',
-              'Dit geeft je niet je entry — het geeft je de richting. Jij past vervolgens je eigen strategie toe in de richting van de bias.',
+              'Dit geeft je niet je entry, het geeft je de richting. Jij past vervolgens je eigen strategie toe in de richting van de bias.',
             ]}
           />
         </FadeIn>
@@ -366,7 +366,7 @@ export default function DailyBriefingIntroPage() {
           </h2>
           <div className="space-y-3 text-sm text-text-muted leading-relaxed">
             <p>
-              <strong className="text-heading">Dit is geen handelssignaal.</strong> De Daily Macro Briefing geeft je een fundamentele bias — de richting
+              <strong className="text-heading">Dit is geen handelssignaal.</strong> De Daily Macro Briefing geeft je een fundamentele bias: de richting
               waarin de macro-data wijst. Het is aan jou om je technische entry te vinden en je risicomanagement toe te passen.
             </p>
             <p>
@@ -379,7 +379,7 @@ export default function DailyBriefingIntroPage() {
             </p>
             <p>
               <strong className="text-heading">Het trackrecord is transparant.</strong> We meten dagelijks of de bias klopte (daily close → daily close).
-              Dit geeft je een eerlijk beeld van de nauwkeurigheid — geen cherry-picking.
+              Dit geeft je een eerlijk beeld van de nauwkeurigheid. Geen cherry-picking.
             </p>
           </div>
         </div>

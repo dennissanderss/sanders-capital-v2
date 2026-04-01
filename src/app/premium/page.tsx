@@ -29,7 +29,7 @@ const premiumFeatures = [
 const tools = [
   {
     name: 'Daily Macro Briefing',
-    description: 'Dagelijks overzicht van macro regime, currency scores en trade focus — gebaseerd op centrale bank beleid en rentedata.',
+    description: 'Dagelijks overzicht van macro regime, currency scores en trade focus, gebaseerd op centrale bank beleid en rentedata.',
     href: '/tools/fx-selector',
     value: 'Bespaart 1-2 uur dagelijkse research',
     icon: (
@@ -42,7 +42,7 @@ const tools = [
   },
   {
     name: 'Macro Fundamentals',
-    description: 'Rentetarieven, inflatiecijfers en centrale bank beleid per valuta — de data achter de scores. Inclusief trackrecord.',
+    description: 'Rentetarieven, inflatiecijfers en centrale bank beleid per valuta. De data achter de scores, inclusief trackrecord.',
     href: '/tools/rentetarieven',
     value: '61%+ winrate op 14 dagen trackrecord',
     icon: (
@@ -54,7 +54,7 @@ const tools = [
   },
   {
     name: 'TradeScope',
-    description: 'Upload je backtest CSV en krijg direct inzicht in je performance — winrate, drawdown, sessie-analyse, Monte Carlo en meer.',
+    description: 'Upload je backtest CSV en krijg direct inzicht in je performance: winrate, drawdown, sessie-analyse, Monte Carlo en meer.',
     href: '/tools/tradescope',
     value: 'Vergelijkbaar met tools van +$200/jaar',
     icon: (
@@ -65,9 +65,9 @@ const tools = [
   },
   {
     name: 'TradeMind',
-    description: 'Je persoonlijke trading journal — log trades, analyseer patronen in je gedrag en verbeter je edge structureel.',
+    description: 'Je persoonlijke trading journal. Log trades, analyseer patronen in je gedrag en verbeter je edge structureel.',
     href: '/tools',
-    value: 'Vervangt Edgewonk ($170/jaar)',
+    value: 'Vervangt vergelijkbare journal tools (~$170/jaar)',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
@@ -89,20 +89,19 @@ const faqItems = [
   },
   {
     q: 'Kan ik mijn abonnement opzeggen?',
-    a: 'Ja, je kunt je premium abonnement op elk moment opzeggen. Je houdt toegang tot het einde van de betaalperiode.',
+    a: 'Ja. Het maandabonnement is op elk moment opzegbaar. Je houdt toegang tot het einde van de lopende betaalperiode. Bij lifetime access geldt een eenmalige betaling zonder verdere verplichtingen.',
   },
   {
     q: 'Hoe krijg ik toegang tot de tools?',
     a: 'Maak eerst een gratis account aan. Daarna kun je upgraden naar premium via de contactpagina en krijg je direct toegang tot alle tools.',
   },
   {
-    q: 'Waarom jaarlijks in plaats van maandelijks?',
-    a: 'Onze tools bouwen over tijd meer waarde op — het fundamentele trackrecord wordt sterker, je journal-data groeit, en je analyses worden beter. Een jaarabonnement past bij die langetermijnvisie en houdt de prijs toegankelijk.',
+    q: 'Waarom bieden jullie ook lifetime access aan?',
+    a: 'Onze tools en content bouwen over tijd meer waarde op. Het fundamentele trackrecord wordt sterker, je journal-data groeit, en je analyses worden beter. Lifetime access is bedoeld voor traders die langetermijn denken en willen investeren in hun ontwikkeling.',
   },
 ]
 
 export default async function PremiumPage() {
-  // Check if user is logged in to show pricing
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   const isLoggedIn = !!user
@@ -115,7 +114,7 @@ export default async function PremiumPage() {
             Premium
           </h1>
           <p className="text-text-muted max-w-2xl mx-auto">
-            Professionele tools, exclusieve content en verdiepende analyses — alles wat je nodig hebt om data-gedreven te handelen.
+            Professionele tools, exclusieve content en verdiepende analyses. Alles wat je nodig hebt om data-gedreven te handelen.
           </p>
         </div>
       </FadeIn>
@@ -173,7 +172,7 @@ export default async function PremiumPage() {
         </div>
       </div>
 
-      {/* Pricing — only visible to logged-in users */}
+      {/* Pricing */}
       {isLoggedIn ? (
         <div className="max-w-5xl mx-auto mb-24">
           <FadeIn>
@@ -187,12 +186,12 @@ export default async function PremiumPage() {
             </div>
           </FadeIn>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
             {/* Free tier */}
             <FadeIn delay={100}>
-              <div className="p-8 rounded-xl bg-bg-card border border-border h-full flex flex-col">
+              <div className="p-7 rounded-xl bg-bg-card border border-border h-full flex flex-col">
                 <div className="mb-6">
-                  <h3 className="text-xl font-display font-semibold text-heading mb-1">Gratis</h3>
+                  <h3 className="text-lg font-display font-semibold text-heading mb-1">Gratis</h3>
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-display font-bold text-heading">&euro;0</span>
                   </div>
@@ -214,22 +213,52 @@ export default async function PremiumPage() {
               </div>
             </FadeIn>
 
-            {/* Premium tier */}
+            {/* Monthly tier */}
             <FadeIn delay={200}>
-              <div className="p-8 rounded-xl bg-bg-card border border-gold/30 h-full relative overflow-hidden flex flex-col">
-                <div className="absolute top-0 right-0 px-3 py-1 bg-gold/15 text-gold text-xs rounded-bl-lg font-medium">
-                  Aanbevolen
-                </div>
+              <div className="p-7 rounded-xl bg-bg-card border border-border h-full flex flex-col">
                 <div className="mb-6">
-                  <h3 className="text-xl font-display font-semibold text-heading mb-1">Premium</h3>
+                  <h3 className="text-lg font-display font-semibold text-heading mb-1">Maandelijks</h3>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-display font-bold text-heading">&euro;699</span>
-                    <span className="text-sm text-text-muted">/jaar</span>
+                    <span className="text-3xl font-display font-bold text-heading">&euro;68,25</span>
+                    <span className="text-sm text-text-muted">/maand</span>
                   </div>
-                  <p className="text-xs text-text-dim mt-1">&euro;58,25/maand &middot; Jaarlijks gefactureerd</p>
+                  <p className="text-xs text-text-dim mt-1">Op elk moment opzegbaar</p>
                 </div>
                 <ul className="space-y-3 mb-8 flex-1">
                   {premiumFeatures.map((f) => (
+                    <li key={f} className="flex items-center gap-3 text-sm">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold shrink-0">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      <span className="text-text">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/contact"
+                  className="block text-center px-6 py-3 rounded-lg border border-gold/30 text-gold text-sm font-medium hover:bg-gold/10 transition-colors"
+                >
+                  Neem contact op
+                </Link>
+              </div>
+            </FadeIn>
+
+            {/* Lifetime tier */}
+            <FadeIn delay={300}>
+              <div className="p-7 rounded-xl bg-bg-card border border-gold/30 h-full relative overflow-hidden flex flex-col">
+                <div className="absolute top-0 right-0 px-3 py-1 bg-gold/15 text-gold text-xs rounded-bl-lg font-medium">
+                  Beste waarde
+                </div>
+                <div className="mb-6">
+                  <h3 className="text-lg font-display font-semibold text-heading mb-1">Lifetime Access</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-display font-bold text-heading">&euro;699</span>
+                    <span className="text-sm text-text-muted">eenmalig</span>
+                  </div>
+                  <p className="text-xs text-text-dim mt-1">Volledige toegang, geen verdere kosten</p>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {[...premiumFeatures, 'Alle toekomstige tools & updates'].map((f) => (
                     <li key={f} className="flex items-center gap-3 text-sm">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold shrink-0">
                         <polyline points="20 6 9 17 4 12" />
@@ -249,25 +278,26 @@ export default async function PremiumPage() {
           </div>
 
           {/* Price justification */}
-          <FadeIn delay={300}>
+          <FadeIn delay={400}>
             <div className="max-w-3xl mx-auto mt-12 rounded-2xl border border-border bg-bg-card/50 px-6 sm:px-8 py-6 sm:py-8">
               <h3 className="text-lg font-display font-semibold text-heading mb-5 flex items-center gap-2">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold">
                   <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                 </svg>
-                Waarom &euro;699?
+                Onderbouwing van de investering
               </h3>
               <div className="space-y-4 text-sm text-text-muted leading-relaxed">
                 <p>
-                  Laten we het uitrekenen. Dit is wat je krijgt — en wat het je zou kosten als je het apart koopt:
+                  De prijs van Sanders Capital Premium is gebaseerd op de marktwaarde van vergelijkbare tools en diensten.
+                  Hieronder een overzicht van wat je ontvangt en wat dit afzonderlijk zou kosten:
                 </p>
 
                 <div className="grid sm:grid-cols-2 gap-3">
                   {[
-                    { label: 'Trading Journal (Edgewonk)', price: '~$170/jaar', desc: 'TradeMind vervangt dit volledig' },
-                    { label: 'Backtest Analytics tools', price: '~$200+/jaar', desc: 'TradeScope met Monte Carlo & optimalisatie' },
-                    { label: 'Fundamentele data services', price: '~$500+/jaar', desc: 'Daily Macro Briefing + Macro Fundamentals' },
-                    { label: 'Trading community & mentoring', price: 'Onbetaalbaar', desc: 'Directe ondersteuning van een ervaren trader' },
+                    { label: 'Trading journal software', price: '~$170/jaar', desc: 'TradeMind vervangt vergelijkbare journal tools volledig' },
+                    { label: 'Backtest analytics platforms', price: '~$200+/jaar', desc: 'TradeScope met Monte Carlo simulatie en optimalisatie' },
+                    { label: 'Fundamentele data services', price: '~$500+/jaar', desc: 'Daily Macro Briefing + Macro Fundamentals dashboard' },
+                    { label: 'Trading community & begeleiding', price: 'Onbetaalbaar', desc: 'Directe ondersteuning van een ervaren trader' },
                   ].map((item) => (
                     <div key={item.label} className="rounded-lg bg-white/[0.02] border border-white/[0.06] px-4 py-3">
                       <div className="flex items-center justify-between mb-1">
@@ -281,24 +311,29 @@ export default async function PremiumPage() {
 
                 <div className="pt-3 border-t border-white/[0.06]">
                   <p>
-                    <strong className="text-heading">Samen &gt; &euro;1.000+ aan waarde per jaar.</strong>{' '}
-                    En dan hebben we het nog niet over het fundamentele model met een{' '}
-                    <strong className="text-heading">61%+ winrate trackrecord</strong> dat dagelijks wordt bijgehouden
-                    — iets wat je nergens kant-en-klaar kunt kopen.
+                    <strong className="text-heading">Gezamenlijke marktwaarde: meer dan &euro;1.000 per jaar.</strong>{' '}
+                    Daarnaast beschik je over een fundamenteel model met een{' '}
+                    <strong className="text-heading">61%+ winrate trackrecord</strong> dat dagelijks wordt bijgehouden.
+                    Dit is geen standaard product dat elders verkrijgbaar is.
                   </p>
                 </div>
 
                 <p>
-                  Dit platform is gebouwd door iemand die zelf jarenlang heeft gezocht naar de juiste tools, frameworks
-                  en data. Geen marketing-praatjes — alles is transparant, met publiek trackrecord en open databronnen.
-                  Je betaalt voor een compleet systeem dat over tijd alleen maar waardevoller wordt.
+                  Sanders Capital is gebouwd door iemand die zelf jarenlang heeft gezocht naar de juiste tools,
+                  frameworks en data. Alles is transparant: publiek trackrecord, open databronnen, geen verborgen
+                  kosten. Je investeert in een compleet systeem dat over tijd alleen maar waardevoller wordt.
+                </p>
+
+                <p className="text-xs text-text-dim pt-1">
+                  Bij het maandabonnement van &euro;68,25 betaal je op jaarbasis &euro;819. Met lifetime access
+                  bespaar je direct &euro;120+ ten opzichte van het eerste jaar, en daarna betaal je niets meer.
                 </p>
               </div>
             </div>
           </FadeIn>
         </div>
       ) : (
-        /* Not logged in — show teaser + register prompt */
+        /* Not logged in */
         <FadeIn>
           <div className="max-w-2xl mx-auto mb-24 p-8 rounded-2xl bg-bg-card border border-border text-center">
             <div className="w-14 h-14 rounded-2xl bg-gold-dim flex items-center justify-center mx-auto mb-5">

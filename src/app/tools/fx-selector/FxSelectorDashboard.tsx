@@ -131,7 +131,7 @@ export default function FxSelectorDashboard() {
       if (!res.ok) throw new Error(json.error || `API error: ${res.status}`)
       setData(json)
       setUpdates(prev => [
-        `${new Date().toLocaleTimeString('nl-NL')} — Data bijgewerkt`,
+        `${new Date().toLocaleTimeString('nl-NL')}: Data bijgewerkt`,
         ...prev.slice(0, 9),
       ])
     } catch (e) {
@@ -360,7 +360,7 @@ export default function FxSelectorDashboard() {
               <div className="space-y-3">
                 {[
                   { step: '1', text: 'Bekijk de samenvatting en het marktregime bovenaan.' },
-                  { step: '2', text: 'Check de trade paren — focus op paren met de hoogste score.' },
+                  { step: '2', text: 'Check de trade paren en focus op paren met de hoogste score.' },
                   { step: '3', text: 'Controleer of er high-impact nieuws is voor die valuta\'s.' },
                   { step: '4', text: 'Open je chart en zoek een entry op basis van je eigen strategie.' },
                   { step: '5', text: 'Gebruik altijd een stop-loss en de juiste positiegrootte.' },

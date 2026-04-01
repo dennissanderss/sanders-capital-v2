@@ -15,6 +15,15 @@ export default async function HomePage() {
     .order('created_at', { ascending: false })
     .limit(3)
 
+  // Fetch real counts for stats
+  const { count: articleCount } = await supabase
+    .from('articles')
+    .select('*', { count: 'exact', head: true })
+    .eq('published', true)
+  const { count: categoryCount } = await supabase
+    .from('kennisbank_categories')
+    .select('*', { count: 'exact', head: true })
+
   return (
     <>
       {/* Hero */}
@@ -92,8 +101,8 @@ export default async function HomePage() {
       <section className="border-y border-border bg-bg-elevated/50">
         <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 text-center">
           {[
-            { end: 50, suffix: '+', label: 'Artikelen' },
-            { end: 12, suffix: '+', label: 'Onderwerpen' },
+            { end: articleCount || 0, suffix: '+', label: 'Artikelen' },
+            { end: categoryCount || 0, suffix: '+', label: 'Onderwerpen' },
             { end: 4, suffix: '+', label: 'Jaren ervaring' },
             { end: 100, suffix: '%', label: 'Data-gedreven' },
           ].map((stat, i) => (
@@ -242,7 +251,7 @@ export default async function HomePage() {
                   </h2>
                   <p className="text-text-muted leading-relaxed mb-6">
                     Wekelijkse en maandelijkse macro-analyses van de valutamarkt. Van centrale bank beleid
-                    tot geopolitieke verschuivingen — begrijp de krachten die valutaparen bewegen en
+                    tot geopolitieke verschuivingen. Begrijp de krachten die valutaparen bewegen en
                     vertaal data naar een onderbouwde visie.
                   </p>
                   <div className="flex flex-wrap gap-2 mb-6">
@@ -276,7 +285,7 @@ export default async function HomePage() {
                         </span>
                       </div>
                     ))}
-                    <p className="text-[10px] text-text-dim text-center pt-1">Voorbeeld — geen actueel advies</p>
+                    <p className="text-[10px] text-text-dim text-center pt-1">Voorbeeld, geen actueel advies</p>
                   </div>
                 </div>
               </div>
@@ -297,7 +306,7 @@ export default async function HomePage() {
                 Ontdek de tools
               </h2>
               <p className="text-text-muted max-w-2xl mx-auto mb-12">
-                De meeste traders missen geen strategie — ze missen structuur. Geen overzicht van macro data,
+                De meeste traders missen geen strategie, ze missen structuur. Geen overzicht van macro data,
                 geen objectieve currency bias, geen inzicht in hun eigen performance. Deze tools lossen dat op.
               </p>
             </div>
@@ -308,7 +317,7 @@ export default async function HomePage() {
               {
                 name: 'Daily Macro Briefing',
                 problem: 'Elke dag macro data verzamelen kost uren en je mist altijd iets.',
-                solution: 'Dagelijks overzicht met macro regime, currency scores en trade focus — automatisch bijgewerkt.',
+                solution: 'Dagelijks overzicht met macro regime, currency scores en trade focus. Automatisch bijgewerkt.',
                 href: '/tools/fx-selector',
                 icon: (
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -344,7 +353,7 @@ export default async function HomePage() {
               {
                 name: 'TradeMind',
                 problem: 'Je weet niet waarom je verliest omdat je trades niet structureel logt.',
-                solution: 'Persoonlijk trading journal — log trades, herken patronen en verbeter je edge.',
+                solution: 'Persoonlijk trading journal. Log trades, herken patronen en verbeter je edge.',
                 href: '/tools',
                 icon: (
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

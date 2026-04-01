@@ -13,7 +13,7 @@ const indicators = [
     actualBetter: 'CPI lager dan verwacht → inflatie neemt af → centrale bank kan rente verlagen → valuta daalt op korte termijn, aandelen stijgen.',
     actualWorse: 'CPI hoger dan verwacht → inflatie stijgt → centrale bank zal rente verhogen → valuta stijgt op korte termijn, aandelen dalen.',
     frequency: 'Maandelijks',
-    note: 'Let ook op Core CPI (exclusief voedsel en energie) — dit is vaak belangrijker voor de markt omdat het minder volatiel is.',
+    note: 'Let ook op Core CPI (exclusief voedsel en energie), dit is vaak belangrijker voor de markt omdat het minder volatiel is.',
   },
   {
     name: 'NFP (Non-Farm Payrolls)',
@@ -33,7 +33,7 @@ const indicators = [
     impact: 'Hoog',
     currencies: ['USD', 'EUR', 'GBP', 'CNY'],
     what: 'Een enquête onder inkoopmanagers over de economische omstandigheden in hun sector. Een score boven 50 = groei, onder 50 = krimp.',
-    whyImportant: 'PMI is een leidende indicator — het geeft een vroeg signaal over de richting van de economie voordat officiële cijfers beschikbaar zijn.',
+    whyImportant: 'PMI is een leidende indicator: het geeft een vroeg signaal over de richting van de economie voordat officiële cijfers beschikbaar zijn.',
     actualBetter: 'PMI hoger dan verwacht (of boven 50) → economie groeit → valuta stijgt.',
     actualWorse: 'PMI lager dan verwacht (of onder 50) → economie krimpt → valuta daalt.',
     frequency: 'Maandelijks',
@@ -41,7 +41,7 @@ const indicators = [
   },
   {
     name: 'GDP (Gross Domestic Product)',
-    aka: 'BBP — Bruto Binnenlands Product',
+    aka: 'BBP, Bruto Binnenlands Product',
     impact: 'Hoog',
     currencies: ['Alle majors'],
     what: 'De totale waarde van alle goederen en diensten die in een land worden geproduceerd. Het is de breedste maatstaf voor economische activiteit.',
@@ -73,7 +73,7 @@ const indicators = [
     actualBetter: 'Werkloosheid lager dan verwacht → sterke arbeidsmarkt → valuta stijgt.',
     actualWorse: 'Werkloosheid hoger dan verwacht → zwakke arbeidsmarkt → valuta daalt.',
     frequency: 'Maandelijks',
-    note: 'In de VS wordt dit samen met NFP gepubliceerd. Let ook op de participatiegraad — een dalende werkloosheid door mensen die stoppen met zoeken is misleidend.',
+    note: 'In de VS wordt dit samen met NFP gepubliceerd. Let ook op de participatiegraad: een dalende werkloosheid door mensen die stoppen met zoeken is misleidend.',
   },
   {
     name: 'Retail Sales',
@@ -141,7 +141,7 @@ const indicators = [
     impact: 'Hoog',
     currencies: ['Valuta van betreffende centrale bank'],
     what: 'De gedetailleerde notulen van de laatste vergadering van een centrale bank. Ze worden meestal 2-3 weken na het rentebesluit gepubliceerd.',
-    whyImportant: 'De notulen onthullen hoe de stemverhoudingen lagen en wat de overwegingen waren — dit geeft hints over toekomstig beleid.',
+    whyImportant: 'De notulen onthullen hoe de stemverhoudingen lagen en wat de overwegingen waren. Dit geeft hints over toekomstig beleid.',
     actualBetter: 'Hawkish toon (meer leden voor hoge rente) → valuta stijgt.',
     actualWorse: 'Dovish toon (meer leden voor lagere rente) → valuta daalt.',
     frequency: '2-3 weken na elk rentebesluit',
@@ -241,7 +241,7 @@ export default function BegrippenContent({ hasAccess }: { hasAccess: boolean }) 
               </div>
               <h3 className="text-lg font-display font-semibold text-heading mb-2">Premium Content</h3>
               <p className="text-sm text-text-muted mb-5 max-w-md">
-                Alle {indicators.length} economische indicatoren uitgelegd — beschikbaar voor premium leden.
+                Alle {indicators.length} economische indicatoren uitgelegd, beschikbaar voor premium leden.
               </p>
               <div className="flex items-center justify-center gap-3">
                 <Link

@@ -178,7 +178,7 @@ export default function FxAnalyseDashboard() {
                   ) : data.rateDiff < 0 ? (
                     <>De {data.quote} heeft een hogere rente dan de {data.base}. Dit trekt kapitaal aan naar {data.quote}-activa en is fundamenteel bearish voor {data.pair}.</>
                   ) : (
-                    <>Beide valuta&apos;s hebben dezelfde rente. Het renteverschil is neutraal — andere factoren bepalen de richting.</>
+                    <>Beide valuta&apos;s hebben dezelfde rente. Het renteverschil is neutraal; andere factoren bepalen de richting.</>
                   )}
                 </p>
                 <div className="mt-3 p-3 rounded bg-white/[0.03]">
@@ -205,7 +205,7 @@ export default function FxAnalyseDashboard() {
                 </div>
                 <div className="mt-3 p-3 rounded bg-white/[0.03]">
                   <p className="text-xs text-text-dim">
-                    <strong className="text-text-muted">Hoe lees je dit?</strong> &quot;Restrictief&quot; = rente hoog houden (hawkish, goed voor de valuta). &quot;Verruimend&quot; = rente verlagen (dovish, slecht voor de valuta). De richting is belangrijker dan het niveau — een centrale bank die naar verruiming beweegt is bearish, ook als de rente nog hoog is.
+                    <strong className="text-text-muted">Hoe lees je dit?</strong> &quot;Restrictief&quot; = rente hoog houden (hawkish, goed voor de valuta). &quot;Verruimend&quot; = rente verlagen (dovish, slecht voor de valuta). De richting is belangrijker dan het niveau: een centrale bank die naar verruiming beweegt is bearish, ook als de rente nog hoog is.
                   </p>
                 </div>
               </div>
@@ -214,8 +214,8 @@ export default function FxAnalyseDashboard() {
             {/* 3. Bridge to Daily Briefing */}
             <Section number={3} title="Van theorie naar praktijk">
               <p className="text-sm text-text-muted mb-4 leading-relaxed">
-                Nu je begrijpt hoe {data.pair} werkt — welke centrale banken er zijn, wat hun beleid is,
-                en hoe het renteverschil de richting bepaalt — is de volgende stap: dit dagelijks toepassen.
+                Nu je begrijpt hoe {data.pair} werkt, welke centrale banken er zijn, wat hun beleid is,
+                en hoe het renteverschil de richting bepaalt, is de volgende stap: dit dagelijks toepassen.
               </p>
 
               <div className="p-4 rounded-lg bg-accent-glow/20 border border-accent-dim/30 mb-4">
@@ -231,9 +231,9 @@ export default function FxAnalyseDashboard() {
                 <div className="p-4 rounded-lg bg-bg-card border border-border">
                   <h4 className="text-sm font-semibold text-heading mb-1">Hoe pas je dit toe?</h4>
                   <p className="text-sm text-text-muted leading-relaxed">
-                    1. <strong>Ken de achtergrond</strong> (deze tool) — wie is hawkish, wie dovish, hoe staat het renteverschil?<br />
-                    2. <strong>Check de Daily Briefing</strong> — welke events komen vandaag, wat is de bias per paar?<br />
-                    3. <strong>Zoek technische bevestiging</strong> — de fundamentals geven je de richting, technicals geven je de entry.
+                    1. <strong>Ken de achtergrond</strong> (deze tool): wie is hawkish, wie dovish, hoe staat het renteverschil?<br />
+                    2. <strong>Check de Daily Briefing</strong>: welke events komen vandaag, wat is de bias per paar?<br />
+                    3. <strong>Zoek technische bevestiging</strong>: de fundamentals geven je de richting, technicals geven je de entry.
                   </p>
                 </div>
 

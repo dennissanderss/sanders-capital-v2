@@ -99,8 +99,8 @@ export default function DisclaimerPage() {
               Intellectueel eigendom
             </h2>
             <p>
-              Alle content op Sanders Capital — inclusief maar niet beperkt tot teksten, afbeeldingen,
-              logo&apos;s, video&apos;s en de structuur van de website — is beschermd door het
+              Alle content op Sanders Capital, inclusief maar niet beperkt tot teksten, afbeeldingen,
+              logo&apos;s, video&apos;s en de structuur van de website, is beschermd door het
               auteursrecht. Niets mag zonder schriftelijke toestemming worden gereproduceerd,
               gedistribueerd of openbaar gemaakt.
             </p>

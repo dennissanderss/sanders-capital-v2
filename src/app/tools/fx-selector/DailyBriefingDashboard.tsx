@@ -148,7 +148,7 @@ function getIntermarketConclusion(signals: IntermarketSignal[], regime: string):
   return {
     sentiment: 'mixed',
     confirmsRegime: false,
-    text: `Gemengde signalen: ${allPoints.join(', ')}. Geen eenduidige bevestiging — wees selectiever en wacht op duidelijkere price action.`,
+    text: `Gemengde signalen: ${allPoints.join(', ')}. Geen eenduidige bevestiging, wees selectiever en wacht op duidelijkere price action.`,
   }
 }
 
@@ -170,7 +170,7 @@ function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: Currenc
     } else if (isBearish) {
       action = `Zoek SHORT structure breaks op je 15min chart. ${pair.quote} is fundamenteel sterker dan ${pair.base}.`
     } else {
-      action = 'Neutraal — wacht op duidelijkere fundamentele divergentie.'
+      action = 'Neutraal, wacht op duidelijkere fundamentele divergentie.'
     }
 
     const whyParts: string[] = []
@@ -197,13 +197,13 @@ function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: Currenc
       if (strongRank?.bias) {
         const b = strongRank.bias.toLowerCase()
         if (b.includes('verkrappend') || b.includes('hawkish')) {
-          explanationParts.push(`${strongCcy} is hawkish (${strongRank.bias}) — de centrale bank verkrapt of houdt rente hoog. Dit trekt kapitaal aan en maakt de valuta sterker.`)
+          explanationParts.push(`${strongCcy} is hawkish (${strongRank.bias}): de centrale bank verkrapt of houdt rente hoog. Dit trekt kapitaal aan en maakt de valuta sterker.`)
         } else if (b.includes('verruimend') || b.includes('dovish')) {
-          explanationParts.push(`${strongCcy} is dovish (${strongRank.bias}) — maar scoort alsnog hoger dan ${weakCcy} door andere factoren (rente, macro-dynamiek).`)
+          explanationParts.push(`${strongCcy} is dovish (${strongRank.bias}), maar scoort alsnog hoger dan ${weakCcy} door andere factoren (rente, macro-dynamiek).`)
         } else if (b.includes('afwachtend')) {
-          explanationParts.push(`${strongCcy} is afwachtend (${strongRank.bias}) — de centrale bank houdt beleid stabiel. Sterkte komt vanuit de zwakte van ${weakCcy}.`)
+          explanationParts.push(`${strongCcy} is afwachtend (${strongRank.bias}): de centrale bank houdt beleid stabiel. Sterkte komt vanuit de zwakte van ${weakCcy}.`)
         } else {
-          explanationParts.push(`${strongCcy}: ${strongRank.bias} — huidige CB-positie geeft een fundamenteel voordeel t.o.v. ${weakCcy}.`)
+          explanationParts.push(`${strongCcy}: ${strongRank.bias}, huidige CB-positie geeft een fundamenteel voordeel t.o.v. ${weakCcy}.`)
         }
       }
 
@@ -211,13 +211,13 @@ function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: Currenc
       if (weakRank?.bias) {
         const b = weakRank.bias.toLowerCase()
         if (b.includes('verruimend') || b.includes('dovish')) {
-          explanationParts.push(`${weakCcy} is dovish (${weakRank.bias}) — de centrale bank verruimt of verlaagt rente. Dit jaagt kapitaal weg en maakt de valuta zwakker.`)
+          explanationParts.push(`${weakCcy} is dovish (${weakRank.bias}): de centrale bank verruimt of verlaagt rente. Dit jaagt kapitaal weg en maakt de valuta zwakker.`)
         } else if (b.includes('verkrappend') || b.includes('hawkish')) {
-          explanationParts.push(`${weakCcy} is hawkish (${weakRank.bias}) — maar scoort alsnog lager dan ${strongCcy} door rente- of macro-verschil.`)
+          explanationParts.push(`${weakCcy} is hawkish (${weakRank.bias}), maar scoort alsnog lager dan ${strongCcy} door rente- of macro-verschil.`)
         } else if (b.includes('afwachtend')) {
-          explanationParts.push(`${weakCcy} is afwachtend (${weakRank.bias}) — scoort lager door rente- of macro-dynamiek t.o.v. ${strongCcy}.`)
+          explanationParts.push(`${weakCcy} is afwachtend (${weakRank.bias}), scoort lager door rente- of macro-dynamiek t.o.v. ${strongCcy}.`)
         } else {
-          explanationParts.push(`${weakCcy}: ${weakRank.bias} — huidige CB-positie is fundamenteel zwakker dan ${strongCcy}.`)
+          explanationParts.push(`${weakCcy}: ${weakRank.bias}, huidige CB-positie is fundamenteel zwakker dan ${strongCcy}.`)
         }
       }
 
@@ -229,7 +229,7 @@ function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: Currenc
         if (absDiff >= 1) {
           explanationParts.push(`Renteverschil: ${higher} biedt ${absDiff}% meer rente dan ${lower}. Grotere renteverschillen trekken carry-trade kapitaal aan richting de hogere rente.`)
         } else if (absDiff > 0) {
-          explanationParts.push(`Renteverschil: ${higher} biedt ${absDiff}% meer rente dan ${lower}. Klein verschil — de CB-bias weegt hier zwaarder.`)
+          explanationParts.push(`Renteverschil: ${higher} biedt ${absDiff}% meer rente dan ${lower}. Klein verschil, de CB-bias weegt hier zwaarder.`)
         } else {
           explanationParts.push(`Renteverschil: gelijk (${pair.base} en ${pair.quote} hebben dezelfde rente). De divergentie komt puur uit CB-beleidsverschillen.`)
         }
@@ -238,7 +238,7 @@ function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: Currenc
 
     let eventWarning = ''
     if (pairEvents.length > 0) {
-      eventWarning = `Let op: ${pairEvents.map(e => `${e.title} (${e.currency}, ${e.time})`).join(', ')} — volatiliteit verwacht.`
+      eventWarning = `Let op: ${pairEvents.map(e => `${e.title} (${e.currency}, ${e.time})`).join(', ')}, volatiliteit verwacht.`
     }
 
     return {
@@ -556,7 +556,7 @@ export default function DailyBriefingDashboard() {
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
-                    Waarom {data.regime}? — de cijfers erachter
+                    Waarom {data.regime}? De cijfers erachter
                   </summary>
                   <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] space-y-3">
                     {/* Safe-haven vs high-yield scores */}
@@ -620,7 +620,7 @@ export default function DailyBriefingDashboard() {
                             {data.regime === 'Risk-On' && `High-yield gemiddeld (${highAvg > 0 ? '+' : ''}${highAvg.toFixed(1)}) is sterker dan safe-haven (${safeAvg > 0 ? '+' : ''}${safeAvg.toFixed(1)}) → kapitaal zoekt rendement → Risk-On.`}
                             {data.regime === 'USD Dominant' && `USD score is hoog door hawkish Fed-beleid. Dit trekt kapitaal naar de dollar, ongeacht het bredere sentiment.`}
                             {data.regime === 'USD Zwak' && `USD score is laag door dovish verwachtingen. Kapitaal stroomt weg van de dollar naar sterkere alternatieven.`}
-                            {data.regime === 'Gemengd' && `Geen duidelijk verschil tussen safe-haven en high-yield scores. De markt heeft geen dominant thema — focus op individuele paar-divergenties.`}
+                            {data.regime === 'Gemengd' && `Geen duidelijk verschil tussen safe-haven en high-yield scores. De markt heeft geen dominant thema, focus op individuele paar-divergenties.`}
                           </div>
                         </>
                       )
@@ -656,7 +656,7 @@ export default function DailyBriefingDashboard() {
           {/* Bridge: Regime → Intermarket */}
           <StepBridge
             icon="down"
-            text={`Het regime is ${data.regime} — klopt dit met wat de markten laten zien? De intermarket signalen hieronder bevestigen of weerleggen dit.`}
+            text={`Het regime is ${data.regime}, klopt dit met wat de markten laten zien? De intermarket signalen hieronder bevestigen of weerleggen dit.`}
           />
 
           {/* ════════════════════════════════════════════════════════
@@ -768,7 +768,7 @@ export default function DailyBriefingDashboard() {
             {/* Currency Strength mini-bar */}
             {data.currencyRanking && data.currencyRanking.length > 0 && (
               <div className="mt-4 p-4 rounded-xl bg-bg-card border border-border">
-                <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider mb-3">Valuta Sterkte — van sterk naar zwak</p>
+                <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider mb-3">Valuta Sterkte: van sterk naar zwak</p>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {data.currencyRanking.map((ccy, i) => {
                     const isStrong = ccy.score > 1
@@ -903,7 +903,7 @@ export default function DailyBriefingDashboard() {
                         <p className="text-heading font-semibold mb-0.5">Wat meten we?</p>
                         <p>Alleen paren met <span className="text-accent-light font-semibold">sterke overtuiging</span> (score ≥ 3.5 of ≤ −3.5) worden bijgehouden. De <span className="text-accent-light">entry</span> is de sluiting van de daily candle op de dag van de call. De <span className="text-accent-light">exit</span> is de sluiting van de volgende daily candle. Bewoog de prijs in de richting van de call → <span className="text-green-400 font-semibold">correct</span>. Ertegen → <span className="text-red-400 font-semibold">incorrect</span>.</p>
                       </div>
-                      <p className="text-text-muted text-[10px] pt-0.5 border-t border-white/[0.04]">{trackStats.startDate ? `Meting loopt sinds ${new Date(trackStats.startDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}` : 'Trackrecord wordt opgebouwd'} · Daily close → daily close · Databron: <a href="/tools/rente" className="text-accent-light/70 underline underline-offset-2">Rentetarieven</a>, handmatig bijgewerkt bij elke CB vergadering · Dit meet de fundamentele bias — niet je entry of structure break.</p>
+                      <p className="text-text-muted text-[10px] pt-0.5 border-t border-white/[0.04]">{trackStats.startDate ? `Meting loopt sinds ${new Date(trackStats.startDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}` : 'Trackrecord wordt opgebouwd'} · Daily close → daily close · Databron: <a href="/tools/rente" className="text-accent-light/70 underline underline-offset-2">Rentetarieven</a>, handmatig bijgewerkt bij elke CB vergadering · Dit meet de fundamentele bias, niet je entry of structure break.</p>
                     </div>
                   </div>
                   <div className="px-5 py-4 bg-bg-card">
@@ -1094,7 +1094,7 @@ export default function DailyBriefingDashboard() {
                     )}
                     <div className="flex items-center justify-between mt-3 gap-3">
                       <p className="text-[10px] text-text-dim leading-relaxed">
-                        Meting: daily close → daily close. Meet of de fundamentele bias klopte op dagbasis — niet je entry of structure break.
+                        Meting: daily close → daily close. Meet of de fundamentele bias klopte op dagbasis, niet je entry of structure break.
                       </p>
                       <button
                         onClick={backfillTrackRecord}
@@ -1126,8 +1126,8 @@ export default function DailyBriefingDashboard() {
                 return (
                   <div className="mb-3 px-3.5 py-2.5 rounded-lg bg-accent/[0.05] border border-accent/15 text-[11px] text-text-muted leading-relaxed">
                     <strong className="text-heading">Waarom alleen {dir}s?</strong> {dir === 'short'
-                      ? 'Het model ziet momenteel geen valuta met een sterk bullish fundamenteel voordeel tegenover een andere. Alle sterke divergenties wijzen dezelfde kant op — dat betekent dat het macro-plaatje duidelijk is. Dit is normaal wanneer één of twee valuta\'s (vaak JPY of USD) duidelijk sterker of zwakker zijn dan de rest.'
-                      : 'Het model ziet momenteel geen valuta met een sterk bearish fundamenteel nadeel. Alle divergenties wijzen omhoog — er is een duidelijk fundamenteel voordeel voor de base valuta\'s in deze paren.'}
+                      ? 'Het model ziet momenteel geen valuta met een sterk bullish fundamenteel voordeel tegenover een andere. Alle sterke divergenties wijzen dezelfde kant op, dat betekent dat het macro-plaatje duidelijk is. Dit is normaal wanneer één of twee valuta\'s (vaak JPY of USD) duidelijk sterker of zwakker zijn dan de rest.'
+                      : 'Het model ziet momenteel geen valuta met een sterk bearish fundamenteel nadeel. Alle divergenties wijzen omhoog, er is een duidelijk fundamenteel voordeel voor de base valuta\'s in deze paren.'}
                   </div>
                 )
               })()}
@@ -1256,7 +1256,7 @@ export default function DailyBriefingDashboard() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
-                Vandaag &amp; Morgen — High Impact
+                Vandaag &amp; Morgen: High Impact
                 <span className="text-[10px] font-normal text-text-dim bg-white/5 px-2 py-0.5 rounded ml-1">
                   {data.todayEvents.length} events
                 </span>
@@ -1264,7 +1264,7 @@ export default function DailyBriefingDashboard() {
               <div className="mt-3">
                 {data.todayEvents.length === 0 ? (
                   <div className="p-4 rounded-xl bg-bg-card border border-border text-center">
-                    <p className="text-sm text-text-dim">Geen high-impact events vandaag of morgen. Rustige dag — focus op technische setups.</p>
+                    <p className="text-sm text-text-dim">Geen high-impact events vandaag of morgen. Rustige dag, focus op technische setups.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1366,7 +1366,7 @@ export default function DailyBriefingDashboard() {
           <div className="p-4 rounded-xl border border-border bg-bg-card/30 text-center">
             <p className="text-xs text-text-dim leading-relaxed">
               Deze briefing is puur educatief en geen financieel advies. Data wordt automatisch opgehaald.
-              Fundamentals geven de richting — je technische analyse (structure breaks) bepaalt de timing en entry.
+              Fundamentals geven de richting, je technische analyse (structure breaks) bepaalt de timing en entry.
             </p>
           </div>
         </>

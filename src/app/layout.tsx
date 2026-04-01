@@ -22,7 +22,7 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Sanders Capital — Kennis. Discipline. Groei.',
+    default: 'Sanders Capital | Kennis. Discipline. Groei.',
     template: '%s | Sanders Capital',
   },
   description:
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     apple: '/assets/images/logo.png',
   },
   openGraph: {
-    title: 'Sanders Capital — Kennis. Discipline. Groei.',
+    title: 'Sanders Capital | Kennis. Discipline. Groei.',
     description:
       'Educatieve content over financiële markten. Leer over trading, risicomanagement en marktpsychologie.',
     url: 'https://sanderscapital.nl',
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary',
-    title: 'Sanders Capital — Kennis. Discipline. Groei.',
+    title: 'Sanders Capital | Kennis. Discipline. Groei.',
     description: 'Educatieve content over financiële markten. Leer over trading, risicomanagement en marktpsychologie.',
     images: ['/assets/images/logo.png'],
   },

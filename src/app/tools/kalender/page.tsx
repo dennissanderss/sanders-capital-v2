@@ -85,7 +85,7 @@ function getEventExplanation(event: CalendarEvent): { what: string; betterThanEx
   }
   if (t.includes('retail') || t.includes('sales') || t.includes('consumer')) {
     return {
-      what: `Meet de consumptieve bestedingen. Consumptie is ~70% van het BBP — sterke retail sales = sterke economie.`,
+      what: `Meet de consumptieve bestedingen. Consumptie is ~70% van het BBP; sterke retail sales = sterke economie.`,
       betterThanExpected: `Hogere verkopen dan verwacht = sterke consument = hawkish voor ${ccy}.`,
       worseThanExpected: `Lagere verkopen dan verwacht = zwakke consument = dovish voor ${ccy}.`,
     }
@@ -99,7 +99,7 @@ function getEventExplanation(event: CalendarEvent): { what: string; betterThanEx
   }
   if (t.includes('speak') || t.includes('press conference') || t.includes('testimony')) {
     return {
-      what: `Toespraak van een centrale bank official. Let op hints over toekomstig rentebeleid — de toon is belangrijker dan specifieke data.`,
+      what: `Toespraak van een centrale bank official. Let op hints over toekomstig rentebeleid; de toon is belangrijker dan specifieke data.`,
       betterThanExpected: `Hawkish toon (inflatiezorgen, geen haast om te verlagen) = ${ccy} sterker.`,
       worseThanExpected: `Dovish toon (groeivertraging, openstaan voor verlaging) = ${ccy} zwakker.`,
     }
@@ -113,7 +113,7 @@ function getEventExplanation(event: CalendarEvent): { what: string; betterThanEx
   }
   if (t.includes('ism') || t.includes('manufacturing')) {
     return {
-      what: `ISM Manufacturing index — meet de gezondheid van de productiesector. Boven 50 = expansie, onder 50 = krimp.`,
+      what: `ISM Manufacturing index: meet de gezondheid van de productiesector. Boven 50 = expansie, onder 50 = krimp.`,
       betterThanExpected: `Hoger dan verwacht = economie groeit = hawkish voor ${ccy}.`,
       worseThanExpected: `Lager dan verwacht = economie krimpt = dovish voor ${ccy}.`,
     }
@@ -177,7 +177,7 @@ function NextEventCountdown({ events }: { events: CalendarEvent[] }) {
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <span className="text-xl">{flagEmoji(next.flag)}</span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-heading truncate">{next.currency} — {next.title}</p>
+            <p className="text-sm font-semibold text-heading truncate">{next.currency}, {next.title}</p>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs text-text-dim">{dateStr}</span>
               <span className="text-xs font-mono font-semibold text-text-muted">{timeStr}</span>

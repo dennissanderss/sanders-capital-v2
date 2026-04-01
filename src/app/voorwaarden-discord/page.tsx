@@ -38,8 +38,8 @@ export default function VoorwaardenDiscordPage() {
             </h2>
             <p className="text-text-muted">
               De Sanders Capital Discord is een educatieve community gericht op financi&euml;le
-              markten. Alles wat gedeeld wordt door Sanders Capital of door leden — inclusief
-              analyses, trade-idee&euml;n, setups en gesprekken — is geen financieel advies.
+              markten. Alles wat gedeeld wordt door Sanders Capital of door leden, inclusief
+              analyses, trade-idee&euml;n, setups en gesprekken, is geen financieel advies.
               Sanders Capital is geen beleggingsonderneming en beschikt niet over een
               AFM-vergunning. Je handelt te allen tijde op eigen risico en verantwoordelijkheid.
             </p>
@@ -95,8 +95,8 @@ export default function VoorwaardenDiscordPage() {
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>
-                4.1. Alle content gedeeld door Sanders Capital in de Discord — inclusief analyses,
-                educatief materiaal, video&apos;s, afbeeldingen en tools — is eigendom van Sanders
+                4.1. Alle content gedeeld door Sanders Capital in de Discord, inclusief analyses,
+                educatief materiaal, video&apos;s, afbeeldingen en tools, is eigendom van Sanders
                 Capital en auteursrechtelijk beschermd.
               </p>
               <p>
@@ -118,7 +118,7 @@ export default function VoorwaardenDiscordPage() {
             </h2>
             <div className="space-y-2 text-text-muted">
               <p>
-                5.1. Sanders Capital is niet aansprakelijk voor enige schade — direct of indirect —
+                5.1. Sanders Capital is niet aansprakelijk voor enige schade, direct of indirect,
                 die voortvloeit uit informatie, analyses of gesprekken binnen de Discord-server,
                 waaronder financi&euml;le verliezen.
               </p>
