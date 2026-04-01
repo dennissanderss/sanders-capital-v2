@@ -211,11 +211,27 @@ function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: Currenc
       score: pair.score, scoreWithoutNews: pair.scoreWithoutNews, newsInfluence: pair.newsInfluence, action, explanation: explanationParts,
       eventWarning: pairEvents.length > 0 ? `${pairEvents.map(e => `${e.title} (${e.time})`).join(', ')}` : '',
       isBullish, isBearish,
+      baseBias: pair.baseBias,
+      quoteBias: pair.quoteBias,
+      base: pair.base,
+      quote: pair.quote,
+      rateDiff: pair.rateDiff,
+      baseRank,
+      quoteRank,
     }
   })
 }
 
 const MAJORS = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD']
+
+const INTERMARKET_HOW_TO_READ: Record<string, string> = {
+  us10y: 'Stijgende yields = USD sterker, risk-off druk. Dalende yields = USD zwakker, risk-on. Het gaat niet om het niveau maar de richting.',
+  sp500: 'Stijgend = risk-on (AUD, NZD, CAD sterk). Dalend = risk-off (JPY, CHF sterk). De ultieme risk barometer.',
+  vix: 'Onder 15 = kalm. 15-20 = normaal. 20-25 = stress. 25-30 = angst. Boven 30 = paniek. VIX is mean-reverting.',
+  gold: 'Stijgt bij onzekerheid en dalende reele rente. Goud + dalende aandelen = sterke risk-off bevestiging.',
+  oil: 'Direct: CAD sterker bij stijgende olie (export), JPY zwakker (import). Indirect: hogere olie = meer inflatie = hawkisher beleid.',
+  dxy: 'Dollar Index meet USD tegen een mandje van 6 valuta&apos;s. Stijgend = USD breed sterker. Dalend = USD breed zwakker.',
+}
 
 // ─── Step Header Component ─────────────────────────────────
 function StepHeader({ step, title, subtitle }: { step: number; title: string; subtitle: string }) {
@@ -329,6 +345,8 @@ export default function BriefingV2Dashboard() {
   const [trackStats, setTrackStats] = useState<TrackStats>({ total: 0, correct: 0, incorrect: 0, pending: 0, winRate: 0, startDate: null })
   const [showTrackRecord, setShowTrackRecord] = useState(false)
   const [expandedPairs, setExpandedPairs] = useState<Set<string>>(new Set())
+  const [backfilling, setBackfilling] = useState(false)
+  const [backfillMsg, setBackfillMsg] = useState<string | null>(null)
 
   const fetchData = async () => {
     setLoading(true)
@@ -347,11 +365,41 @@ export default function BriefingV2Dashboard() {
 
   const fetchTrackRecord = async () => {
     try {
+      // Try v2 endpoint first
+      const resV2 = await fetch('/api/trackrecord-v2')
+      const jsonV2 = await resV2.json()
+      const records = jsonV2.records || []
+      if (records.length > 0) {
+        setTrackRecords(records)
+        setTrackStats(jsonV2.stats || { total: 0, correct: 0, incorrect: 0, pending: 0, winRate: 0, startDate: null })
+        return
+      }
+      // Fallback to v1 if v2 returns empty
       const res = await fetch('/api/trackrecord')
       const json = await res.json()
       setTrackRecords(json.records || [])
       setTrackStats(json.stats || { total: 0, correct: 0, incorrect: 0, pending: 0, winRate: 0, startDate: null })
     } catch { /* table might not exist */ }
+  }
+
+  const handleBackfill = async () => {
+    setBackfilling(true)
+    setBackfillMsg(null)
+    try {
+      const res = await fetch('/api/trackrecord-v2/backfill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days: 30 }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Backfill mislukt')
+      setBackfillMsg(`Backfill voltooid: ${json.added || 0} records toegevoegd, ${json.updated || 0} bijgewerkt.`)
+      await fetchTrackRecord()
+    } catch (e) {
+      setBackfillMsg(e instanceof Error ? e.message : 'Backfill mislukt')
+    } finally {
+      setBackfilling(false)
+    }
   }
 
   useEffect(() => {
@@ -541,7 +589,7 @@ export default function BriefingV2Dashboard() {
 
               {/* Expandable: Waarom dit regime? */}
               <div className="px-5 sm:px-6 pb-4">
-                <details className="group">
+                <details className="mt-3 group">
                   <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
                       <polyline points="9 18 15 12 9 6" />
@@ -618,23 +666,23 @@ export default function BriefingV2Dashboard() {
                 </details>
 
                 {/* Expandable: Methodology */}
-                <details className="mt-2 group">
+                <details className="mt-3 group">
                   <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
                     Hoe wordt het regime bepaald?
                   </summary>
-                  <div className="mt-3 space-y-3">
-                    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                    <div className="space-y-3">
                       <p className="text-xs text-text-dim leading-relaxed">{data.regimeMethodology}</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-accent-glow/10 border border-accent-dim/20">
-                      <p className="text-xs text-text-dim leading-relaxed">
-                        <strong className="text-accent-light">Databron:</strong> Centraal bank persconferenties, policy statements en forward guidance.
-                        Score per valuta op basis van hawkish/dovish bias en rentetarieven. Data uit{' '}
-                        <a href="/tools/rente" className="text-accent-light underline underline-offset-2 hover:text-accent-light/80">Tools &gt; Rentetarieven</a>.
-                      </p>
+                      <div className="p-3 rounded-lg bg-accent-glow/10 border border-accent-dim/20">
+                        <p className="text-xs text-text-dim leading-relaxed">
+                          <strong className="text-accent-light">Databron:</strong> Centraal bank persconferenties, policy statements en forward guidance.
+                          Score per valuta op basis van hawkish/dovish bias en rentetarieven. Data uit{' '}
+                          <a href="/tools/rente" className="text-accent-light underline underline-offset-2 hover:text-accent-light/80">Tools &gt; Rentetarieven</a>.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </details>
@@ -750,44 +798,56 @@ export default function BriefingV2Dashboard() {
 
               {/* Expandable: News methodology */}
               <div className="px-5 sm:px-6 py-4 border-t border-white/[0.04]">
-                <details className="group">
+                <details className="mt-3 group">
                   <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
                     Hoe wordt nieuws geanalyseerd?
                   </summary>
-                  <div className="mt-3 space-y-3">
-                    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                      <p className="text-xs text-text-dim leading-relaxed">
-                        Nieuwsartikelen uit 7 bronnen worden geanalyseerd op bullish/bearish keywords per valuta.
-                        Elk artikel krijgt een relevantie-score en wordt gekoppeld aan de valuta&apos;s die het betreft.
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                        <p className="text-[10px] text-accent-light font-semibold mb-1">Keyword Analyse</p>
-                        <p className="text-[10px] text-text-dim leading-relaxed">
-                          Artikelen worden gescand op bullish keywords (rate hike, hawkish, strong growth) en bearish keywords (rate cut, dovish, recession risk) per valuta.
-                        </p>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                        <p className="text-[10px] text-accent-light font-semibold mb-1">Recentheid Weging</p>
-                        <p className="text-[10px] text-text-dim leading-relaxed">
-                          Recent nieuws weegt zwaarder: &lt;12u = 1.5x, 12-24u = 1.2x, 24-48u = 1.0x, ouder = 0.7x. Zo telt vers nieuws het meest mee.
-                        </p>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                        <p className="text-[10px] text-accent-light font-semibold mb-1">Begrenzing +-1.5</p>
-                        <p className="text-[10px] text-text-dim leading-relaxed">
-                          Het nieuws-effect is gemaximeerd op +-1.5 punten. De fundamentele CB-analyse blijft altijd de basis, nieuws is een aanvullend signaal.
-                        </p>
+                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                          <p className="text-[10px] text-accent-light font-semibold mb-1">Keyword Analyse</p>
+                          <p className="text-[10px] text-text-dim leading-relaxed">
+                            Artikelen worden gescand op bullish keywords (hawkish, rate hike, strong, surge, beat) en bearish keywords (dovish, rate cut, weak, recession, decline). Per match wordt het sentiment voor de betreffende valuta aangepast.
+                          </p>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                          <p className="text-[10px] text-accent-light font-semibold mb-1">Recency Weging</p>
+                          <p className="text-[10px] text-text-dim leading-relaxed">
+                            Recent nieuws weegt zwaarder: artikelen van &lt;12u geleden krijgen factor 1.5x, 12-24u = 1.2x, 24-48u = 1.0x, ouder = 0.7x.
+                          </p>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                          <p className="text-[10px] text-accent-light font-semibold mb-1">Begrenzing</p>
+                          <p className="text-[10px] text-text-dim leading-relaxed">
+                            Het nieuws-effect is begrensd op maximaal +-1.5 punten per valuta. Dit voorkomt dat een enkele nieuwsgolf de fundamentele analyse volledig overstemt. CB beleid blijft altijd de basis.
+                          </p>
+                        </div>
                       </div>
                     </div>
-                    <div className="p-2.5 rounded-lg bg-accent-glow/10 border border-accent-dim/20">
-                      <p className="text-[10px] text-text-dim leading-relaxed">
-                        <strong className="text-accent-light">Databronnen:</strong> Reuters, Bloomberg, FXStreet, ForexLive, Investing.com, DailyFX, Central Banking. Artikelen worden automatisch elke 2 uur opgehaald.
-                      </p>
+                  </div>
+                </details>
+
+                {/* Expandable: Databronnen */}
+                <details className="mt-3 group">
+                  <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                    Databronnen
+                  </summary>
+                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                    <p className="text-[10px] text-text-dim mb-2">RSS feeds worden automatisch elke 2 uur opgehaald uit de volgende bronnen:</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                      {['Federal Reserve', 'ECB', 'ForexLive', 'CNBC', 'Bloomberg', 'BBC', 'NY Times'].map(source => (
+                        <div key={source} className="flex items-center gap-1.5 text-[10px] text-text-muted px-2 py-1.5 rounded bg-white/[0.02] border border-white/[0.04]">
+                          <span className="w-1 h-1 rounded-full bg-accent-light/40 shrink-0" />
+                          {source}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </details>
@@ -860,39 +920,85 @@ export default function BriefingV2Dashboard() {
 
               {/* Expandable: Per-signal explanation */}
               <div className="px-5 sm:px-6 pb-4">
-                <details className="group">
+                <details className="mt-3 group">
                   <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
                     Per signaal uitleg bekijken
                   </summary>
-                  <div className="mt-3 space-y-2">
-                    {data.intermarketSignals.map(signal => {
-                      const isUp = signal.direction === 'up'
-                      const isDown = signal.direction === 'down'
-                      return (
-                        <div key={signal.key} className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-semibold text-heading">{signal.name}</span>
-                            <div className="flex items-center gap-2">
-                              {signal.current !== null && (
-                                <span className="text-[10px] font-mono text-text-muted">
-                                  {signal.unit === '$' ? '$' : ''}{signal.current}{signal.unit === '%' ? '%' : ''}
+                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                    <div className="space-y-2">
+                      {data.intermarketSignals.map(signal => {
+                        const isUp = signal.direction === 'up'
+                        const isDown = signal.direction === 'down'
+                        const howToRead = INTERMARKET_HOW_TO_READ[signal.key] || ''
+                        return (
+                          <div key={signal.key} className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-semibold text-heading">{signal.name}</span>
+                              <div className="flex items-center gap-2">
+                                {signal.current !== null && (
+                                  <span className="text-[10px] font-mono text-text-muted">
+                                    {signal.unit === '$' ? '$' : ''}{signal.current}{signal.unit === '%' ? '%' : ''}
+                                  </span>
+                                )}
+                                <span className={`text-xs font-mono font-semibold ${isUp ? 'text-green-400' : isDown ? 'text-red-400' : 'text-text-dim'}`}>
+                                  {isUp ? '\u25B2' : isDown ? '\u25BC' : '\u2014'}
                                 </span>
-                              )}
-                              <span className={`text-xs font-mono font-semibold ${isUp ? 'text-green-400' : isDown ? 'text-red-400' : 'text-text-dim'}`}>
-                                {isUp ? '\u25B2' : isDown ? '\u25BC' : '\u2014'}
-                              </span>
+                              </div>
                             </div>
+                            {howToRead && (
+                              <p className="text-[10px] text-text-dim leading-relaxed mb-1">{howToRead}</p>
+                            )}
+                            {signal.context && <p className="text-[10px] text-text-dim leading-relaxed">{signal.context}</p>}
+                            <p className="text-[10px] text-accent-light/70 mt-1">
+                              <strong>Regime impact:</strong> {signal.regimeImpact}
+                            </p>
                           </div>
-                          {signal.context && <p className="text-[10px] text-text-dim leading-relaxed">{signal.context}</p>}
-                          <p className="text-[10px] text-accent-light/70 mt-1">
-                            <strong>Regime impact:</strong> {signal.regimeImpact}
-                          </p>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </details>
+
+                {/* Expandable: How intermarket confirms regime */}
+                <details className="mt-3 group">
+                  <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                    Hoe bevestigen intermarket signalen het regime?
+                  </summary>
+                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                    <div className="space-y-2 text-[10px] text-text-dim leading-relaxed">
+                      <p>
+                        Intermarket signalen worden gebruikt als bevestiging van het macro regime dat in Stap 1 is bepaald op basis van centraal bank beleid.
+                        Ze veranderen het regime niet, maar verhogen of verlagen de confidence score.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                          <p className="text-accent-light font-semibold mb-1">Risk-Off bevestigd als:</p>
+                          <p>VIX stijgt + S&amp;P 500 daalt + Goud stijgt (minimaal 3 van 4 risk-off signalen)</p>
                         </div>
-                      )
-                    })}
+                        <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                          <p className="text-accent-light font-semibold mb-1">Risk-On bevestigd als:</p>
+                          <p>VIX daalt + S&amp;P 500 stijgt + Goud daalt (minimaal 3 van 4 risk-on signalen)</p>
+                        </div>
+                        <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                          <p className="text-accent-light font-semibold mb-1">USD Dominant bevestigd als:</p>
+                          <p>Yields stijgen OF minimaal 2 risk-off signalen actief</p>
+                        </div>
+                        <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                          <p className="text-accent-light font-semibold mb-1">USD Zwak bevestigd als:</p>
+                          <p>Yields dalen OF minimaal 2 risk-on signalen actief</p>
+                        </div>
+                      </div>
+                      <p>
+                        Als intermarket signalen het regime bevestigen, wordt de confidence score verhoogd.
+                        Bij conflict blijft het regime gelijk maar de confidence score wordt verlaagd, wat leidt tot meer selectieve trade suggesties.
+                      </p>
+                    </div>
                   </div>
                 </details>
               </div>
@@ -1004,24 +1110,92 @@ export default function BriefingV2Dashboard() {
                         </div>
                       )}
 
-                      {/* Expandable explanation per pair */}
-                      <details className="group mt-1" open={expandedPairs.has(trade.pair)} onClick={(e) => { e.preventDefault(); togglePairExpanded(trade.pair) }}>
-                        <summary className="flex items-center gap-2 text-[11px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${expandedPairs.has(trade.pair) ? 'rotate-90' : ''}`}>
+                      {/* Expandable: Waarom dit paar? */}
+                      <details className="mt-3 group">
+                        <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
                             <polyline points="9 18 15 12 9 6" />
                           </svg>
-                          Fundamentele onderbouwing
+                          Waarom dit paar?
                         </summary>
-                        {expandedPairs.has(trade.pair) && (
-                          <div className="mt-2 space-y-1.5">
-                            {trade.explanation.map((exp, j) => (
-                              <div key={j} className="flex items-start gap-1.5 text-[11px] text-text-dim leading-relaxed">
-                                <span className="text-accent-light mt-0.5 shrink-0">&gt;</span>
-                                <span>{exp}</span>
+                        <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                          <div className="space-y-2">
+                            {/* Full score breakdown */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                                <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">{trade.base} (base)</p>
+                                <p className={`text-sm font-mono font-bold ${(trade.baseRank?.score || 0) > 0 ? 'text-green-400' : (trade.baseRank?.score || 0) < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                                  {(trade.baseRank?.score || 0) > 0 ? '+' : ''}{(trade.baseRank?.score || 0).toFixed(1)}
+                                </p>
+                                <p className="text-[9px] text-text-dim mt-0.5">
+                                  Basis: {(trade.baseRank?.baseScore || 0) > 0 ? '+' : ''}{(trade.baseRank?.baseScore || 0).toFixed(1)}
+                                  {(trade.baseRank?.newsBonus || 0) !== 0 && ` | Nieuws: ${(trade.baseRank?.newsBonus || 0) > 0 ? '+' : ''}${(trade.baseRank?.newsBonus || 0).toFixed(1)}`}
+                                </p>
                               </div>
-                            ))}
+                              <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                                <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">{trade.quote} (quote)</p>
+                                <p className={`text-sm font-mono font-bold ${(trade.quoteRank?.score || 0) > 0 ? 'text-green-400' : (trade.quoteRank?.score || 0) < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                                  {(trade.quoteRank?.score || 0) > 0 ? '+' : ''}{(trade.quoteRank?.score || 0).toFixed(1)}
+                                </p>
+                                <p className="text-[9px] text-text-dim mt-0.5">
+                                  Basis: {(trade.quoteRank?.baseScore || 0) > 0 ? '+' : ''}{(trade.quoteRank?.baseScore || 0).toFixed(1)}
+                                  {(trade.quoteRank?.newsBonus || 0) !== 0 && ` | Nieuws: ${(trade.quoteRank?.newsBonus || 0) > 0 ? '+' : ''}${(trade.quoteRank?.newsBonus || 0).toFixed(1)}`}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* CB bias */}
+                            {(trade.baseBias || trade.quoteBias) && (
+                              <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                                <p className="text-[10px] text-accent-light font-semibold mb-1">CB Bias</p>
+                                <div className="space-y-0.5 text-[10px] text-text-dim">
+                                  {trade.baseBias && <p>{trade.base}: {trade.baseBias}</p>}
+                                  {trade.quoteBias && <p>{trade.quote}: {trade.quoteBias}</p>}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Rate differential */}
+                            {trade.rateDiff !== null && trade.rateDiff !== 0 && (
+                              <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                                <p className="text-[10px] text-accent-light font-semibold mb-1">Renteverschil</p>
+                                <p className="text-[10px] text-text-dim">
+                                  {trade.base} vs {trade.quote}: {trade.rateDiff > 0 ? '+' : ''}{trade.rateDiff}%.
+                                  {trade.rateDiff > 0
+                                    ? ` ${trade.base} biedt een hogere rente, wat carry-trade stromen richting ${trade.base} aantrekt.`
+                                    : ` ${trade.quote} biedt een hogere rente, wat carry-trade stromen richting ${trade.quote} aantrekt.`
+                                  }
+                                </p>
+                              </div>
+                            )}
+
+                            {/* News influence */}
+                            {trade.newsInfluence !== 0 && (
+                              <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                                <p className="text-[10px] text-accent-light font-semibold mb-1">Nieuws Invloed</p>
+                                <p className="text-[10px] text-text-dim">
+                                  Het recente nieuws {trade.newsInfluence > 0 ? 'versterkt' : 'verzwakt'} de fundamentele richting met {Math.abs(trade.newsInfluence)} punt.
+                                  {trade.newsInfluence > 0
+                                    ? ' Nieuwssentiment is in lijn met de CB-divergentie, wat de overtuiging verhoogt.'
+                                    : ' Nieuwssentiment gaat tegen de CB-divergentie in, wat de overtuiging verlaagt.'
+                                  }
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Full explanation list */}
+                            {trade.explanation.length > 0 && (
+                              <div className="space-y-1">
+                                {trade.explanation.map((exp, j) => (
+                                  <div key={j} className="flex items-start gap-1.5 text-[11px] text-text-dim leading-relaxed">
+                                    <span className="text-accent-light mt-0.5 shrink-0">&gt;</span>
+                                    <span>{exp}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </details>
                     </div>
                   </div>
@@ -1032,6 +1206,37 @@ export default function BriefingV2Dashboard() {
                 <p className="text-sm text-text-muted">Geen sterke divergenties gevonden vandaag. Wacht op duidelijkere fundamentele signalen.</p>
               </div>
             )}
+
+            {/* Expandable: How trade focus pairs are selected */}
+            <div className="mt-4">
+              <details className="mt-3 group">
+                <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                  Hoe worden de trade focus paren geselecteerd?
+                </summary>
+                <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                  <div className="space-y-2 text-[10px] text-text-dim leading-relaxed">
+                    <p>
+                      De trade focus paren worden geselecteerd op basis van <strong className="text-accent-light">fundamentele divergentie</strong> tussen de base en quote valuta.
+                    </p>
+                    <p>
+                      Voor elk valutapaar wordt de score berekend als: <span className="font-mono text-text-muted">base_score - quote_score</span>.
+                      Een hoge positieve score betekent dat de base valuta fundamenteel veel sterker is dan de quote valuta (bullish bias).
+                      Een hoge negatieve score betekent het omgekeerde (bearish bias).
+                    </p>
+                    <p>
+                      Alleen paren met overtuiging &quot;sterk&quot; of &quot;matig&quot; worden opgenomen in de trade focus.
+                      De top 3 paren met de hoogste absolute divergentie worden getoond.
+                    </p>
+                    <p>
+                      De score bestaat uit drie componenten: (1) CB beleid score (basis), (2) renteverschil bonus/malus, en (3) nieuws sentiment correctie (max +-1.5).
+                    </p>
+                  </div>
+                </div>
+              </details>
+            </div>
 
             {/* Full Pair Bias Table */}
             <div className="mt-4 rounded-2xl border border-border bg-bg-card overflow-hidden">
@@ -1165,36 +1370,120 @@ export default function BriefingV2Dashboard() {
                     ))}
                   </div>
 
-                  {/* Historical Records Table */}
+                  {/* Backfill Button */}
+                  <div className="mb-4 flex items-center gap-3">
+                    <button
+                      onClick={handleBackfill}
+                      disabled={backfilling}
+                      className="px-3 py-1.5 text-[11px] font-medium rounded-lg border border-accent/30 bg-accent/10 text-accent-light hover:bg-accent/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {backfilling ? (
+                        <span className="flex items-center gap-1.5">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
+                            <polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                          </svg>
+                          Backfill bezig...
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                          </svg>
+                          Backfill 30 dagen
+                        </span>
+                      )}
+                    </button>
+                    {backfillMsg && (
+                      <span className="text-[10px] text-text-muted">{backfillMsg}</span>
+                    )}
+                  </div>
+
+                  {/* Historical Records Table - DETAILED */}
                   {trackRecords.length > 0 && (
-                    <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
-                      {trackRecords.slice(0, 20).map(record => (
-                        <div key={record.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.04] text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="text-text-dim font-mono">{record.date}</span>
-                            <span className="font-semibold text-heading">{record.pair}</span>
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                              record.direction.includes('bullish') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                    <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
+                      {trackRecords.slice(0, 30).map(record => (
+                        <div key={record.id} className="px-3 py-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04] text-xs">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-text-dim font-mono text-[10px]">{record.date}</span>
+                              <span className="font-semibold text-heading font-mono">{record.pair}</span>
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                record.direction.includes('bullish') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                              }`}>
+                                {record.direction.includes('bullish') ? 'LONG' : 'SHORT'}
+                              </span>
+                              {record.entry_price !== null && (
+                                <span className="text-text-dim">
+                                  <span className="text-[9px] text-text-dim/60 mr-0.5">entry</span>
+                                  <span className="font-mono text-text-muted">{record.entry_price}</span>
+                                </span>
+                              )}
+                              {record.exit_price !== null && (
+                                <span className="text-text-dim">
+                                  <span className="text-[9px] text-text-dim/60 mr-0.5">exit</span>
+                                  <span className="font-mono text-text-muted">{record.exit_price}</span>
+                                </span>
+                              )}
+                              {record.pips_moved !== null && (
+                                <span className={`font-mono text-[10px] ${record.pips_moved > 0 ? 'text-green-400' : record.pips_moved < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                                  {record.pips_moved > 0 ? '+' : ''}{record.pips_moved} pips
+                                </span>
+                              )}
+                              {record.regime && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.04] text-text-dim">{record.regime}</span>
+                              )}
+                            </div>
+                            <span className={`px-2 py-0.5 rounded font-semibold shrink-0 ${
+                              record.result === 'correct' ? 'bg-green-500/10 text-green-400' :
+                              record.result === 'incorrect' ? 'bg-red-500/10 text-red-400' :
+                              'bg-white/[0.06] text-text-dim'
                             }`}>
-                              {record.direction.includes('bullish') ? 'LONG' : 'SHORT'}
+                              {record.result === 'correct' ? 'Correct' : record.result === 'incorrect' ? 'Incorrect' : 'Pending'}
                             </span>
-                            <span className="text-text-dim font-mono">{record.score}</span>
                           </div>
-                          <span className={`px-2 py-0.5 rounded font-semibold ${
-                            record.result === 'correct' ? 'bg-green-500/10 text-green-400' :
-                            record.result === 'incorrect' ? 'bg-red-500/10 text-red-400' :
-                            'bg-white/[0.06] text-text-dim'
-                          }`}>
-                            {record.result === 'correct' ? 'Correct' : record.result === 'incorrect' ? 'Incorrect' : 'Pending'}
-                          </span>
                         </div>
                       ))}
                     </div>
                   )}
 
                   {trackRecords.length === 0 && (
-                    <p className="text-xs text-text-dim text-center py-4">Nog geen trackrecord data beschikbaar. Data wordt automatisch dagelijks opgeslagen.</p>
+                    <p className="text-xs text-text-dim text-center py-4">Nog geen trackrecord data beschikbaar. Gebruik de backfill knop of wacht tot data automatisch dagelijks wordt opgeslagen.</p>
                   )}
+
+                  {/* Expandable: How trackrecord is calculated */}
+                  <details className="mt-3 group">
+                    <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                      Hoe wordt het trackrecord berekend?
+                    </summary>
+                    <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                      <div className="space-y-2 text-[10px] text-text-dim leading-relaxed">
+                        <p>
+                          Het trackrecord meet hoe nauwkeurig de dagelijkse trade focus suggesties zijn door ze te vergelijken met de werkelijke prijsbeweging.
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-accent-light font-semibold mb-1">Entry</p>
+                            <p>De prijs op het moment dat de daily briefing wordt gegenereerd (begin Europese sessie).</p>
+                          </div>
+                          <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-accent-light font-semibold mb-1">Exit</p>
+                            <p>De prijs op de volgende handelsdag op hetzelfde tijdstip. Elke trade heeft een looptijd van 1 handelsdag.</p>
+                          </div>
+                          <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-accent-light font-semibold mb-1">Richting</p>
+                            <p>Gebaseerd op de fundamentele divergentie score: bullish paren worden als LONG geteld, bearish als SHORT.</p>
+                          </div>
+                        </div>
+                        <p>
+                          Een trade is &quot;correct&quot; als de prijs in de verwachte richting bewoog (LONG = prijs steeg, SHORT = prijs daalde).
+                          Het totale trackrecord geeft de win rate als percentage correcte calls over alle afgeronde trades.
+                        </p>
+                      </div>
+                    </div>
+                  </details>
                 </div>
               )}
             </div>
