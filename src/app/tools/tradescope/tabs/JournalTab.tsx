@@ -428,22 +428,27 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
   }
 
   // ── Auto-calculate derived fields ──
+  // Stringify dependencies to prevent infinite loops with number/string mismatches
+  const calcKey = `${form.open_price}|${form.close_price}|${form.sl}|${form.lot_size}|${form.action}|${form.symbol}|${form.commission}|${form.swap}`
   useEffect(() => {
-    const entry = parseFloat(form.open_price as string)
-    const exit = parseFloat(form.close_price as string)
-    const sl = parseFloat(form.sl as string)
-    const lot = parseFloat(form.lot_size as string)
-    const commission = parseFloat(form.commission as string) || 0
-    const swap = parseFloat(form.swap as string) || 0
+    // Skip auto-calc for existing trades (all derived fields are manual)
+    if (manualFields.size >= 4) return
+
+    const entry = parseFloat(String(form.open_price ?? ''))
+    const exit = parseFloat(String(form.close_price ?? ''))
+    const sl = parseFloat(String(form.sl ?? ''))
+    const lot = parseFloat(String(form.lot_size ?? ''))
+    const commission = parseFloat(String(form.commission ?? '')) || 0
+    const swap = parseFloat(String(form.swap ?? '')) || 0
     const isBuy = form.action === 'buy'
-    const symbol = (form.symbol as string || '').toUpperCase()
+    const symbol = String(form.symbol ?? '').toUpperCase()
 
     // Determine pip size from symbol
     const isJPY = symbol.includes('JPY') || symbol.includes('XAU')
     const pipSize = isJPY ? 0.01 : 0.0001
     const pipValue = isJPY ? (1000 * lot) : (10 * lot)
 
-    const updates: Record<string, unknown> = {}
+    const updates: Record<string, string> = {}
 
     // Auto-calc pips from entry + exit
     if (!isNaN(entry) && !isNaN(exit) && entry > 0 && exit > 0 && !manualFields.has('pips')) {
@@ -452,8 +457,8 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
     }
 
     // Auto-calc P&L from pips + lot (includes commission + swap)
-    const calcPips = parseFloat((updates.pips as string) ?? (form.pips as string))
-    if (!isNaN(calcPips) && !isNaN(lot) && lot > 0 && !manualFields.has('profit_loss')) {
+    const calcPips = parseFloat(updates.pips ?? String(form.pips ?? ''))
+    if (!isNaN(calcPips) && !isNaN(lot) && lot > 0 && !isNaN(pipValue) && !manualFields.has('profit_loss')) {
       const grossPnl = calcPips * pipValue
       const netPnl = Math.round((grossPnl - commission + swap) * 100) / 100
       updates.profit_loss = netPnl.toString()
@@ -469,8 +474,8 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
     }
 
     // Auto-calc Result (R) from actual P&L and risk amount
-    const calcPnl = parseFloat((updates.profit_loss as string) ?? (form.profit_loss as string))
-    if (!isNaN(entry) && !isNaN(sl) && !isNaN(lot) && entry > 0 && sl > 0 && lot > 0 && !isNaN(calcPnl) && !manualFields.has('result_r')) {
+    const calcPnl = parseFloat(updates.profit_loss ?? String(form.profit_loss ?? ''))
+    if (!isNaN(entry) && !isNaN(sl) && !isNaN(lot) && entry > 0 && sl > 0 && lot > 0 && !isNaN(calcPnl) && !isNaN(pipValue) && !manualFields.has('result_r')) {
       const riskPips = Math.abs(entry - sl) / pipSize
       const riskAmount = riskPips * pipValue
       if (riskAmount > 0) {
@@ -482,7 +487,7 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
       setForm(f => ({ ...f, ...updates }))
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.open_price, form.close_price, form.sl, form.lot_size, form.action, form.symbol, form.commission, form.swap])
+  }, [calcKey])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
