@@ -115,6 +115,16 @@ export default function Header() {
     setOpenDropdown(null)
   }, [pathname])
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [mobileOpen])
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = () => setOpenDropdown(null)
@@ -148,7 +158,7 @@ export default function Header() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-7">
+        <nav className="hidden lg:flex items-center gap-7">
           {/* Home */}
           <Link
             href="/"
@@ -348,7 +358,7 @@ export default function Header() {
         {/* Mobile hamburger */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden flex flex-col gap-1.5 p-3"
+          className="lg:hidden flex flex-col gap-1.5 p-3"
           aria-label="Menu"
         >
           <span className={`w-5 h-px bg-heading transition-transform duration-200 ${mobileOpen ? 'rotate-45 translate-y-[4px]' : ''}`} />
@@ -357,95 +367,144 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <nav className="md:hidden glass-elevated border-b border-white/[0.07] overflow-y-auto" style={{ maxHeight: 'calc(100vh - 4rem)' }}>
-          <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col gap-3">
-            <Link href="/" className={`text-sm py-2 transition-colors ${pathname === '/' ? 'text-heading' : 'text-text-muted'}`}>
-              Home
-            </Link>
+      {/* Mobile slide-out overlay */}
+      <div
+        className={`lg:hidden fixed inset-0 z-40 bg-black/60 transition-opacity duration-300 ${
+          mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setMobileOpen(false)}
+      />
 
-            {/* Nieuws */}
-            <Link href="/nieuws" className={`text-sm py-2 transition-colors ${pathname.startsWith('/nieuws') ? 'text-heading' : 'text-text-muted'}`}>
-              Nieuws
-            </Link>
+      {/* Mobile slide-out panel */}
+      <nav
+        className={`lg:hidden fixed top-0 right-0 z-50 h-[100dvh] transition-transform duration-300 ease-out ${
+          mobileOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        style={{
+          width: '95%',
+          maxWidth: '420px',
+          background: 'rgba(10, 12, 16, 0.97)',
+          backdropFilter: 'blur(32px)',
+          WebkitBackdropFilter: 'blur(32px)',
+          borderLeft: '1px solid rgba(255,255,255,0.08)',
+        }}
+      >
+        {/* Close button */}
+        <div className="flex items-center justify-between px-8 h-16 border-b border-white/[0.06]">
+          <span className="text-sm font-display font-semibold text-heading tracking-wider">Menu</span>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] transition-colors"
+            aria-label="Sluiten"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
 
-            {/* Blog section */}
-            <div className="text-sm py-2 text-text-muted font-semibold">Blog</div>
-            {blogDropdown.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`text-sm py-1.5 pl-4 transition-colors ${
-                  pathname === item.href ? 'text-heading' : 'text-text-muted'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-
-            {/* Kennisbank section */}
-            <div className="text-sm py-2 text-text-muted font-semibold">Kennisbank</div>
-            {kbCategories.map((cat) => (
-              <Link
-                key={cat.slug}
-                href={`/kennisbank#${cat.slug}`}
-                className="text-sm py-1.5 pl-4 transition-colors text-text-muted flex items-center gap-2"
-              >
-                {cat.name}
-                {cat.is_premium && (
-                  <span className="text-[9px] font-semibold uppercase tracking-wider px-1 py-0.5 rounded bg-accent/10 text-accent-light leading-none">
-                    Pro
-                  </span>
-                )}
-              </Link>
-            ))}
-            {/* Tools section */}
-            <div className="text-sm py-2 text-text-muted font-semibold">Tools</div>
-            {toolsDropdown.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`text-sm py-1.5 pl-4 transition-colors flex items-center gap-2 ${
-                  pathname === item.href ? 'text-heading' : 'text-text-muted'
-                }`}
-              >
-                {item.label}
-                {(item.slug in toolPremiumMap ? toolPremiumMap[item.slug] : item.defaultPremium) && (
-                  <span className="text-[9px] font-semibold uppercase tracking-wider px-1 py-0.5 rounded bg-accent/10 text-accent-light leading-none">
-                    Pro
-                  </span>
-                )}
-              </Link>
-            ))}
-
-            {/* Premium, Over, Contact */}
-            {navLinks.filter(l => ['Premium', 'Over', 'Contact'].includes(l.label)).map((link) => (
+        {/* Scrollable content */}
+        <div className="overflow-y-auto px-8 py-6 flex flex-col items-center text-center" style={{ height: 'calc(100dvh - 4rem)' }}>
+          {/* Main links */}
+          <div className="w-full flex flex-col items-center gap-1 mb-6">
+            {[
+              { href: '/', label: 'Home' },
+              { href: '/nieuws', label: 'Nieuws' },
+              { href: '/premium', label: 'Premium' },
+              { href: '/over', label: 'Over' },
+              { href: '/contact', label: 'Contact' },
+            ].map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-sm py-2 transition-colors ${
-                  pathname === link.href ? 'text-heading' : 'text-text-muted'
+                className={`w-full py-3 text-base font-medium rounded-lg transition-colors ${
+                  pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
+                    ? 'text-heading bg-white/[0.04]'
+                    : 'text-text-muted hover:text-heading hover:bg-white/[0.03]'
                 }`}
               >
                 {link.label}
               </Link>
             ))}
-
-            <Link
-              href={user ? '/dashboard' : '/login'}
-              className="text-sm py-2 text-accent-light"
-            >
-              {user ? 'Dashboard' : 'Inloggen'}
-            </Link>
-
-            {/* Language */}
-            <div className="pt-2 border-t border-white/[0.06]">
-              <LanguageSelector />
-            </div>
           </div>
-        </nav>
-      )}
+
+          {/* Divider */}
+          <div className="w-16 h-px bg-white/[0.08] mb-6" />
+
+          {/* Blog section */}
+          <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim mb-3 font-semibold">Blog</p>
+          <div className="w-full flex flex-col items-center gap-1 mb-6">
+            {blogDropdown.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`w-full py-2.5 text-sm rounded-lg transition-colors ${
+                  pathname === item.href ? 'text-heading bg-white/[0.04]' : 'text-text-muted hover:text-heading hover:bg-white/[0.03]'
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Kennisbank section */}
+          <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim mb-3 font-semibold">Kennisbank</p>
+          <div className="w-full flex flex-col items-center gap-1 mb-6">
+            {kbCategories.map((cat) => (
+              <Link
+                key={cat.slug}
+                href={`/kennisbank#${cat.slug}`}
+                className="w-full py-2.5 text-sm text-text-muted hover:text-heading hover:bg-white/[0.03] rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                {cat.name}
+                {cat.is_premium && (
+                  <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/10 text-accent-light leading-none">
+                    Pro
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+
+          {/* Tools section */}
+          <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim mb-3 font-semibold">Tools</p>
+          <div className="w-full flex flex-col items-center gap-1 mb-6">
+            {toolsDropdown.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`w-full py-2.5 text-sm rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                  pathname === item.href ? 'text-heading bg-white/[0.04]' : 'text-text-muted hover:text-heading hover:bg-white/[0.03]'
+                }`}
+              >
+                {item.label}
+                {(item.slug in toolPremiumMap ? toolPremiumMap[item.slug] : item.defaultPremium) && (
+                  <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/10 text-accent-light leading-none">
+                    Pro
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div className="w-16 h-px bg-white/[0.08] mb-6" />
+
+          {/* Login / Dashboard */}
+          <Link
+            href={user ? '/dashboard' : '/login'}
+            className="w-full py-3 text-sm font-medium rounded-lg border border-accent/30 text-accent-light hover:bg-accent-glow transition-colors mb-4"
+          >
+            {user ? 'Dashboard' : 'Inloggen'}
+          </Link>
+
+          {/* Language selector */}
+          <div className="mt-auto pt-4">
+            <LanguageSelector />
+          </div>
+        </div>
+      </nav>
     </header>
   )
 }
