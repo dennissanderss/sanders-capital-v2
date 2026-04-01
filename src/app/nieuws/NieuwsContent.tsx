@@ -78,12 +78,14 @@ const MAJOR_PAIRS = ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD']
 
 function FxWidget() {
   const [rates, setRates] = useState<FxRate[]>([])
+  const [prevRates, setPrevRates] = useState<Record<string, string>>({})
+  const [flashPairs, setFlashPairs] = useState<Record<string, 'up' | 'down'>>({})
   const [loading, setLoading] = useState(true)
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
 
   useEffect(() => {
     async function fetchRates() {
       try {
-        // Use exchangerate.host free API (no key needed)
         const pairs = MAJOR_PAIRS.map(p => ({
           pair: p,
           base: p.slice(0, 3),
@@ -92,7 +94,7 @@ function FxWidget() {
 
         const results: FxRate[] = []
 
-        // Fetch all rates in parallel via a free forex API
+        // Fetch via exchangerate.host free API
         const responses = await Promise.allSettled(
           pairs.map(async ({ pair, base, quote }) => {
             const res = await fetch(
@@ -118,7 +120,7 @@ function FxWidget() {
           }
         }
 
-        // Fallback: if API failed, use approximate static values as placeholder
+        // Fallback if API failed
         if (results.length === 0) {
           const fallback: Record<string, string> = {
             'EUR/USD': '1.0850', 'GBP/USD': '1.2640', 'USD/JPY': '151.20',
@@ -129,9 +131,28 @@ function FxWidget() {
           }
         }
 
+        // Detect price changes and flash
+        const flashes: Record<string, 'up' | 'down'> = {}
+        for (const rate of results) {
+          const prev = prevRates[rate.pair]
+          if (prev && prev !== rate.price) {
+            flashes[rate.pair] = parseFloat(rate.price) > parseFloat(prev) ? 'up' : 'down'
+          }
+        }
+
+        // Store current prices for next comparison
+        const newPrev: Record<string, string> = {}
+        for (const r of results) newPrev[r.pair] = r.price
+        setPrevRates(newPrev)
+
+        if (Object.keys(flashes).length > 0) {
+          setFlashPairs(flashes)
+          setTimeout(() => setFlashPairs({}), 1200)
+        }
+
         setRates(results)
+        setLastUpdate(new Date())
       } catch {
-        // Fallback prices
         setRates([
           { pair: 'EUR/USD', price: '1.0850', change: '', direction: 'flat' },
           { pair: 'GBP/USD', price: '1.2640', change: '', direction: 'flat' },
@@ -146,10 +167,11 @@ function FxWidget() {
     }
 
     fetchRates()
-    // Refresh every 60 seconds
-    const interval = setInterval(fetchRates, 60000)
+    // Refresh every 30 seconds for more responsive feel
+    const interval = setInterval(fetchRates, 30000)
     return () => clearInterval(interval)
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prevRates])
 
   if (loading) {
     return (
@@ -163,18 +185,36 @@ function FxWidget() {
 
   return (
     <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-thin">
-      {rates.map((rate) => (
-        <div
-          key={rate.pair}
-          className="shrink-0 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-colors"
-        >
-          <div className="text-[10px] text-text-dim font-medium">{rate.pair}</div>
-          <div className="text-sm font-mono font-semibold text-heading">{rate.price}</div>
+      {rates.map((rate) => {
+        const flash = flashPairs[rate.pair]
+        return (
+          <div
+            key={rate.pair}
+            className={`shrink-0 px-3 py-2 rounded-lg border transition-all duration-300 ${
+              flash === 'up' ? 'bg-green-500/[0.08] border-green-500/25' :
+              flash === 'down' ? 'bg-red-500/[0.08] border-red-500/25' :
+              'bg-white/[0.03] border-white/[0.06] hover:border-white/[0.12]'
+            }`}
+          >
+            <div className="text-[10px] text-text-dim font-medium">{rate.pair}</div>
+            <div className={`text-sm font-mono font-semibold transition-colors duration-300 ${
+              flash === 'up' ? 'text-green-400' :
+              flash === 'down' ? 'text-red-400' :
+              'text-heading'
+            }`}>{rate.price}</div>
+          </div>
+        )
+      })}
+      <div className="shrink-0 flex flex-col items-start gap-0.5 pl-1">
+        <div className="flex items-center gap-1 text-[9px] text-text-dim/50">
+          <span className="w-1 h-1 rounded-full bg-green-400/50 animate-pulse" />
+          Indicatief
         </div>
-      ))}
-      <div className="shrink-0 flex items-center gap-1 text-[9px] text-text-dim/50 pl-1">
-        <span className="w-1 h-1 rounded-full bg-green-400/50 animate-pulse" />
-        Live indicatie
+        {lastUpdate && (
+          <span className="text-[8px] text-text-dim/30">
+            {lastUpdate.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          </span>
+        )}
       </div>
     </div>
   )
@@ -191,21 +231,33 @@ export default function NieuwsContent() {
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null)
   const [showDutch, setShowDutch] = useState(true)
 
-  const fetchNews = useCallback(async () => {
-    setLoading(true)
+  const [isFirstLoad, setIsFirstLoad] = useState(true)
+
+  const fetchNews = useCallback(async (retry = false) => {
+    if (!retry) setLoading(true)
     setError(null)
     try {
       const res = await fetch(`/api/news?category=${activeCategory}&days=${activeDays}`)
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      setArticles(data.articles || [])
+      const arts = data.articles || []
+      setArticles(arts)
       setFetchedAt(data.fetchedAt)
+
+      // First load returns empty because feeds are being fetched in background
+      // Auto-retry after 8 seconds to pick up the newly stored articles
+      if (arts.length === 0 && isFirstLoad) {
+        setIsFirstLoad(false)
+        setTimeout(() => fetchNews(true), 8000)
+      } else {
+        setIsFirstLoad(false)
+      }
     } catch {
       setError('Kon nieuws niet laden. Probeer het later opnieuw.')
     } finally {
       setLoading(false)
     }
-  }, [activeCategory, activeDays])
+  }, [activeCategory, activeDays, isFirstLoad])
 
   useEffect(() => {
     fetchNews()
@@ -505,10 +557,23 @@ export default function NieuwsContent() {
         </div>
       )}
 
-      {/* Empty */}
+      {/* Empty / Loading feeds */}
       {!loading && !error && articles.length === 0 && (
         <div className="p-8 rounded-xl bg-bg-card border border-border text-center">
-          <p className="text-text-muted">Geen relevant nieuws gevonden voor deze periode en categorie.</p>
+          {isFirstLoad ? (
+            <>
+              <div className="flex justify-center mb-3">
+                <span className="inline-block w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+              </div>
+              <p className="text-text-muted text-sm">Nieuwsfeeds worden voor het eerst opgehaald...</p>
+              <p className="text-text-dim text-xs mt-1">Dit duurt enkele seconden. De pagina ververst automatisch.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-text-muted text-sm">Geen relevant nieuws gevonden voor deze periode en categorie.</p>
+              <p className="text-text-dim text-xs mt-1">Probeer een andere periode of categorie, of ververs handmatig.</p>
+            </>
+          )}
         </div>
       )}
 
