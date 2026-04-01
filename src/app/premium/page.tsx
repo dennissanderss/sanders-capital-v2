@@ -123,10 +123,10 @@ export default function PremiumPage() {
 
         <div className="grid md:grid-cols-2 gap-4">
           {tools.map((tool, i) => (
-            <FadeIn key={tool.name} delay={i * 100}>
+            <FadeIn key={tool.name} delay={i * 100} className="h-full">
               <Link
                 href={tool.href}
-                className="block p-6 rounded-xl bg-bg-card border border-border hover:border-accent-dim/40 transition-all group"
+                className="block h-full p-6 rounded-xl bg-bg-card border border-border hover:border-accent-dim/40 transition-all group"
               >
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-lg bg-accent-glow flex items-center justify-center text-accent-light shrink-0 group-hover:bg-accent-dim/20 transition-colors">

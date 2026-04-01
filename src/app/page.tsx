@@ -157,8 +157,8 @@ export default async function HomePage() {
                   'Data-gedreven evaluatie en continue verbetering van je analytisch vermogen.',
               },
             ].map((pillar, i) => (
-              <FadeIn key={i} delay={i * 150}>
-                <div className="p-8 rounded-xl bg-bg-card border border-border hover:border-border-light transition-colors group">
+              <FadeIn key={i} delay={i * 150} className="h-full">
+                <div className="h-full p-8 rounded-xl bg-bg-card border border-border hover:border-border-light transition-colors group">
                   <div className="w-12 h-12 rounded-lg bg-accent-glow flex items-center justify-center text-accent-light mb-5 group-hover:bg-accent-dim/20 transition-colors">
                     {pillar.icon}
                   </div>
@@ -195,10 +195,10 @@ export default async function HomePage() {
 
             <div className="grid md:grid-cols-3 gap-6">
               {articles.map((article, i) => (
-                <FadeIn key={article.id} delay={i * 100}>
+                <FadeIn key={article.id} delay={i * 100} className="h-full">
                   <Link
                     href={`/blog/${article.slug}`}
-                    className="block p-6 rounded-xl bg-bg-card border border-border hover:border-border-light transition-all group"
+                    className="block h-full p-6 rounded-xl bg-bg-card border border-border hover:border-border-light transition-all group"
                   >
                     {article.tag && (
                       <span className="inline-block text-xs px-2.5 py-1 rounded-md bg-accent-glow text-accent-light mb-3">
@@ -355,10 +355,10 @@ export default async function HomePage() {
                 comingSoon: true,
               },
             ].map((tool, i) => (
-              <FadeIn key={tool.name} delay={i * 100}>
+              <FadeIn key={tool.name} delay={i * 100} className="h-full">
                 <Link
                   href={tool.href}
-                  className="block p-6 rounded-xl bg-bg-card border border-border hover:border-accent-dim/40 transition-all group relative overflow-hidden"
+                  className="block h-full p-6 rounded-xl bg-bg-card border border-border hover:border-accent-dim/40 transition-all group relative overflow-hidden"
                 >
                   {'comingSoon' in tool && tool.comingSoon && (
                     <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded bg-accent/15 text-accent-light border border-accent/20">
