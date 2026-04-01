@@ -1,11 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
+import LanguageSelector from './LanguageSelector'
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -148,6 +148,17 @@ export default function Header() {
             {pathname === '/' && <span className="absolute -bottom-1 left-0 right-0 h-px bg-accent" />}
           </Link>
 
+          {/* Nieuws */}
+          <Link
+            href="/nieuws"
+            className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading ${
+              pathname.startsWith('/nieuws') ? 'text-heading' : 'text-text-muted'
+            }`}
+          >
+            Nieuws
+            {pathname.startsWith('/nieuws') && <span className="absolute -bottom-1 left-0 right-0 h-px bg-accent" />}
+          </Link>
+
           {/* Blog dropdown */}
           <div className="relative group/blog">
             <button
@@ -189,17 +200,6 @@ export default function Header() {
               </div>
             </div>
           </div>
-
-          {/* Nieuws */}
-          <Link
-            href="/nieuws"
-            className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading ${
-              pathname.startsWith('/nieuws') ? 'text-heading' : 'text-text-muted'
-            }`}
-          >
-            Nieuws
-            {pathname.startsWith('/nieuws') && <span className="absolute -bottom-1 left-0 right-0 h-px bg-accent" />}
-          </Link>
 
           {/* Kennisbank dropdown */}
           <div className="relative group/kb">
@@ -315,6 +315,7 @@ export default function Header() {
               )}
             </Link>
           ))}
+          <LanguageSelector />
           {user ? (
             <Link
               href="/dashboard"
@@ -352,6 +353,11 @@ export default function Header() {
               Home
             </Link>
 
+            {/* Nieuws */}
+            <Link href="/nieuws" className={`text-sm py-2 transition-colors ${pathname.startsWith('/nieuws') ? 'text-heading' : 'text-text-muted'}`}>
+              Nieuws
+            </Link>
+
             {/* Blog section */}
             <div className="text-sm py-2 text-text-muted font-semibold">Blog</div>
             {blogDropdown.map((item) => (
@@ -365,11 +371,6 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-
-            {/* Nieuws */}
-            <Link href="/nieuws" className={`text-sm py-2 transition-colors ${pathname.startsWith('/nieuws') ? 'text-heading' : 'text-text-muted'}`}>
-              Nieuws
-            </Link>
 
             {/* Kennisbank section */}
             <div className="text-sm py-2 text-text-muted font-semibold">Kennisbank</div>
@@ -425,6 +426,11 @@ export default function Header() {
             >
               {user ? 'Dashboard' : 'Inloggen'}
             </Link>
+
+            {/* Language */}
+            <div className="pt-2 border-t border-white/[0.06]">
+              <LanguageSelector />
+            </div>
           </div>
         </nav>
       )}
