@@ -562,7 +562,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      version: 'v2',
+      version: 'v2.2',
       regime,
       regimeExplain,
       regimeColor,

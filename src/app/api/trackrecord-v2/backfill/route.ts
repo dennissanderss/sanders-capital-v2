@@ -1,11 +1,15 @@
-// ─── V2.1 Track Record Backfill API ─────────────────────────
-// Backfills up to 30 days of historical v2 records using
-// CB rates + simulated news bonus + V2.1 FILTERS:
+// ─── V2.2 Track Record Backfill API ─────────────────────────
+// Backfills up to 45 days of historical v2 records using
+// CB rates + simulated news bonus + V2.2 MEAN REVERSION:
 //   - Regime determination (safe-haven vs high-yield)
 //   - Regime alignment check (pair direction must match regime)
 //   - Cross-pair contradiction filter
 //   - Historical intermarket data for regime confirmation
 //   - Non-aligned pairs never "sterk"
+//   - **NEW V2.2**: Mean Reversion filter — only trade when
+//     2-day price action OPPOSES fundamental direction
+//   - **NEW V2.2**: 2-day holding period (was 1-day)
+//   - **NEW V2.2**: Score threshold ≥3.0 (sterk + matig)
 //
 // DELETE: Clears all v2 backfill records (newsSimulated = true)
 // POST:   Backfills with new filters
@@ -258,7 +262,7 @@ export async function DELETE() {
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}))
-    const days = Math.min(body.days || 14, 30)
+    const days = Math.min(body.days || 45, 60)
     const hasMetadata = await checkMetadataColumn()
 
     if (!hasMetadata) {
@@ -417,9 +421,9 @@ export async function POST(request: Request) {
         }
       }
 
-      // Pick top "sterk" pairs after all filters
+      // V2.2: Pick top pairs with score ≥ 3.0 (sterk + matig)
       const topPairs = pairBiases
-        .filter(p => p.conviction === 'sterk')
+        .filter(p => (p.conviction === 'sterk' || p.conviction === 'matig') && Math.abs(p.score) >= 3.0)
         .slice(0, 3)
 
       if (topPairs.length === 0) continue
@@ -429,11 +433,24 @@ export async function POST(request: Request) {
       for (const p of topPairs) {
         const prices = historicalData[p.pair] || []
         const entryIdx = prices.findIndex(px => px.date === date)
-        if (entryIdx < 0 || entryIdx >= prices.length - 1) continue
+        // V2.2: Need at least 2 days before entry (for momentum check) and 2 days after (holding period)
+        if (entryIdx < 2 || entryIdx >= prices.length - 2) continue
+
+        // V2.2: MEAN REVERSION FILTER
+        // Only take the trade if 2-day price momentum OPPOSES the fundamental direction
+        // This means: fundamentals say bullish, but price has been falling → BUY the dip
+        //             fundamentals say bearish, but price has been rising → SELL the rally
+        const recentMomentum = prices[entryIdx].close - prices[entryIdx - 2].close
+        const isBullishSignal = p.direction.includes('bullish')
+        const isMeanReversion = (isBullishSignal && recentMomentum < 0) ||
+                                (!isBullishSignal && p.direction.includes('bearish') && recentMomentum > 0)
+
+        if (!isMeanReversion) continue // Skip if no mean reversion opportunity
 
         const entryPrice = prices[entryIdx].close
-        const exitPrice = prices[entryIdx + 1].close
-        const exitDate = prices[entryIdx + 1].date
+        // V2.2: 2-day holding period (was 1 day)
+        const exitPrice = prices[entryIdx + 2].close
+        const exitDate = prices[entryIdx + 2].date
 
         const key = `${date}-${p.pair}`
         if (existingKeys.has(key)) continue
@@ -460,6 +477,7 @@ export async function POST(request: Request) {
           resolved_at: new Date().toISOString(),
           metadata: {
             source: 'v2' as const,
+            version: 'v2.2',
             scoreWithoutNews: p.scoreWithoutNews,
             newsInfluence: p.newsInfluence,
             confidence: simulatedConfidence,
@@ -468,6 +486,9 @@ export async function POST(request: Request) {
             entryTime: `${date}T16:00:00.000Z`,
             exitTime: `${exitDate}T16:00:00.000Z`,
             newsSimulated: true,
+            holdingPeriod: 2,
+            meanReversion: true,
+            preMomentum: Math.round(recentMomentum * (p.pair.includes('JPY') ? 100 : 10000)),
           },
         })
       }
@@ -497,8 +518,8 @@ export async function POST(request: Request) {
     const totalCount = deduped.length
 
     return NextResponse.json({
-      version: 'v2.1',
-      message: `Backfilled ${deduped.length} v2.1 records over ${days} days`,
+      version: 'v2.2',
+      message: `Backfilled ${deduped.length} v2.2 records over ${days} days`,
       records: deduped.length,
       skippedExisting: existingKeys.size,
       stats: {
@@ -513,7 +534,7 @@ export async function POST(request: Request) {
         filteredByContradiction: filteredByContradiction,
         totalFiltered: filteredByRegime + filteredByIntermarket + filteredByContradiction,
       },
-      note: 'V2.1 backfill with regime alignment, intermarket confirmation, and cross-pair contradiction filters.',
+      note: 'V2.2 backfill with Mean Reversion filter, 2-day holding, score ≥3.0 threshold.',
     })
   } catch (e) {
     return NextResponse.json({ error: String(e), version: 'v2' }, { status: 500 })
