@@ -380,6 +380,8 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
       profit_loss: '',
       risk_reward: '',
       result_r: '',
+      commission: '',
+      swap: '',
       open_date: new Date().toISOString().slice(0, 16),
       close_date: '',
       session: '',
@@ -409,7 +411,78 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
     }
   })
 
-  const set = (key: string, value: unknown) => setForm(f => ({ ...f, [key]: value }))
+  // Track which fields the user has manually edited
+  const [manualFields, setManualFields] = useState<Set<string>>(new Set(trade ? ['pips', 'profit_loss', 'risk_reward', 'result_r'] : []))
+
+  const set = (key: string, value: unknown) => {
+    // Mark derived fields as manual when user types in them
+    if (['pips', 'profit_loss', 'risk_reward', 'result_r'].includes(key)) {
+      if (value === '' || value === null) {
+        // User cleared the field → allow auto-calc again
+        setManualFields(prev => { const n = new Set(prev); n.delete(key); return n })
+      } else {
+        setManualFields(prev => new Set(prev).add(key))
+      }
+    }
+    setForm(f => ({ ...f, [key]: value }))
+  }
+
+  // ── Auto-calculate derived fields ──
+  useEffect(() => {
+    const entry = parseFloat(form.open_price as string)
+    const exit = parseFloat(form.close_price as string)
+    const sl = parseFloat(form.sl as string)
+    const lot = parseFloat(form.lot_size as string)
+    const commission = parseFloat(form.commission as string) || 0
+    const swap = parseFloat(form.swap as string) || 0
+    const isBuy = form.action === 'buy'
+    const symbol = (form.symbol as string || '').toUpperCase()
+
+    // Determine pip size from symbol
+    const isJPY = symbol.includes('JPY') || symbol.includes('XAU')
+    const pipSize = isJPY ? 0.01 : 0.0001
+    const pipValue = isJPY ? (1000 * lot) : (10 * lot)
+
+    const updates: Record<string, unknown> = {}
+
+    // Auto-calc pips from entry + exit
+    if (!isNaN(entry) && !isNaN(exit) && entry > 0 && exit > 0 && !manualFields.has('pips')) {
+      const rawPips = isBuy ? (exit - entry) / pipSize : (entry - exit) / pipSize
+      updates.pips = (Math.round(rawPips * 10) / 10).toString()
+    }
+
+    // Auto-calc P&L from pips + lot (includes commission + swap)
+    const calcPips = parseFloat((updates.pips as string) ?? (form.pips as string))
+    if (!isNaN(calcPips) && !isNaN(lot) && lot > 0 && !manualFields.has('profit_loss')) {
+      const grossPnl = calcPips * pipValue
+      const netPnl = Math.round((grossPnl - commission + swap) * 100) / 100
+      updates.profit_loss = netPnl.toString()
+    }
+
+    // Auto-calc R:R from entry + exit + SL
+    if (!isNaN(entry) && !isNaN(exit) && !isNaN(sl) && entry > 0 && sl > 0 && exit > 0 && !manualFields.has('risk_reward')) {
+      const risk = Math.abs(entry - sl)
+      const reward = isBuy ? (exit - entry) : (entry - exit)
+      if (risk > 0) {
+        updates.risk_reward = (Math.round((reward / risk) * 100) / 100).toString()
+      }
+    }
+
+    // Auto-calc Result (R) from actual P&L and risk amount
+    const calcPnl = parseFloat((updates.profit_loss as string) ?? (form.profit_loss as string))
+    if (!isNaN(entry) && !isNaN(sl) && !isNaN(lot) && entry > 0 && sl > 0 && lot > 0 && !isNaN(calcPnl) && !manualFields.has('result_r')) {
+      const riskPips = Math.abs(entry - sl) / pipSize
+      const riskAmount = riskPips * pipValue
+      if (riskAmount > 0) {
+        updates.result_r = (Math.round((calcPnl / riskAmount) * 100) / 100).toString()
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      setForm(f => ({ ...f, ...updates }))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.open_price, form.close_price, form.sl, form.lot_size, form.action, form.symbol, form.commission, form.swap])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -425,6 +498,8 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
       profit_loss: form.profit_loss ? parseFloat(form.profit_loss as string) : null,
       risk_reward: form.risk_reward ? parseFloat(form.risk_reward as string) : null,
       result_r: form.result_r ? parseFloat(form.result_r as string) : null,
+      commission: form.commission ? parseFloat(form.commission as string) : 0,
+      swap: form.swap ? parseFloat(form.swap as string) : 0,
       open_date: form.open_date as string,
       close_date: form.close_date ? (form.close_date as string) : null,
       session: (form.session as string) || null,
@@ -524,17 +599,23 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
               <FormField label="Lot size">
                 <input type="number" step="any" value={form.lot_size as string} onChange={(e) => set('lot_size', e.target.value)} className="form-input" />
               </FormField>
-              <FormField label="Pips">
-                <input type="number" step="any" value={form.pips as string} onChange={(e) => set('pips', e.target.value)} className="form-input" />
+              <FormField label="Commission ($)">
+                <input type="number" step="any" value={form.commission as string} onChange={(e) => set('commission', e.target.value)} className="form-input" placeholder="0.00" />
               </FormField>
-              <FormField label="P&L ($)">
-                <input type="number" step="any" value={form.profit_loss as string} onChange={(e) => set('profit_loss', e.target.value)} className="form-input" />
+              <FormField label="Swap ($)">
+                <input type="number" step="any" value={form.swap as string} onChange={(e) => set('swap', e.target.value)} className="form-input" placeholder="0.00" />
               </FormField>
-              <FormField label="R:R">
-                <input type="number" step="any" value={form.risk_reward as string} onChange={(e) => set('risk_reward', e.target.value)} className="form-input" />
+              <FormField label="Pips ✦">
+                <input type="number" step="any" value={form.pips as string} onChange={(e) => set('pips', e.target.value)} className="form-input" placeholder="auto" />
               </FormField>
-              <FormField label="Resultaat (R)">
-                <input type="number" step="any" value={form.result_r as string} onChange={(e) => set('result_r', e.target.value)} className="form-input" />
+              <FormField label="P&L ($) ✦">
+                <input type="number" step="any" value={form.profit_loss as string} onChange={(e) => set('profit_loss', e.target.value)} className="form-input" placeholder="auto" />
+              </FormField>
+              <FormField label="R:R ✦">
+                <input type="number" step="any" value={form.risk_reward as string} onChange={(e) => set('risk_reward', e.target.value)} className="form-input" placeholder="auto" />
+              </FormField>
+              <FormField label="Resultaat (R) ✦">
+                <input type="number" step="any" value={form.result_r as string} onChange={(e) => set('result_r', e.target.value)} className="form-input" placeholder="auto" />
               </FormField>
             </div>
           </div>
