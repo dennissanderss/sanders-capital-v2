@@ -879,7 +879,7 @@ export default function BriefingV2Dashboard() {
               <div className="px-5 sm:px-6 py-4">
                 <div className="flex items-center gap-2 mb-4">
                   <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Sentiment per Valuta</p>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-accent/10 text-accent-light border border-accent/20 font-bold">NIEUW</span>
+                  <span className="text-[8px] text-text-dim/50">(klik voor detail)</span>
                 </div>
                 <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
                   {MAJORS.map(ccy => {
@@ -907,6 +907,11 @@ export default function BriefingV2Dashboard() {
                     )
                   })}
                 </div>
+                <p className="text-[9px] text-text-dim/50 mt-2 leading-relaxed">
+                  Neutraal = geen relevante nieuwsartikelen gevonden voor deze valuta in de afgelopen 72 uur, of het nieuws bevat geen duidelijk bullish/bearish signaal.
+                  De score op basis van CB-beleid en rente is onafhankelijk van het nieuws en blijft altijd actief.
+                </p>
+
                 {/* Expanded sentiment detail */}
                 {expandedSentiment && (() => {
                   const s = data.newsSentiment?.[expandedSentiment]
@@ -1801,9 +1806,23 @@ export default function BriefingV2Dashboard() {
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {trackRecords.slice(0, 40).map(record => {
                         const meta = record.metadata
-                        const callTime = formatCET(meta?.callTime || record.created_at)
-                        const entryTime = formatCET(meta?.entryTime || record.created_at)
-                        const exitTime = formatCET(meta?.exitTime || record.resolved_at)
+                        // Call time = signal date at 08:00 NL time (07:00 UTC)
+                        // Entry time = signal date at 18:00 NL time (daily close, 16:00 UTC)
+                        // Exit time = 2 days later at 18:00 NL time
+                        const signalDateStr = record.date // e.g. "2026-03-29"
+                        const callTime = meta?.callTime
+                          ? formatCET(meta.callTime)
+                          : signalDateStr
+                            ? formatCET(`${signalDateStr}T07:00:00.000Z`)
+                            : formatCET(record.created_at)
+                        const entryTime = meta?.entryTime
+                          ? formatCET(meta.entryTime)
+                          : signalDateStr
+                            ? formatCET(`${signalDateStr}T16:00:00.000Z`)
+                            : ''
+                        const exitTime = meta?.exitTime
+                          ? formatCET(meta.exitTime)
+                          : ''
                         return (
                           <div key={record.id} className="rounded-xl bg-white/[0.02] border border-white/[0.04] overflow-hidden">
                             {/* Header row */}
