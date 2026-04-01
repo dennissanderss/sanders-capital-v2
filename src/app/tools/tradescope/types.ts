@@ -180,30 +180,22 @@ export interface TsRoutine {
 }
 
 // ============================================================
-// Bridge type: convert DB trade → existing ParsedTrade for analytics
+// Bridge: convert DB trade → existing ParsedTrade for analytics
 // ============================================================
 
-export interface ParsedTrade {
-  tradeNumber: number
-  openDate: Date
-  closeDate: Date
-  symbol: string
-  action: 'buy' | 'sell'
-  lotSize: number
-  openPrice: number
-  closePrice: number
-  sl: number
-  tp: number
-  commission: number
-  swap: number
-  pips: number
-  profitLoss: number
-  riskReward: number | null
-  session: string
-  dayOfWeek: string
-  holdingTimeMinutes: number
-  isWin: boolean
-  tags: string
+import type { ParsedTrade } from './utils/csvParser'
+export type { ParsedTrade }
+
+const SESSION_MAP: Record<string, ParsedTrade['session']> = {
+  london: 'London',
+  'new york': 'New York',
+  asia: 'Asia',
+  overlap: 'Overlap',
+}
+
+function mapSession(s: string | null): ParsedTrade['session'] {
+  if (!s) return 'London'
+  return SESSION_MAP[s.toLowerCase()] || 'London'
 }
 
 export function dbTradeToAnalytics(trade: TsTrade, index: number): ParsedTrade {
@@ -223,7 +215,7 @@ export function dbTradeToAnalytics(trade: TsTrade, index: number): ParsedTrade {
     pips: trade.pips || 0,
     profitLoss: trade.profit_loss || 0,
     riskReward: trade.risk_reward,
-    session: trade.session || 'Unknown',
+    session: mapSession(trade.session),
     dayOfWeek: trade.day_of_week || new Date(trade.open_date).toLocaleDateString('nl-NL', { weekday: 'long' }),
     holdingTimeMinutes: trade.holding_time_minutes || 0,
     isWin: (trade.profit_loss || 0) > 0,
@@ -265,4 +257,4 @@ export interface TradeFilters {
 // Tab definitions
 // ============================================================
 
-export type TradescopeTab = 'dashboard' | 'journal' | 'analytics' | 'strategy' | 'optimization' | 'routines' | 'accounts'
+export type TradescopeTab = 'dashboard' | 'journal' | 'analytics' | 'strategy' | 'optimization' | 'strategyAnalysis' | 'psychology' | 'insights' | 'routines' | 'accounts' | 'playbook'

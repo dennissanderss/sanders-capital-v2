@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import type { TsTrade, TsAccount, TsStrategy, TsSetup, TradeFilters } from '../types'
+import TradeScreenshots from '../components/TradeScreenshots'
 
 interface Props {
   accounts: TsAccount[]
@@ -338,6 +339,11 @@ function TradeRow({ trade, onEdit, onDelete }: { trade: TsTrade; onEdit: () => v
               ))}
             </div>
           )}
+
+          {/* Screenshots */}
+          <div className="mb-3">
+            <TradeScreenshots tradeId={trade.id} screenshots={trade.screenshots || []} onUpdate={() => {}} />
+          </div>
 
           {/* Actions */}
           <div className="flex items-center gap-2 pt-2 border-t border-white/[0.04]">

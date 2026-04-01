@@ -14,7 +14,7 @@ export function useTrades(filters?: TradeFilters) {
     const sb = createClient()
     let query = sb
       .from('ts_trades')
-      .select('*, account:ts_accounts(id,name,type,broker), strategy:ts_strategies(id,name,color), setup:ts_setups(id,name)', { count: 'exact' })
+      .select('*, account:ts_accounts(id,name,type,broker), strategy:ts_strategies(id,name,color), setup:ts_setups(id,name), screenshots:ts_trade_screenshots(id,trade_id,user_id,storage_path,label,sort_order,created_at)', { count: 'exact' })
       .order('open_date', { ascending: false })
 
     if (filters?.accountId) query = query.eq('account_id', filters.accountId)
