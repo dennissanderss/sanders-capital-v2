@@ -9,6 +9,7 @@ import type { User } from '@supabase/supabase-js'
 
 const navLinks = [
   { href: '/', label: 'Home' },
+  { href: '/nieuws', label: 'Nieuws' },
   { href: '/premium', label: 'Premium' },
   { href: '/over', label: 'Over' },
   { href: '/contact', label: 'Contact' },
@@ -189,6 +190,17 @@ export default function Header() {
             </div>
           </div>
 
+          {/* Nieuws */}
+          <Link
+            href="/nieuws"
+            className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading ${
+              pathname.startsWith('/nieuws') ? 'text-heading' : 'text-text-muted'
+            }`}
+          >
+            Nieuws
+            {pathname.startsWith('/nieuws') && <span className="absolute -bottom-1 left-0 right-0 h-px bg-accent" />}
+          </Link>
+
           {/* Kennisbank dropdown */}
           <div className="relative group/kb">
             <button
@@ -286,7 +298,7 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Remaining: Premium, Over, Contact */}
+          {/* Remaining: Premium, Over, Contact (Nieuws is handled separately above) */}
           {navLinks.filter(l => ['Premium', 'Over', 'Contact'].includes(l.label)).map((link) => (
             <Link
               key={link.href}
@@ -353,6 +365,11 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
+
+            {/* Nieuws */}
+            <Link href="/nieuws" className={`text-sm py-2 transition-colors ${pathname.startsWith('/nieuws') ? 'text-heading' : 'text-text-muted'}`}>
+              Nieuws
+            </Link>
 
             {/* Kennisbank section */}
             <div className="text-sm py-2 text-text-muted font-semibold">Kennisbank</div>
