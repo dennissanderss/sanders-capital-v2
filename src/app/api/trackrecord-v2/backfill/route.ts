@@ -13,7 +13,7 @@
 //   - **NEW V2.3**: 21 pairs (11 new cross pairs)
 //   - **NEW V2.3**: Intermarket regime override (VIX + S&P)
 //   - **NEW V2.3**: Magnitude-weighted intermarket alignment
-//   - **NEW V2.3**: Top 5 pairs (was 3)
+//   - **NEW V2.3**: Top 5 pairs (was 3) with pair diversification (max 2 per currency)
 //   - **NEW V2.3**: DXY in intermarket data
 //   - **NEW V2.3**: Yahoo rate limiting + User-Agent header
 //
@@ -482,13 +482,47 @@ export async function POST(request: Request) {
       // V2.2: Pick top pairs with score ≥ 3.0 (sterk + matig)
       const topPairs = pairBiases
         .filter(p => (p.conviction === 'sterk' || p.conviction === 'matig') && Math.abs(p.score) >= 3.0)
-        .slice(0, 5)
 
-      if (topPairs.length === 0) continue
-
-      const simulatedConfidence = Math.min(80, 40 + topPairs.length * 15)
-
+      // V2.3: Pair diversification — max 2 pairs per shared currency
+      // This prevents "5x JPY shorts" and ensures the model tests diverse setups
+      const diversified: typeof topPairs = []
+      const currencyCount: Record<string, number> = {}
       for (const p of topPairs) {
+        const baseCount = currencyCount[p.baseCcy] || 0
+        const quoteCount = currencyCount[p.quoteCcy] || 0
+        // Allow max 2 appearances per currency to avoid JPY-only or USD-only trades
+        if (baseCount >= 2 && quoteCount >= 2) continue
+        if (baseCount >= 2 || quoteCount >= 2) {
+          // If one currency is already at 2, only allow if this is a strong signal
+          if (Math.abs(p.score) < 3.5) continue
+        }
+        diversified.push(p)
+        currencyCount[p.baseCcy] = baseCount + 1
+        currencyCount[p.quoteCcy] = quoteCount + 1
+        if (diversified.length >= 5) break
+      }
+
+      // If diversification reduced the list, add lower-threshold diversified pairs
+      if (diversified.length < 3) {
+        const usedCurrencies = new Set<string>()
+        diversified.forEach(p => { usedCurrencies.add(p.baseCcy); usedCurrencies.add(p.quoteCcy) })
+
+        const additional = pairBiases
+          .filter(p =>
+            (p.conviction === 'sterk' || p.conviction === 'matig') &&
+            Math.abs(p.score) >= 2.0 &&
+            !diversified.some(d => d.pair === p.pair)
+          )
+          .slice(0, 3 - diversified.length)
+
+        diversified.push(...additional)
+      }
+
+      if (diversified.length === 0) continue
+
+      const simulatedConfidence = Math.min(80, 40 + diversified.length * 15)
+
+      for (const p of diversified) {
         const prices = historicalData[p.pair] || []
         const entryIdx = prices.findIndex(px => px.date === date)
         // V2.2: Need at least 2 days before entry (for momentum check) and 2 days after (holding period)

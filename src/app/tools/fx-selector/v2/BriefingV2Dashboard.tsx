@@ -451,6 +451,7 @@ export default function BriefingV2Dashboard() {
   const [showTrackRecord, setShowTrackRecord] = useState(false)
   const [expandedCurrency, setExpandedCurrency] = useState<string | null>(null)
   const [expandedSentiment, setExpandedSentiment] = useState<string | null>(null)
+  const [showConfidenceBreakdown, setShowConfidenceBreakdown] = useState(false)
   const [expandedPairs, setExpandedPairs] = useState<Set<string>>(new Set())
   const [backfilling, setBackfilling] = useState(false)
   const [backfillMsg, setBackfillMsg] = useState<string | null>(null)
@@ -661,6 +662,179 @@ export default function BriefingV2Dashboard() {
                 </div>
                 <p className="text-xs text-text-muted leading-relaxed mt-3">{data.regimeExplain}</p>
 
+                {/* Confidence Breakdown — clickable "Hoe berekend?" */}
+                <div className="mt-3">
+                  <button
+                    onClick={() => setShowConfidenceBreakdown(!showConfidenceBreakdown)}
+                    className="flex items-center gap-1.5 text-[11px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${showConfidenceBreakdown ? 'rotate-90' : ''}`}>
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                    Hoe berekend? ({data.confidence}% confidence)
+                  </button>
+                  {showConfidenceBreakdown && (() => {
+                    const regime = data.regime
+                    const signals = data.intermarketSignals || []
+
+                    // Calculate per-signal alignment score
+                    const signalResults = signals.map(signal => {
+                      const pct = Math.abs(signal.changePct || 0)
+                      const strength = pct > 1 ? 1.0 : pct > 0.5 ? 0.75 : pct > 0.2 ? 0.5 : 0.25
+
+                      // Determine if this signal confirms the regime
+                      let confirms = false
+                      let explanation = ''
+
+                      if (regime === 'Risk-Off') {
+                        if (signal.key === 'sp500') {
+                          confirms = signal.direction === 'down'
+                          explanation = confirms ? 'bevestigt Risk-Off' : 'tegenspreekt Risk-Off'
+                        } else if (signal.key === 'vix') {
+                          confirms = signal.direction === 'up'
+                          explanation = confirms ? 'bevestigt Risk-Off' : 'tegenspreekt Risk-Off'
+                        } else if (signal.key === 'gold') {
+                          confirms = signal.direction === 'up'
+                          explanation = confirms ? 'bevestigt Risk-Off' : 'tegenspreekt Risk-Off'
+                        } else if (signal.key === 'us10y') {
+                          confirms = signal.direction === 'up'
+                          explanation = confirms ? 'bevestigt zwak' : 'tegenspreekt'
+                        } else if (signal.key === 'dxy') {
+                          confirms = signal.direction === 'up'
+                          explanation = confirms ? 'bevestigt matig' : 'tegenspreekt'
+                        } else if (signal.key === 'oil') {
+                          confirms = signal.direction === 'up'
+                          explanation = confirms ? 'bevestigt matig' : 'tegenspreekt'
+                        }
+                      } else if (regime === 'Risk-On') {
+                        if (signal.key === 'sp500') {
+                          confirms = signal.direction === 'up'
+                          explanation = confirms ? 'bevestigt Risk-On' : 'tegenspreekt Risk-On'
+                        } else if (signal.key === 'vix') {
+                          confirms = signal.direction === 'down'
+                          explanation = confirms ? 'bevestigt Risk-On' : 'tegenspreekt Risk-On'
+                        } else if (signal.key === 'gold') {
+                          confirms = signal.direction === 'down'
+                          explanation = confirms ? 'bevestigt Risk-On' : 'tegenspreekt Risk-On'
+                        } else if (signal.key === 'us10y') {
+                          confirms = signal.direction === 'down'
+                          explanation = confirms ? 'bevestigt zwak' : 'tegenspreekt'
+                        } else if (signal.key === 'dxy') {
+                          confirms = signal.direction === 'down'
+                          explanation = confirms ? 'bevestigt matig' : 'tegenspreekt'
+                        } else if (signal.key === 'oil') {
+                          confirms = signal.direction === 'down'
+                          explanation = confirms ? 'bevestigt matig' : 'tegenspreekt'
+                        }
+                      } else if (regime === 'USD Dominant') {
+                        if (signal.key === 'us10y') {
+                          confirms = signal.direction === 'up'
+                          explanation = confirms ? 'bevestigt USD Dominant' : 'tegenspreekt'
+                        } else if (signal.key === 'dxy') {
+                          confirms = signal.direction === 'up'
+                          explanation = confirms ? 'bevestigt USD Dominant' : 'tegenspreekt'
+                        } else if (signal.key === 'sp500') {
+                          confirms = signal.direction === 'down'
+                          explanation = confirms ? 'bevestigt risk-off component' : 'tegenspreekt'
+                        } else if (signal.key === 'vix') {
+                          confirms = signal.direction === 'up'
+                          explanation = confirms ? 'bevestigt risk-off component' : 'tegenspreekt'
+                        } else if (signal.key === 'gold') {
+                          confirms = signal.direction === 'up'
+                          explanation = confirms ? 'bevestigt safe-haven vraag' : 'tegenspreekt'
+                        } else if (signal.key === 'oil') {
+                          confirms = signal.direction === 'up'
+                          explanation = confirms ? 'bevestigt matig' : 'tegenspreekt'
+                        }
+                      } else if (regime === 'USD Zwak') {
+                        if (signal.key === 'us10y') {
+                          confirms = signal.direction === 'down'
+                          explanation = confirms ? 'bevestigt USD Zwak' : 'tegenspreekt'
+                        } else if (signal.key === 'dxy') {
+                          confirms = signal.direction === 'down'
+                          explanation = confirms ? 'bevestigt USD Zwak' : 'tegenspreekt'
+                        } else if (signal.key === 'sp500') {
+                          confirms = signal.direction === 'up'
+                          explanation = confirms ? 'bevestigt risk-on component' : 'tegenspreekt'
+                        } else if (signal.key === 'vix') {
+                          confirms = signal.direction === 'down'
+                          explanation = confirms ? 'bevestigt risk-on component' : 'tegenspreekt'
+                        } else if (signal.key === 'gold') {
+                          confirms = signal.direction === 'down'
+                          explanation = confirms ? 'bevestigt risk-on component' : 'tegenspreekt'
+                        } else if (signal.key === 'oil') {
+                          confirms = signal.direction === 'down'
+                          explanation = confirms ? 'bevestigt matig' : 'tegenspreekt'
+                        }
+                      } else {
+                        // Gemengd
+                        explanation = 'gemengd regime'
+                        confirms = false
+                      }
+
+                      const score = confirms ? strength : 0
+                      return { signal, confirms, score, strength, explanation }
+                    })
+
+                    const intermarketTotal = signalResults.reduce((sum, r) => sum + r.score, 0)
+                    const intermarketMax = signalResults.length * 1.0
+                    const intermarketPct = intermarketMax > 0 ? Math.round((intermarketTotal / intermarketMax) * 100) : 0
+
+                    // News alignment from data
+                    const newsAlignment = data.intermarketAlignment !== undefined
+                      ? Math.round(data.confidence * 2 - intermarketPct)
+                      : data.confidence
+
+                    return (
+                      <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                        <p className="text-[10px] text-text-dim uppercase tracking-wider mb-2 font-medium">Intermarket bevestiging: {intermarketPct}%</p>
+                        <div className="space-y-1">
+                          {signalResults.map((r, idx) => {
+                            const isLast = idx === signalResults.length - 1
+                            const prefix = isLast ? '\u2514' : '\u251C'
+                            const changePctStr = r.signal.changePct !== null ? `${r.signal.changePct > 0 ? '+' : ''}${r.signal.changePct}%` : 'N/A'
+                            const directionStr = r.signal.direction === 'up' ? '\u2191' : r.signal.direction === 'down' ? '\u2193' : '\u2194'
+                            return (
+                              <div key={r.signal.key} className="flex items-center gap-2 text-[10px] font-mono">
+                                <span className="text-text-dim/40 w-3 text-center">{prefix}</span>
+                                <span className="text-text-muted w-16">{r.signal.name}:</span>
+                                <span className={r.signal.direction === 'up' ? 'text-green-400' : r.signal.direction === 'down' ? 'text-red-400' : 'text-text-dim'}>
+                                  {directionStr} {changePctStr}
+                                </span>
+                                <span className="text-text-dim/60">&rarr;</span>
+                                <span className={r.confirms ? 'text-green-400' : 'text-red-400'}>
+                                  {r.confirms ? '\u2713' : '\u2717'} {r.explanation}
+                                </span>
+                                <span className="text-text-dim/40 ml-auto">
+                                  ({r.score.toFixed(1)}/{r.strength.toFixed(1)})
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+
+                        <div className="mt-3 pt-2 border-t border-white/[0.05]">
+                          <div className="flex items-center gap-2 text-[10px] font-mono text-text-dim">
+                            <span>Intermarket: {intermarketPct}%</span>
+                            {data.intermarketAlignment !== undefined && (
+                              <>
+                                <span className="text-text-dim/40">|</span>
+                                <span>Nieuws alignment: {Math.max(0, Math.min(100, newsAlignment))}%</span>
+                              </>
+                            )}
+                          </div>
+                          <p className="text-[10px] font-mono text-text-muted mt-1">
+                            Confidence = {data.intermarketAlignment !== undefined
+                              ? `(intermarket + nieuws) / 2 = ${data.confidence}%`
+                              : `intermarket score = ${data.confidence}%`
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </div>
+
                 {/* Educational: Why is this risk-on/off? — COLLAPSIBLE */}
                 <details className="mt-3 group">
                   <summary className="flex items-center gap-2 text-[11px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
@@ -737,22 +911,22 @@ export default function BriefingV2Dashboard() {
                     const ccy = data.currencyRanking.find(c => c.currency === expandedCurrency)
                     if (!ccy) return null
                     return (
-                      <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] animate-in fade-in duration-200">
+                      <div key={ccy.currency} className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] transition-all duration-200">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-xs font-semibold text-heading">{ccy.currency} — Score Opbouw</p>
-                          <button onClick={() => setExpandedCurrency(null)} className="text-text-dim hover:text-heading">
+                          <button onClick={(e) => { e.stopPropagation(); setExpandedCurrency(null) }} className="text-text-dim hover:text-heading p-1">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                           </button>
                         </div>
                         <div className="space-y-1.5">
                           {/* CB Bias */}
                           <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-white/[0.02]">
-                            <span className="text-text-dim">CB Beleid ({ccy.bank || '—'}): <span className="text-text-muted">{ccy.bias || 'onbekend'}</span></span>
+                            <span className="text-text-dim">CB Beleid ({ccy.bank || '\u2014'}): <span className="text-text-muted">{ccy.bias || 'onbekend'}</span></span>
                             <span className={`font-mono font-bold ${ccy.baseScore > 0 ? 'text-green-400' : ccy.baseScore < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                               {ccy.baseScore > 0 ? '+' : ''}{ccy.baseScore.toFixed(1)}
                             </span>
                           </div>
-                          {/* Rate vs Target */}
+                          {/* Rate */}
                           {ccy.rate !== null && (
                             <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-white/[0.02]">
                               <span className="text-text-dim">Rente: <span className="text-text-muted">{ccy.rate}%</span></span>
@@ -760,29 +934,43 @@ export default function BriefingV2Dashboard() {
                             </div>
                           )}
                           {/* News bonus */}
-                          {ccy.newsBonus !== 0 && (
-                            <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-white/[0.02]">
-                              <span className="text-text-dim">Nieuws sentiment bonus</span>
-                              <span className={`font-mono font-bold ${ccy.newsBonus > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                {ccy.newsBonus > 0 ? '+' : ''}{ccy.newsBonus.toFixed(1)}
-                              </span>
-                            </div>
-                          )}
-                          {/* Total */}
-                          <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-accent/5 border border-accent/10 font-semibold">
-                            <span className="text-text-muted">Totaal</span>
-                            <span className={`font-mono font-bold ${ccy.score > 0 ? 'text-green-400' : ccy.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
-                              {ccy.score > 0 ? '+' : ''}{ccy.score.toFixed(1)}
+                          <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-white/[0.02]">
+                            <span className="text-text-dim">Nieuws sentiment bonus</span>
+                            <span className={`font-mono font-bold ${ccy.newsBonus > 0 ? 'text-green-400' : ccy.newsBonus < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                              {ccy.newsBonus > 0 ? '+' : ''}{ccy.newsBonus.toFixed(1)}
                             </span>
                           </div>
-                          {/* Explanation */}
+                          {/* Total */}
+                          <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-accent/5 border border-accent/10 font-semibold">
+                            <span className="text-text-muted">Totaal = CB basis + nieuws</span>
+                            <span className={`font-mono font-bold ${ccy.score > 0 ? 'text-green-400' : ccy.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                              {ccy.baseScore > 0 ? '+' : ''}{ccy.baseScore.toFixed(1)} {ccy.newsBonus >= 0 ? '+' : ''} {ccy.newsBonus.toFixed(1)} = {ccy.score > 0 ? '+' : ''}{ccy.score.toFixed(1)}
+                            </span>
+                          </div>
+                          {/* Reasons */}
                           {ccy.reasons && ccy.reasons.length > 0 && (
-                            <div className="mt-1 space-y-0.5">
-                              {ccy.reasons.map((r, ri) => (
-                                <p key={ri} className="text-[10px] text-text-dim flex items-start gap-1">
-                                  <span className="text-accent-light shrink-0">&rsaquo;</span> {r}
-                                </p>
-                              ))}
+                            <div className="mt-2">
+                              <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Redenen:</p>
+                              <div className="space-y-0.5">
+                                {ccy.reasons.map((r, ri) => (
+                                  <p key={ri} className="text-[10px] text-text-dim flex items-start gap-1">
+                                    <span className="text-accent-light shrink-0">&rsaquo;</span> {r}
+                                  </p>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {/* News Headlines */}
+                          {ccy.newsHeadlines && ccy.newsHeadlines.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Nieuws headlines:</p>
+                              <div className="space-y-0.5">
+                                {ccy.newsHeadlines.map((h, hi) => (
+                                  <p key={hi} className="text-[10px] text-text-muted flex items-start gap-1 leading-relaxed">
+                                    <span className="text-accent-light shrink-0">&rsaquo;</span> {h}
+                                  </p>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1434,7 +1622,14 @@ export default function BriefingV2Dashboard() {
                         <div className="flex items-center gap-1.5">
                           <span className="text-[9px] text-text-dim uppercase tracking-wider">Call:</span>
                           <span className="text-[10px] font-mono font-semibold text-accent-light/80">
-                            {new Date().toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', timeZone: 'Europe/Amsterdam' })} (vandaag)
+                            {data.generatedAt
+                              ? new Date(data.generatedAt).toLocaleString('nl-NL', {
+                                  day: 'numeric', month: 'short', year: 'numeric',
+                                  hour: '2-digit', minute: '2-digit',
+                                  timeZone: 'Europe/Amsterdam'
+                                }) + ' NL'
+                              : 'vandaag'
+                            }
                           </span>
                         </div>
                         <span className="text-text-dim/20">|</span>
