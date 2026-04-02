@@ -137,6 +137,14 @@ interface BriefingV2Data {
   newsCount?: number
   regimeSource?: string
   intermarketAlignment?: number
+  confidenceBreakdown?: {
+    fundamentalClarity: number
+    fundamentalSpread: number
+    newsAlignment: number
+    intermarketAlignment: number
+    regimeBonus: number
+    formula: string
+  }
   divergences?: Record<string, DivergenceInfo>
   currencyMomentum?: Record<string, { direction: string; changePct: number }>
 }
@@ -664,28 +672,7 @@ export default function BriefingV2Dashboard() {
 
       {data && !loading && (
         <>
-          {/* ── High Impact Events Banner ── */}
-          {data.todayEvents.length > 0 && (
-            <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/[0.04] overflow-hidden">
-              <div className="px-4 py-2 border-b border-red-500/10 flex items-center gap-2">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-red-400">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                <span className="text-[10px] font-bold text-red-300 uppercase tracking-wider">High Impact Events Vandaag</span>
-              </div>
-              <div className="px-4 py-2.5 flex flex-wrap gap-x-6 gap-y-1.5">
-                {data.todayEvents.map((evt, i) => (
-                  <div key={i} className="flex items-center gap-1.5 text-xs">
-                    <span className="text-sm leading-none">{flagEmoji(evt.flag)}</span>
-                    <span className="font-mono font-bold text-heading">{evt.time}</span>
-                    <span className="text-text-muted">{evt.title}</span>
-                    {evt.forecast && <span className="text-text-dim">({evt.forecast})</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* High Impact Events — compact notice inside regime section handled below */}
 
           {/* ════════════════════════════════════════════════════════
               STAP 1: MACRO REGIME
@@ -712,11 +699,9 @@ export default function BriefingV2Dashboard() {
                     {lastUpdate && (
                       <span className="text-[9px] text-text-dim/50 font-normal">Laatste update: {lastUpdate}</span>
                     )}
-                    {data.regimeSource === 'fundamenteel + intermarket' && (
-                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-accent/10 text-accent-light border border-accent/20 font-medium">
-                        Intermarket bevestigd
-                      </span>
-                    )}
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/[0.06] text-text-dim border border-white/[0.06]">
+                      Bron: {data.regimeSource || 'centraal bank beleid'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <ConfidenceRing value={data.confidence} size={52} />
@@ -730,6 +715,23 @@ export default function BriefingV2Dashboard() {
                 </div>
                 <p className="text-xs text-text-muted leading-relaxed mt-3">{data.regimeExplain}</p>
 
+                {/* High Impact Events — compact inline */}
+                {data.todayEvents.length > 0 && (
+                  <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/[0.04] border border-red-500/10">
+                    <span className="text-[9px] font-bold text-red-400 uppercase tracking-wider shrink-0">Events:</span>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      {data.todayEvents.slice(0, 4).map((evt, i) => (
+                        <span key={i} className="text-[10px] text-text-muted">
+                          {flagEmoji(evt.flag)} <span className="font-mono text-heading">{evt.time}</span> {evt.title}
+                        </span>
+                      ))}
+                      {data.todayEvents.length > 4 && (
+                        <span className="text-[10px] text-text-dim">+{data.todayEvents.length - 4} meer</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Confidence Breakdown — clickable "Hoe berekend?" */}
                 <div className="mt-3">
                   <button
@@ -741,166 +743,41 @@ export default function BriefingV2Dashboard() {
                     </svg>
                     Hoe berekend? ({data.confidence}% confidence)
                   </button>
-                  {showConfidenceBreakdown && (() => {
-                    const regime = data.regime
-                    const signals = data.intermarketSignals || []
-
-                    // Calculate per-signal alignment score
-                    const signalResults = signals.map(signal => {
-                      const pct = Math.abs(signal.changePct || 0)
-                      const strength = pct > 1 ? 1.0 : pct > 0.5 ? 0.75 : pct > 0.2 ? 0.5 : 0.25
-
-                      // Determine if this signal confirms the regime
-                      let confirms = false
-                      let explanation = ''
-
-                      if (regime === 'Risk-Off') {
-                        if (signal.key === 'sp500') {
-                          confirms = signal.direction === 'down'
-                          explanation = confirms ? 'bevestigt Risk-Off' : 'tegenspreekt Risk-Off'
-                        } else if (signal.key === 'vix') {
-                          confirms = signal.direction === 'up'
-                          explanation = confirms ? 'bevestigt Risk-Off' : 'tegenspreekt Risk-Off'
-                        } else if (signal.key === 'gold') {
-                          confirms = signal.direction === 'up'
-                          explanation = confirms ? 'bevestigt Risk-Off' : 'tegenspreekt Risk-Off'
-                        } else if (signal.key === 'us10y') {
-                          confirms = signal.direction === 'up'
-                          explanation = confirms ? 'bevestigt zwak' : 'tegenspreekt'
-                        } else if (signal.key === 'dxy') {
-                          confirms = signal.direction === 'up'
-                          explanation = confirms ? 'bevestigt matig' : 'tegenspreekt'
-                        } else if (signal.key === 'oil') {
-                          confirms = signal.direction === 'up'
-                          explanation = confirms ? 'bevestigt matig' : 'tegenspreekt'
-                        }
-                      } else if (regime === 'Risk-On') {
-                        if (signal.key === 'sp500') {
-                          confirms = signal.direction === 'up'
-                          explanation = confirms ? 'bevestigt Risk-On' : 'tegenspreekt Risk-On'
-                        } else if (signal.key === 'vix') {
-                          confirms = signal.direction === 'down'
-                          explanation = confirms ? 'bevestigt Risk-On' : 'tegenspreekt Risk-On'
-                        } else if (signal.key === 'gold') {
-                          confirms = signal.direction === 'down'
-                          explanation = confirms ? 'bevestigt Risk-On' : 'tegenspreekt Risk-On'
-                        } else if (signal.key === 'us10y') {
-                          confirms = signal.direction === 'down'
-                          explanation = confirms ? 'bevestigt zwak' : 'tegenspreekt'
-                        } else if (signal.key === 'dxy') {
-                          confirms = signal.direction === 'down'
-                          explanation = confirms ? 'bevestigt matig' : 'tegenspreekt'
-                        } else if (signal.key === 'oil') {
-                          confirms = signal.direction === 'down'
-                          explanation = confirms ? 'bevestigt matig' : 'tegenspreekt'
-                        }
-                      } else if (regime === 'USD Dominant') {
-                        if (signal.key === 'us10y') {
-                          confirms = signal.direction === 'up'
-                          explanation = confirms ? 'bevestigt USD Dominant' : 'tegenspreekt'
-                        } else if (signal.key === 'dxy') {
-                          confirms = signal.direction === 'up'
-                          explanation = confirms ? 'bevestigt USD Dominant' : 'tegenspreekt'
-                        } else if (signal.key === 'sp500') {
-                          confirms = signal.direction === 'down'
-                          explanation = confirms ? 'bevestigt risk-off component' : 'tegenspreekt'
-                        } else if (signal.key === 'vix') {
-                          confirms = signal.direction === 'up'
-                          explanation = confirms ? 'bevestigt risk-off component' : 'tegenspreekt'
-                        } else if (signal.key === 'gold') {
-                          confirms = signal.direction === 'up'
-                          explanation = confirms ? 'bevestigt safe-haven vraag' : 'tegenspreekt'
-                        } else if (signal.key === 'oil') {
-                          confirms = signal.direction === 'up'
-                          explanation = confirms ? 'bevestigt matig' : 'tegenspreekt'
-                        }
-                      } else if (regime === 'USD Zwak') {
-                        if (signal.key === 'us10y') {
-                          confirms = signal.direction === 'down'
-                          explanation = confirms ? 'bevestigt USD Zwak' : 'tegenspreekt'
-                        } else if (signal.key === 'dxy') {
-                          confirms = signal.direction === 'down'
-                          explanation = confirms ? 'bevestigt USD Zwak' : 'tegenspreekt'
-                        } else if (signal.key === 'sp500') {
-                          confirms = signal.direction === 'up'
-                          explanation = confirms ? 'bevestigt risk-on component' : 'tegenspreekt'
-                        } else if (signal.key === 'vix') {
-                          confirms = signal.direction === 'down'
-                          explanation = confirms ? 'bevestigt risk-on component' : 'tegenspreekt'
-                        } else if (signal.key === 'gold') {
-                          confirms = signal.direction === 'down'
-                          explanation = confirms ? 'bevestigt risk-on component' : 'tegenspreekt'
-                        } else if (signal.key === 'oil') {
-                          confirms = signal.direction === 'down'
-                          explanation = confirms ? 'bevestigt matig' : 'tegenspreekt'
-                        }
-                      } else {
-                        // Gemengd
-                        explanation = 'gemengd regime'
-                        confirms = false
-                      }
-
-                      const score = confirms ? strength : 0
-                      return { signal, confirms, score, strength, explanation }
-                    })
-
-                    const intermarketTotal = signalResults.reduce((sum, r) => sum + r.score, 0)
-                    const intermarketMax = signalResults.length * 1.0
-                    const intermarketPct = intermarketMax > 0 ? Math.round((intermarketTotal / intermarketMax) * 100) : 0
-
-                    // News alignment from data
-                    const newsAlignment = data.intermarketAlignment !== undefined
-                      ? Math.round(data.confidence * 2 - intermarketPct)
-                      : data.confidence
-
-                    return (
-                      <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                        <p className="text-[10px] text-text-dim uppercase tracking-wider mb-2 font-medium">Intermarket bevestiging: {intermarketPct}%</p>
-                        <div className="space-y-1">
-                          {signalResults.map((r, idx) => {
-                            const isLast = idx === signalResults.length - 1
-                            const prefix = isLast ? '\u2514' : '\u251C'
-                            const changePctStr = r.signal.changePct !== null ? `${r.signal.changePct > 0 ? '+' : ''}${r.signal.changePct}%` : 'N/A'
-                            const directionStr = r.signal.direction === 'up' ? '\u2191' : r.signal.direction === 'down' ? '\u2193' : '\u2194'
-                            return (
-                              <div key={r.signal.key} className="flex items-center gap-2 text-[10px] font-mono">
-                                <span className="text-text-dim/40 w-3 text-center">{prefix}</span>
-                                <span className="text-text-muted w-16">{r.signal.name}:</span>
-                                <span className={r.signal.direction === 'up' ? 'text-green-400' : r.signal.direction === 'down' ? 'text-red-400' : 'text-text-dim'}>
-                                  {directionStr} {changePctStr}
-                                </span>
-                                <span className="text-text-dim/60">&rarr;</span>
-                                <span className={r.confirms ? 'text-green-400' : 'text-red-400'}>
-                                  {r.confirms ? '\u2713' : '\u2717'} {r.explanation}
-                                </span>
-                                <span className="text-text-dim/40 ml-auto">
-                                  ({r.score.toFixed(1)}/{r.strength.toFixed(1)})
-                                </span>
+                  {showConfidenceBreakdown && (
+                    <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                      <p className="text-[10px] text-text-dim mb-3 leading-relaxed">
+                        De confidence score geeft aan hoe duidelijk het fundamentele beeld is. Een hoog percentage betekent dat de valutascores sterk uiteenlopen en het regime helder is.
+                      </p>
+                      {/* Breakdown bars */}
+                      {(() => {
+                        const bd = (data as any).confidenceBreakdown
+                        const items = [
+                          { label: 'Fundamentele duidelijkheid', value: bd?.fundamentalClarity ?? data.confidence, weight: '70%', detail: bd ? `Spread: ${bd.fundamentalSpread} punten tussen sterkste/zwakste valuta` : '' },
+                          { label: 'Nieuws alignment', value: bd?.newsAlignment ?? 50, weight: '30%', detail: 'Bevestigt het nieuws het regime?' },
+                          ...(bd?.regimeBonus ? [{ label: 'Regime bonus', value: bd.regimeBonus * 10, weight: '+10', detail: 'Duidelijk regime (niet Gemengd)' }] : []),
+                        ]
+                        return (
+                          <div className="space-y-2">
+                            {items.map(item => (
+                              <div key={item.label}>
+                                <div className="flex items-center justify-between text-[10px] mb-0.5">
+                                  <span className="text-text-muted">{item.label} <span className="text-text-dim/50">({item.weight})</span></span>
+                                  <span className="font-mono text-heading">{item.value}%</span>
+                                </div>
+                                <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full transition-all ${item.value >= 65 ? 'bg-green-500/60' : item.value >= 40 ? 'bg-amber-500/60' : 'bg-red-500/60'}`} style={{ width: `${Math.min(100, item.value)}%` }} />
+                                </div>
+                                {item.detail && <p className="text-[9px] text-text-dim/50 mt-0.5">{item.detail}</p>}
                               </div>
-                            )
-                          })}
-                        </div>
-
-                        <div className="mt-3 pt-2 border-t border-white/[0.05]">
-                          <div className="flex items-center gap-2 text-[10px] font-mono text-text-dim">
-                            <span>Intermarket: {intermarketPct}%</span>
-                            {data.intermarketAlignment !== undefined && (
-                              <>
-                                <span className="text-text-dim/40">|</span>
-                                <span>Nieuws alignment: {Math.max(0, Math.min(100, newsAlignment))}%</span>
-                              </>
-                            )}
+                            ))}
+                            <div className="pt-2 mt-2 border-t border-white/[0.05] text-[10px] font-mono text-text-dim">
+                              Totaal: {data.confidence}%{bd?.formula && ` (${bd.formula})`}
+                            </div>
                           </div>
-                          <p className="text-[10px] font-mono text-text-muted mt-1">
-                            Confidence = {data.intermarketAlignment !== undefined
-                              ? `(intermarket + nieuws) / 2 = ${data.confidence}%`
-                              : `intermarket score = ${data.confidence}%`
-                            }
-                          </p>
-                        </div>
-                      </div>
-                    )
-                  })()}
+                        )
+                      })()}
+                    </div>
+                  )}
                 </div>
 
                 {/* Educational: Why is this risk-on/off? — COLLAPSIBLE */}
@@ -1495,14 +1372,19 @@ export default function BriefingV2Dashboard() {
                           </div>
                           <p className="text-sm text-text-muted leading-relaxed">{intermarketConclusion.text}</p>
                           {alignment !== undefined && (
-                            <p className="text-[10px] text-text-dim mt-1.5">
-                              {alignment > 65
-                                ? 'Intermarket signalen bevestigen het huidige regime sterk. Hogere overtuiging bij trades.'
-                                : alignment >= 35
-                                ? 'Gemengde intermarket signalen. Wees selectiever met posities.'
-                                : 'Intermarket signalen spreken het regime tegen. Extra voorzichtigheid geboden.'
-                              }
-                            </p>
+                            <div className="mt-1.5">
+                              <p className="text-[10px] text-text-dim">
+                                {alignment > 65
+                                  ? 'Intermarket signalen bevestigen het huidige regime sterk. Hogere overtuiging bij trades.'
+                                  : alignment >= 35
+                                  ? 'Gemengde intermarket signalen. Wees selectiever met posities.'
+                                  : 'Intermarket signalen spreken het regime tegen. Extra voorzichtigheid geboden.'
+                                }
+                              </p>
+                              <p className="text-[9px] text-text-dim/50 mt-1">
+                                Berekening: per signaal wordt gecheckt of de richting het regime bevestigt. De sterkte weegt mee: &gt;1% = vol gewicht, 0.5-1% = 75%, 0.2-0.5% = 50%, &lt;0.2% = 25%. Totaal / maximum = alignment %.
+                              </p>
+                            </div>
                           )}
                         </div>
                         <div className="ml-4 shrink-0">
@@ -1907,7 +1789,7 @@ export default function BriefingV2Dashboard() {
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
                       </svg>
                       <span className="text-[10px] font-semibold text-text-dim uppercase tracking-wider">Watchlist</span>
-                      <span className="text-[9px] text-text-dim/50">— paren om in de gaten te houden</span>
+                      <span className="text-[9px] text-text-dim/50">— paren met potentieel, maar nog niet sterk genoeg voor een call</span>
                     </div>
                     <div className="divide-y divide-white/[0.03]">
                       {watchlist.map(wp => {
@@ -1936,6 +1818,12 @@ export default function BriefingV2Dashboard() {
                           </div>
                         )
                       })}
+                    </div>
+                    <div className="px-4 py-2 bg-white/[0.01] border-t border-white/[0.04]">
+                      <p className="text-[9px] text-text-dim leading-relaxed">
+                        <strong className="text-text-dim/80">Wat doe je hiermee?</strong> Watchlist-paren hebben een score van 2.0-3.0 — er is een fundamentele bias, maar niet sterk genoeg voor een trade call.
+                        Hou ze in de gaten: als het nieuws of de intermarket signalen versterken, kunnen ze naar de Trade Focus promoveren. Ze zijn ook nuttig als bevestiging van het bredere regime.
+                      </p>
                     </div>
                   </div>
                 )}
@@ -2454,10 +2342,52 @@ export default function BriefingV2Dashboard() {
 
           {/* ── Methodology Footer ── */}
           <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium mb-2">Methode &amp; Databronnen</p>
-            <p className="text-xs text-text-dim leading-relaxed">{data.regimeMethodology}</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium mb-3">Methode &amp; Databronnen — v2.5</p>
+
+            <div className="space-y-3 text-[11px] text-text-dim leading-relaxed">
+              <div>
+                <p className="font-semibold text-text-muted mb-1">Hoe werkt dit model?</p>
+                <p>Het Daily Macro Briefing analyseert de FX-markt in 4 stappen. Elke stap bouwt voort op de vorige:</p>
+                <ol className="list-decimal list-inside mt-1 space-y-0.5 text-[10px]">
+                  <li><strong className="text-text-muted">Macro Regime</strong> — bepaald door centraal bank beleid (hawkish/dovish bias + rente vs doel). Dit verandert niet door dagelijkse markbewegingen.</li>
+                  <li><strong className="text-text-muted">Currency Scorecard &amp; Nieuws</strong> — elke valuta krijgt een score (CB beleid × 2 + rentetarget + nieuwsbonus max ±2.0). Het verschil bepaalt de bias per paar.</li>
+                  <li><strong className="text-text-muted">Intermarket Bevestiging</strong> — VIX, S&amp;P 500, goud, yields en DXY worden gecheckt als bevestiging of waarschuwing. Ze veranderen het regime niet, maar beïnvloeden de overtuiging.</li>
+                  <li><strong className="text-text-muted">Trade Focus</strong> — paren met score ≥3.0 en regime-aligned worden geselecteerd. Het model wacht op mean reversion: pas traden als de prijs tegen de fundamentele richting beweegt.</li>
+                </ol>
+              </div>
+
+              <div>
+                <p className="font-semibold text-text-muted mb-1">Databronnen</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[10px]">
+                  {[
+                    { bron: 'Centraal bank rentetarieven', detail: 'Supabase DB, handmatig bijgewerkt na CB-vergaderingen' },
+                    { bron: 'Intermarket koersen', detail: 'Yahoo Finance API (real-time, cache: 5 min)' },
+                    { bron: 'Nieuws artikelen', detail: 'Bloomberg, ForexLive, CNBC via Supabase (laatste 3 dagen)' },
+                    { bron: 'Economische kalender', detail: 'ForexFactory API (wekelijks ververst)' },
+                    { bron: 'Koers momentum (divergentie)', detail: 'Yahoo Finance 5d chart data, proxy-paren' },
+                    { bron: 'Track Record', detail: 'Supabase DB, dagelijks automatisch geresolved na 2 handelsdagen' },
+                  ].map(item => (
+                    <div key={item.bron} className="flex items-start gap-1.5 p-1.5 rounded bg-white/[0.02]">
+                      <span className="text-accent-light/40 mt-0.5">&#x2022;</span>
+                      <div>
+                        <span className="text-text-muted font-medium">{item.bron}</span>
+                        <span className="text-text-dim/60 block">{item.detail}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="font-semibold text-text-muted mb-1">Update frequenties</p>
+                <p className="text-[10px]">
+                  CB beleid: na elke vergadering · Intermarket: elke 5 min (Yahoo cache) · Nieuws: continu, analyse afgelopen 72 uur · Kalender: wekelijks · Track record: dagelijks om ~23:00 NL
+                </p>
+              </div>
+            </div>
+
             <div className="mt-3 flex flex-wrap gap-2">
-              {['CB Beleid (basis)', 'Rente vs Target', 'Intermarket Signalen', 'Nieuws Sentiment', 'Intermarket Filter', 'Mean Reversion', 'Economische Kalender'].map(tag => (
+              {['CB Beleid ×2', 'Rente vs Target', 'Nieuws ±2.0', 'Intermarket Check', 'Mean Reversion', 'Confluence 4/4', '21 Paren', 'Dagkoers NY Close'].map(tag => (
                 <span key={tag} className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">{tag}</span>
               ))}
             </div>
@@ -2465,8 +2395,11 @@ export default function BriefingV2Dashboard() {
 
           <div className="mt-4 p-4 rounded-xl border border-border bg-bg-card/30 text-center">
             <p className="text-xs text-text-dim leading-relaxed">
-              Deze briefing is puur educatief en geen financieel advies. Data wordt automatisch opgehaald.
-              Fundamentals geven de richting, je technische analyse (structure breaks) bepaalt de timing en entry.
+              Deze briefing is puur educatief en geen financieel advies. Data wordt automatisch opgehaald en verwerkt.
+              Fundamentals geven de richting, technische analyse (structure breaks) bepaalt de timing en entry.
+            </p>
+            <p className="text-[9px] text-text-dim/40 mt-1">
+              Versie {data.version} · Gegenereerd: {formatCET(data.generatedAt)} · 21 FX paren · 8 valuta&apos;s · 6 intermarket signalen
             </p>
           </div>
         </>

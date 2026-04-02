@@ -101,7 +101,8 @@ function analyzeNewsSentiment(articles: NewsArticle[]): Record<string, { score: 
   ]
   const bullishWords = [
     'hawkish', 'tightening', 'restrictive', 'robust', 'surge', 'rally',
-    'booming', 'upbeat', 'outperform', 'accelerat',
+    'booming', 'upbeat', 'outperform', 'accelerat', 'strong', 'growth',
+    'gain', 'rise', 'climb', 'recover', 'optimis', 'positive', 'boost',
   ]
 
   // Bearish PHRASES first, then single words
@@ -109,11 +110,15 @@ function analyzeNewsSentiment(articles: NewsArticle[]): Record<string, { score: 
     'rate cut', 'rate decrease', 'lower than expected', 'missed expectations',
     'below expected', 'weaker than expected', 'dovish surprise', 'dovish pivot',
     'easing cycle', 'below consensus', 'hard landing', 'debt crisis',
+    'oil prices fall', 'oil price drop', 'crude oil decline', 'under pressure',
+    'higher prices for', 'supply chain', 'iran deal',
   ]
   const bearishWords = [
     'dovish', 'easing', 'accommodative', 'recession', 'slowdown',
     'contraction', 'crisis', 'warning', 'downgrade', 'stagflation',
-    'deteriorat', 'plunge', 'crash',
+    'deteriorat', 'plunge', 'crash', 'tariff', 'trade war', 'sanction',
+    'tension', 'conflict', 'geopolit', 'uncertainty', 'risk',
+    'pressure', 'decline', 'fall', 'drop', 'slide', 'tumble', 'weak',
   ]
 
   for (const article of articles) {
@@ -151,7 +156,8 @@ function analyzeNewsSentiment(articles: NewsArticle[]): Record<string, { score: 
     }
 
     // Skip articles with no clear signal (noise filter)
-    if (Math.abs(isBullish - isBearish) < 0.5) continue
+    // Lowered threshold: single keyword matches (0.5) now count
+    if (isBullish === 0 && isBearish === 0) continue
 
     // Weight by relevance score
     const weight = Math.min(article.relevance_score / 5, 1.5)
@@ -475,75 +481,34 @@ export async function GET() {
       direction: marketData[def.key]?.direction ?? 'flat',
     }))
 
-    // ── 6. Macro Regime (uses BOTH fundamentals AND intermarket data) ──
-    // Start with fundamental regime
+    // ── 6. Macro Regime (PURE fundamentals: CB policy + rate differentials) ──
+    // Regime is determined ONLY by central bank bias scores — no intermarket here.
+    // Intermarket signals are used later (Step 3) as confirmation/contradiction.
     let regime: string
     let regimeExplain: string
     let regimeColor: string
-    let regimeSource = 'fundamenteel'
+    const regimeSource = 'centraal bank beleid'
 
-    // Fundamental regime (based on currency scores)
     if (jpyScore > 1 && highYieldAvg < 0) {
       regime = 'Risk-Off'
-      regimeExplain = 'JPY is sterk en high-yield valuta\'s zijn zwak. Markt zoekt veiligheid. Voorzichtig met long risk-posities.'
+      regimeExplain = `JPY is fundamenteel sterk (score ${jpyScore > 0 ? '+' : ''}${jpyScore.toFixed(1)}) en high-yield valuta's zwak (gem. ${highYieldAvg > 0 ? '+' : ''}${highYieldAvg.toFixed(1)}). Centrale banken in JP zijn hawkish terwijl AUD/NZD/CAD dovish neigen. Dit creëert een risk-off omgeving.`
       regimeColor = 'red'
     } else if (highYieldAvg > 1 && jpyScore < 0) {
       regime = 'Risk-On'
-      regimeExplain = 'High-yield valuta\'s zijn sterk en JPY is zwak. Markt is in risk-on modus. Kijk naar long AUD, NZD en short JPY setups.'
+      regimeExplain = `High-yield valuta's zijn sterk (gem. ${highYieldAvg > 0 ? '+' : ''}${highYieldAvg.toFixed(1)}) en JPY zwak (${jpyScore > 0 ? '+' : ''}${jpyScore.toFixed(1)}). Hawkish beleid bij RBA/RBNZ/BoC vs dovish BoJ creëert een risk-on omgeving.`
       regimeColor = 'green'
     } else if (usdScore > 2) {
       regime = 'USD Dominant'
-      regimeExplain = 'De dollar domineert door hawkish Fed en/of risk-off flows. Focus op USD-paren.'
+      regimeExplain = `USD scoort ${usdScore > 0 ? '+' : ''}${usdScore.toFixed(1)} — ver boven andere valuta's. Hawkish Fed en/of hoge rente trekt kapitaal naar de dollar.`
       regimeColor = 'blue'
     } else if (usdScore < -2) {
       regime = 'USD Zwak'
-      regimeExplain = 'De dollar is zwak door dovish verwachtingen. Long posities in sterke valuta\'s tegen USD.'
+      regimeExplain = `USD scoort ${usdScore > 0 ? '+' : ''}${usdScore.toFixed(1)} — dovish signalen vanuit de Fed. Dit creëert kansen in sterke valuta's tegen de dollar.`
       regimeColor = 'amber'
     } else {
       regime = 'Gemengd'
-      regimeExplain = 'Geen duidelijk macro-thema domineert. Focus op individuele paar-divergenties en events.'
+      regimeExplain = `Geen duidelijk macro-thema domineert (USD: ${usdScore > 0 ? '+' : ''}${usdScore.toFixed(1)}, JPY: ${jpyScore > 0 ? '+' : ''}${jpyScore.toFixed(1)}, HY gem: ${highYieldAvg > 0 ? '+' : ''}${highYieldAvg.toFixed(1)}). Focus op individuele paar-divergenties.`
       regimeColor = 'gray'
-    }
-
-    // Intermarket override (only when signals are strong)
-    const vixData = marketData['vix']
-    const spData = marketData['sp500']
-    const dxyData = marketData['dxy']
-
-    if (vixData && spData) {
-      // Strong Risk-Off signal: VIX > 25 AND S&P falling
-      if ((vixData.current ?? 0) > 25 && spData.direction === 'down') {
-        if (regime !== 'Risk-Off') {
-          regime = 'Risk-Off'
-          regimeExplain = 'VIX boven 25 en dalende aandelen signaleren verhoogde angst. Intermarket data wijst op risk-off, ongeacht de fundamentele scores. Voorzichtig met risk-posities.'
-          regimeColor = 'red'
-          regimeSource = 'fundamenteel + intermarket'
-        }
-      }
-      // Strong Risk-On signal: VIX < 15 AND S&P rising
-      if ((vixData.current ?? 0) < 15 && spData.direction === 'up') {
-        if (regime === 'Gemengd') {
-          regime = 'Risk-On'
-          regimeExplain = 'Lage VIX en stijgende aandelen wijzen op risk-on sentiment. Intermarket bevestigt gunstig klimaat voor high-yield valuta\'s.'
-          regimeColor = 'green'
-          regimeSource = 'fundamenteel + intermarket'
-        }
-      }
-    }
-
-    // DXY override for USD regimes
-    if (dxyData && regime === 'Gemengd') {
-      if (dxyData.direction === 'up' && (dxyData.changePct ?? 0) > 0.3) {
-        regime = 'USD Dominant'
-        regimeExplain = 'Dollar Index (DXY) stijgt vandaag significant. USD-sterkte domineert het speelveld vandaag.'
-        regimeColor = 'blue'
-        regimeSource = 'fundamenteel + intermarket'
-      } else if (dxyData.direction === 'down' && (dxyData.changePct ?? 0) < -0.3) {
-        regime = 'USD Zwak'
-        regimeExplain = 'Dollar Index (DXY) daalt vandaag significant. Dit creëert kansen in paren tegen de USD.'
-        regimeColor = 'amber'
-        regimeSource = 'fundamenteel + intermarket'
-      }
     }
 
     // ── 7. News Headlines (top important) ──
@@ -564,13 +529,23 @@ export async function GET() {
       }))
 
     // ── 8. Regime Methodology ──
-    const regimeMethodology = `Het macro regime wordt bepaald door een combinatie van centraal bank beleid, recent nieuws sentiment en intermarket signalen. Fundamentele scores (CB bias, rente vs target) vormen de basis. Nieuws sentiment werkt als aanvullend signaal (max +-2.0 punten). Intermarket data (VIX, S&P 500, DXY) kan het regime overrulen bij sterke signalen.`
+    const regimeMethodology = `Het macro regime wordt bepaald door centraal bank beleid: de bias (hawkish/dovish) en de rente t.o.v. het doel. Elke valuta krijgt een score op basis van deze fundamenten + een nieuws bonus (max ±2.0). Het regime volgt uit de verhoudingen tussen veilige havens (JPY, CHF), high-yield (AUD, NZD, CAD) en USD. Intermarket signalen (Stap 3) bevestigen of weerspreken het regime, maar veranderen het niet.`
 
     // ── 9. Confidence Score ──
-    // How aligned are all signals?
+    // Confidence = how clear is the fundamental picture?
+    // Based on: spread between strongest/weakest currency, regime clarity, news alignment
     const intermarketAlignment = calculateIntermarketAlignment(intermarketSignals, regime)
     const newsAlignment = calculateNewsAlignment(newsSentiment, regime)
-    const overallConfidence = Math.round((intermarketAlignment + newsAlignment) / 2)
+
+    // Fundamental clarity: larger spread = clearer picture
+    const sortedScores = MAJORS.map(c => currencyScores[c]?.score || 0).sort((a, b) => b - a)
+    const fundamentalSpread = sortedScores[0] - sortedScores[sortedScores.length - 1]
+    // Spread of 6+ = very clear (100%), 4 = decent (75%), 2 = unclear (40%), 0 = no signal (20%)
+    const fundamentalClarity = Math.min(100, Math.round(20 + (fundamentalSpread / 8) * 80))
+    // Regime specificity bonus: non-Gemengd = clearer
+    const regimeBonus = regime !== 'Gemengd' ? 10 : 0
+    // Confidence = fundamental clarity (70%) + news alignment (30%) + regime bonus
+    const overallConfidence = Math.min(95, Math.round(fundamentalClarity * 0.7 + newsAlignment * 0.3 + regimeBonus))
 
     // ── 9a. Divergence Detection ──
     // Compute divergences: price direction vs fundamental direction
@@ -681,13 +656,22 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      version: 'v2.4',
+      version: 'v2.5',
       regime,
       regimeExplain,
       regimeColor,
       regimeSource,
       regimeMethodology,
       confidence: overallConfidence,
+      confidenceBreakdown: {
+        fundamentalClarity,
+        fundamentalSpread: +fundamentalSpread.toFixed(1),
+        newsAlignment,
+        intermarketAlignment,
+        regimeBonus,
+        formula: 'fundamentalClarity × 70% + newsAlignment × 30% + regimeBonus',
+      },
+      intermarketAlignment,
       intermarketSignals,
       currencyRanking,
       pairBiases,
