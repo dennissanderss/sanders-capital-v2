@@ -172,13 +172,13 @@ export default function DailyBriefingIntroPage() {
               wat vandaag de markt kan bewegen.
             </p>
             <p className="text-accent-light font-medium">
-              De Daily Macro Briefing lost dit op in vijf stappen.
+              De Daily Macro Briefing lost dit op in vier stappen.
             </p>
           </div>
         </div>
       </FadeIn>
 
-      {/* Five Steps */}
+      {/* Four Steps */}
       <div className="space-y-6 sm:space-y-8 mb-10 sm:mb-14">
         <FadeIn>
           <StepCard
@@ -186,11 +186,12 @@ export default function DailyBriefingIntroPage() {
             title="Macro Regime"
             color="blue"
             problem="Je weet niet of de markt in risk-on, risk-off of een dollargevoelige fase zit. Je tradet AUD/JPY long terwijl de markt in paniek is."
-            solution="Het model bepaalt automatisch het huidige regime (Risk-On, Risk-Off, USD Dominant, USD Zwak of Gemengd) zodat je direct weet welk speelveld je op zit."
+            solution="Het model bepaalt automatisch het huidige regime (Risk-On, Risk-Off, USD Dominant, USD Zwak of Gemengd) op basis van centraal bank beleid."
             details={[
+              'Puur gebaseerd op centraal bank beleid: de hawkish/dovish bias van elke centrale bank en de rente t.o.v. het target.',
               'Vergelijkt safe-haven valuta\'s (JPY, CHF) met high-yield valuta\'s (AUD, NZD, CAD) en de USD.',
-              'Gebruikt live intermarket data: DXY, US10Y yields, goud, S&P 500 en VIX als bevestiging.',
-              'Geeft een duidelijke omschrijving van wat het regime betekent voor jouw trading.',
+              'Regime confidence = hoe groot het verschil is tussen de sterkste en zwakste valuta. Groter verschil = duidelijker regime.',
+              'Intermarket data (VIX, S&P, goud) wordt pas in Stap 3 gebruikt als bevestiging — niet voor het regime zelf.',
             ]}
           />
         </FadeIn>
@@ -198,16 +199,16 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <StepCard
             step={2}
-            title="Currency Scorecard"
+            title="Currency Scorecard & Nieuws"
             color="green"
             problem="Je hebt geen overzicht van welke valuta fundamenteel sterk of zwak is. Je weet niet of de GBP sterker of zwakker is dan de EUR."
-            solution="Elke major valuta (USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD) krijgt een fundamentele score, gerangschikt van sterkste naar zwakste."
+            solution="Elke major valuta krijgt een score op basis van CB beleid + een nieuws bonus. Per paar zie je de bias: sterkste vs. zwakste valuta."
             details={[
-              'Score is gebaseerd op het officiële beleid van de centrale bank: hawkish bias = hogere score (sterke valuta), dovish = lagere score (zwakke valuta).',
-              'De bias wordt bepaald uit persconferenties, policy statements en forward guidance na rentevergaderingen. Handmatig bijgewerkt na elke vergadering.',
+              'Score is gebaseerd op het officiële beleid van de centrale bank: hawkish bias = hogere score, dovish = lagere score. De bias telt dubbel (×2).',
               'Rente t.o.v. het target telt mee: rente boven target = extra hawkish signaal, rente onder target = extra dovish.',
-              'Nieuws sentiment wordt als bonus meegewogen: actuele headlines die hawkish of dovish zijn passen de score aan (max ±1.5 punt).',
-              'Per valuta zie je de redenering: welke bank, welk beleid, waarom die score. Klik op een valuta voor de volledige onderbouwing.',
+              'Nieuws sentiment wordt als bonus meegewogen (max ±2.0 punt): actuele headlines die hawkish of dovish zijn passen de score aan.',
+              'Per valuta zie je de volledige onderbouwing: welke bank, welk beleid, welke headlines, waarom die score.',
+              'Pair bias = score base valuta − score quote valuta. Hoe groter het verschil, hoe sterker de bias voor dat paar.',
             ]}
           />
         </FadeIn>
@@ -215,16 +216,17 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <StepCard
             step={3}
-            title="Nieuws Sentiment"
-            color="purple"
-            problem="Je leest tientallen nieuwsartikelen maar weet niet welke headlines écht impact hebben op valuta's. Ruis versus signaal is niet te onderscheiden."
-            solution="Het model scant actuele financiële headlines en bepaalt per valuta of het sentiment hawkish, dovish of neutraal is — inclusief een impactscore."
+            title="Intermarket Bevestiging"
+            color="amber"
+            problem="Je tradet forex in isolatie zonder te kijken of de bredere markten je analyse bevestigen. Je gaat short USD terwijl de dollar-index juist stijgt."
+            solution="Het model checkt of intermarket signalen (DXY, US10Y, goud, S&P 500, VIX, olie) het regime bevestigen of tegenspreken."
             details={[
-              'Headlines worden automatisch geanalyseerd op relevantie voor elke major valuta (USD, EUR, GBP, JPY, etc.).',
-              'Per headline zie je welke valuta geraakt wordt, de richting (hawkish/dovish) en de impactsterkte.',
-              'Het sentiment wordt als bonus (max ±1.5 punt) meegewogen in de currency score — zodat actueel nieuws de fundamentele analyse versterkt.',
-              'Klik op het sentiment-icoon bij een valuta om de specifieke headlines te zien die de score beïnvloeden.',
-              'Neutraal sentiment (geen relevante headlines) is ook informatie: het betekent dat de fundamentele bias onveranderd geldig is.',
+              'Intermarket verandert het regime NIET — het bevestigt of waarschuwt. Bij bevestiging stijgt de overtuiging, bij tegenspraak daalt die.',
+              'DXY (Dollar Index): stijgende DXY bevestigt USD-sterkte, dalend bevestigt USD-zwakte.',
+              'US10Y (rente op 10-jaars staatsobligaties): stijgende yields = hawkish signaal voor USD.',
+              'Goud: stijgend goud = risk-off / vlucht naar veiligheid. Bevestigt JPY/CHF sterkte.',
+              'S&P 500 + VIX: hoge VIX + dalende S&P = risk-off omgeving. Lage VIX = risk-on.',
+              'Alignment %: per signaal wordt gecheckt of de richting het regime bevestigt, gewogen naar sterkte van de beweging.',
             ]}
           />
         </FadeIn>
@@ -232,34 +234,18 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <StepCard
             step={4}
-            title="Intermarket Bevestiging"
-            color="amber"
-            problem="Je tradet forex in isolatie zonder te kijken of de bredere markten je analyse bevestigen. Je gaat short USD terwijl de dollar-index juist stijgt."
-            solution="Het model toont live intermarket signalen (DXY, US10Y, goud, S&P 500, VIX) en checkt of deze het macro regime en de currency scores bevestigen."
-            details={[
-              'DXY (Dollar Index): stijgende DXY bevestigt USD-sterkte, dalend bevestigt USD-zwakte.',
-              'US10Y (rente op 10-jaars staatsobligaties): stijgende yields = hawkish signaal voor USD.',
-              'Goud: stijgend goud = risk-off / vlucht naar veiligheid. Bevestigt JPY/CHF sterkte.',
-              'S&P 500 + VIX: hoge VIX + dalende S&P = risk-off omgeving. Lage VIX = risk-on.',
-              'Wanneer intermarket data het regime bevestigt, heb je meer vertrouwen in je trade. Bij tegenspraak: extra voorzichtigheid.',
-            ]}
-          />
-        </FadeIn>
-
-        <FadeIn>
-          <StepCard
-            step={5}
             title="Trade Focus"
             color="gold"
             problem="Je opent TradingView en zoekt willekeurig door 28 forex paren. Je weet niet waar je moet focussen en mist de beste setups."
             solution="Het model selecteert automatisch de sterkste divergenties: de sterkste valuta tegenover de zwakste, gefilterd door mean reversion timing."
             details={[
               'Pair score = score van de base valuta minus de quote valuta. Hoe groter het verschil, hoe sterker de bias.',
-              'Sterke overtuiging: score ≥ 3.5. Matige overtuiging: score ≥ 3.0. Alleen deze worden getrackt.',
-              'Mean reversion filter: een signaal wordt pas actief als de prijs de afgelopen 2 dagen tégen de fundamentele richting is bewogen — je koopt de dip, niet de top.',
-              'Bij elk paar zie je de richting (bullish/bearish), overtuiging, entry (dagkoers vandaag) en exit (dagkoers 2 handelsdagen later).',
-              'Het trackrecord meet of de fundamentele bias klopte: dagkoers op signaaldag vs. dagkoers 2 handelsdagen later. Volledig transparant, geen cherry-picking.',
-              'Dit geeft je niet je entry, het geeft je de richting. Jij past vervolgens je eigen strategie toe in de richting van de bias.',
+              'Sterke overtuiging: score ≥ 3.5. Matige overtuiging: score ≥ 3.0. Alleen deze worden geselecteerd.',
+              'Confluence meter: 4 factoren moeten bevestigen (Fundamenteel, Regime, Intermarket, Nieuws). Hoe meer bevestiging, hoe sterker het signaal.',
+              'Mean reversion filter: een signaal wordt pas actief als de prijs de afgelopen 2 dagen tégen de fundamentele richting is bewogen.',
+              'Bij elk paar zie je richting (bullish/bearish), overtuiging, entry (dagkoers vandaag) en exit (dagkoers +2 handelsdagen).',
+              'Het trackrecord meet of de fundamentele bias klopte. Volledig transparant, geen cherry-picking.',
+              'Dit geeft je de richting. Jij past je eigen strategie toe in de richting van de bias.',
             ]}
           />
         </FadeIn>
@@ -412,7 +398,7 @@ export default function DailyBriefingIntroPage() {
             <SourceCard
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" /></svg>}
               title="Nieuws Sentiment"
-              desc="Actuele financiële headlines worden geanalyseerd op impact per valuta. Hawkish of dovish sentiment wordt als bonus (max ±1.5) meegewogen in de currency score."
+              desc="Actuele financiële headlines worden geanalyseerd op impact per valuta. Hawkish of dovish sentiment wordt als bonus (max ±2.0) meegewogen in de currency score."
             />
             <SourceCard
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>}

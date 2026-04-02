@@ -1,5 +1,5 @@
 // ─── V2.3 Track Record Backfill API ─────────────────────────
-// Backfills up to 60 days of historical v2 records using
+// Backfills up to 180 days of historical v2 records using
 // CB rates + simulated news bonus + V2.3 scoring logic:
 //   - Regime determination (safe-haven vs high-yield)
 //   - Regime alignment check (pair direction must match regime)
@@ -96,7 +96,7 @@ function rateTargetScore(rate: number | null, target: number | null): number {
 async function fetchHistoricalPrices(symbol: string, days: number): Promise<{ date: string; close: number }[]> {
   try {
     const res = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${days + 5}d`,
+      `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${days <= 95 ? `${days + 5}d` : '1y'}`,
       {
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
         next: { revalidate: 0 }
@@ -294,7 +294,7 @@ export async function DELETE() {
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}))
-    const days = Math.min(body.days || 90, 90)
+    const days = Math.min(body.days || 90, 180)
     const hasMetadata = await checkMetadataColumn()
 
     if (!hasMetadata) {

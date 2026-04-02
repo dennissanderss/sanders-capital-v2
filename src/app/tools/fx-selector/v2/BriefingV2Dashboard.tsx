@@ -123,6 +123,7 @@ interface BriefingV2Data {
   regimeColor: string
   regimeMethodology: string
   confidence: number
+  regimeConfidence?: number
   intermarketSignals: IntermarketSignal[]
   currencyRanking: CurrencyRank[]
   pairBiases: PairBias[]
@@ -143,6 +144,7 @@ interface BriefingV2Data {
     newsAlignment: number
     intermarketAlignment: number
     regimeBonus: number
+    regimeConfidence: number
     formula: string
   }
   divergences?: Record<string, DivergenceInfo>
@@ -704,11 +706,11 @@ export default function BriefingV2Dashboard() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <ConfidenceRing value={data.confidence} size={52} />
+                    <ConfidenceRing value={data.regimeConfidence ?? data.confidence} size={52} />
                     <div className="text-right">
-                      <p className="text-[10px] text-text-dim uppercase tracking-wider">Confidence</p>
+                      <p className="text-[10px] text-text-dim uppercase tracking-wider">Regime Confidence</p>
                       <p className="text-xs text-text-muted">
-                        {data.confidence >= 70 ? 'Sterke consensus' : data.confidence >= 45 ? 'Gemengde signalen' : 'Zwakke consensus'}
+                        {(data.regimeConfidence ?? data.confidence) >= 70 ? 'Sterke consensus' : (data.regimeConfidence ?? data.confidence) >= 45 ? 'Gemengde signalen' : 'Zwakke consensus'}
                       </p>
                     </div>
                   </div>
@@ -741,37 +743,34 @@ export default function BriefingV2Dashboard() {
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${showConfidenceBreakdown ? 'rotate-90' : ''}`}>
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
-                    Hoe berekend? ({data.confidence}% confidence)
+                    Hoe berekend? ({data.regimeConfidence ?? data.confidence}% regime confidence)
                   </button>
                   {showConfidenceBreakdown && (
                     <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
                       <p className="text-[10px] text-text-dim mb-3 leading-relaxed">
-                        De confidence score geeft aan hoe duidelijk het fundamentele beeld is. Een hoog percentage betekent dat de valutascores sterk uiteenlopen en het regime helder is.
+                        De regime confidence geeft aan hoe duidelijk het centraal bank beeld is. Dit is puur gebaseerd op de spread tussen de sterkste en zwakste valuta — hoe groter het verschil, hoe duidelijker het regime.
                       </p>
                       {/* Breakdown bars */}
                       {(() => {
-                        const bd = (data as any).confidenceBreakdown
-                        const items = [
-                          { label: 'Fundamentele duidelijkheid', value: bd?.fundamentalClarity ?? data.confidence, weight: '70%', detail: bd ? `Spread: ${bd.fundamentalSpread} punten tussen sterkste/zwakste valuta` : '' },
-                          { label: 'Nieuws alignment', value: bd?.newsAlignment ?? 50, weight: '30%', detail: 'Bevestigt het nieuws het regime?' },
-                          ...(bd?.regimeBonus ? [{ label: 'Regime bonus', value: bd.regimeBonus * 10, weight: '+10', detail: 'Duidelijk regime (niet Gemengd)' }] : []),
-                        ]
+                        const bd = data.confidenceBreakdown
+                        const regConf = data.regimeConfidence ?? data.confidence
+                        const spread = bd?.fundamentalSpread ?? 0
                         return (
                           <div className="space-y-2">
-                            {items.map(item => (
-                              <div key={item.label}>
-                                <div className="flex items-center justify-between text-[10px] mb-0.5">
-                                  <span className="text-text-muted">{item.label} <span className="text-text-dim/50">({item.weight})</span></span>
-                                  <span className="font-mono text-heading">{item.value}%</span>
-                                </div>
-                                <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
-                                  <div className={`h-full rounded-full transition-all ${item.value >= 65 ? 'bg-green-500/60' : item.value >= 40 ? 'bg-amber-500/60' : 'bg-red-500/60'}`} style={{ width: `${Math.min(100, item.value)}%` }} />
-                                </div>
-                                {item.detail && <p className="text-[9px] text-text-dim/50 mt-0.5">{item.detail}</p>}
+                            <div>
+                              <div className="flex items-center justify-between text-[10px] mb-0.5">
+                                <span className="text-text-muted">Fundamentele duidelijkheid</span>
+                                <span className="font-mono text-heading">{regConf}%</span>
                               </div>
-                            ))}
+                              <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full transition-all ${regConf >= 65 ? 'bg-green-500/60' : regConf >= 40 ? 'bg-amber-500/60' : 'bg-red-500/60'}`} style={{ width: `${Math.min(100, regConf)}%` }} />
+                              </div>
+                              <p className="text-[9px] text-text-dim/50 mt-0.5">
+                                Spread van {spread.toFixed ? spread.toFixed(1) : spread} punten tussen sterkste en zwakste valuta. Een spread van 6+ = zeer duidelijk, 4+ = duidelijk, 2+ = onduidelijk.
+                              </p>
+                            </div>
                             <div className="pt-2 mt-2 border-t border-white/[0.05] text-[10px] font-mono text-text-dim">
-                              Totaal: {data.confidence}%{bd?.formula && ` (${bd.formula})`}
+                              Regime confidence: {regConf}%
                             </div>
                           </div>
                         )
@@ -2184,24 +2183,40 @@ export default function BriefingV2Dashboard() {
                         return (
                           <div key={record.id} className="rounded-xl bg-white/[0.02] border border-white/[0.04] overflow-hidden">
                             {/* Header row */}
-                            <div className="px-3 py-2 flex items-center justify-between bg-white/[0.01]">
+                            <div className={`px-3 py-2 flex items-center justify-between ${
+                              record.direction.includes('bullish') ? 'bg-gradient-to-r from-green-500/[0.04] to-transparent' :
+                              'bg-gradient-to-r from-red-500/[0.04] to-transparent'
+                            }`}>
                               <div className="flex items-center gap-2">
                                 <span className="text-text-dim font-mono text-[10px]">{record.date}</span>
                                 <span className="font-semibold text-heading font-mono text-xs">{record.pair}</span>
-                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                  record.direction.includes('bullish') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                                  record.direction.includes('bullish')
+                                    ? 'bg-green-500/15 text-green-400 border border-green-500/20'
+                                    : 'bg-red-500/15 text-red-400 border border-red-500/20'
                                 }`}>
-                                  {record.direction.includes('bullish') ? 'LONG' : 'SHORT'}
+                                  {record.direction.includes('bullish') ? '\u25B2 BULLISH' : '\u25BC BEARISH'}
                                 </span>
-                                <span className="text-[9px] font-mono text-text-dim">score: {record.score}</span>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                  record.conviction === 'sterk'
+                                    ? 'bg-white/[0.08] text-heading'
+                                    : 'bg-white/[0.04] text-text-dim'
+                                }`}>
+                                  {record.conviction || 'matig'}
+                                </span>
                               </div>
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                                record.result === 'correct' ? 'bg-green-500/10 text-green-400' :
-                                record.result === 'incorrect' ? 'bg-red-500/10 text-red-400' :
-                                'bg-amber-500/10 text-amber-400'
-                              }`}>
-                                {record.result === 'correct' ? '\u2713 Correct' : record.result === 'incorrect' ? '\u2717 Incorrect' : '\u23F3 Pending'}
-                              </span>
+                              <div className="flex items-center gap-2.5">
+                                <span className={`text-sm font-mono font-bold ${
+                                  record.score > 0 ? 'text-green-400' : record.score < 0 ? 'text-red-400' : 'text-text-dim'
+                                }`}>{record.score > 0 ? '+' : ''}{record.score}</span>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  record.result === 'correct' ? 'bg-green-500/15 text-green-400 border border-green-500/20' :
+                                  record.result === 'incorrect' ? 'bg-red-500/15 text-red-400 border border-red-500/20' :
+                                  'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                }`}>
+                                  {record.result === 'correct' ? '\u2713 Correct' : record.result === 'incorrect' ? '\u2717 Incorrect' : '\u23F3 Pending'}
+                                </span>
+                              </div>
                             </div>
                             {/* Detail row: entry, exit, pips, timestamps */}
                             <div className="px-3 py-2 border-t border-white/[0.03]">

@@ -3,7 +3,7 @@
 // Deletes all existing v2 trackrecord and rebuilds with v2.5 scoring:
 // - Pure CB policy regime (no intermarket override)
 // - Expanded news keywords
-// - 21 pairs, 5 per day, 90 days history
+// - 21 pairs, 5 per day, 180 days history
 // - Mean reversion, 2-day hold
 
 const API = 'https://www.sanderscapital.nl/api/trackrecord-v2/backfill'
@@ -25,15 +25,15 @@ async function main() {
   console.log('\nWaiting 3 seconds...')
   await new Promise(r => setTimeout(r, 3000))
 
-  // Step 3: Backfill with v2.5 scoring (90 days)
-  console.log('\nStep 2: Backfilling 90 days with v2.5 scoring...')
+  // Step 3: Backfill with v2.5 scoring (180 days)
+  console.log('\nStep 2: Backfilling 180 days with v2.5 scoring...')
   console.log('  (21 pairs, pure CB regime, expanded news, 2-day hold)')
-  console.log('  This may take 3-5 minutes due to Yahoo Finance rate limits...\n')
+  console.log('  This may take 5-10 minutes due to Yahoo Finance rate limits...\n')
 
   const postRes = await fetch(API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ days: 90 }),
+    body: JSON.stringify({ days: 180 }),
     redirect: 'follow',
   })
 
