@@ -165,21 +165,33 @@ function getIntermarketAlignment(
     return prev !== 0 ? ((hist[idx].close - prev) / prev) * 100 : null
   }
 
+  // Must match optimizer exactly: total always increments per indicator,
+  // even if data is missing (undefined > 0 = false, so aligned stays same)
   let aligned = 0, total = 0
   if (regime === 'Risk-Off') {
-    const vix = getDayChange('VIX'); if (vix !== null) { if (vix > 0) aligned++; total++ }
-    const gold = getDayChange('GOLD'); if (gold !== null) { if (gold > 0) aligned++; total++ }
-    const sp = getDayChange('SP500'); if (sp !== null) { if (sp < 0) aligned++; total++ }
-    const yields = getDayChange('US10Y'); if (yields !== null) { if (yields < 0) aligned++; total++ }
+    const vix = getDayChange('VIX')
+    const gold = getDayChange('GOLD')
+    const sp = getDayChange('SP500')
+    const yields = getDayChange('US10Y')
+    if (vix !== null && vix > 0) aligned++; total++
+    if (gold !== null && gold > 0) aligned++; total++
+    if (sp !== null && sp < 0) aligned++; total++
+    if (yields !== null && yields < 0) aligned++; total++
   } else if (regime === 'Risk-On') {
-    const vix = getDayChange('VIX'); if (vix !== null) { if (vix < 0) aligned++; total++ }
-    const sp = getDayChange('SP500'); if (sp !== null) { if (sp > 0) aligned++; total++ }
-    const yields = getDayChange('US10Y'); if (yields !== null) { if (yields > 0) aligned++; total++ }
-    const oil = getDayChange('OIL'); if (oil !== null) { if (oil > 0) aligned++; total++ }
+    const vix = getDayChange('VIX')
+    const sp = getDayChange('SP500')
+    const yields = getDayChange('US10Y')
+    const oil = getDayChange('OIL')
+    if (vix !== null && vix < 0) aligned++; total++
+    if (sp !== null && sp > 0) aligned++; total++
+    if (yields !== null && yields > 0) aligned++; total++
+    if (oil !== null && oil > 0) aligned++; total++
   } else if (regime === 'USD Dominant' || regime === 'USD Zwak') {
     const usdUp = regime === 'USD Dominant'
-    const dxy = getDayChange('DXY'); if (dxy !== null) { if ((dxy > 0) === usdUp) aligned++; total++ }
-    const gold = getDayChange('GOLD'); if (gold !== null) { if ((gold < 0) === usdUp) aligned++; total++ }
+    const dxy = getDayChange('DXY')
+    const gold = getDayChange('GOLD')
+    if (dxy !== null) { if ((dxy > 0) === usdUp) aligned++; total++ }
+    if (gold !== null) { if ((gold < 0) === usdUp) aligned++; total++ }
   }
   return total > 0 ? (aligned / total) * 100 : 50
 }
