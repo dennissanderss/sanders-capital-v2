@@ -211,7 +211,7 @@ export default function DailyBriefingIntroPage() {
               'Factor 4 — Sentiment: Nieuws headlines worden geanalyseerd op bullish/bearish impact per valuta.',
               'Factor 5 — Commodity: Olie en goud impact. CAD volgt olie (0.9 sensitivity), AUD volgt goud (0.8).',
               'Factor 6 — Haven: Safe-haven flows. JPY (0.9), CHF (0.8) profiteren van risk-off. AUD/NZD (-0.7) lijden.',
-              'Factor 7 — Momentum: 3-daagse prijsrichting als bevestiging of tegensignaal.',
+              'Factor 7 — Momentum: 5-daagse prijsrichting als contrarian filter (mean reversion).',
               'De gewichten per factor worden bepaald door het sub-regime. In range_chop wegen fundamentals licht, in rate_repricing weegt CB beleid 2x.',
             ]}
           />
@@ -304,23 +304,23 @@ export default function DailyBriefingIntroPage() {
 
             {/* Optimizer results */}
             <div className="rounded-xl bg-purple-500/[0.06] border border-purple-500/15 p-4 mb-6">
-              <p className="text-[10px] font-semibold text-purple-400/80 uppercase tracking-wider mb-2">Optimizer resultaten — 131 configuraties getest</p>
+              <p className="text-[10px] font-semibold text-purple-400/80 uppercase tracking-wider mb-2">Optimizer resultaten — 1.260 configuraties getest</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="text-center">
-                  <p className="text-lg font-bold text-heading font-mono">68%</p>
+                  <p className="text-lg font-bold text-heading font-mono">56%</p>
                   <p className="text-[10px] text-text-dim">Win Rate</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-heading font-mono">346</p>
-                  <p className="text-[10px] text-text-dim">Trades</p>
+                  <p className="text-lg font-bold text-heading font-mono">190</p>
+                  <p className="text-[10px] text-text-dim">Trades / jaar</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-green-400 font-mono">+16.680</p>
+                  <p className="text-lg font-bold text-green-400 font-mono">+2.423</p>
                   <p className="text-[10px] text-text-dim">Pips totaal</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-heading font-mono">5d / 3d</p>
-                  <p className="text-[10px] text-text-dim">Lookback / Hold</p>
+                  <p className="text-lg font-bold text-heading font-mono">PF 1.42</p>
+                  <p className="text-[10px] text-text-dim">Profit Factor</p>
                 </div>
               </div>
             </div>
@@ -332,14 +332,14 @@ export default function DailyBriefingIntroPage() {
                 Je koopt niet wanneer iedereen al koopt — je koopt wanneer de markt een dip maakt.
               </p>
               <p>
-                <strong className="text-heading">Waarom werkt dit?</strong> Optimalisatie over 131 configuraties (momentum, contrarian, lookback 2-10d, hold 1-5d)
-                toonde aan dat de contrarian strategie met 5-daagse lookback en 3-daagse holding het sterkst presteert:
-                68% winrate over 346 trades met +16.680 pips. Momentum (kopen omdat het stijgt) scoorde consistent het slechtst.
+                <strong className="text-heading">Waarom werkt dit?</strong> Optimalisatie over 1.260 configuraties (momentum, contrarian, lookback 2-5d, hold 1-2d, 3 scoring modellen)
+                toonde aan dat de contrarian strategie met 5-daagse lookback, 1-dag hold en intermarket bevestiging het sterkst presteert:
+                56% winrate, PF 1.42, +2.423 pips over 190 trades. Momentum (kopen omdat het stijgt) scoorde consistent het slechtst.
               </p>
               <p>
-                <strong className="text-heading">Holding periode:</strong> 3 handelsdagen. De entry is de dagkoers op de signaaldag,
-                de exit is de dagkoers 3 handelsdagen later. Dit geeft de mean reversion voldoende tijd om te werken
-                zonder te veel blootstelling aan event risk.
+                <strong className="text-heading">Holding periode:</strong> 1 handelsdag. De entry is de dagkoers op de signaaldag,
+                de exit is de dagkoers 1 handelsdag later. Dit is geoptimaliseerd voor daily traders met minimale
+                blootstelling aan overnight event risk.
               </p>
             </div>
           </div>
