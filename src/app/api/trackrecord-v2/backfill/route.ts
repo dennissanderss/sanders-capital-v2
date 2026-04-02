@@ -1,15 +1,21 @@
-// ─── V2.2 Track Record Backfill API ─────────────────────────
-// Backfills up to 45 days of historical v2 records using
-// CB rates + simulated news bonus + V2.2 MEAN REVERSION:
+// ─── V2.3 Track Record Backfill API ─────────────────────────
+// Backfills up to 60 days of historical v2 records using
+// CB rates + simulated news bonus + V2.3 scoring logic:
 //   - Regime determination (safe-haven vs high-yield)
 //   - Regime alignment check (pair direction must match regime)
 //   - Cross-pair contradiction filter
 //   - Historical intermarket data for regime confirmation
 //   - Non-aligned pairs never "sterk"
-//   - **NEW V2.2**: Mean Reversion filter — only trade when
+//   - Mean Reversion filter — only trade when
 //     2-day price action OPPOSES fundamental direction
-//   - **NEW V2.2**: 2-day holding period (was 1-day)
-//   - **NEW V2.2**: Score threshold ≥3.0 (sterk + matig)
+//   - 2-day holding period
+//   - Score threshold ≥3.0 (sterk + matig)
+//   - **NEW V2.3**: 21 pairs (11 new cross pairs)
+//   - **NEW V2.3**: Intermarket regime override (VIX + S&P)
+//   - **NEW V2.3**: Magnitude-weighted intermarket alignment
+//   - **NEW V2.3**: Top 5 pairs (was 3)
+//   - **NEW V2.3**: DXY in intermarket data
+//   - **NEW V2.3**: Yahoo rate limiting + User-Agent header
 //
 // DELETE: Clears all v2 backfill records (newsSimulated = true)
 // POST:   Backfills with new filters
@@ -34,6 +40,17 @@ const PAIR_SYMBOLS: Record<string, string> = {
   'EUR/GBP': 'EURGBP=X',
   'EUR/JPY': 'EURJPY=X',
   'GBP/JPY': 'GBPJPY=X',
+  'AUD/JPY': 'AUDJPY=X',
+  'NZD/JPY': 'NZDJPY=X',
+  'CAD/JPY': 'CADJPY=X',
+  'EUR/AUD': 'EURAUD=X',
+  'GBP/AUD': 'GBPAUD=X',
+  'AUD/NZD': 'AUDNZD=X',
+  'EUR/CHF': 'EURCHF=X',
+  'GBP/CHF': 'GBPCHF=X',
+  'EUR/CAD': 'EURCAD=X',
+  'GBP/NZD': 'GBPNZD=X',
+  'AUD/CAD': 'AUDCAD=X',
 }
 
 const INTERMARKET_SYMBOLS: Record<string, string> = {
@@ -41,11 +58,15 @@ const INTERMARKET_SYMBOLS: Record<string, string> = {
   vix: '%5EVIX',
   gold: 'GC%3DF',
   us10y: '%5ETNX',
+  dxy: 'DX-Y.NYB',
 }
 
 const PAIRS = [
   'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'NZD/USD',
   'USD/CAD', 'USD/CHF', 'EUR/GBP', 'EUR/JPY', 'GBP/JPY',
+  'AUD/JPY', 'NZD/JPY', 'CAD/JPY', 'EUR/AUD', 'GBP/AUD',
+  'AUD/NZD', 'EUR/CHF', 'GBP/CHF', 'EUR/CAD', 'GBP/NZD',
+  'AUD/CAD',
 ]
 
 const MAJORS = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'NZD', 'CAD', 'CHF']
@@ -76,7 +97,10 @@ async function fetchHistoricalPrices(symbol: string, days: number): Promise<{ da
   try {
     const res = await fetch(
       `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${days + 5}d`,
-      { next: { revalidate: 0 } }
+      {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        next: { revalidate: 0 }
+      }
     )
     if (!res.ok) return []
     const json = await res.json()
@@ -149,51 +173,59 @@ function isAlignedWithRegime(base: string, quote: string, isBullish: boolean, re
   return false
 }
 
-// ─── V2.1: Intermarket alignment for a date ───────────────
+// ─── V2.3: Magnitude-weighted intermarket alignment ───────
 function getIntermarketAlignment(
   date: string,
   regime: string,
   intermarketHistory: Record<string, { date: string; close: number }[]>
 ): number {
-  // For each signal, check direction (comparing today vs yesterday)
-  const getDir = (key: string): 'up' | 'down' | 'flat' => {
+  const getStrength = (key: string): { dir: 'up' | 'down' | 'flat'; strength: number } => {
     const prices = intermarketHistory[key] || []
     const idx = prices.findIndex(p => p.date === date)
-    if (idx <= 0) return 'flat'
+    if (idx <= 0) return { dir: 'flat', strength: 0 }
     const today = prices[idx].close
     const yesterday = prices[idx - 1].close
-    if (today > yesterday * 1.001) return 'up'
-    if (today < yesterday * 0.999) return 'down'
-    return 'flat'
+    if (yesterday === 0) return { dir: 'flat', strength: 0 }
+    const changePct = Math.abs((today - yesterday) / yesterday * 100)
+    const dir = today > yesterday * 1.001 ? 'up' as const : today < yesterday * 0.999 ? 'down' as const : 'flat' as const
+    const s = changePct > 1.0 ? 1.0 : changePct > 0.5 ? 0.75 : changePct > 0.2 ? 0.5 : 0.25
+    return { dir, strength: dir === 'flat' ? 0 : s }
   }
 
-  const sp = getDir('sp500')
-  const vix = getDir('vix')
-  const gold = getDir('gold')
-  const yields = getDir('us10y')
+  const sp = getStrength('sp500')
+  const vix = getStrength('vix')
+  const gold = getStrength('gold')
+  const yields = getStrength('us10y')
 
-  let aligned = 0
-  let total = 0
+  let score = 0
+  let maxScore = 0
 
   if (regime === 'Risk-Off') {
-    if (sp === 'down') aligned++; total++
-    if (vix === 'up') aligned++; total++
-    if (gold === 'up') aligned++; total++
-    if (yields === 'up') aligned++; total++
+    maxScore = 4
+    if (sp.dir === 'down') score += sp.strength
+    if (vix.dir === 'up') score += vix.strength
+    if (gold.dir === 'up') score += gold.strength
+    if (yields.dir === 'up') score += yields.strength
   } else if (regime === 'Risk-On') {
-    if (sp === 'up') aligned++; total++
-    if (vix === 'down') aligned++; total++
-    if (gold === 'down') aligned++; total++
+    maxScore = 3
+    if (sp.dir === 'up') score += sp.strength
+    if (vix.dir === 'down') score += vix.strength
+    if (gold.dir === 'down') score += gold.strength
   } else if (regime === 'USD Dominant') {
-    if (yields === 'up') aligned++; total++
-    if (sp !== 'up') aligned++; total++
+    maxScore = 2.5
+    if (yields.dir === 'up') score += yields.strength
+    if (sp.dir !== 'up') score += 0.5
+    // DXY not available in intermarket history but could be added
   } else if (regime === 'USD Zwak') {
-    if (yields === 'down') aligned++; total++
-    if (sp === 'up') aligned++; total++
+    maxScore = 2.5
+    if (yields.dir === 'down') score += yields.strength
+    if (sp.dir === 'up') score += 0.5
+  } else {
+    return 50
   }
 
-  if (total === 0) return 50
-  return Math.round((aligned / total) * 100)
+  if (maxScore === 0) return 50
+  return Math.round((score / maxScore) * 100)
 }
 
 // ─── Check metadata column ────────────────────────────────
@@ -262,7 +294,7 @@ export async function DELETE() {
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}))
-    const days = Math.min(body.days || 45, 60)
+    const days = Math.min(body.days || 60, 90)
     const hasMetadata = await checkMetadataColumn()
 
     if (!hasMetadata) {
@@ -317,6 +349,7 @@ export async function POST(request: Request) {
       const symbol = PAIR_SYMBOLS[pair]
       if (symbol) {
         historicalData[pair] = await fetchHistoricalPrices(symbol, days)
+        await new Promise(r => setTimeout(r, 1500))
       }
     }
 
@@ -324,6 +357,7 @@ export async function POST(request: Request) {
     const intermarketHistory: Record<string, { date: string; close: number }[]> = {}
     for (const [key, symbol] of Object.entries(INTERMARKET_SYMBOLS)) {
       intermarketHistory[key] = await fetchHistoricalPrices(symbol, days)
+      await new Promise(r => setTimeout(r, 1500))
     }
 
     // 6. Build records with V2.1 FILTERS
@@ -347,7 +381,31 @@ export async function POST(request: Request) {
       }
 
       // Determine regime for this date
-      const regime = determineRegime(currencyScores)
+      let regime = determineRegime(currencyScores)
+
+      // V2.3: Intermarket regime override
+      const getPrice = (key: string, d: string) => {
+        const prices = intermarketHistory[key] || []
+        return prices.find(p => p.date === d)?.close
+      }
+      const vixPrice = getPrice('vix', date)
+      const spDir = (() => {
+        const prices = intermarketHistory['sp500'] || []
+        const idx = prices.findIndex(p => p.date === date)
+        if (idx <= 0) return 'flat'
+        const today = prices[idx].close
+        const yesterday = prices[idx - 1].close
+        return today > yesterday * 1.001 ? 'up' : today < yesterday * 0.999 ? 'down' : 'flat'
+      })()
+
+      // VIX > 25 + S&P down = forced Risk-Off
+      if (vixPrice && vixPrice > 25 && spDir === 'down') {
+        regime = 'Risk-Off'
+      }
+      // VIX < 15 + S&P up = upgrade Gemengd to Risk-On
+      if (vixPrice && vixPrice < 15 && spDir === 'up' && regime === 'Gemengd') {
+        regime = 'Risk-On'
+      }
 
       // V2.1: Check intermarket alignment for this date
       const intermarketAlignment = getIntermarketAlignment(date, regime, intermarketHistory)
@@ -424,7 +482,7 @@ export async function POST(request: Request) {
       // V2.2: Pick top pairs with score ≥ 3.0 (sterk + matig)
       const topPairs = pairBiases
         .filter(p => (p.conviction === 'sterk' || p.conviction === 'matig') && Math.abs(p.score) >= 3.0)
-        .slice(0, 3)
+        .slice(0, 5)
 
       if (topPairs.length === 0) continue
 
@@ -477,7 +535,7 @@ export async function POST(request: Request) {
           resolved_at: new Date().toISOString(),
           metadata: {
             source: 'v2' as const,
-            version: 'v2.2',
+            version: 'v2.3',
             scoreWithoutNews: p.scoreWithoutNews,
             newsInfluence: p.newsInfluence,
             confidence: simulatedConfidence,
@@ -519,8 +577,8 @@ export async function POST(request: Request) {
     const totalCount = deduped.length
 
     return NextResponse.json({
-      version: 'v2.2',
-      message: `Backfilled ${deduped.length} v2.2 records over ${days} days`,
+      version: 'v2.3',
+      message: `Backfilled ${deduped.length} v2.3 records over ${days} days`,
       records: deduped.length,
       skippedExisting: existingKeys.size,
       stats: {
@@ -535,7 +593,7 @@ export async function POST(request: Request) {
         filteredByContradiction: filteredByContradiction,
         totalFiltered: filteredByRegime + filteredByIntermarket + filteredByContradiction,
       },
-      note: 'V2.2 backfill with Mean Reversion filter, 2-day holding, score ≥3.0 threshold.',
+      note: 'V2.3 backfill with intermarket regime override, magnitude-weighted alignment, 21 pairs, top 5 selection.',
     })
   } catch (e) {
     return NextResponse.json({ error: String(e), version: 'v2' }, { status: 500 })
