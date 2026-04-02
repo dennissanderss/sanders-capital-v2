@@ -45,6 +45,9 @@ const MAJORS = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD']
 const PAIRS = [
   'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'NZD/USD',
   'USD/CAD', 'USD/CHF', 'EUR/GBP', 'EUR/JPY', 'GBP/JPY',
+  'AUD/JPY', 'NZD/JPY', 'CAD/JPY', 'EUR/AUD', 'GBP/AUD',
+  'AUD/NZD', 'EUR/CHF', 'GBP/CHF', 'EUR/CAD', 'GBP/NZD',
+  'AUD/CAD',
 ]
 
 const IMPACT_MAP: Record<string, string> = {
@@ -329,7 +332,7 @@ export async function GET() {
 
       // News sentiment bonus (capped at +-1.5 to not overpower fundamentals)
       const newsData = newsSentiment[ccy]
-      const newsBonus = Math.max(-1.5, Math.min(1.5, newsData?.score || 0))
+      const newsBonus = Math.max(-2.0, Math.min(2.0, newsData?.score || 0))
       if (newsBonus > 0.3) {
         reasons.push(`Nieuws sentiment positief (${newsData.sentiment})`)
       } else if (newsBonus < -0.3) {
@@ -388,40 +391,13 @@ export async function GET() {
       }
     }).sort((a, b) => Math.abs(b.score) - Math.abs(a.score))
 
-    // ── 3. Macro Regime ──
-    // NOTE: We determine regime FIRST, then apply intermarket confirmation
-    // which can UPGRADE or DOWNGRADE conviction levels.
+    // ── 3. Currency scores for regime (calculated here, regime determined after intermarket data) ──
     const usdScore = currencyScores['USD']?.score || 0
     const jpyScore = currencyScores['JPY']?.score || 0
     const chfScore = currencyScores['CHF']?.score || 0
     const safeHavenAvg = (jpyScore + chfScore) / 2
     const highYieldAvg = (['AUD', 'NZD', 'CAD'] as const)
       .reduce((sum, c) => sum + (currencyScores[c]?.score || 0), 0) / 3
-
-    let regime: string
-    let regimeExplain: string
-    let regimeColor: string
-    if (jpyScore > 1 && highYieldAvg < 0) {
-      regime = 'Risk-Off'
-      regimeExplain = 'JPY is sterk en high-yield valuta\'s zijn zwak. Markt zoekt veiligheid. Voorzichtig met long risk-posities.'
-      regimeColor = 'red'
-    } else if (highYieldAvg > 1 && jpyScore < 0) {
-      regime = 'Risk-On'
-      regimeExplain = 'High-yield valuta\'s zijn sterk en JPY is zwak. Markt is in risk-on modus. Kijk naar long AUD, NZD en short JPY setups.'
-      regimeColor = 'green'
-    } else if (usdScore > 2) {
-      regime = 'USD Dominant'
-      regimeExplain = 'De dollar domineert door hawkish Fed en/of risk-off flows. Focus op USD-paren.'
-      regimeColor = 'blue'
-    } else if (usdScore < -2) {
-      regime = 'USD Zwak'
-      regimeExplain = 'De dollar is zwak door dovish verwachtingen. Long posities in sterke valuta\'s tegen USD.'
-      regimeColor = 'amber'
-    } else {
-      regime = 'Gemengd'
-      regimeExplain = 'Geen duidelijk macro-thema domineert. Focus op individuele paar-divergenties en events.'
-      regimeColor = 'gray'
-    }
 
     // ── 4. Currency Ranking ──
     const currencyRanking = MAJORS
@@ -476,12 +452,84 @@ export async function GET() {
     const intermarketSignals = intermarketDefs.map(def => ({
       ...def,
       current: marketData[def.key]?.current ?? null,
+      previousClose: marketData[def.key]?.previousClose ?? null,
       change: marketData[def.key]?.change ?? null,
       changePct: marketData[def.key]?.changePct ?? null,
       direction: marketData[def.key]?.direction ?? 'flat',
     }))
 
-    // ── 6. News Headlines (top important) ──
+    // ── 6. Macro Regime (uses BOTH fundamentals AND intermarket data) ──
+    // Start with fundamental regime
+    let regime: string
+    let regimeExplain: string
+    let regimeColor: string
+    let regimeSource = 'fundamenteel'
+
+    // Fundamental regime (based on currency scores)
+    if (jpyScore > 1 && highYieldAvg < 0) {
+      regime = 'Risk-Off'
+      regimeExplain = 'JPY is sterk en high-yield valuta\'s zijn zwak. Markt zoekt veiligheid. Voorzichtig met long risk-posities.'
+      regimeColor = 'red'
+    } else if (highYieldAvg > 1 && jpyScore < 0) {
+      regime = 'Risk-On'
+      regimeExplain = 'High-yield valuta\'s zijn sterk en JPY is zwak. Markt is in risk-on modus. Kijk naar long AUD, NZD en short JPY setups.'
+      regimeColor = 'green'
+    } else if (usdScore > 2) {
+      regime = 'USD Dominant'
+      regimeExplain = 'De dollar domineert door hawkish Fed en/of risk-off flows. Focus op USD-paren.'
+      regimeColor = 'blue'
+    } else if (usdScore < -2) {
+      regime = 'USD Zwak'
+      regimeExplain = 'De dollar is zwak door dovish verwachtingen. Long posities in sterke valuta\'s tegen USD.'
+      regimeColor = 'amber'
+    } else {
+      regime = 'Gemengd'
+      regimeExplain = 'Geen duidelijk macro-thema domineert. Focus op individuele paar-divergenties en events.'
+      regimeColor = 'gray'
+    }
+
+    // Intermarket override (only when signals are strong)
+    const vixData = marketData['vix']
+    const spData = marketData['sp500']
+    const dxyData = marketData['dxy']
+
+    if (vixData && spData) {
+      // Strong Risk-Off signal: VIX > 25 AND S&P falling
+      if ((vixData.current ?? 0) > 25 && spData.direction === 'down') {
+        if (regime !== 'Risk-Off') {
+          regime = 'Risk-Off'
+          regimeExplain = 'VIX boven 25 en dalende aandelen signaleren verhoogde angst. Intermarket data wijst op risk-off, ongeacht de fundamentele scores. Voorzichtig met risk-posities.'
+          regimeColor = 'red'
+          regimeSource = 'fundamenteel + intermarket'
+        }
+      }
+      // Strong Risk-On signal: VIX < 15 AND S&P rising
+      if ((vixData.current ?? 0) < 15 && spData.direction === 'up') {
+        if (regime === 'Gemengd') {
+          regime = 'Risk-On'
+          regimeExplain = 'Lage VIX en stijgende aandelen wijzen op risk-on sentiment. Intermarket bevestigt gunstig klimaat voor high-yield valuta\'s.'
+          regimeColor = 'green'
+          regimeSource = 'fundamenteel + intermarket'
+        }
+      }
+    }
+
+    // DXY override for USD regimes
+    if (dxyData && regime === 'Gemengd') {
+      if (dxyData.direction === 'up' && (dxyData.changePct ?? 0) > 0.3) {
+        regime = 'USD Dominant'
+        regimeExplain = 'Dollar Index (DXY) stijgt vandaag significant. USD-sterkte domineert het speelveld vandaag.'
+        regimeColor = 'blue'
+        regimeSource = 'fundamenteel + intermarket'
+      } else if (dxyData.direction === 'down' && (dxyData.changePct ?? 0) < -0.3) {
+        regime = 'USD Zwak'
+        regimeExplain = 'Dollar Index (DXY) daalt vandaag significant. Dit creëert kansen in paren tegen de USD.'
+        regimeColor = 'amber'
+        regimeSource = 'fundamenteel + intermarket'
+      }
+    }
+
+    // ── 7. News Headlines (top important) ──
     const topNews = recentNews
       .sort((a, b) => b.relevance_score - a.relevance_score)
       .slice(0, 8)
@@ -498,10 +546,10 @@ export async function GET() {
         url: a.url,
       }))
 
-    // ── 7. Regime Methodology ──
-    const regimeMethodology = `Het macro regime wordt bepaald door een combinatie van centraal bank beleid en recent nieuws sentiment. Fundamentele scores (CB bias, rente vs target) vormen de basis. Nieuws sentiment werkt als aanvullend signaal (max +-1.5 punten) en kan de richting bevestigen of tegenspreken.`
+    // ── 8. Regime Methodology ──
+    const regimeMethodology = `Het macro regime wordt bepaald door een combinatie van centraal bank beleid, recent nieuws sentiment en intermarket signalen. Fundamentele scores (CB bias, rente vs target) vormen de basis. Nieuws sentiment werkt als aanvullend signaal (max +-2.0 punten). Intermarket data (VIX, S&P 500, DXY) kan het regime overrulen bij sterke signalen.`
 
-    // ── 8. Confidence Score ──
+    // ── 9. Confidence Score ──
     // How aligned are all signals?
     const intermarketAlignment = calculateIntermarketAlignment(intermarketSignals, regime)
     const newsAlignment = calculateNewsAlignment(newsSentiment, regime)
@@ -561,11 +609,24 @@ export async function GET() {
       }
     }
 
+    // ── Trade Focus Tier ──
+    for (const pair of pairBiases) {
+      const absScore = Math.abs(pair.score)
+      if (pair.conviction === 'sterk' || pair.conviction === 'matig') {
+        (pair as any).tradeFocusTier = absScore >= 3.0 ? 'primary' : 'secondary'
+      } else if (absScore >= 2.0) {
+        (pair as any).tradeFocusTier = 'watchlist'
+      } else {
+        (pair as any).tradeFocusTier = 'none'
+      }
+    }
+
     return NextResponse.json({
-      version: 'v2.2',
+      version: 'v2.3',
       regime,
       regimeExplain,
       regimeColor,
+      regimeSource,
       regimeMethodology,
       confidence: overallConfidence,
       intermarketSignals,
@@ -575,6 +636,10 @@ export async function GET() {
       weekEvents,
       topNews,
       newsSentiment,
+      newsLastUpdated: recentNews.length > 0
+        ? recentNews.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())[0].published_at
+        : null,
+      newsCount: recentNews.length,
       generatedAt: new Date().toISOString(),
       date: todayStr,
     })
@@ -621,37 +686,58 @@ function isAlignedWithRegime(pair: { pair: string; direction: string; base: stri
 
 // ─── Confidence Calculations ────────────────────────────────
 function calculateIntermarketAlignment(
-  signals: { key: string; direction: string; current: number | null }[],
+  signals: { key: string; direction: string; current: number | null; changePct: number | null }[],
   regime: string
 ): number {
   const get = (key: string) => signals.find(s => s.key === key)
-  let aligned = 0
-  let total = 0
+  let score = 0
+  let maxScore = 0
 
   const sp = get('sp500')
   const vix = get('vix')
   const gold = get('gold')
   const yields = get('us10y')
+  const dxy = get('dxy')
 
-  if (regime === 'Risk-Off') {
-    if (sp?.direction === 'down') aligned++; total++
-    if (vix?.direction === 'up') aligned++; total++
-    if (gold?.direction === 'up') aligned++; total++
-    if (yields?.direction === 'up') aligned++; total++
-  } else if (regime === 'Risk-On') {
-    if (sp?.direction === 'up') aligned++; total++
-    if (vix?.direction === 'down') aligned++; total++
-    if (gold?.direction === 'down') aligned++; total++
-  } else if (regime === 'USD Dominant') {
-    if (yields?.direction === 'up') aligned++; total++
-    if (sp?.direction !== 'up') aligned++; total++
-  } else if (regime === 'USD Zwak') {
-    if (yields?.direction === 'down') aligned++; total++
-    if (sp?.direction === 'up') aligned++; total++
+  // Helper: direction strength (0-1 based on magnitude)
+  const strength = (signal: typeof sp) => {
+    if (!signal || signal.direction === 'flat') return 0
+    const pct = Math.abs(signal.changePct ?? 0)
+    if (pct > 1.0) return 1.0   // strong move
+    if (pct > 0.5) return 0.75
+    if (pct > 0.2) return 0.5
+    return 0.25  // tiny move
   }
 
-  if (total === 0) return 50
-  return Math.round((aligned / total) * 100)
+  if (regime === 'Risk-Off') {
+    maxScore = 5
+    if (sp?.direction === 'down') score += strength(sp)
+    if (vix?.direction === 'up') score += strength(vix)
+    if (gold?.direction === 'up') score += strength(gold)
+    if (yields?.direction === 'up') score += strength(yields)
+    if (dxy?.direction === 'up') score += strength(dxy) // USD safe haven
+  } else if (regime === 'Risk-On') {
+    maxScore = 4
+    if (sp?.direction === 'up') score += strength(sp)
+    if (vix?.direction === 'down') score += strength(vix)
+    if (gold?.direction === 'down') score += strength(gold)
+    if (dxy?.direction === 'down') score += strength(dxy)
+  } else if (regime === 'USD Dominant') {
+    maxScore = 3
+    if (dxy?.direction === 'up') score += strength(dxy)
+    if (yields?.direction === 'up') score += strength(yields)
+    if (sp?.direction !== 'up') score += 0.5
+  } else if (regime === 'USD Zwak') {
+    maxScore = 3
+    if (dxy?.direction === 'down') score += strength(dxy)
+    if (yields?.direction === 'down') score += strength(yields)
+    if (sp?.direction === 'up') score += 0.5
+  } else {
+    return 50 // Gemengd
+  }
+
+  if (maxScore === 0) return 50
+  return Math.round((score / maxScore) * 100)
 }
 
 function calculateNewsAlignment(
@@ -728,6 +814,7 @@ async function fetchRecentNews(supabaseUrl?: string, supabaseKey?: string): Prom
 
 interface MarketQuote {
   current: number
+  previousClose: number
   change: number
   changePct: number
   direction: 'up' | 'down' | 'flat'
@@ -777,6 +864,7 @@ async function fetchMarketData(): Promise<Record<string, MarketQuote>> {
 
             result[key] = {
               current: displayCurrent,
+              previousClose: key === 'us10y' ? +(previous).toFixed(3) : +(previous).toFixed(2),
               change,
               changePct,
               direction: change > 0.01 ? 'up' : change < -0.01 ? 'down' : 'flat',

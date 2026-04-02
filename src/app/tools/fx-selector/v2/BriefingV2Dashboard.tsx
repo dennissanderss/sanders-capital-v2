@@ -53,6 +53,7 @@ interface IntermarketSignal {
   context: string
   regimeImpact: string
   current: number | null
+  previousClose: number | null
   change: number | null
   changePct: number | null
   direction: 'up' | 'down' | 'flat'
@@ -94,6 +95,10 @@ interface BriefingV2Data {
   generatedAt: string
   date: string
   error?: string
+  newsLastUpdated?: string
+  newsCount?: number
+  regimeSource?: string
+  intermarketAlignment?: number
 }
 
 interface TrackRecordMetadata {
@@ -168,6 +173,16 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hours / 24)}d`
 }
 
+function timeAgoDutch(isoDate: string): string {
+  const diff = Date.now() - new Date(isoDate).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins} min geleden`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours} uur geleden`
+  const days = Math.floor(hours / 24)
+  return `${days} dag${days > 1 ? 'en' : ''} geleden`
+}
+
 function getIntermarketConclusion(signals: IntermarketSignal[], regime: string): { text: string; sentiment: string; confirmsRegime: boolean } {
   const get = (key: string) => signals.find(s => s.key === key)
   const vix = get('vix')
@@ -207,54 +222,69 @@ function getIntermarketConclusion(signals: IntermarketSignal[], regime: string):
   return { sentiment: 'mixed', confirmsRegime: false, text: `Gemengd: ${[...riskOnSignals, ...riskOffSignals].join(', ')}.` }
 }
 
+function buildTradeFocusItem(pair: PairBias, events: TodayEvent[], ranking: CurrencyRank[]) {
+  const isBullish = pair.direction.includes('bullish')
+  const isBearish = pair.direction.includes('bearish')
+  const pairEvents = events.filter(e => e.currency === pair.base || e.currency === pair.quote)
+  const baseRank = ranking.find(r => r.currency === pair.base)
+  const quoteRank = ranking.find(r => r.currency === pair.quote)
+
+  let action = ''
+  if (isBullish) action = `LONG ${pair.pair}: ${pair.base} fundamenteel sterker dan ${pair.quote}.`
+  else if (isBearish) action = `SHORT ${pair.pair}: ${pair.quote} fundamenteel sterker dan ${pair.base}.`
+  else action = 'Neutraal, wacht op duidelijkere divergentie.'
+
+  const explanationParts: string[] = []
+  if (isBullish || isBearish) {
+    const strongCcy = isBullish ? pair.base : pair.quote
+    const weakCcy = isBullish ? pair.quote : pair.base
+    const strongRank = isBullish ? baseRank : quoteRank
+    const weakRank = isBullish ? quoteRank : baseRank
+
+    if (strongRank && weakRank) {
+      explanationParts.push(`Score: ${strongCcy} = ${strongRank.score > 0 ? '+' : ''}${strongRank.score.toFixed(1)} vs ${weakCcy} = ${weakRank.score > 0 ? '+' : ''}${weakRank.score.toFixed(1)}`)
+    }
+    if (strongRank?.bias) explanationParts.push(`${strongCcy}: ${strongRank.bias}`)
+    if (weakRank?.bias) explanationParts.push(`${weakCcy}: ${weakRank.bias}`)
+    if (pair.rateDiff !== null && pair.rateDiff !== 0) {
+      explanationParts.push(`Renteverschil: ${pair.rateDiff > 0 ? '+' : ''}${pair.rateDiff}%`)
+    }
+    if (pair.newsInfluence !== 0) {
+      explanationParts.push(`Nieuws effect: ${pair.newsInfluence > 0 ? '+' : ''}${pair.newsInfluence} punt`)
+    }
+  }
+
+  return {
+    pair: pair.pair, direction: pair.direction, conviction: pair.conviction,
+    score: pair.score, scoreWithoutNews: pair.scoreWithoutNews, newsInfluence: pair.newsInfluence, action, explanation: explanationParts,
+    eventWarning: pairEvents.length > 0 ? `${pairEvents.map(e => `${e.title} (${e.time})`).join(', ')}` : '',
+    isBullish, isBearish,
+    baseBias: pair.baseBias,
+    quoteBias: pair.quoteBias,
+    base: pair.base,
+    quote: pair.quote,
+    rateDiff: pair.rateDiff,
+    baseRank,
+    quoteRank,
+  }
+}
+
 function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: CurrencyRank[]) {
-  const strong = pairs.filter(p => p.conviction === 'sterk' || p.conviction === 'matig')
-  return strong.slice(0, 3).map(pair => {
-    const isBullish = pair.direction.includes('bullish')
-    const isBearish = pair.direction.includes('bearish')
-    const pairEvents = events.filter(e => e.currency === pair.base || e.currency === pair.quote)
-    const baseRank = ranking.find(r => r.currency === pair.base)
-    const quoteRank = ranking.find(r => r.currency === pair.quote)
+  // Primary: score >= 3.0, sterk or matig conviction
+  const primary = pairs
+    .filter(p => (p.conviction === 'sterk' || p.conviction === 'matig') && Math.abs(p.score) >= 3.0)
+    .sort((a, b) => Math.abs(b.score) - Math.abs(a.score))
+    .slice(0, 5)
+    .map(p => buildTradeFocusItem(p, events, ranking))
 
-    let action = ''
-    if (isBullish) action = `LONG ${pair.pair}: ${pair.base} fundamenteel sterker dan ${pair.quote}.`
-    else if (isBearish) action = `SHORT ${pair.pair}: ${pair.quote} fundamenteel sterker dan ${pair.base}.`
-    else action = 'Neutraal, wacht op duidelijkere divergentie.'
+  // Watchlist: score >= 2.0 but not in primary, not neutral
+  const primaryPairs = new Set(primary.map(p => p.pair))
+  const watchlist = pairs
+    .filter(p => !primaryPairs.has(p.pair) && Math.abs(p.score) >= 2.0 && p.direction !== 'neutraal')
+    .sort((a, b) => Math.abs(b.score) - Math.abs(a.score))
+    .slice(0, 5)
 
-    const explanationParts: string[] = []
-    if (isBullish || isBearish) {
-      const strongCcy = isBullish ? pair.base : pair.quote
-      const weakCcy = isBullish ? pair.quote : pair.base
-      const strongRank = isBullish ? baseRank : quoteRank
-      const weakRank = isBullish ? quoteRank : baseRank
-
-      if (strongRank && weakRank) {
-        explanationParts.push(`Score: ${strongCcy} = ${strongRank.score > 0 ? '+' : ''}${strongRank.score.toFixed(1)} vs ${weakCcy} = ${weakRank.score > 0 ? '+' : ''}${weakRank.score.toFixed(1)}`)
-      }
-      if (strongRank?.bias) explanationParts.push(`${strongCcy}: ${strongRank.bias}`)
-      if (weakRank?.bias) explanationParts.push(`${weakCcy}: ${weakRank.bias}`)
-      if (pair.rateDiff !== null && pair.rateDiff !== 0) {
-        explanationParts.push(`Renteverschil: ${pair.rateDiff > 0 ? '+' : ''}${pair.rateDiff}%`)
-      }
-      if (pair.newsInfluence !== 0) {
-        explanationParts.push(`Nieuws effect: ${pair.newsInfluence > 0 ? '+' : ''}${pair.newsInfluence} punt`)
-      }
-    }
-
-    return {
-      pair: pair.pair, direction: pair.direction, conviction: pair.conviction,
-      score: pair.score, scoreWithoutNews: pair.scoreWithoutNews, newsInfluence: pair.newsInfluence, action, explanation: explanationParts,
-      eventWarning: pairEvents.length > 0 ? `${pairEvents.map(e => `${e.title} (${e.time})`).join(', ')}` : '',
-      isBullish, isBearish,
-      baseBias: pair.baseBias,
-      quoteBias: pair.quoteBias,
-      base: pair.base,
-      quote: pair.quote,
-      rateDiff: pair.rateDiff,
-      baseRank,
-      quoteRank,
-    }
-  })
+  return { primary, watchlist }
 }
 
 const MAJORS = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD']
@@ -366,11 +396,15 @@ function ConfidenceRing({ value, size = 64 }: { value: number; size?: number }) 
 }
 
 // ─── Signal Pill Component ──────────────────────────────────
-function SignalPill({ direction, label, value, unit, changePct }: {
-  direction: string; label: string; value: number | null; unit: string; changePct: number | null
+function SignalPill({ direction, label, value, unit, changePct, previousClose, change }: {
+  direction: string; label: string; value: number | null; unit: string; changePct: number | null; previousClose?: number | null; change?: number | null
 }) {
   const isUp = direction === 'up'
   const isDown = direction === 'down'
+  const formatVal = (v: number | null | undefined) => {
+    if (v === null || v === undefined) return 'N/A'
+    return `${unit === '$' ? '$' : ''}${v.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${unit === '%' ? '%' : ''}`
+  }
   return (
     <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-all group">
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
@@ -388,14 +422,20 @@ function SignalPill({ direction, label, value, unit, changePct }: {
         <p className="text-[10px] text-text-dim uppercase tracking-wider">{label}</p>
         <div className="flex items-baseline gap-2">
           <span className="text-base font-mono font-bold text-heading">
-            {value !== null ? `${unit === '$' ? '$' : ''}${value}${unit === '%' ? '%' : ''}` : 'N/A'}
+            {formatVal(value)}
           </span>
           {changePct !== null && (
             <span className={`text-xs font-mono ${isUp ? 'text-green-400' : isDown ? 'text-red-400' : 'text-text-dim'}`}>
-              {changePct > 0 ? '+' : ''}{changePct}%
+              {change !== null && change !== undefined ? `${change > 0 ? '+' : ''}${change.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ` : ''}
+              ({changePct > 0 ? '+' : ''}{changePct}%)
             </span>
           )}
         </div>
+        {previousClose !== null && previousClose !== undefined && (
+          <p className="text-[9px] text-text-dim/60 font-mono mt-0.5">
+            Vorige dag: {formatVal(previousClose)}
+          </p>
+        )}
       </div>
     </div>
   )
@@ -497,7 +537,9 @@ export default function BriefingV2Dashboard() {
   }
 
   const intermarketConclusion = data?.intermarketSignals ? getIntermarketConclusion(data.intermarketSignals, data.regime) : null
-  const tradeFocus = data ? getTradeFocus(data.pairBiases, data.todayEvents, data.currencyRanking) : []
+  const tradeFocusResult = data ? getTradeFocus(data.pairBiases, data.todayEvents, data.currencyRanking) : { primary: [], watchlist: [] }
+  const tradeFocus = tradeFocusResult.primary
+  const watchlist = tradeFocusResult.watchlist
 
   const regimeColors: Record<string, { bg: string; text: string; border: string; glow: string }> = {
     red: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/25', glow: 'shadow-red-500/10' },
@@ -601,6 +643,11 @@ export default function BriefingV2Dashboard() {
                       data.regime === 'USD Zwak' ? 'bg-amber-500' : 'bg-gray-500'
                     }`} />
                     <h2 className={`text-2xl font-display font-bold ${rc.text}`}>{data.regime}</h2>
+                    {data.regimeSource === 'fundamenteel + intermarket' && (
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-accent/10 text-accent-light border border-accent/20 font-medium">
+                        Intermarket bevestigd
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-3">
                     <ConfidenceRing value={data.confidence} size={52} />
@@ -867,9 +914,25 @@ export default function BriefingV2Dashboard() {
             <div className="rounded-2xl border border-border bg-bg-card overflow-hidden">
               {/* Sentiment Grid */}
               <div className="px-5 sm:px-6 py-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Sentiment per Valuta</p>
-                  <span className="text-[8px] text-text-dim/50">(klik voor detail)</span>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Sentiment per Valuta</p>
+                    <span className="text-[8px] text-text-dim/50">(klik voor detail)</span>
+                  </div>
+                  {(data.newsLastUpdated || data.newsCount) && (
+                    <div className="text-right">
+                      {data.newsLastUpdated && (
+                        <p className="text-[9px] text-text-dim/60">
+                          Laatste update: <span className="text-text-dim">{timeAgoDutch(data.newsLastUpdated)}</span>
+                        </p>
+                      )}
+                      {data.newsCount !== undefined && (
+                        <p className="text-[9px] text-text-dim/50">
+                          Op basis van {data.newsCount} artikelen (afgelopen 3 dagen)
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
                   {MAJORS.map(ccy => {
@@ -1101,39 +1164,63 @@ export default function BriefingV2Dashboard() {
                       value={signal.current}
                       unit={signal.unit}
                       changePct={signal.changePct}
+                      previousClose={signal.previousClose}
+                      change={signal.change}
                     />
                   ))}
                 </div>
 
-                {/* Conclusion + Confidence Ring */}
-                {intermarketConclusion && (
-                  <div className={`p-4 rounded-xl border ${
-                    intermarketConclusion.sentiment === 'risk-off' ? 'bg-red-500/[0.06] border-red-500/20' :
-                    intermarketConclusion.sentiment === 'risk-on' ? 'bg-green-500/[0.06] border-green-500/20' :
-                    'bg-white/[0.03] border-border'
-                  }`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">Conclusie</p>
-                          {intermarketConclusion.confirmsRegime ? (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20 font-medium">
-                              Bevestigt {data.regime}
-                            </span>
-                          ) : (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20 font-medium">
-                              Conflicteert met regime
-                            </span>
+                {/* Conclusion + Alignment Score */}
+                {intermarketConclusion && (() => {
+                  const alignment = data.intermarketAlignment
+                  const alignColor = alignment !== undefined
+                    ? (alignment > 65 ? 'text-green-400' : alignment >= 35 ? 'text-amber-400' : 'text-red-400')
+                    : ''
+                  const alignBg = alignment !== undefined
+                    ? (alignment > 65 ? 'bg-green-500/[0.06] border-green-500/20' : alignment >= 35 ? 'bg-amber-500/[0.06] border-amber-500/20' : 'bg-red-500/[0.06] border-red-500/20')
+                    : (intermarketConclusion.sentiment === 'risk-off' ? 'bg-red-500/[0.06] border-red-500/20' :
+                       intermarketConclusion.sentiment === 'risk-on' ? 'bg-green-500/[0.06] border-green-500/20' :
+                       'bg-white/[0.03] border-border')
+                  return (
+                    <div className={`p-4 rounded-xl border ${alignBg}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">Conclusie</p>
+                            {alignment !== undefined && (
+                              <span className={`text-sm font-mono font-bold ${alignColor}`}>
+                                {alignment}%
+                              </span>
+                            )}
+                            {intermarketConclusion.confirmsRegime ? (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20 font-medium">
+                                Bevestigt {data.regime}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20 font-medium">
+                                Conflicteert met regime
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-text-muted leading-relaxed">{intermarketConclusion.text}</p>
+                          {alignment !== undefined && (
+                            <p className="text-[10px] text-text-dim mt-1.5">
+                              {alignment > 65
+                                ? 'Intermarket signalen bevestigen het huidige regime sterk. Hogere overtuiging bij trades.'
+                                : alignment >= 35
+                                ? 'Gemengde intermarket signalen. Wees selectiever met posities.'
+                                : 'Intermarket signalen spreken het regime tegen. Extra voorzichtigheid geboden.'
+                              }
+                            </p>
                           )}
                         </div>
-                        <p className="text-sm text-text-muted leading-relaxed">{intermarketConclusion.text}</p>
-                      </div>
-                      <div className="ml-4 shrink-0">
-                        <ConfidenceRing value={data.confidence} size={56} />
+                        <div className="ml-4 shrink-0">
+                          <ConfidenceRing value={alignment ?? data.confidence} size={56} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )
+                })()}
               </div>
 
               {/* Educational: Why do these combinations signal risk-on/off? */}
@@ -1297,7 +1384,7 @@ export default function BriefingV2Dashboard() {
               subtitle="De concrete output: top paren met richting, overtuiging en score."
             />
 
-            {tradeFocus.length > 0 ? (
+            {(tradeFocus.length > 0 || watchlist.length > 0) ? (
               <div className="space-y-4">
                 {tradeFocus.map((trade, i) => (
                   <div key={trade.pair} className="rounded-2xl border border-border bg-bg-card overflow-hidden">
@@ -1497,6 +1584,47 @@ export default function BriefingV2Dashboard() {
                     </div>
                   </div>
                 ))}
+
+                {/* Watchlist Section */}
+                {watchlist.length > 0 && (
+                  <div className="mt-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] overflow-hidden">
+                    <div className="px-4 py-2.5 border-b border-white/[0.04] flex items-center gap-2">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                      </svg>
+                      <span className="text-[10px] font-semibold text-text-dim uppercase tracking-wider">Watchlist</span>
+                      <span className="text-[9px] text-text-dim/50">— paren om in de gaten te houden</span>
+                    </div>
+                    <div className="divide-y divide-white/[0.03]">
+                      {watchlist.map(wp => {
+                        const wIsBullish = wp.direction.includes('bullish')
+                        const wIsBearish = wp.direction.includes('bearish')
+                        return (
+                          <div key={wp.pair} className="px-4 py-2 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                            <div className="flex items-center gap-3">
+                              <span className="font-mono font-bold text-xs text-text-muted">{wp.pair}</span>
+                              <span className={`text-[10px] ${wIsBullish ? 'text-green-400' : wIsBearish ? 'text-red-400' : 'text-text-dim'}`}>
+                                {wIsBullish ? '\u25B2' : wIsBearish ? '\u25BC' : '\u2014'} {wp.direction}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className={`text-xs font-mono font-bold ${wp.score > 0 ? 'text-green-400/70' : wp.score < 0 ? 'text-red-400/70' : 'text-text-dim'}`}>
+                                {wp.score > 0 ? '+' : ''}{wp.score}
+                              </span>
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+                                wp.conviction === 'sterk' ? 'bg-white/[0.06] text-text-muted' :
+                                wp.conviction === 'matig' ? 'bg-white/[0.04] text-text-dim' :
+                                'bg-white/[0.02] text-text-dim/60'
+                              }`}>
+                                {wp.conviction}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="p-8 rounded-xl bg-bg-card border border-border text-center">
@@ -1800,8 +1928,8 @@ export default function BriefingV2Dashboard() {
                   {trackRecords.length > 0 && (
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {trackRecords.slice(0, 40).map(record => {
-                        const meta = record.metadata
-                        // Format dates as readable Dutch dates (no fake times)
+                        const meta = record.metadata as TrackRecordMetadata | undefined
+                        // Format dates as readable Dutch dates
                         const formatDate = (dateStr: string | undefined) => {
                           if (!dateStr) return ''
                           try {
@@ -1809,7 +1937,26 @@ export default function BriefingV2Dashboard() {
                             return d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', timeZone: 'Europe/Amsterdam' })
                           } catch { return '' }
                         }
-                        const signalDate = formatDate(record.date + 'T12:00:00Z')
+                        // Format call time with timestamp if available
+                        const formatCallTime = () => {
+                          if (meta?.callTime) {
+                            try {
+                              const d = new Date(meta.callTime)
+                              return d.toLocaleString('nl-NL', {
+                                day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+                                timeZone: 'Europe/Amsterdam'
+                              }) + ' NL'
+                            } catch { /* fall through */ }
+                          }
+                          if (record.date) {
+                            try {
+                              const d = new Date(record.date + 'T12:00:00Z')
+                              return d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', timeZone: 'Europe/Amsterdam' })
+                            } catch { return '' }
+                          }
+                          return ''
+                        }
+                        const signalDate = formatCallTime()
                         const exitDate = meta?.exitTime ? formatDate(meta.exitTime) : ''
                         return (
                           <div key={record.id} className="rounded-xl bg-white/[0.02] border border-white/[0.04] overflow-hidden">
@@ -1837,7 +1984,7 @@ export default function BriefingV2Dashboard() {
                             <div className="px-3 py-2 border-t border-white/[0.03]">
                               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[10px]">
                                 <div>
-                                  <span className="text-text-dim/60 block">Call datum</span>
+                                  <span className="text-text-dim/60 block">Call (datum + tijd)</span>
                                   <span className="font-mono text-accent-light/80 font-semibold">
                                     {signalDate || record.date}
                                   </span>
