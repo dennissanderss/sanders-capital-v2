@@ -479,43 +479,61 @@ export async function POST(request: Request) {
         }
       }
 
-      // V2.2: Pick top pairs with score ≥ 3.0 (sterk + matig)
-      const topPairs = pairBiases
+      // V2.3: Pick and diversify trade candidates
+      // Tier 1: score ≥ 3.0 (strong signals)
+      // Tier 2: score ≥ 2.0 (moderate signals, for diversification)
+      const tier1 = pairBiases
         .filter(p => (p.conviction === 'sterk' || p.conviction === 'matig') && Math.abs(p.score) >= 3.0)
+      const tier2 = pairBiases
+        .filter(p => Math.abs(p.score) >= 2.0 && p.direction !== 'neutraal' && !tier1.some(t => t.pair === p.pair))
 
-      // V2.3: Pair diversification — max 2 pairs per shared currency
-      // This prevents "5x JPY shorts" and ensures the model tests diverse setups
-      const diversified: typeof topPairs = []
+      // Diversify: max 2 pairs per currency, mix directions, max 5 total
+      const diversified: typeof tier1 = []
       const currencyCount: Record<string, number> = {}
-      for (const p of topPairs) {
+      const directionCount = { bullish: 0, bearish: 0 }
+
+      // First pass: tier 1 with diversification
+      for (const p of tier1) {
         const baseCount = currencyCount[p.baseCcy] || 0
         const quoteCount = currencyCount[p.quoteCcy] || 0
-        // Allow max 2 appearances per currency to avoid JPY-only or USD-only trades
         if (baseCount >= 2 && quoteCount >= 2) continue
         if (baseCount >= 2 || quoteCount >= 2) {
-          // If one currency is already at 2, only allow if this is a strong signal
           if (Math.abs(p.score) < 3.5) continue
         }
         diversified.push(p)
-        currencyCount[p.baseCcy] = baseCount + 1
-        currencyCount[p.quoteCcy] = quoteCount + 1
-        if (diversified.length >= 5) break
+        currencyCount[p.baseCcy] = (currencyCount[p.baseCcy] || 0) + 1
+        currencyCount[p.quoteCcy] = (currencyCount[p.quoteCcy] || 0) + 1
+        if (p.direction.includes('bullish')) directionCount.bullish++
+        else directionCount.bearish++
+        if (diversified.length >= 4) break
       }
 
-      // If diversification reduced the list, add lower-threshold diversified pairs
+      // Second pass: add tier 2 for balance (prefer opposite direction)
+      const needsLongs = directionCount.bullish === 0 && directionCount.bearish >= 2
+      const needsShorts = directionCount.bearish === 0 && directionCount.bullish >= 2
+      for (const p of tier2) {
+        if (diversified.length >= 5) break
+        if (diversified.some(d => d.pair === p.pair)) continue
+        const baseCount = currencyCount[p.baseCcy] || 0
+        const quoteCount = currencyCount[p.quoteCcy] || 0
+        if (baseCount >= 2 && quoteCount >= 2) continue
+        // Prefer adding the underrepresented direction
+        if (needsLongs && !p.direction.includes('bullish')) continue
+        if (needsShorts && !p.direction.includes('bearish')) continue
+        diversified.push(p)
+        currencyCount[p.baseCcy] = (currencyCount[p.baseCcy] || 0) + 1
+        currencyCount[p.quoteCcy] = (currencyCount[p.quoteCcy] || 0) + 1
+        if (p.direction.includes('bullish')) directionCount.bullish++
+        else directionCount.bearish++
+      }
+
+      // Third pass: fill remaining slots from tier 2 regardless of direction
       if (diversified.length < 3) {
-        const usedCurrencies = new Set<string>()
-        diversified.forEach(p => { usedCurrencies.add(p.baseCcy); usedCurrencies.add(p.quoteCcy) })
-
-        const additional = pairBiases
-          .filter(p =>
-            (p.conviction === 'sterk' || p.conviction === 'matig') &&
-            Math.abs(p.score) >= 2.0 &&
-            !diversified.some(d => d.pair === p.pair)
-          )
-          .slice(0, 3 - diversified.length)
-
-        diversified.push(...additional)
+        for (const p of tier2) {
+          if (diversified.length >= 3) break
+          if (diversified.some(d => d.pair === p.pair)) continue
+          diversified.push(p)
+        }
       }
 
       if (diversified.length === 0) continue
