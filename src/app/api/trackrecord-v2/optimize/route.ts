@@ -1,6 +1,13 @@
-// ─── Backfill Optimizer ──────────────────────────────────────
-// Tests multiple parameter combinations to find the highest
-// win rate. Does NOT insert records — just calculates stats.
+// ─── Comprehensive Backfill Optimizer v2 ─────────────────────
+// Tests 100+ configurations across multiple dimensions:
+//   - Contrarian signal (fade when fundamentals + momentum agree)
+//   - Score bands (3.0-3.5, 3.5-4.0, 4.0-5.0, 5.0+)
+//   - Pair groups (Majors, Crosses, JPY crosses)
+//   - Regime-specific (Risk-Off only, Risk-On only, clear only)
+//   - Momentum lookback (1d, 2d, 3d, 5d)
+//   - Min pip threshold for mean reversion dip
+//   - Hold periods (1d, 2d, 3d)
+//   - Combination configs mixing the best of each
 //
 // GET /api/trackrecord-v2/optimize
 // Returns a ranked list of configurations with their win rates.
@@ -28,8 +35,22 @@ const INTERMARKET_SYMBOLS: Record<string, string> = {
   sp500: '%5EGSPC', vix: '%5EVIX', gold: 'GC%3DF', us10y: '%5ETNX', dxy: 'DX-Y.NYB',
 }
 
-const PAIRS = Object.keys(PAIR_SYMBOLS)
+const ALL_PAIRS = Object.keys(PAIR_SYMBOLS)
 const MAJORS = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'NZD', 'CAD', 'CHF']
+
+const MAJOR_USD_PAIRS = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'NZD/USD', 'USD/CAD', 'USD/CHF']
+const CROSS_PAIRS = ALL_PAIRS.filter(p => !MAJOR_USD_PAIRS.includes(p))
+const JPY_CROSSES = ALL_PAIRS.filter(p => p.includes('JPY') && !MAJOR_USD_PAIRS.includes(p))
+
+type PairGroup = 'all' | 'majors' | 'crosses' | 'jpy-crosses'
+const PAIR_GROUPS: Record<PairGroup, string[]> = {
+  'all': ALL_PAIRS,
+  'majors': MAJOR_USD_PAIRS,
+  'crosses': CROSS_PAIRS,
+  'jpy-crosses': JPY_CROSSES,
+}
+
+// ─── Scoring helpers ─────────────────────────────────────────
 
 function biasScore(bias: string): number {
   const b = (bias || '').toLowerCase()
@@ -154,50 +175,229 @@ async function fetchHistoricalPrices(symbol: string, days: number) {
   } catch { return [] }
 }
 
+// ─── Configuration types ─────────────────────────────────────
+
+type SignalMode = 'normal' | 'contrarian' | 'mean-reversion' | 'contrarian-mr'
+type RegimeFilter = 'any' | 'Risk-Off' | 'Risk-On' | 'clear-only' // clear-only = not Gemengd
+
 interface Config {
   name: string
-  scoreThreshold: number
+  scoreMin: number
+  scoreMax: number           // Infinity = no upper bound
+  pairGroup: PairGroup
+  regimeFilter: RegimeFilter
   requireRegimeAligned: boolean
   minIntermarketAlignment: number
   onlySterk: boolean
   holdDays: number
-  meanReversion: boolean
+  signalMode: SignalMode
+  momentumLookback: number   // days for momentum/MR check
+  minDipPips: number         // minimum pip move against direction to qualify as "dip"
   maxPerDay: number
 }
 
-const CONFIGS: Config[] = [
-  // Basis variaties
-  { name: 'Base: score≥3.0, MR, 2d', scoreThreshold: 3.0, requireRegimeAligned: false, minIntermarketAlignment: 0, onlySterk: false, holdDays: 2, meanReversion: true, maxPerDay: 5 },
-  { name: 'Score≥3.5, MR, 2d', scoreThreshold: 3.5, requireRegimeAligned: false, minIntermarketAlignment: 0, onlySterk: false, holdDays: 2, meanReversion: true, maxPerDay: 5 },
-  { name: 'Score≥4.0, MR, 2d', scoreThreshold: 4.0, requireRegimeAligned: false, minIntermarketAlignment: 0, onlySterk: false, holdDays: 2, meanReversion: true, maxPerDay: 5 },
-  // Regime aligned
-  { name: 'Score≥3.0, regime, MR, 2d', scoreThreshold: 3.0, requireRegimeAligned: true, minIntermarketAlignment: 0, onlySterk: false, holdDays: 2, meanReversion: true, maxPerDay: 5 },
-  { name: 'Score≥3.5, regime, MR, 2d', scoreThreshold: 3.5, requireRegimeAligned: true, minIntermarketAlignment: 0, onlySterk: false, holdDays: 2, meanReversion: true, maxPerDay: 5 },
-  // Intermarket bevestiging
-  { name: 'Score≥3.0, IM≥50, MR, 2d', scoreThreshold: 3.0, requireRegimeAligned: false, minIntermarketAlignment: 50, onlySterk: false, holdDays: 2, meanReversion: true, maxPerDay: 5 },
-  { name: 'Score≥3.0, IM≥65, MR, 2d', scoreThreshold: 3.0, requireRegimeAligned: false, minIntermarketAlignment: 65, onlySterk: false, holdDays: 2, meanReversion: true, maxPerDay: 5 },
-  // Alles samen
-  { name: 'Score≥3.0, regime+IM≥50, MR, 2d', scoreThreshold: 3.0, requireRegimeAligned: true, minIntermarketAlignment: 50, onlySterk: false, holdDays: 2, meanReversion: true, maxPerDay: 5 },
-  { name: 'Score≥3.5, regime+IM≥50, MR, 2d', scoreThreshold: 3.5, requireRegimeAligned: true, minIntermarketAlignment: 50, onlySterk: false, holdDays: 2, meanReversion: true, maxPerDay: 5 },
-  { name: 'Score≥3.0, regime+IM≥65, MR, 2d', scoreThreshold: 3.0, requireRegimeAligned: true, minIntermarketAlignment: 65, onlySterk: false, holdDays: 2, meanReversion: true, maxPerDay: 5 },
-  // Alleen sterk
-  { name: 'Sterk only, MR, 2d', scoreThreshold: 3.5, requireRegimeAligned: false, minIntermarketAlignment: 0, onlySterk: true, holdDays: 2, meanReversion: true, maxPerDay: 5 },
-  { name: 'Sterk only, regime, MR, 2d', scoreThreshold: 3.5, requireRegimeAligned: true, minIntermarketAlignment: 0, onlySterk: true, holdDays: 2, meanReversion: true, maxPerDay: 5 },
-  { name: 'Sterk, regime+IM≥50, MR, 2d', scoreThreshold: 3.5, requireRegimeAligned: true, minIntermarketAlignment: 50, onlySterk: true, holdDays: 2, meanReversion: true, maxPerDay: 5 },
-  // Zonder MR
-  { name: 'Score≥3.0, no MR, 2d', scoreThreshold: 3.0, requireRegimeAligned: false, minIntermarketAlignment: 0, onlySterk: false, holdDays: 2, meanReversion: false, maxPerDay: 5 },
-  { name: 'Score≥3.5, regime+IM≥50, no MR, 2d', scoreThreshold: 3.5, requireRegimeAligned: true, minIntermarketAlignment: 50, onlySterk: false, holdDays: 2, meanReversion: false, maxPerDay: 5 },
-  // 1-dag hold
-  { name: 'Score≥3.0, MR, 1d', scoreThreshold: 3.0, requireRegimeAligned: false, minIntermarketAlignment: 0, onlySterk: false, holdDays: 1, meanReversion: true, maxPerDay: 5 },
-  { name: 'Score≥3.0, regime+IM≥50, MR, 1d', scoreThreshold: 3.0, requireRegimeAligned: true, minIntermarketAlignment: 50, onlySterk: false, holdDays: 1, meanReversion: true, maxPerDay: 5 },
-  { name: 'Score≥3.5, regime+IM≥65, MR, 1d', scoreThreshold: 3.5, requireRegimeAligned: true, minIntermarketAlignment: 65, onlySterk: false, holdDays: 1, meanReversion: true, maxPerDay: 5 },
-  // 3-dag hold
-  { name: 'Score≥3.0, regime+IM≥50, MR, 3d', scoreThreshold: 3.0, requireRegimeAligned: true, minIntermarketAlignment: 50, onlySterk: false, holdDays: 3, meanReversion: true, maxPerDay: 5 },
-]
+// ─── Build all configs programmatically ──────────────────────
+
+function buildConfigs(): Config[] {
+  const configs: Config[] = []
+
+  const base = (name: string, overrides: Partial<Config>): Config => ({
+    name,
+    scoreMin: 3.0,
+    scoreMax: Infinity,
+    pairGroup: 'all',
+    regimeFilter: 'any',
+    requireRegimeAligned: false,
+    minIntermarketAlignment: 0,
+    onlySterk: false,
+    holdDays: 2,
+    signalMode: 'mean-reversion',
+    momentumLookback: 2,
+    minDipPips: 0,
+    maxPerDay: 5,
+    ...overrides,
+  })
+
+  // ── 1. CONTRARIAN configs (the key new dimension) ──────────
+  // When fundamentals + momentum AGREE, trade OPPOSITE direction
+  for (const hold of [1, 2, 3]) {
+    for (const lookback of [1, 2, 3, 5]) {
+      configs.push(base(`CONTRARIAN lb${lookback}d hold${hold}d score≥3.0`, {
+        signalMode: 'contrarian', momentumLookback: lookback, holdDays: hold,
+      }))
+    }
+    configs.push(base(`CONTRARIAN lb3d hold${hold}d score≥3.5`, {
+      signalMode: 'contrarian', momentumLookback: 3, holdDays: hold, scoreMin: 3.5,
+    }))
+    configs.push(base(`CONTRARIAN lb3d hold${hold}d score≥4.0`, {
+      signalMode: 'contrarian', momentumLookback: 3, holdDays: hold, scoreMin: 4.0,
+    }))
+  }
+  // Contrarian + regime aligned
+  configs.push(base('CONTRARIAN lb3d hold2d regime-aligned', {
+    signalMode: 'contrarian', momentumLookback: 3, holdDays: 2, requireRegimeAligned: true,
+  }))
+  configs.push(base('CONTRARIAN lb3d hold2d regime-aligned score≥3.5', {
+    signalMode: 'contrarian', momentumLookback: 3, holdDays: 2, requireRegimeAligned: true, scoreMin: 3.5,
+  }))
+  // Contrarian + pair groups
+  for (const pg of ['majors', 'crosses', 'jpy-crosses'] as PairGroup[]) {
+    configs.push(base(`CONTRARIAN lb3d hold2d ${pg}`, {
+      signalMode: 'contrarian', momentumLookback: 3, holdDays: 2, pairGroup: pg,
+    }))
+  }
+  // Contrarian + regime filters
+  for (const rf of ['Risk-Off', 'Risk-On', 'clear-only'] as RegimeFilter[]) {
+    configs.push(base(`CONTRARIAN lb3d hold2d ${rf}`, {
+      signalMode: 'contrarian', momentumLookback: 3, holdDays: 2, regimeFilter: rf,
+    }))
+  }
+  // Contrarian with min dip
+  for (const dip of [20, 30, 50]) {
+    configs.push(base(`CONTRARIAN lb3d hold2d minDip${dip}`, {
+      signalMode: 'contrarian', momentumLookback: 3, holdDays: 2, minDipPips: dip,
+    }))
+  }
+  // Contrarian MR hybrid: contrarian direction but only enter on dip
+  configs.push(base('CONTRARIAN-MR lb3d hold2d score≥3.0', {
+    signalMode: 'contrarian-mr', momentumLookback: 3, holdDays: 2,
+  }))
+  configs.push(base('CONTRARIAN-MR lb3d hold2d score≥3.5', {
+    signalMode: 'contrarian-mr', momentumLookback: 3, holdDays: 2, scoreMin: 3.5,
+  }))
+
+  // ── 2. Score band configs ──────────────────────────────────
+  const bands: [number, number, string][] = [
+    [3.0, 3.5, '3.0-3.5'], [3.5, 4.0, '3.5-4.0'],
+    [4.0, 5.0, '4.0-5.0'], [5.0, Infinity, '5.0+'],
+  ]
+  for (const [min, max, label] of bands) {
+    for (const hold of [1, 2, 3]) {
+      configs.push(base(`Band ${label} MR hold${hold}d`, {
+        scoreMin: min, scoreMax: max, holdDays: hold,
+      }))
+      configs.push(base(`Band ${label} CONTRARIAN hold${hold}d`, {
+        scoreMin: min, scoreMax: max, holdDays: hold, signalMode: 'contrarian', momentumLookback: 3,
+      }))
+    }
+  }
+
+  // ── 3. Pair group configs ──────────────────────────────────
+  for (const pg of ['majors', 'crosses', 'jpy-crosses'] as PairGroup[]) {
+    for (const hold of [1, 2, 3]) {
+      configs.push(base(`${pg} MR hold${hold}d score≥3.0`, {
+        pairGroup: pg, holdDays: hold,
+      }))
+      configs.push(base(`${pg} MR hold${hold}d score≥3.5`, {
+        pairGroup: pg, holdDays: hold, scoreMin: 3.5,
+      }))
+    }
+  }
+
+  // ── 4. Regime-specific configs ─────────────────────────────
+  for (const rf of ['Risk-Off', 'Risk-On', 'clear-only'] as RegimeFilter[]) {
+    for (const hold of [1, 2, 3]) {
+      configs.push(base(`${rf} MR hold${hold}d score≥3.0`, {
+        regimeFilter: rf, holdDays: hold,
+      }))
+      configs.push(base(`${rf} MR hold${hold}d score≥3.5`, {
+        regimeFilter: rf, holdDays: hold, scoreMin: 3.5,
+      }))
+    }
+  }
+
+  // ── 5. Momentum lookback configs ───────────────────────────
+  for (const lb of [1, 2, 3, 5]) {
+    for (const hold of [1, 2, 3]) {
+      configs.push(base(`MR lb${lb}d hold${hold}d score≥3.0`, {
+        momentumLookback: lb, holdDays: hold,
+      }))
+    }
+  }
+
+  // ── 6. Min dip pip threshold ───────────────────────────────
+  for (const dip of [20, 30, 50]) {
+    for (const hold of [1, 2, 3]) {
+      configs.push(base(`MR minDip${dip} hold${hold}d score≥3.0`, {
+        minDipPips: dip, holdDays: hold,
+      }))
+    }
+  }
+
+  // ── 7. No-filter / normal signal baselines ─────────────────
+  for (const hold of [1, 2, 3]) {
+    configs.push(base(`Normal (no MR) hold${hold}d score≥3.0`, {
+      signalMode: 'normal', holdDays: hold,
+    }))
+    configs.push(base(`Normal (no MR) hold${hold}d score≥3.5`, {
+      signalMode: 'normal', holdDays: hold, scoreMin: 3.5,
+    }))
+  }
+
+  // ── 8. Combination "best of" configs ───────────────────────
+  // Contrarian + high score + regime aligned + intermarket
+  configs.push(base('COMBO: CONTR+score≥4+regime+IM≥50 hold2d', {
+    signalMode: 'contrarian', momentumLookback: 3, scoreMin: 4.0,
+    requireRegimeAligned: true, minIntermarketAlignment: 50, holdDays: 2,
+  }))
+  configs.push(base('COMBO: CONTR+score≥3.5+regime+IM≥50 hold2d', {
+    signalMode: 'contrarian', momentumLookback: 3, scoreMin: 3.5,
+    requireRegimeAligned: true, minIntermarketAlignment: 50, holdDays: 2,
+  }))
+  configs.push(base('COMBO: CONTR+score≥3.5+regime hold1d', {
+    signalMode: 'contrarian', momentumLookback: 3, scoreMin: 3.5,
+    requireRegimeAligned: true, holdDays: 1,
+  }))
+  configs.push(base('COMBO: CONTR+score≥3.5+regime hold3d', {
+    signalMode: 'contrarian', momentumLookback: 3, scoreMin: 3.5,
+    requireRegimeAligned: true, holdDays: 3,
+  }))
+  // Contrarian + majors only + dip filter
+  configs.push(base('COMBO: CONTR+majors+minDip30 hold2d', {
+    signalMode: 'contrarian', momentumLookback: 3, pairGroup: 'majors', minDipPips: 30, holdDays: 2,
+  }))
+  configs.push(base('COMBO: CONTR+majors+score≥3.5 hold2d', {
+    signalMode: 'contrarian', momentumLookback: 3, pairGroup: 'majors', scoreMin: 3.5, holdDays: 2,
+  }))
+  // Risk-Off + JPY crosses contrarian
+  configs.push(base('COMBO: CONTR+jpy-crosses+Risk-Off hold2d', {
+    signalMode: 'contrarian', momentumLookback: 3, pairGroup: 'jpy-crosses', regimeFilter: 'Risk-Off', holdDays: 2,
+  }))
+  // MR combos with best filters
+  configs.push(base('COMBO: MR+lb1d+score≥3.5+regime hold1d', {
+    momentumLookback: 1, scoreMin: 3.5, requireRegimeAligned: true, holdDays: 1,
+  }))
+  configs.push(base('COMBO: MR+lb5d+minDip30+score≥3.5 hold2d', {
+    momentumLookback: 5, minDipPips: 30, scoreMin: 3.5, holdDays: 2,
+  }))
+  configs.push(base('COMBO: MR+majors+regime+IM≥50 hold2d', {
+    pairGroup: 'majors', requireRegimeAligned: true, minIntermarketAlignment: 50, holdDays: 2,
+  }))
+  configs.push(base('COMBO: MR+sterk+regime+IM≥65 hold2d', {
+    onlySterk: true, scoreMin: 3.5, requireRegimeAligned: true, minIntermarketAlignment: 65, holdDays: 2,
+  }))
+  // Clear regime only combos
+  configs.push(base('COMBO: CONTR+clear-only+score≥3.5 hold2d', {
+    signalMode: 'contrarian', momentumLookback: 3, regimeFilter: 'clear-only', scoreMin: 3.5, holdDays: 2,
+  }))
+  configs.push(base('COMBO: MR+clear-only+score≥3.5+regime hold2d', {
+    regimeFilter: 'clear-only', scoreMin: 3.5, requireRegimeAligned: true, holdDays: 2,
+  }))
+
+  // Deduplicate by name
+  const seen = new Set<string>()
+  return configs.filter(c => {
+    if (seen.has(c.name)) return false
+    seen.add(c.name)
+    return true
+  })
+}
+
+// ─── Main route handler ──────────────────────────────────────
 
 export async function GET() {
   try {
-    const days = 250 // ~1 year of trading days
+    const days = 250
 
     // 1. Fetch CB rate snapshots
     const { data: snapshots } = await supabase
@@ -222,9 +422,9 @@ export async function GET() {
       return (best && snapshotsByDate[best]) ? snapshotsByDate[best] : currentRatesMap
     }
 
-    // 2. Fetch historical prices
+    // 2. Fetch historical prices (all pairs + intermarket)
     const historicalData: Record<string, { date: string; close: number }[]> = {}
-    for (const pair of PAIRS) {
+    for (const pair of ALL_PAIRS) {
       const symbol = PAIR_SYMBOLS[pair]
       historicalData[pair] = await fetchHistoricalPrices(symbol, days)
       await new Promise(r => setTimeout(r, 1500))
@@ -236,7 +436,7 @@ export async function GET() {
       await new Promise(r => setTimeout(r, 1500))
     }
 
-    // 3. Build dates
+    // 3. Build date range
     const today = new Date().toISOString().split('T')[0]
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
@@ -245,12 +445,15 @@ export async function GET() {
       dates.push(d.toISOString().split('T')[0])
     }
 
-    // 4. Pre-calculate daily data (shared across configs)
+    // 4. Pre-calculate daily data (shared across all configs)
     const dailyData: {
       date: string
       regime: string
       intermarketAlignment: number
-      pairBiases: { pair: string; baseCcy: string; quoteCcy: string; direction: string; conviction: string; score: number }[]
+      pairBiases: {
+        pair: string; baseCcy: string; quoteCcy: string
+        direction: string; conviction: string; score: number
+      }[]
     }[] = []
 
     for (const date of dates) {
@@ -264,7 +467,7 @@ export async function GET() {
       const regime = determineRegime(scores)
       const intermarketAlignment = getIntermarketAlignment(date, regime, intermarketHistory)
 
-      const pairBiases = PAIRS.map(pair => {
+      const pairBiases = ALL_PAIRS.map(pair => {
         const [baseCcy, quoteCcy] = pair.split('/')
         const diff = (scores[baseCcy] || 0) - (scores[quoteCcy] || 0)
         let direction: string, conviction: string
@@ -281,15 +484,34 @@ export async function GET() {
       dailyData.push({ date, regime, intermarketAlignment, pairBiases })
     }
 
-    // 5. Test each config
+    // 5. Build and test all configs
+    const CONFIGS = buildConfigs()
+
     const results = CONFIGS.map(cfg => {
       let correct = 0, incorrect = 0, totalPips = 0
+      const allowedPairs = PAIR_GROUPS[cfg.pairGroup]
 
       for (const day of dailyData) {
+        // Regime filter
+        if (cfg.regimeFilter === 'Risk-Off' && day.regime !== 'Risk-Off') continue
+        if (cfg.regimeFilter === 'Risk-On' && day.regime !== 'Risk-On') continue
+        if (cfg.regimeFilter === 'clear-only' && day.regime === 'Gemengd') continue
+
+        // Intermarket filter
         if (cfg.minIntermarketAlignment > 0 && day.intermarketAlignment < cfg.minIntermarketAlignment) continue
 
-        let candidates = day.pairBiases.filter(p => Math.abs(p.score) >= cfg.scoreThreshold && p.direction !== 'neutraal')
+        // Filter candidates
+        let candidates = day.pairBiases.filter(p => {
+          if (!allowedPairs.includes(p.pair)) return false
+          const absScore = Math.abs(p.score)
+          if (absScore < cfg.scoreMin) return false
+          if (absScore >= cfg.scoreMax) return false
+          if (p.direction === 'neutraal') return false
+          return true
+        })
+
         if (cfg.onlySterk) candidates = candidates.filter(p => p.conviction === 'sterk')
+
         if (cfg.requireRegimeAligned) {
           candidates = candidates.filter(p => {
             const isBull = p.direction.includes('bullish')
@@ -302,25 +524,69 @@ export async function GET() {
         for (const p of selected) {
           const prices = historicalData[p.pair] || []
           const entryIdx = prices.findIndex(px => px.date === day.date)
-          if (entryIdx < 2 || entryIdx >= prices.length - cfg.holdDays) continue
+          // Need enough history for lookback AND enough forward for hold
+          const neededBack = Math.max(cfg.momentumLookback, 2)
+          if (entryIdx < neededBack || entryIdx >= prices.length - cfg.holdDays) continue
 
-          if (cfg.meanReversion) {
-            const momentum = prices[entryIdx].close - prices[entryIdx - 2].close
-            const isBull = p.direction.includes('bullish')
-            const isBear = p.direction.includes('bearish')
+          const isBull = p.direction.includes('bullish')
+          const isBear = p.direction.includes('bearish')
+          const isJpy = p.pair.includes('JPY')
+          const pipMultiplier = isJpy ? 100 : 10000
+
+          // Calculate momentum over the lookback period
+          const momentum = prices[entryIdx].close - prices[entryIdx - cfg.momentumLookback].close
+          const momentumPips = Math.abs(momentum) * pipMultiplier
+
+          // Check minimum dip threshold
+          if (cfg.minDipPips > 0 && momentumPips < cfg.minDipPips) continue
+
+          // Determine trade direction based on signal mode
+          let tradeDirection: 'long' | 'short' | null = null
+
+          if (cfg.signalMode === 'normal') {
+            // Normal: trade in fundamental direction, no momentum filter
+            tradeDirection = isBull ? 'long' : 'short'
+
+          } else if (cfg.signalMode === 'mean-reversion') {
+            // Mean reversion: only enter when price has moved AGAINST the fundamental direction
             const isMR = (isBull && momentum < 0) || (isBear && momentum > 0)
             if (!isMR) continue
+            tradeDirection = isBull ? 'long' : 'short'
+
+          } else if (cfg.signalMode === 'contrarian') {
+            // CONTRARIAN: when fundamentals + momentum AGREE, trade OPPOSITE
+            // If fundamentals say bullish AND price is going up → SHORT (fade the agreement)
+            // If fundamentals say bearish AND price is going down → LONG (fade the agreement)
+            const momAgreesWithFundamental = (isBull && momentum > 0) || (isBear && momentum < 0)
+            if (!momAgreesWithFundamental) continue // only trade when they agree
+            // Trade opposite to fundamental direction
+            tradeDirection = isBull ? 'short' : 'long'
+
+          } else if (cfg.signalMode === 'contrarian-mr') {
+            // Contrarian MR hybrid: direction is contrarian, but wait for a dip in that contrarian direction
+            // Step 1: fundamentals + momentum must agree
+            const momAgreesWithFundamental = (isBull && momentum > 0) || (isBear && momentum < 0)
+            if (!momAgreesWithFundamental) continue
+            // Step 2: contrarian direction is opposite to fundamental
+            // Step 3: check 1-day momentum for a dip in the contrarian direction
+            const shortTermMom = prices[entryIdx].close - prices[entryIdx - 1].close
+            // If contrarian direction is short (fade bullish), we want a bounce (shortTermMom > 0) to fade
+            // If contrarian direction is long (fade bearish), we want a dip (shortTermMom < 0) to buy
+            const contraDip = (isBull && shortTermMom > 0) || (isBear && shortTermMom < 0)
+            if (!contraDip) continue
+            tradeDirection = isBull ? 'short' : 'long'
           }
+
+          if (!tradeDirection) continue
 
           const entryPrice = prices[entryIdx].close
           const exitPrice = prices[entryIdx + cfg.holdDays].close
           const priceDiff = exitPrice - entryPrice
-          const isJpy = p.pair.includes('JPY')
-          const pips = Math.round(Math.abs(priceDiff) * (isJpy ? 100 : 10000))
+          const pips = Math.round(Math.abs(priceDiff) * pipMultiplier)
 
-          let isCorrect = false
-          if (p.direction.includes('bullish') && priceDiff > 0) isCorrect = true
-          if (p.direction.includes('bearish') && priceDiff < 0) isCorrect = true
+          const isCorrect =
+            (tradeDirection === 'long' && priceDiff > 0) ||
+            (tradeDirection === 'short' && priceDiff < 0)
 
           if (isCorrect) { correct++; totalPips += pips }
           else { incorrect++; totalPips -= pips }
@@ -336,17 +602,29 @@ export async function GET() {
         winRate: total > 0 ? Math.round((correct / total) * 100) : 0,
         totalPips,
         avgPipsPerTrade: total > 0 ? +(totalPips / total).toFixed(1) : 0,
+        meaningful: total >= 40,
       }
     })
 
-    // Sort by win rate desc, then by trades desc
+    // Sort by win rate desc, then trades desc
     results.sort((a, b) => b.winRate - a.winRate || b.trades - a.trades)
+
+    // Tag meaningful results
+    const meaningful = results.filter(r => r.meaningful)
+    const topMeaningful = meaningful.slice(0, 30)
 
     return NextResponse.json({
       message: `Tested ${CONFIGS.length} configurations over ${days} days`,
       days,
       snapshotPeriods: snapshotDates.length,
-      results,
+      totalConfigs: CONFIGS.length,
+      summary: {
+        meaningfulConfigs: meaningful.length,
+        bestMeaningfulWinRate: topMeaningful[0]?.winRate ?? 0,
+        bestMeaningfulConfig: topMeaningful[0]?.config ?? 'N/A',
+      },
+      top30meaningful: topMeaningful,
+      allResults: results,
     })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
