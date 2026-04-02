@@ -19,34 +19,12 @@ export default function TradeScreenshots({ tradeId, screenshots: initial, onUpda
 
   useEffect(() => { setScreenshots(initial) }, [initial])
 
-  // Clipboard paste support (Ctrl+V)
+  // Reset viewing if the viewed screenshot is no longer in the list
   useEffect(() => {
-    const handlePaste = async (e: ClipboardEvent) => {
-      const items = e.clipboardData?.items
-      if (!items) return
-
-      const imageFiles: File[] = []
-      for (const item of Array.from(items)) {
-        if (item.type.startsWith('image/')) {
-          const blob = item.getAsFile()
-          if (blob) {
-            const ext = item.type.split('/')[1] || 'png'
-            imageFiles.push(new File([blob], `paste_${Date.now()}.${ext}`, { type: item.type }))
-          }
-        }
-      }
-
-      if (imageFiles.length > 0) {
-        e.preventDefault()
-        const dt = new DataTransfer()
-        imageFiles.forEach(f => dt.items.add(f))
-        handleUpload(dt.files)
-      }
+    if (viewing && !screenshots.find(s => s.id === viewing)) {
+      setViewing(null)
     }
-
-    document.addEventListener('paste', handlePaste)
-    return () => document.removeEventListener('paste', handlePaste)
-  }, [handleUpload])
+  }, [viewing, screenshots])
 
   const getPublicUrl = (path: string) => {
     const sb = createClient()
@@ -112,6 +90,35 @@ export default function TradeScreenshots({ tradeId, screenshots: initial, onUpda
     e.preventDefault()
     setDragOver(false)
     if (e.dataTransfer.files.length > 0) handleUpload(e.dataTransfer.files)
+  }, [handleUpload])
+
+  // Clipboard paste support (Ctrl+V)
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      const imageFiles: File[] = []
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const blob = item.getAsFile()
+          if (blob) {
+            const ext = item.type.split('/')[1] || 'png'
+            imageFiles.push(new File([blob], `paste_${Date.now()}.${ext}`, { type: item.type }))
+          }
+        }
+      }
+
+      if (imageFiles.length > 0) {
+        e.preventDefault()
+        const dt = new DataTransfer()
+        imageFiles.forEach(f => dt.items.add(f))
+        handleUpload(dt.files)
+      }
+    }
+
+    document.addEventListener('paste', handlePaste)
+    return () => document.removeEventListener('paste', handlePaste)
   }, [handleUpload])
 
   return (
@@ -227,6 +234,7 @@ export default function TradeScreenshots({ tradeId, screenshots: initial, onUpda
                 onClick={(e) => {
                   e.stopPropagation()
                   const idx = screenshots.findIndex(s => s.id === viewing)
+                  if (idx === -1) return
                   const prev = idx > 0 ? screenshots[idx - 1] : screenshots[screenshots.length - 1]
                   setViewing(prev.id)
                 }}
@@ -238,6 +246,7 @@ export default function TradeScreenshots({ tradeId, screenshots: initial, onUpda
                 onClick={(e) => {
                   e.stopPropagation()
                   const idx = screenshots.findIndex(s => s.id === viewing)
+                  if (idx === -1) return
                   const next = idx < screenshots.length - 1 ? screenshots[idx + 1] : screenshots[0]
                   setViewing(next.id)
                 }}
@@ -247,12 +256,17 @@ export default function TradeScreenshots({ tradeId, screenshots: initial, onUpda
               </button>
             </>
           )}
-          <img
-            src={getPublicUrl(screenshots.find(s => s.id === viewing)!.storage_path)}
-            alt="Screenshot"
-            className="max-w-full max-h-[90vh] object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {(() => {
+            const current = screenshots.find(s => s.id === viewing)
+            return current ? (
+              <img
+                src={getPublicUrl(current.storage_path)}
+                alt={current.label || 'Screenshot'}
+                className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : null
+          })()}
         </div>
       )}
     </div>

@@ -565,10 +565,10 @@ export default function AdminPage() {
               {[
                 { name: 'Economische Kalender', desc: 'Events automatisch opgehaald via FairEconomy/ForexFactory API. Klik-uitleg per event. Geen actuele data (API biedt dit niet).', status: 'live' },
                 { name: 'Sanders Capital Fundamentals', desc: 'Marktregime classificatie, valutascoring (CB beleid x2, rente x1.5, nieuws), intermarket bevestiging en contrarian signalen. 10 major paren, 1 dag hold. Volledig automatisch.', status: 'live' },
-                { name: 'Daily Macro Briefing', desc: 'Regime, currency scores, pair signals en trade focus automatisch berekend via V3 engine. Includes sub-regime, conviction scores en IM alignment.', status: 'live' },
+                { name: 'Daily Macro Briefing', desc: 'Regime, currency scores, pair signals en trade focus automatisch berekend. Inclusief conviction scores en IM alignment.', status: 'live' },
                 { name: 'Trade Focus Trackrecord', desc: 'Meet dagelijks of de contrarian mean reversion bias klopt (1-dag hold, PF 1.42). Model B scoring + IM bevestiging. Backfill 365 dagen, 10 major pairs.', status: 'live' },
                 { name: 'Intermarket Data (Pair-Specifiek)', desc: 'DXY, VIX, S&P 500, US 10Y Yields, Goud en Olie via Yahoo Finance. Elk paar heeft eigen gewichten (bijv. USD/CAD: olie 45%, USD/JPY: yields 40%).', status: 'live' },
-                { name: 'FX Koersen (21 paren)', desc: 'Live koersen voor alle 21 major/cross paren via Yahoo Finance (5 min cache). 8 valuta\'s: USD, EUR, GBP, JPY, AUD, NZD, CAD, CHF.', status: 'live' },
+                { name: 'FX Koersen (10 paren)', desc: 'Live koersen voor alle 10 major paren via Yahoo Finance (5 min cache). 8 valuta\'s: USD, EUR, GBP, JPY, AUD, NZD, CAD, CHF.', status: 'live' },
                 { name: 'Vergaderdata', desc: 'CB meetings automatisch uit economische kalender (komende 2 weken).', status: 'live' },
                 { name: 'Nieuws Aggregatie', desc: 'Automatisch gecureerd FX-relevant nieuws uit 7 bronnen (Fed, ECB, ForexLive, CNBC, Bloomberg, BBC, NYT). 10 min cache, relevantie-filtering.', status: 'live' },
                 { name: 'Auth & Premium gating', desc: 'Supabase Auth + RLS regelt toegang tot premium content en tools.', status: 'live' },
@@ -890,7 +890,7 @@ export default function AdminPage() {
                     <div key={api.name} className="flex items-center gap-2 text-xs">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
                       <span className="text-text-muted font-medium">{api.name}</span>
-                      <span className="text-text-dim">— {api.desc}</span>
+                      <span className="text-text-dim">{api.desc}</span>
                     </div>
                   ))}
                 </div>
@@ -1578,7 +1578,7 @@ export default function AdminPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-heading">
-                  {editingCb.currency ? `${editingCb.currency} — ${editingCb.bank}` : 'Nieuwe centrale bank'}
+                  {editingCb.currency ? `${editingCb.currency} - ${editingCb.bank}` : 'Nieuwe centrale bank'}
                 </h2>
                 <button onClick={() => setEditingCb(null)} className="text-sm text-text-muted hover:text-heading">Annuleren</button>
               </div>
@@ -1705,7 +1705,7 @@ export default function AdminPage() {
                         </div>
                         <div>
                           <p className="text-[10px] text-accent-light uppercase tracking-wider font-semibold">Eerstvolgende vergadering</p>
-                          <p className="text-lg font-display font-bold text-heading">{next.currency} — {next.bank.split('(')[0].trim()}</p>
+                          <p className="text-lg font-display font-bold text-heading">{next.currency} - {next.bank.split('(')[0].trim()}</p>
                           <p className="text-xs text-text-muted mt-0.5">
                             {next.meetDate.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                             {next.bias && <> · <span className="text-text-dim">Bias: {next.bias}</span></>}

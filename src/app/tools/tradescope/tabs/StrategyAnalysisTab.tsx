@@ -278,7 +278,7 @@ export default function StrategyAnalysisTab({ trades, strategies, setups, accoun
                   {worst.totalPnl < 0 && <Insight type="negative" text={`Slechtste: "${worst.label}" met $${worst.totalPnl.toFixed(2)} verlies over ${worst.trades} trades`} />}
                   {highestWR && highestWR.trades >= 5 && <Insight type="info" text={`Hoogste win rate: "${highestWR.label}" met ${highestWR.winRate.toFixed(1)}% (${highestWR.trades} trades)`} />}
                   {bestPF && bestPF.trades >= 5 && bestPF.profitFactor > 1 && <Insight type="positive" text={`Beste profit factor: "${bestPF.label}" met ${bestPF.profitFactor.toFixed(2)}`} />}
-                  {groups.some(g => g.trades < 5) && <Insight type="warning" text={`${groups.filter(g => g.trades < 5).length} groep(en) met minder dan 5 trades — statistisch niet betrouwbaar`} />}
+                  {groups.some(g => g.trades < 5) && <Insight type="warning" text={`${groups.filter(g => g.trades < 5).length} groep(en) met minder dan 5 trades : statistisch niet betrouwbaar`} />}
                 </>
               )
             })()}

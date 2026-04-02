@@ -1581,7 +1581,7 @@ export default function BriefingV2Dashboard() {
                         <span className="text-text-dim/20">|</span>
                         <div className="flex items-center gap-1.5">
                           <span className="text-[9px] text-text-dim uppercase tracking-wider">Exit:</span>
-                          <span className="text-[10px] font-mono text-text-muted">dagkoers +2 handelsdagen</span>
+                          <span className="text-[10px] font-mono text-text-muted">dagkoers +1 handelsdag</span>
                         </div>
                         <span className="text-text-dim/20">|</span>
                         <div className="flex items-center gap-1.5">
@@ -1729,7 +1729,7 @@ export default function BriefingV2Dashboard() {
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
                       </svg>
                       <span className="text-[10px] font-semibold text-text-dim uppercase tracking-wider">Watchlist</span>
-                      <span className="text-[9px] text-text-dim/50">— paren met potentieel, maar nog niet sterk genoeg voor een call</span>
+                      <span className="text-[9px] text-text-dim/50">paren met potentieel, maar nog niet sterk genoeg voor een call</span>
                     </div>
                     <div className="divide-y divide-white/[0.03]">
                       {watchlist.map(wp => {

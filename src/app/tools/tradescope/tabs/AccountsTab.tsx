@@ -202,7 +202,7 @@ function StrategiesSection() {
           <div key={s.id} className="flex items-center gap-2 px-3 py-2 rounded-lg glass group">
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
             <span className="text-sm text-heading">{s.name}</span>
-            {s.description && <span className="text-xs text-text-dim">— {s.description}</span>}
+            {s.description && <span className="text-xs text-text-dim">{s.description}</span>}
             <button onClick={() => { if (confirm('Strategie verwijderen?')) remove(s.id) }} className="text-xs text-red-400/40 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 ml-1">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
             </button>

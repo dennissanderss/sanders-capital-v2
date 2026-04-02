@@ -41,7 +41,7 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
     const sb = createClient()
     let query = sb
       .from('ts_trades')
-      .select('*, account:ts_accounts(id,name,type), strategy:ts_strategies(id,name,color), setup:ts_setups(id,name)')
+      .select('*, account:ts_accounts(id,name,type), strategy:ts_strategies(id,name,color), setup:ts_setups(id,name), screenshots:ts_trade_screenshots(id,trade_id,user_id,storage_path,label,sort_order,created_at)')
       .order('open_date', { ascending: false })
       .limit(200)
 
@@ -161,6 +161,7 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
               trade={trade}
               onEdit={() => { setEditingTrade(trade); setShowForm(true) }}
               onDelete={() => handleDelete(trade.id)}
+              onScreenshotUpdate={fetchTrades}
             />
           ))}
         </div>
@@ -176,6 +177,7 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
           saving={saving}
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditingTrade(null) }}
+          onScreenshotUpdate={fetchTrades}
         />
       )}
     </div>
@@ -183,7 +185,7 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
 }
 
 // ─── Trade row component ───────────────────────────────────
-function TradeRow({ trade, onEdit, onDelete }: { trade: TsTrade; onEdit: () => void; onDelete: () => void }) {
+function TradeRow({ trade, onEdit, onDelete, onScreenshotUpdate }: { trade: TsTrade; onEdit: () => void; onDelete: () => void; onScreenshotUpdate: () => void }) {
   const [expanded, setExpanded] = useState(false)
   const pnl = trade.profit_loss || 0
   const isWin = pnl > 0
@@ -342,7 +344,7 @@ function TradeRow({ trade, onEdit, onDelete }: { trade: TsTrade; onEdit: () => v
 
           {/* Screenshots */}
           <div className="mb-3">
-            <TradeScreenshots tradeId={trade.id} screenshots={trade.screenshots || []} onUpdate={() => {}} />
+            <TradeScreenshots tradeId={trade.id} screenshots={trade.screenshots || []} onUpdate={onScreenshotUpdate} />
           </div>
 
           {/* Actions */}
@@ -357,7 +359,7 @@ function TradeRow({ trade, onEdit, onDelete }: { trade: TsTrade; onEdit: () => v
 }
 
 // ─── Trade form modal ──────────────────────────────────────
-function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, onClose }: {
+function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, onClose, onScreenshotUpdate }: {
   trade: TsTrade | null
   accounts: TsAccount[]
   strategies: TsStrategy[]
@@ -365,6 +367,7 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
   saving: boolean
   onSave: (data: Partial<TsTrade>) => void
   onClose: () => void
+  onScreenshotUpdate: () => void
 }) {
   const [form, setForm] = useState<Record<string, unknown>>(() => {
     if (trade) return { ...trade }
@@ -735,7 +738,7 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
           <div>
             <h3 className="text-xs font-semibold text-heading uppercase tracking-wider mb-3">Screenshots</h3>
             {trade ? (
-              <TradeScreenshots tradeId={trade.id} screenshots={trade.screenshots || []} onUpdate={() => {}} />
+              <TradeScreenshots tradeId={trade.id} screenshots={trade.screenshots || []} onUpdate={onScreenshotUpdate} />
             ) : (
               <div className="border border-dashed border-border rounded-lg p-6 text-center">
                 <p className="text-xs text-text-dim">Sla de trade eerst op om screenshots toe te voegen</p>

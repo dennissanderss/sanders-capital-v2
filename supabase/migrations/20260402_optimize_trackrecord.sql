@@ -1,4 +1,4 @@
--- Optimize trade_focus_records for V3 engine queries
+-- Optimize trade_focus_records for trackrecord queries
 -- Safe: only adds indexes (no data changes, no drops)
 
 -- Index for metadata->>source filter (used by trackrecord-v2 API)

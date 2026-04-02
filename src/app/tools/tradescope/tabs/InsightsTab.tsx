@@ -258,7 +258,7 @@ function generateInsights(trades: TsTrade[], strategies: TsStrategy[]): Insight[
     insights.push({
       type: 'weakness',
       title: 'Revenge trading patroon',
-      description: `${revengeTrades.length} revenge trades gevonden met totaal $${revPnl.toFixed(2)} P&L. Revenge trading is bijna altijd verliesgevend — pauzeer na een verlies.`,
+      description: `${revengeTrades.length} revenge trades gevonden met totaal $${revPnl.toFixed(2)} P&L. Revenge trading is bijna altijd verliesgevend. Pauzeer na een verlies.`,
       metric: `${revengeTrades.length}x`,
       priority: 9,
     })
