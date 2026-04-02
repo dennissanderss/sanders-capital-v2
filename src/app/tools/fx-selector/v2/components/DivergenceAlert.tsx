@@ -79,7 +79,7 @@ function DivergenceAlert({ divergences }: DivergenceAlertProps) {
           </div>
           <div className="flex items-start gap-2">
             <span className="text-purple-400 font-bold shrink-0">2.</span>
-            <p><strong className="text-text-muted">Koersrichting (3 dagen):</strong> we halen de koers op via Yahoo Finance en berekenen de procentuele verandering over de afgelopen 3 handelsdagen. Hiervoor gebruiken we EUR/USD, GBP/USD, USD/JPY en AUD/USD als proxy.</p>
+            <p><strong className="text-text-muted">Koersrichting (5 dagen):</strong> we halen de koers op via Yahoo Finance en berekenen de procentuele verandering over de afgelopen 5 handelsdagen. Hiervoor gebruiken we de 10 major paren.</p>
           </div>
           <div className="flex items-start gap-2">
             <span className="text-purple-400 font-bold shrink-0">3.</span>
