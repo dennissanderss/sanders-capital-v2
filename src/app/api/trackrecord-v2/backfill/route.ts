@@ -397,6 +397,7 @@ export async function POST(request: Request) {
 
     for (const date of dates) {
       // Currency scores for this date using HISTORICAL CB rates
+      // V2.6: NO simulated news — pure CB scoring for reliable backfill
       const ratesForDate = getRatesForDate(date)
       const currencyScores: Record<string, { total: number; base: number; newsBonus: number }> = {}
       for (const ccy of MAJORS) {
@@ -406,8 +407,7 @@ export async function POST(request: Request) {
           base += biasScore(rate.bias) * 2
           base += rateTargetScore(rate.rate, rate.target)
         }
-        const newsBonus = simulatedNewsBonus(date, ccy)
-        currencyScores[ccy] = { total: base + newsBonus, base, newsBonus }
+        currencyScores[ccy] = { total: base, base, newsBonus: 0 }
       }
 
       // Determine regime for this date
@@ -503,61 +503,29 @@ export async function POST(request: Request) {
         }
       }
 
-      // V2.3: Pick and diversify trade candidates
-      // Tier 1: score ≥ 3.0 (strong signals)
-      // Tier 2: score ≥ 2.0 (moderate signals, for diversification)
-      const tier1 = pairBiases
+      // V2.6: Score >= 3.0, regime-aligned preferred, diversified
+      const candidates = pairBiases
         .filter(p => (p.conviction === 'sterk' || p.conviction === 'matig') && Math.abs(p.score) >= 3.0)
-      const tier2 = pairBiases
-        .filter(p => Math.abs(p.score) >= 2.0 && p.direction !== 'neutraal' && !tier1.some(t => t.pair === p.pair))
 
-      // Diversify: max 2 pairs per currency, mix directions, max 5 total
-      const diversified: typeof tier1 = []
+      // Prefer regime-aligned trades, then fill with rest
+      const aligned = candidates.filter(p => {
+        const isBull = p.direction.includes('bullish')
+        return isAlignedWithRegime(p.baseCcy, p.quoteCcy, isBull, regime)
+      })
+      const nonAligned = candidates.filter(p => !aligned.includes(p))
+      const ordered = [...aligned, ...nonAligned]
+
+      // Diversify: max 2 pairs per currency, max 5 total
+      const diversified: typeof candidates = []
       const currencyCount: Record<string, number> = {}
-      const directionCount = { bullish: 0, bearish: 0 }
-
-      // First pass: tier 1 with diversification
-      for (const p of tier1) {
+      for (const p of ordered) {
         const baseCount = currencyCount[p.baseCcy] || 0
         const quoteCount = currencyCount[p.quoteCcy] || 0
         if (baseCount >= 2 && quoteCount >= 2) continue
-        if (baseCount >= 2 || quoteCount >= 2) {
-          if (Math.abs(p.score) < 3.5) continue
-        }
         diversified.push(p)
         currencyCount[p.baseCcy] = (currencyCount[p.baseCcy] || 0) + 1
         currencyCount[p.quoteCcy] = (currencyCount[p.quoteCcy] || 0) + 1
-        if (p.direction.includes('bullish')) directionCount.bullish++
-        else directionCount.bearish++
-        if (diversified.length >= 4) break
-      }
-
-      // Second pass: add tier 2 for balance (prefer opposite direction)
-      const needsLongs = directionCount.bullish === 0 && directionCount.bearish >= 2
-      const needsShorts = directionCount.bearish === 0 && directionCount.bullish >= 2
-      for (const p of tier2) {
         if (diversified.length >= 5) break
-        if (diversified.some(d => d.pair === p.pair)) continue
-        const baseCount = currencyCount[p.baseCcy] || 0
-        const quoteCount = currencyCount[p.quoteCcy] || 0
-        if (baseCount >= 2 && quoteCount >= 2) continue
-        // Prefer adding the underrepresented direction
-        if (needsLongs && !p.direction.includes('bullish')) continue
-        if (needsShorts && !p.direction.includes('bearish')) continue
-        diversified.push(p)
-        currencyCount[p.baseCcy] = (currencyCount[p.baseCcy] || 0) + 1
-        currencyCount[p.quoteCcy] = (currencyCount[p.quoteCcy] || 0) + 1
-        if (p.direction.includes('bullish')) directionCount.bullish++
-        else directionCount.bearish++
-      }
-
-      // Third pass: fill remaining slots from tier 2 regardless of direction
-      if (diversified.length < 3) {
-        for (const p of tier2) {
-          if (diversified.length >= 3) break
-          if (diversified.some(d => d.pair === p.pair)) continue
-          diversified.push(p)
-        }
       }
 
       if (diversified.length === 0) continue
@@ -567,22 +535,23 @@ export async function POST(request: Request) {
       for (const p of diversified) {
         const prices = historicalData[p.pair] || []
         const entryIdx = prices.findIndex(px => px.date === date)
-        // V2.2: Need at least 2 days before entry (for momentum check) and 2 days after (holding period)
+        // V2.6: Need 2 days before (momentum) and 2 days after (hold)
         if (entryIdx < 2 || entryIdx >= prices.length - 2) continue
 
-        // V2.2: MEAN REVERSION FILTER
-        // Only take the trade if 2-day price momentum OPPOSES the fundamental direction
-        // This means: fundamentals say bullish, but price has been falling → BUY the dip
-        //             fundamentals say bearish, but price has been rising → SELL the rally
+        // V2.6: MEAN REVERSION — 2-day hold
+        // Trade when 2-day price action OPPOSES fundamental direction
+        // Fundamentals bullish + price falling → BUY the dip
+        // Fundamentals bearish + price rising → SELL the rally
         const recentMomentum = prices[entryIdx].close - prices[entryIdx - 2].close
         const isBullishSignal = p.direction.includes('bullish')
+        const isBearishSignal = p.direction.includes('bearish')
         const isMeanReversion = (isBullishSignal && recentMomentum < 0) ||
-                                (!isBullishSignal && p.direction.includes('bearish') && recentMomentum > 0)
+                                (isBearishSignal && recentMomentum > 0)
 
-        if (!isMeanReversion) continue // Skip if no mean reversion opportunity
+        if (!isMeanReversion) continue
 
         const entryPrice = prices[entryIdx].close
-        // V2.2: 2-day holding period (was 1 day)
+        // 2-day holding period
         const exitPrice = prices[entryIdx + 2].close
         const exitDate = prices[entryIdx + 2].date
 
@@ -622,8 +591,8 @@ export async function POST(request: Request) {
             exitTime: `${exitDate}T16:00:00.000Z`,
             newsSimulated: true,
             holdingPeriod: 2,
-            meanReversion: true,
-            preMomentum: Math.round(recentMomentum * (p.pair.includes('JPY') ? 100 : 10000)),
+            meanReversion: false,
+            preMomentum: 0,
           },
         })
       }
@@ -648,9 +617,16 @@ export async function POST(request: Request) {
       }
     }
 
-    // 8. Stats
+    // 8. Stats with pips analysis
     const correctCount = deduped.filter(r => r.result === 'correct').length
     const totalCount = deduped.length
+    const totalPips = deduped.reduce((sum, r) => sum + ((r.pips_moved as number) || 0), 0)
+    const avgWinPips = correctCount > 0
+      ? Math.round(deduped.filter(r => r.result === 'correct').reduce((s, r) => s + ((r.pips_moved as number) || 0), 0) / correctCount)
+      : 0
+    const avgLossPips = (totalCount - correctCount) > 0
+      ? Math.round(deduped.filter(r => r.result === 'incorrect').reduce((s, r) => s + Math.abs((r.pips_moved as number) || 0), 0) / (totalCount - correctCount))
+      : 0
 
     return NextResponse.json({
       version: 'v2.6',
@@ -664,6 +640,10 @@ export async function POST(request: Request) {
         correct: correctCount,
         incorrect: totalCount - correctCount,
         winRate: totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0,
+        totalPips,
+        avgWinPips,
+        avgLossPips,
+        profitFactor: avgLossPips > 0 ? +(avgWinPips / avgLossPips).toFixed(2) : 0,
       },
       filters: {
         filteredByRegimeAlignment: filteredByRegime,
