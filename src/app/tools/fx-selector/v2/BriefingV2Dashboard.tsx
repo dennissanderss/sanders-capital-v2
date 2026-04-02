@@ -552,6 +552,16 @@ export default function BriefingV2Dashboard() {
 
   const rc = regimeColors[data?.regimeColor || 'gray']
 
+  const formatUpdateTime = (isoDate?: string) => {
+    if (!isoDate) return ''
+    try {
+      return new Date(isoDate).toLocaleString('nl-NL', {
+        hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam'
+      }) + ' NL'
+    } catch { return '' }
+  }
+  const lastUpdate = formatUpdateTime(data?.generatedAt)
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
       {/* ── Test Banner ── */}
@@ -644,6 +654,9 @@ export default function BriefingV2Dashboard() {
                       data.regime === 'USD Zwak' ? 'bg-amber-500' : 'bg-gray-500'
                     }`} />
                     <h2 className={`text-2xl font-display font-bold ${rc.text}`}>{data.regime}</h2>
+                    {lastUpdate && (
+                      <span className="text-[9px] text-text-dim/50 font-normal">Laatste update: {lastUpdate}</span>
+                    )}
                     {data.regimeSource === 'fundamenteel + intermarket' && (
                       <span className="text-[9px] px-2 py-0.5 rounded-full bg-accent/10 text-accent-light border border-accent/20 font-medium">
                         Intermarket bevestigd
@@ -1159,7 +1172,7 @@ export default function BriefingV2Dashboard() {
                   const ccyRank = data.currencyRanking.find(c => c.currency === expandedSentiment)
                   if (!s) return null
                   return (
-                    <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] animate-in fade-in duration-200">
+                    <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] transition-all duration-200">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-xs font-semibold text-heading">{expandedSentiment} — Nieuws Sentiment Detail</p>
                         <button onClick={() => setExpandedSentiment(null)} className="text-text-dim hover:text-heading">
@@ -1172,12 +1185,28 @@ export default function BriefingV2Dashboard() {
                           <span className={`font-mono font-bold ${s.score > 0 ? 'text-green-400' : s.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                             {s.score > 0 ? '+' : ''}{s.score}
                           </span>
-                          <span className="text-text-dim/60">→</span>
+                          <span className="text-text-dim/60">&rarr;</span>
                           <span className="text-text-muted">{s.sentiment}</span>
                         </div>
+                        {ccyRank && (
+                          <div className="flex items-center gap-3 text-[11px]">
+                            <span className="text-text-dim">CB basis score:</span>
+                            <span className="font-mono font-bold text-heading">{ccyRank.baseScore > 0 ? '+' : ''}{ccyRank.baseScore.toFixed(1)}</span>
+                            <span className="text-text-dim/60">+</span>
+                            <span className="text-text-dim">nieuws bonus:</span>
+                            <span className={`font-mono font-bold ${ccyRank.newsBonus > 0 ? 'text-green-400' : ccyRank.newsBonus < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                              {ccyRank.newsBonus > 0 ? '+' : ''}{ccyRank.newsBonus.toFixed(1)}
+                            </span>
+                            <span className="text-text-dim/60">=</span>
+                            <span className="text-text-dim">totaal:</span>
+                            <span className={`font-mono font-bold ${ccyRank.score > 0 ? 'text-green-400' : ccyRank.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                              {ccyRank.score > 0 ? '+' : ''}{ccyRank.score.toFixed(1)}
+                            </span>
+                          </div>
+                        )}
                         {ccyRank && ccyRank.newsBonus !== 0 && (
                           <div className="flex items-center gap-3 text-[11px]">
-                            <span className="text-text-dim">Toegepaste bonus (max &plusmn;1.5):</span>
+                            <span className="text-text-dim">Toegepaste bonus (max &plusmn;2.0):</span>
                             <span className={`font-mono font-bold ${ccyRank.newsBonus > 0 ? 'text-green-400' : 'text-red-400'}`}>
                               {ccyRank.newsBonus > 0 ? '+' : ''}{ccyRank.newsBonus.toFixed(1)}
                             </span>
@@ -1193,9 +1222,22 @@ export default function BriefingV2Dashboard() {
                             ))}
                           </div>
                         )}
+                        {/* Empty state: no headlines */}
+                        {s.headlines.length === 0 && (
+                          <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-[10px] text-text-muted leading-relaxed">
+                              <strong className="text-heading">Geen recente headlines gevonden</strong> voor {expandedSentiment} in de afgelopen 72 uur
+                              die een duidelijk hawkish of bearish signaal bevatten.
+                            </p>
+                            <p className="text-[10px] text-text-dim mt-1 leading-relaxed">
+                              Dit betekent dat de score voor {expandedSentiment} volledig op CB-beleid en rente is gebaseerd.
+                              Het nieuws versterkt noch verzwakt de fundamentele bias op dit moment.
+                            </p>
+                          </div>
+                        )}
                         <p className="text-[9px] text-text-dim/60 leading-relaxed">
                           De score wordt berekend op basis van bullish/bearish keywords in recente nieuwsartikelen,
-                          gewogen naar relevantie en hoe recent het artikel is. De bonus wordt gecapt op &plusmn;1.5 om ruis te beperken.
+                          gewogen naar relevantie en hoe recent het artikel is. De bonus wordt gecapt op &plusmn;2.0 om ruis te beperken.
                         </p>
                       </div>
                     </div>
@@ -1292,7 +1334,7 @@ export default function BriefingV2Dashboard() {
                         <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
                           <p className="text-[10px] text-accent-light font-semibold mb-1">Begrenzing</p>
                           <p className="text-[10px] text-text-dim leading-relaxed">
-                            Het nieuws-effect is begrensd op maximaal +-1.5 punten per valuta. Dit voorkomt dat een enkele nieuwsgolf de fundamentele analyse volledig overstemt. CB beleid blijft altijd de basis.
+                            Het nieuws-effect is begrensd op maximaal +-2.0 punten per valuta. Dit voorkomt dat een enkele nieuwsgolf de fundamentele analyse volledig overstemt. CB beleid blijft altijd de basis.
                           </p>
                         </div>
                       </div>
@@ -1342,6 +1384,12 @@ export default function BriefingV2Dashboard() {
 
             <div className="rounded-2xl border border-border bg-bg-card overflow-hidden">
               <div className="px-5 sm:px-6 py-4">
+                {lastUpdate && (
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[9px] text-text-dim/50">Laatste update: {lastUpdate}</span>
+                    <span className="text-[9px] text-text-dim/40">Koersen via Yahoo Finance · Cache: 5 minuten · Ververs de pagina voor actuele data</span>
+                  </div>
+                )}
                 {/* Signal Pills Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-4">
                   {data.intermarketSignals.map(signal => (
@@ -1566,11 +1614,18 @@ export default function BriefingV2Dashboard() {
               STAP 4: TRADE FOCUS
               ════════════════════════════════════════════════════════ */}
           <section className="mb-2">
-            <StepHeader
-              step={4}
-              title="Trade Focus"
-              subtitle="De concrete output: top paren met richting, overtuiging en score."
-            />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-accent/15 border border-accent/30 text-accent-light text-sm font-bold shrink-0">
+                4
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-display font-semibold text-heading leading-tight">Trade Focus</h2>
+                  {lastUpdate && <span className="text-[9px] text-text-dim/50 font-normal ml-auto">Laatste update: {lastUpdate}</span>}
+                </div>
+                <p className="text-[11px] text-text-dim">De concrete output: top paren met richting, overtuiging en score.</p>
+              </div>
+            </div>
 
             {(tradeFocus.length > 0 || watchlist.length > 0) ? (
               <div className="space-y-4">
@@ -1870,7 +1925,7 @@ export default function BriefingV2Dashboard() {
                     </div>
 
                     <p>
-                      <strong className="text-text-muted">Elke valuta krijgt een score</strong> op basis van: (1) het beleid van de centrale bank (hawkish = positief, dovish = negatief), (2) de huidige rente t.o.v. het target, en (3) recent nieuws sentiment (max &plusmn;1.5 bonus).
+                      <strong className="text-text-muted">Elke valuta krijgt een score</strong> op basis van: (1) het beleid van de centrale bank (hawkish = positief, dovish = negatief), (2) de huidige rente t.o.v. het target, en (3) recent nieuws sentiment (max &plusmn;2.0 bonus).
                     </p>
 
                     <div className="grid grid-cols-3 gap-2">
@@ -2015,11 +2070,18 @@ export default function BriefingV2Dashboard() {
               STAP 5: TRACKRECORD
               ════════════════════════════════════════════════════════ */}
           <section className="mb-8">
-            <StepHeader
-              step={5}
-              title="Trackrecord"
-              subtitle="Historische prestaties van het model. Hoe accuraat zijn de trade focus suggesties?"
-            />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-accent/15 border border-accent/30 text-accent-light text-sm font-bold shrink-0">
+                5
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-display font-semibold text-heading leading-tight">Trackrecord</h2>
+                  {lastUpdate && <span className="text-[9px] text-text-dim/50 font-normal ml-auto">Laatste update: {lastUpdate}</span>}
+                </div>
+                <p className="text-[11px] text-text-dim">Historische prestaties van het model. Hoe accuraat zijn de trade focus suggesties?</p>
+              </div>
+            </div>
 
             <div className="rounded-2xl border border-border bg-bg-card overflow-hidden">
               <button
@@ -2280,7 +2342,7 @@ export default function BriefingV2Dashboard() {
                         </div>
                         <p>
                           Een trade is &quot;correct&quot; als de prijs in de verwachte richting bewoog (LONG = prijs steeg, SHORT = prijs daalde).
-                          Scores zijn een combinatie van CB beleid (basis) + nieuws sentiment (bonus, max &plusmn;1.5), gefilterd door intermarket confirmatie.
+                          Scores zijn een combinatie van CB beleid (basis) + nieuws sentiment (bonus, max &plusmn;2.0), gefilterd door intermarket confirmatie.
                         </p>
                       </div>
                     </div>
