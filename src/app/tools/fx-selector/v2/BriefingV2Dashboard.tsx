@@ -5,6 +5,7 @@ import Link from 'next/link'
 import SummaryBar from './components/SummaryBar'
 import DivergenceAlert from './components/DivergenceAlert'
 import ConfluenceMeter from './components/ConfluenceMeter'
+import { formatCET, flagEmoji, timeAgo, timeAgoDutch, getIntermarketConclusion } from './utils'
 
 // ─── Types ──────────────────────────────────────────────────
 interface CurrencyRank {
@@ -198,79 +199,7 @@ interface TrackStats {
   }
 }
 
-// ─── Helpers ────────────────────────────────────────────────
-function formatCET(isoStr: string | undefined): string {
-  if (!isoStr) return ''
-  try {
-    return new Date(isoStr).toLocaleString('nl-NL', {
-      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-      timeZone: 'Europe/Amsterdam',
-    }) + ' NL'
-  } catch { return '' }
-}
-
-function flagEmoji(code: string) {
-  if (!code || code.length !== 2) return ''
-  return code.toUpperCase().split('').map(c => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65)).join('')
-}
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-  if (minutes < 60) return `${minutes}m`
-  if (hours < 24) return `${hours}u`
-  return `${Math.floor(hours / 24)}d`
-}
-
-function timeAgoDutch(isoDate: string): string {
-  const diff = Date.now() - new Date(isoDate).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins} min geleden`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours} uur geleden`
-  const days = Math.floor(hours / 24)
-  return `${days} dag${days > 1 ? 'en' : ''} geleden`
-}
-
-function getIntermarketConclusion(signals: IntermarketSignal[], regime: string): { text: string; sentiment: string; confirmsRegime: boolean } {
-  const get = (key: string) => signals.find(s => s.key === key)
-  const vix = get('vix')
-  const sp = get('sp500')
-  const gold = get('gold')
-  const yields = get('us10y')
-
-  const riskOnSignals: string[] = []
-  const riskOffSignals: string[] = []
-
-  if (sp?.direction === 'up') riskOnSignals.push('S&P 500 stijgt')
-  if (sp?.direction === 'down') riskOffSignals.push('S&P 500 daalt')
-  if (vix?.direction === 'down') riskOnSignals.push('VIX daalt')
-  if (vix?.direction === 'up') riskOffSignals.push('VIX stijgt')
-  if (vix?.current && vix.current > 25) riskOffSignals.push(`VIX hoog (${vix.current})`)
-  if (gold?.direction === 'up') riskOffSignals.push('Goud stijgt')
-  if (gold?.direction === 'down') riskOnSignals.push('Goud daalt')
-  if (yields?.direction === 'up') riskOffSignals.push('Yields stijgen')
-  if (yields?.direction === 'down') riskOnSignals.push('Yields dalen')
-
-  const isRiskOff = riskOffSignals.length >= 3
-  const isRiskOn = riskOnSignals.length >= 3
-
-  const confirmsRegime =
-    (regime === 'Risk-Off' && isRiskOff) ||
-    (regime === 'Risk-On' && isRiskOn) ||
-    (regime === 'USD Dominant' && (yields?.direction === 'up' || riskOffSignals.length >= 2)) ||
-    (regime === 'USD Zwak' && (yields?.direction === 'down' || riskOnSignals.length >= 2))
-
-  if (isRiskOff) {
-    return { sentiment: 'risk-off', confirmsRegime, text: `Risk-Off: ${riskOffSignals.join(', ')}.` }
-  }
-  if (isRiskOn) {
-    return { sentiment: 'risk-on', confirmsRegime, text: `Risk-On: ${riskOnSignals.join(', ')}.` }
-  }
-
-  return { sentiment: 'mixed', confirmsRegime: false, text: `Gemengd: ${[...riskOnSignals, ...riskOffSignals].join(', ')}.` }
-}
+// ─── Helpers imported from ./utils ──────────────────────────
 
 function buildTradeFocusItem(pair: PairBias, events: TodayEvent[], ranking: CurrencyRank[]) {
   const isBullish = pair.direction.includes('bullish')

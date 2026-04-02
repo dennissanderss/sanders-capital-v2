@@ -9,6 +9,10 @@
     {
       "path": "/api/cron/trackrecord",
       "schedule": "0 21 * * 1-5"
+    },
+    {
+      "path": "/api/cron/cb-snapshot",
+      "schedule": "0 6 1 * *"
     }
   ]
 }

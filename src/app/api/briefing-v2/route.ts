@@ -655,7 +655,7 @@ export async function GET() {
       ;(pair as any).confluence = { factors: confluenceFactors, score: confluenceScore, total: 4 }
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       version: 'v2.5',
       regime,
       regimeExplain,
@@ -690,6 +690,8 @@ export async function GET() {
       generatedAt: new Date().toISOString(),
       date: todayStr,
     })
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+    return response
   } catch (e) {
     console.error('Briefing V2 API error:', e)
     return NextResponse.json({ error: String(e) }, { status: 500 })

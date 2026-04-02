@@ -1,6 +1,7 @@
-// ─── V2.3 Track Record Backfill API ─────────────────────────
-// Backfills up to 180 days of historical v2 records using
-// CB rates + simulated news bonus + V2.3 scoring logic:
+// ─── V2.6 Track Record Backfill API ─────────────────────────
+// Backfills up to 365 days of historical v2 records using
+// HISTORICAL CB rate snapshots + simulated news bonus:
+//   - Uses cb_rate_snapshots table for period-correct rates
 //   - Regime determination (safe-haven vs high-yield)
 //   - Regime alignment check (pair direction must match regime)
 //   - Cross-pair contradiction filter
@@ -10,15 +11,11 @@
 //     2-day price action OPPOSES fundamental direction
 //   - 2-day holding period
 //   - Score threshold ≥3.0 (sterk + matig)
-//   - **NEW V2.3**: 21 pairs (11 new cross pairs)
-//   - **NEW V2.3**: Intermarket regime override (VIX + S&P)
-//   - **NEW V2.3**: Magnitude-weighted intermarket alignment
-//   - **NEW V2.3**: Top 5 pairs (was 3) with pair diversification (max 2 per currency)
-//   - **NEW V2.3**: DXY in intermarket data
-//   - **NEW V2.3**: Yahoo rate limiting + User-Agent header
+//   - 21 pairs, top 5 selection, max 2 per currency
+//   - Magnitude-weighted intermarket alignment
 //
 // DELETE: Clears all v2 backfill records (newsSimulated = true)
-// POST:   Backfills with new filters
+// POST:   Backfills with historical CB snapshots
 // ────────────────────────────────────────────────────────────
 
 import { createClient } from '@supabase/supabase-js'
@@ -96,7 +93,7 @@ function rateTargetScore(rate: number | null, target: number | null): number {
 async function fetchHistoricalPrices(symbol: string, days: number): Promise<{ date: string; close: number }[]> {
   try {
     const res = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${days <= 95 ? `${days + 5}d` : '1y'}`,
+      `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${days <= 95 ? `${days + 5}d` : days <= 365 ? '1y' : '2y'}`,
       {
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
         next: { revalidate: 0 }
@@ -290,11 +287,11 @@ export async function DELETE() {
   }
 }
 
-// ─── POST: Backfill v2.1 track record ─────────────────────
+// ─── POST: Backfill v2.6 track record (with historical CB snapshots) ──
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}))
-    const days = Math.min(body.days || 90, 180)
+    const days = Math.min(body.days || 365, 365)
     const hasMetadata = await checkMetadataColumn()
 
     if (!hasMetadata) {
@@ -304,35 +301,62 @@ export async function POST(request: Request) {
       }, { status: 400 })
     }
 
-    // 1. Fetch CB rates
+    // 1. Fetch ALL CB rate snapshots (historical monthly data)
+    const { data: snapshots, error: snapError } = await supabase
+      .from('cb_rate_snapshots')
+      .select('snapshot_date, currency, rate, target, bias, bank')
+      .order('snapshot_date', { ascending: true })
+
+    // Group snapshots by date for quick lookup
+    const snapshotsByDate: Record<string, Record<string, { bank: string; rate: number; target: number | null; bias: string }>> = {}
+    for (const s of snapshots || []) {
+      const dateKey = s.snapshot_date
+      if (!snapshotsByDate[dateKey]) snapshotsByDate[dateKey] = {}
+      snapshotsByDate[dateKey][s.currency] = { bank: s.bank, rate: s.rate, target: s.target, bias: s.bias }
+    }
+    const snapshotDates = Object.keys(snapshotsByDate).sort()
+
+    // Also fetch current rates as fallback
     const { data: cbRates } = await supabase
       .from('central_bank_rates')
       .select('currency, bank, rate, target, bias')
 
-    const ratesMap: Record<string, { bank: string; rate: number; target: number | null; bias: string }> = {}
+    const currentRatesMap: Record<string, { bank: string; rate: number; target: number | null; bias: string }> = {}
     for (const r of cbRates || []) {
-      ratesMap[r.currency] = { bank: r.bank, rate: r.rate, target: r.target, bias: r.bias }
+      currentRatesMap[r.currency] = { bank: r.bank, rate: r.rate, target: r.target, bias: r.bias }
     }
 
-    // 2. Base currency scores (CB-based)
-    const baseCurrencyScores: Record<string, number> = {}
-    for (const ccy of MAJORS) {
-      const rate = ratesMap[ccy]
-      let score = 0
-      if (rate) {
-        score += biasScore(rate.bias) * 2
-        score += rateTargetScore(rate.rate, rate.target)
+    const hasSnapshots = snapshotDates.length > 0
+
+    // Helper: get the CB rates that were in effect for a given date
+    // Uses the most recent snapshot on or before that date
+    function getRatesForDate(dateStr: string): Record<string, { bank: string; rate: number; target: number | null; bias: string }> {
+      if (!hasSnapshots) return currentRatesMap
+
+      // Find the latest snapshot_date <= dateStr
+      let bestDate = ''
+      for (const sd of snapshotDates) {
+        if (sd <= dateStr) bestDate = sd
+        else break
       }
-      baseCurrencyScores[ccy] = score
+
+      if (bestDate && snapshotsByDate[bestDate]) {
+        return snapshotsByDate[bestDate]
+      }
+      // If date is before all snapshots, use earliest snapshot
+      if (snapshotDates.length > 0) {
+        return snapshotsByDate[snapshotDates[0]]
+      }
+      return currentRatesMap
     }
 
-    // 3. Date range
+    // 2. Date range
     const today = new Date().toISOString().split('T')[0]
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
     const startDateStr = startDate.toISOString().split('T')[0]
 
-    // 4. Existing records check
+    // 3. Existing records check
     const { data: existingRecords } = await supabase
       .from('trade_focus_records')
       .select('date, pair')
@@ -372,10 +396,16 @@ export async function POST(request: Request) {
     let filteredByIntermarket = 0
 
     for (const date of dates) {
-      // Currency scores for this date
+      // Currency scores for this date using HISTORICAL CB rates
+      const ratesForDate = getRatesForDate(date)
       const currencyScores: Record<string, { total: number; base: number; newsBonus: number }> = {}
       for (const ccy of MAJORS) {
-        const base = baseCurrencyScores[ccy]
+        const rate = ratesForDate[ccy]
+        let base = 0
+        if (rate) {
+          base += biasScore(rate.bias) * 2
+          base += rateTargetScore(rate.rate, rate.target)
+        }
         const newsBonus = simulatedNewsBonus(date, ccy)
         currencyScores[ccy] = { total: base + newsBonus, base, newsBonus }
       }
@@ -581,7 +611,7 @@ export async function POST(request: Request) {
           resolved_at: new Date().toISOString(),
           metadata: {
             source: 'v2' as const,
-            version: 'v2.5',
+            version: 'v2.6',
             scoreWithoutNews: p.scoreWithoutNews,
             newsInfluence: p.newsInfluence,
             confidence: simulatedConfidence,
@@ -623,10 +653,12 @@ export async function POST(request: Request) {
     const totalCount = deduped.length
 
     return NextResponse.json({
-      version: 'v2.5',
-      message: `Backfilled ${deduped.length} v2.3 records over ${days} days`,
+      version: 'v2.6',
+      message: `Backfilled ${deduped.length} v2.6 records over ${days} days`,
       records: deduped.length,
       skippedExisting: existingKeys.size,
+      hasHistoricalSnapshots: hasSnapshots,
+      snapshotPeriods: snapshotDates.length,
       stats: {
         total: totalCount,
         correct: correctCount,
@@ -639,7 +671,9 @@ export async function POST(request: Request) {
         filteredByContradiction: filteredByContradiction,
         totalFiltered: filteredByRegime + filteredByIntermarket + filteredByContradiction,
       },
-      note: 'V2.3 backfill with intermarket regime override, magnitude-weighted alignment, 21 pairs, top 5 selection.',
+      note: hasSnapshots
+        ? `V2.6 backfill met historische CB snapshots (${snapshotDates.length} periodes). Rates veranderen per maand.`
+        : 'V2.6 backfill ZONDER historische snapshots — gebruikt huidige rates. Maak eerst snapshots aan.',
     })
   } catch (e) {
     return NextResponse.json({ error: String(e), version: 'v2' }, { status: 500 })

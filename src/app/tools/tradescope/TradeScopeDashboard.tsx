@@ -10,18 +10,20 @@ import { useAccounts } from './hooks/useAccounts'
 import { useStrategies } from './hooks/useStrategies'
 import { useSetups } from './hooks/useSetups'
 import { dbTradeToAnalytics, type TradeFilters, type TradescopeTab } from './types'
-import DashboardTab from './tabs/DashboardTab'
-import AnalyticsTab from './tabs/AnalyticsTab'
-import StrategyTesterTab from './tabs/StrategyTesterTab'
-import OptimizationTab from './tabs/OptimizationTab'
-import JournalTab from './tabs/JournalTab'
-import AccountsTab from './tabs/AccountsTab'
-import ImportTab from './tabs/ImportTab'
-import RoutinesTab from './tabs/RoutinesTab'
-import StrategyAnalysisTab from './tabs/StrategyAnalysisTab'
-import PsychologyTab from './tabs/PsychologyTab'
-import InsightsTab from './tabs/InsightsTab'
-import PlaybookTab from './tabs/PlaybookTab'
+import dynamic from 'next/dynamic'
+
+const DashboardTab = dynamic(() => import('./tabs/DashboardTab'), { ssr: false })
+const AnalyticsTab = dynamic(() => import('./tabs/AnalyticsTab'), { ssr: false })
+const StrategyTesterTab = dynamic(() => import('./tabs/StrategyTesterTab'), { ssr: false })
+const OptimizationTab = dynamic(() => import('./tabs/OptimizationTab'), { ssr: false })
+const JournalTab = dynamic(() => import('./tabs/JournalTab'), { ssr: false })
+const AccountsTab = dynamic(() => import('./tabs/AccountsTab'), { ssr: false })
+const ImportTab = dynamic(() => import('./tabs/ImportTab'), { ssr: false })
+const RoutinesTab = dynamic(() => import('./tabs/RoutinesTab'), { ssr: false })
+const StrategyAnalysisTab = dynamic(() => import('./tabs/StrategyAnalysisTab'), { ssr: false })
+const PsychologyTab = dynamic(() => import('./tabs/PsychologyTab'), { ssr: false })
+const InsightsTab = dynamic(() => import('./tabs/InsightsTab'), { ssr: false })
+const PlaybookTab = dynamic(() => import('./tabs/PlaybookTab'), { ssr: false })
 
 const tabs: { id: TradescopeTab; label: string; icon: React.ReactNode }[] = [
   {
