@@ -299,7 +299,7 @@ export default function DailyBriefingIntroPage() {
                 </svg>
               </span>
               <h2 className="text-xl sm:text-2xl font-display font-bold text-heading">
-                Mean Reversion — de kern van het model
+                Mean Reversion: de kern van het model
               </h2>
             </div>
             <p className="text-sm text-text-muted leading-relaxed mb-6">
@@ -311,7 +311,7 @@ export default function DailyBriefingIntroPage() {
 
             {/* Visual diagram */}
             <div className="flex flex-col items-center mb-6">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-text-dim font-medium mb-4">Visueel voorbeeld — Contrarian Mean Reversion</p>
+              <p className="text-[10px] uppercase tracking-[0.15em] text-text-dim font-medium mb-4">Visueel voorbeeld: Contrarian Mean Reversion</p>
               <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
                 <div className="p-3 sm:p-4 rounded-xl bg-green-500/10 border border-green-500/15 text-center min-w-[90px]">
                   <p className="text-[10px] text-text-dim mb-1">Fundamenteel</p>
@@ -335,7 +335,7 @@ export default function DailyBriefingIntroPage() {
 
             {/* Optimizer results */}
             <div className="rounded-xl bg-purple-500/[0.06] border border-purple-500/15 p-4 mb-6">
-              <p className="text-[10px] font-semibold text-purple-400/80 uppercase tracking-wider mb-2">Optimizer resultaten — 1.260 configuraties getest</p>
+              <p className="text-[10px] font-semibold text-purple-400/80 uppercase tracking-wider mb-2">Optimizer resultaten: 1.260 configuraties getest</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="text-center">
                   <p className="text-lg font-bold text-heading font-mono">56%</p>
@@ -360,7 +360,7 @@ export default function DailyBriefingIntroPage() {
               <p>
                 <strong className="text-heading">Gedachtegang:</strong> De 7-factor score bepaalt de fundamentele richting van een valuta.
                 Als de prijs de afgelopen 5 dagen tegen die richting ingaat, is dat een <em>reversal-kans</em>.
-                Je koopt niet wanneer iedereen al koopt — je koopt wanneer de markt een dip maakt.
+                Je koopt niet wanneer iedereen al koopt. Je koopt wanneer de markt een dip maakt.
               </p>
               <p>
                 <strong className="text-heading">Waarom werkt dit?</strong> Optimalisatie over 1.260 configuraties (momentum, contrarian, lookback 2-5d, hold 1-2d, 3 scoring modellen)

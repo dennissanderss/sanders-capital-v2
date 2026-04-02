@@ -75,19 +75,19 @@ function DivergenceAlert({ divergences }: DivergenceAlertProps) {
         <div className="mt-2 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] text-[10px] text-text-dim leading-relaxed space-y-2">
           <div className="flex items-start gap-2">
             <span className="text-purple-400 font-bold shrink-0">1.</span>
-            <p><strong className="text-text-muted">Fundamentele richting</strong> — elke valuta krijgt een score op basis van centraal bank beleid (hawkish/dovish) en de rente t.o.v. het doel. Score &gt; +1.0 = bullish, &lt; -1.0 = bearish.</p>
+            <p><strong className="text-text-muted">Fundamentele richting:</strong> elke valuta krijgt een score op basis van centraal bank beleid (hawkish/dovish) en de rente t.o.v. het doel. Score &gt; +1.0 = bullish, &lt; -1.0 = bearish.</p>
           </div>
           <div className="flex items-start gap-2">
             <span className="text-purple-400 font-bold shrink-0">2.</span>
-            <p><strong className="text-text-muted">Koersrichting (3 dagen)</strong> — we halen de koers op via Yahoo Finance en berekenen de procentuele verandering over de afgelopen 3 handelsdagen. Hiervoor gebruiken we EUR/USD, GBP/USD, USD/JPY en AUD/USD als proxy.</p>
+            <p><strong className="text-text-muted">Koersrichting (3 dagen):</strong> we halen de koers op via Yahoo Finance en berekenen de procentuele verandering over de afgelopen 3 handelsdagen. Hiervoor gebruiken we EUR/USD, GBP/USD, USD/JPY en AUD/USD als proxy.</p>
           </div>
           <div className="flex items-start gap-2">
             <span className="text-purple-400 font-bold shrink-0">3.</span>
-            <p><strong className="text-text-muted">Divergentie check</strong> — als de fundamentele richting bullish is maar de prijs daalt (of andersom), is er een divergentie. De koers beweegt tegen de &quot;logische&quot; richting in.</p>
+            <p><strong className="text-text-muted">Divergentie check:</strong> als de fundamentele richting bullish is maar de prijs daalt (of andersom), is er een divergentie. De koers beweegt tegen de &quot;logische&quot; richting in.</p>
           </div>
           <div className="flex items-start gap-2">
             <span className="text-purple-400 font-bold shrink-0">4.</span>
-            <p><strong className="text-text-muted">Mean reversion signaal</strong> — historisch keert de prijs vaak terug naar de fundamentele waarde. Een divergentie is daarom een potentieel instappunt: de markt heeft &quot;overreact&quot; en een correctie wordt waarschijnlijker.</p>
+            <p><strong className="text-text-muted">Mean reversion signaal:</strong> historisch keert de prijs vaak terug naar de fundamentele waarde. Een divergentie is daarom een potentieel instappunt: de markt heeft &quot;overreact&quot; en een correctie wordt waarschijnlijker.</p>
           </div>
         </div>
       </details>

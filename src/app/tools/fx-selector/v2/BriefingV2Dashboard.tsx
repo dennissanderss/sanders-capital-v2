@@ -295,7 +295,7 @@ const INTERMARKET_HOW_TO_READ: Record<string, { summary: string; detail: string;
   },
   vix: {
     summary: 'De VIX (Fear Index) meet de verwachte volatiliteit van de S&P 500 over de komende 30 dagen.',
-    detail: 'De VIX wordt berekend uit optieprijzen. Een hoge VIX betekent dat beleggers veel betalen voor bescherming tegen koersdalingen — ze zijn bang. Een lage VIX betekent rust. Belangrijk: de VIX is mean-reverting. Na een piek keert hij altijd terug naar gemiddeld niveau. Extremen zijn daarom ook potentiële keerpunten.',
+    detail: 'De VIX wordt berekend uit optieprijzen. Een hoge VIX betekent dat beleggers veel betalen voor bescherming tegen koersdalingen, ze zijn bang. Een lage VIX betekent rust. Belangrijk: de VIX is mean-reverting. Na een piek keert hij altijd terug naar gemiddeld niveau. Extremen zijn daarom ook potentiële keerpunten.',
     levels: 'Onder 15 = markt is kalm, risk-on. 15-20 = normaal. 20-25 = verhoogde stress. 25-30 = angst, risk-off. Boven 30 = paniek (zeldzaam, grote kans op snap-back rally).',
     fxImpact: 'VIX stijgt → JPY en CHF sterker, AUD en NZD zwakker. VIX daalt → omgekeerd. VIX boven 25 versterkt het risk-off signaal significant.',
   },
@@ -689,7 +689,7 @@ export default function BriefingV2Dashboard() {
                   {showConfidenceBreakdown && (
                     <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
                       <p className="text-[10px] text-text-dim mb-3 leading-relaxed">
-                        De regime confidence geeft aan hoe duidelijk het centraal bank beeld is. Dit is puur gebaseerd op de spread tussen de sterkste en zwakste valuta — hoe groter het verschil, hoe duidelijker het regime.
+                        De regime confidence geeft aan hoe duidelijk het centraal bank beeld is. Dit is puur gebaseerd op de spread tussen de sterkste en zwakste valuta. Hoe groter het verschil, hoe duidelijker het regime.
                       </p>
                       {/* Breakdown bars */}
                       {(() => {
@@ -798,7 +798,7 @@ export default function BriefingV2Dashboard() {
                     return (
                       <div key={ccy.currency} className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] transition-all duration-200">
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs font-semibold text-heading">{ccy.currency} — Score Opbouw</p>
+                          <p className="text-xs font-semibold text-heading">{ccy.currency}: Score Opbouw</p>
                           <button onClick={(e) => { e.stopPropagation(); setExpandedCurrency(null) }} className="text-text-dim hover:text-heading p-1">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                           </button>
@@ -1046,7 +1046,7 @@ export default function BriefingV2Dashboard() {
                   return (
                     <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] transition-all duration-200">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold text-heading">{expandedSentiment} — Nieuws Sentiment Detail</p>
+                        <p className="text-xs font-semibold text-heading">{expandedSentiment}: Nieuws Sentiment Detail</p>
                         <button onClick={() => setExpandedSentiment(null)} className="text-text-dim hover:text-heading">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                         </button>
@@ -1761,7 +1761,7 @@ export default function BriefingV2Dashboard() {
                     </div>
                     <div className="px-4 py-2 bg-white/[0.01] border-t border-white/[0.04]">
                       <p className="text-[9px] text-text-dim leading-relaxed">
-                        <strong className="text-text-dim/80">Wat doe je hiermee?</strong> Watchlist-paren hebben een score van 2.0-3.0 — er is een fundamentele bias, maar niet sterk genoeg voor een trade call.
+                        <strong className="text-text-dim/80">Wat doe je hiermee?</strong> Watchlist-paren hebben een score van 2.0-3.0. Er is een fundamentele bias, maar niet sterk genoeg voor een trade call.
                         Hou ze in de gaten: als het nieuws of de intermarket signalen versterken, kunnen ze naar de Trade Focus promoveren. Ze zijn ook nuttig als bevestiging van het bredere regime.
                       </p>
                     </div>

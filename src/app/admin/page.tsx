@@ -595,7 +595,7 @@ export default function AdminPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
-                { name: 'Rentetarieven & CB Bias', desc: 'Rente, target, bias en laatste actie per centrale bank. Update via Claude na elk CB besluit. Dit is de primaire input voor de V3 engine — CB factor weegt het zwaarst.', tab: 'rentes' },
+                { name: 'Rentetarieven & CB Bias', desc: 'Rente, target, bias en laatste actie per centrale bank. Update via Claude na elk CB besluit. Dit is de primaire input voor het model. CB factor weegt het zwaarst.', tab: 'rentes' },
                 { name: 'Artikelen & Blog', desc: 'Blog posts schrijven, publiceren en premium content beheren.', tab: 'articles' },
                 { name: 'Kennisbank content', desc: 'Educatieve artikelen en documenten per categorie.', tab: 'kennisbank' },
                 { name: 'Tool instellingen', desc: 'Premium/gratis status en zichtbaarheid van tools.', tab: 'tools' },
@@ -680,7 +680,7 @@ export default function AdminPage() {
               </svg>
               Terugkerende taken
             </h2>
-            <p className="text-xs text-text-dim mb-3">Taken worden automatisch gereset na hun periode. Vink af als voltooid — ze komen terug.</p>
+            <p className="text-xs text-text-dim mb-3">Taken worden automatisch gereset na hun periode. Vink af als voltooid, ze komen terug.</p>
             <div className="space-y-2">
               {[
                 { id: 'cb_rates', task: 'Rentetarieven updaten via Claude', freq: 'Na elk CB besluit', resetDays: 30, priority: 'hoog', desc: 'Vraag Claude om rente, target, bias en laatste actie bij te werken na een centraal bank besluit. De data in Rentes tab wordt via het admin panel aangepast.', tab: 'rentes' },
@@ -1224,7 +1224,7 @@ export default function AdminPage() {
               />
               {uploadingDocs && <span className="text-xs text-text-dim animate-pulse">Uploaden...</span>}
             </div>
-            <p className="text-xs text-text-dim mt-1">PDF, Word, Excel, PowerPoint, ZIP — lezers kunnen deze downloaden op de pagina</p>
+            <p className="text-xs text-text-dim mt-1">PDF, Word, Excel, PowerPoint, ZIP. Lezers kunnen deze downloaden op de pagina</p>
           </div>
 
           <div>
