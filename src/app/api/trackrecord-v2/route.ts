@@ -174,10 +174,11 @@ export async function POST() {
     if (hasMetadata) {
       const { data: pendingRecords } = await supabase
         .from('trade_focus_records')
-        .select('*')
+        .select('id, date, pair, direction, entry_price, metadata')
         .eq('result', 'pending')
         .eq('metadata->>source', 'v2')
         .lt('date', today)
+        .limit(50)
 
       if (pendingRecords && pendingRecords.length > 0) {
         for (const record of pendingRecords) {

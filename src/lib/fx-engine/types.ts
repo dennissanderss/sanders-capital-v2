@@ -57,7 +57,7 @@ export type Tradeability = 'tradeable' | 'conditional' | 'not_tradeable'
 export interface TradeabilityResult {
   status: Tradeability
   reasons: string[]
-  extensionWarning: boolean  // 3d move > 1.5x 20d ATR
+  extensionWarning: boolean  // 5d move > 1.5x 20d ATR
   eventRisk: boolean         // High-impact event within 24h
   conflictingIM: boolean     // Intermarket contradicts fundamental bias
 }
@@ -93,9 +93,9 @@ export interface PairSignal {
   priceMomentum: {
     direction: 'up' | 'down' | 'flat'
     pips1d: number
-    pips3d: number
+    pips5d: number
     atr20d: number
-    extensionRatio: number   // abs(3d move) / ATR
+    extensionRatio: number   // abs(5d move) / ATR
   }
 }
 

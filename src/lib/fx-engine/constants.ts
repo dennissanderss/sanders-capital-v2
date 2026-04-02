@@ -183,9 +183,9 @@ export const THRESHOLDS = {
   moderateSignal: 2.0,    // "matig" conviction
   weakSignal: 0.5,        // "licht" conviction — below this = no_trade
 
-  // Mean reversion: extension ratio thresholds
-  mrEntryExtension: 1.2,  // 3d move > 1.2x ATR = potential MR
-  mrDangerExtension: 2.0, // 3d move > 2.0x ATR = too extended, wait
+  // Mean reversion: extension ratio thresholds (5d lookback)
+  mrEntryExtension: 1.2,  // 5d move > 1.2x ATR = potential MR
+  mrDangerExtension: 2.0, // 5d move > 2.0x ATR = too extended, wait
 
   // Tradeability
   extensionWarning: 1.5,  // ATR ratio for extension warning

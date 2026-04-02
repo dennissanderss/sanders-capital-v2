@@ -6,7 +6,7 @@
 //   - Pair-specific intermarket weights
 //   - 5-category signal output (trend, mean-reversion, no-trade)
 //   - Tradeability filter (extension, event risk, IM conflict)
-//   - 1-day holding period
+//   - 3-day holding period (optimizer optimal)
 //
 // DELETE: Clears all v2/v3 backfill records
 // POST:   Backfills with v3 engine
@@ -279,14 +279,16 @@ export async function POST(request: Request) {
         if (!symbol) continue
         const prices = priceHistory[symbol] || []
         const entryIdx = prices.findIndex(px => px.date === date)
-        if (entryIdx < 0 || entryIdx >= prices.length - 1) continue
+        if (entryIdx < 0 || entryIdx >= prices.length - 3) continue
 
         const key = `${date}-${sig.pair}`
         if (existingKeys.has(key)) continue
 
         const entryPrice = prices[entryIdx].close
-        const exitPrice = prices[entryIdx + 1].close
-        const exitDate = prices[entryIdx + 1].date
+        // 3-day hold (optimizer optimal: lb5d hold3d = 68% winrate)
+        const exitIdx = Math.min(entryIdx + 3, prices.length - 1)
+        const exitPrice = prices[exitIdx].close
+        const exitDate = prices[exitIdx].date
 
         const priceDiff = exitPrice - entryPrice
         const isJpy = sig.pair.includes('JPY')
@@ -332,7 +334,7 @@ export async function POST(request: Request) {
             entryTime: `${date}T16:00:00.000Z`,
             exitTime: `${exitDate}T16:00:00.000Z`,
             newsSimulated: true,
-            holdingPeriod: 1,
+            holdingPeriod: 3,
             meanReversion: isMR,
           },
         })

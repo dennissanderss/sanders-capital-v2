@@ -154,7 +154,7 @@ interface BriefingV2Data {
   v3?: {
     regime: { macro: string; sub: string; confidence: number; drivers: string[]; color: string }
     currencyScores: { currency: string; factors: Record<string, number>; weightedTotal: number; rawTotal: number; rank: number; reasons: string[] }[]
-    pairSignals: { pair: string; signal: string; conviction: number; score: number; tradeability: { status: string; reasons: string[] }; intermarket: { pair: string; alignment: number; signals: { instrument: string; direction: string; strength: number; relevance: string }[] }; reasons: string[]; priceMomentum: { direction: string; pips1d: number; pips3d: number; atr20d: number; extensionRatio: number } }[]
+    pairSignals: { pair: string; signal: string; conviction: number; score: number; tradeability: { status: string; reasons: string[] }; intermarket: { pair: string; alignment: number; signals: { instrument: string; direction: string; strength: number; relevance: string }[] }; reasons: string[]; priceMomentum: { direction: string; pips1d: number; pips5d: number; atr20d: number; extensionRatio: number } }[]
     tradeFocus: { pair: string; signal: string; conviction: number; score: number; tradeability: string; reasons: string[] }[]
     metadata: { version: string; timestamp: string; subRegime: string; signalCount: { tradeable: number; conditional: number; noTrade: number } }
   } | null

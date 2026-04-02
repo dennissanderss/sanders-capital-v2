@@ -1,10 +1,11 @@
 // ─── FX Edge Extraction Engine v3 — Tradeability Filter ──
 // Determines if a pair signal is tradeable based on:
-// 1. Price extension (3d move vs 20d ATR)
+// 1. Price extension (5d move vs 20d ATR)
 // 2. Event risk (high-impact event within 24h)
 // 3. Conflicting intermarket signals
 // 4. Minimum conviction threshold
 //
+// Lookback: 5 days (optimizer optimal), Hold: 3 days
 // Output: tradeable | conditional | not_tradeable
 // ──────────────────────────────────────────────────────────
 
@@ -17,7 +18,7 @@ import { THRESHOLDS, PIP_MULTIPLIER } from './constants'
 interface PriceMomentum {
   direction: 'up' | 'down' | 'flat'
   pips1d: number
-  pips3d: number
+  pips5d: number
   atr20d: number
   extensionRatio: number
 }
@@ -29,7 +30,7 @@ export function calculatePriceMomentum(
   const mult = PIP_MULTIPLIER[pair] || 10000
 
   if (history.length < 21) {
-    return { direction: 'flat', pips1d: 0, pips3d: 0, atr20d: 0, extensionRatio: 0 }
+    return { direction: 'flat', pips1d: 0, pips5d: 0, atr20d: 0, extensionRatio: 0 }
   }
 
   const recent = history.slice(-21)
@@ -39,9 +40,9 @@ export function calculatePriceMomentum(
   const prev1d = recent[recent.length - 2].close
   const pips1d = Math.round((last - prev1d) * mult)
 
-  // 3d move
-  const prev3d = recent.length >= 4 ? recent[recent.length - 4].close : prev1d
-  const pips3d = Math.round((last - prev3d) * mult)
+  // 5d move (optimizer optimal lookback)
+  const prev5d = recent.length >= 6 ? recent[recent.length - 6].close : prev1d
+  const pips5d = Math.round((last - prev5d) * mult)
 
   // 20d ATR (average true range approximation using daily ranges)
   let atrSum = 0
@@ -50,12 +51,13 @@ export function calculatePriceMomentum(
   }
   const atr20d = Math.round(atrSum / (recent.length - 1))
 
-  const extensionRatio = atr20d > 0 ? Math.round(Math.abs(pips3d) / atr20d * 100) / 100 : 0
+  const extensionRatio = atr20d > 0 ? Math.round(Math.abs(pips5d) / atr20d * 100) / 100 : 0
 
+  // Direction based on 5d lookback (contrarian signal window)
   const direction: 'up' | 'down' | 'flat' =
-    pips1d > 5 ? 'up' : pips1d < -5 ? 'down' : 'flat'
+    pips5d > 10 ? 'up' : pips5d < -10 ? 'down' : 'flat'
 
-  return { direction, pips1d, pips3d, atr20d, extensionRatio }
+  return { direction, pips1d, pips5d, atr20d, extensionRatio }
 }
 
 export function assessTradeability(
@@ -74,7 +76,7 @@ export function assessTradeability(
   const extensionWarning = momentum.extensionRatio > THRESHOLDS.extensionWarning
   if (extensionWarning) {
     warnings++
-    reasons.push(`Prijs overextended (${momentum.extensionRatio.toFixed(1)}x ATR in 3d)`)
+    reasons.push(`Prijs overextended (${momentum.extensionRatio.toFixed(1)}x ATR in 5d)`)
   }
   if (momentum.extensionRatio > THRESHOLDS.mrDangerExtension) {
     blockers++
