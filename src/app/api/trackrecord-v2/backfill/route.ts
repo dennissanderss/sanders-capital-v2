@@ -270,8 +270,13 @@ export async function POST(request: Request) {
         },
       })
 
-      // Extract trade focus (top signals)
-      const tradeFocus = extractTradeFocus(engineResult.pairSignals, 5, 2)
+      // Extract trade focus — ONLY contrarian/mean reversion signals
+      // Optimizer proved: contrarian lb5d hold3d = 68% winrate (346 trades)
+      // Trend signals (49% win) dilute the edge — exclude from trackrecord
+      const mrSignals = engineResult.pairSignals.filter(s =>
+        s.signal === 'bullish_mean_reversion' || s.signal === 'bearish_mean_reversion'
+      )
+      const tradeFocus = extractTradeFocus(mrSignals, 5, 2)
       if (tradeFocus.length === 0) continue
 
       for (const sig of tradeFocus) {

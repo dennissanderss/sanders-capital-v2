@@ -249,11 +249,20 @@ export async function POST() {
     }
     const briefing = await briefRes.json()
 
-    // 4. Get top pairs -- only "sterk" conviction for higher accuracy
-    const strong = (briefing.pairBiases || []).filter(
-      (p: { conviction: string }) => p.conviction === 'sterk'
+    // 4. Get top pairs — ONLY mean reversion (contrarian) signals from V3 engine
+    // Optimizer proved: contrarian lb5d hold3d = 68% winrate
+    const v3Signals = briefing.v3?.pairSignals || []
+    const mrSignals = v3Signals.filter(
+      (s: { signal: string; tradeability?: { status: string } }) =>
+        (s.signal === 'bullish_mean_reversion' || s.signal === 'bearish_mean_reversion') &&
+        s.tradeability?.status !== 'not_tradeable'
     )
-    const top = strong.slice(0, 3)
+    // Fallback to old v2 pairBiases if no v3 data
+    const top = mrSignals.length > 0
+      ? mrSignals.slice(0, 5)
+      : (briefing.pairBiases || []).filter(
+          (p: { conviction: string }) => p.conviction === 'sterk'
+        ).slice(0, 3)
 
     // 5. Collect news headlines from the briefing
     const allNewsHeadlines: string[] = (briefing.topNews || [])
