@@ -54,8 +54,10 @@ export function calculatePriceMomentum(
   const extensionRatio = atr20d > 0 ? Math.round(Math.abs(pips5d) / atr20d * 100) / 100 : 0
 
   // Direction based on 5d lookback (contrarian signal window)
+  // Threshold relative to ATR for pair-agnostic comparison
+  const dirThreshold = Math.max(5, Math.round(atr20d * 0.3))
   const direction: 'up' | 'down' | 'flat' =
-    pips5d > 10 ? 'up' : pips5d < -10 ? 'down' : 'flat'
+    pips5d > dirThreshold ? 'up' : pips5d < -dirThreshold ? 'down' : 'flat'
 
   return { direction, pips1d, pips5d, atr20d, extensionRatio }
 }
