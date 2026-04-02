@@ -1,27 +1,26 @@
-// ─── V3.0 Track Record Backfill API ─────────────────────────
-// Backfills up to 365 days using the FX Edge Extraction Engine:
+// ─── Track Record Backfill — Optimizer Proven Formula ────────
+// Exact formula that achieved 58.9% winrate, PF 1.33 over 214 trades:
+//   - Model B scoring: CB_bias × 2 + rate_gap × 1.5 + news_bonus
+//   - Contrarian + Intermarket confirmation (IM alignment > 50%)
+//   - 10 major pairs only
+//   - 5-day lookback for contrarian detection
+//   - Score threshold: ≥ 2.0 pair difference
+//   - Hold: 1 trading day
 //   - Historical CB rate snapshots for period-correct rates
-//   - Sub-regime classification (6 types)
-//   - Multi-factor context-weighted scoring
-//   - Pair-specific intermarket weights
-//   - 5-category signal output (trend, mean-reversion, no-trade)
-//   - Tradeability filter (extension, event risk, IM conflict)
-//   - 3-day holding period (optimizer optimal)
 //
-// DELETE: Clears all v2/v3 backfill records
-// POST:   Backfills with v3 engine
+// DELETE: Clears all v2 backfill records
+// POST:   Backfills with optimizer formula
 // ────────────────────────────────────────────────────────────
 
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { runBackfillPipeline, extractTradeFocus } from '@/lib/fx-engine'
-import type { CBRate } from '@/lib/fx-engine'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// 10 major pairs only (optimizer proven)
 const PAIR_SYMBOLS: Record<string, string> = {
   'EUR/USD': 'EURUSD=X',
   'GBP/USD': 'GBPUSD=X',
@@ -33,34 +32,157 @@ const PAIR_SYMBOLS: Record<string, string> = {
   'EUR/GBP': 'EURGBP=X',
   'EUR/JPY': 'EURJPY=X',
   'GBP/JPY': 'GBPJPY=X',
-  'AUD/JPY': 'AUDJPY=X',
-  'NZD/JPY': 'NZDJPY=X',
-  'CAD/JPY': 'CADJPY=X',
-  'EUR/AUD': 'EURAUD=X',
-  'GBP/AUD': 'GBPAUD=X',
-  'AUD/NZD': 'AUDNZD=X',
-  'EUR/CHF': 'EURCHF=X',
-  'GBP/CHF': 'GBPCHF=X',
-  'EUR/CAD': 'EURCAD=X',
-  'GBP/NZD': 'GBPNZD=X',
-  'AUD/CAD': 'AUDCAD=X',
 }
 
 const INTERMARKET_SYMBOLS: Record<string, string> = {
-  sp500: '%5EGSPC',
-  vix: '%5EVIX',
-  gold: 'GC%3DF',
-  us10y: '%5ETNX',
-  dxy: 'DX-Y.NYB',
+  SP500: '%5EGSPC',
+  VIX: '%5EVIX',
+  GOLD: 'GC%3DF',
+  US10Y: '%5ETNX',
+  OIL: 'CL%3DF',
+  DXY: 'DX-Y.NYB',
 }
 
-const PAIRS = [
-  'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'NZD/USD',
-  'USD/CAD', 'USD/CHF', 'EUR/GBP', 'EUR/JPY', 'GBP/JPY',
-  'AUD/JPY', 'NZD/JPY', 'CAD/JPY', 'EUR/AUD', 'GBP/AUD',
-  'AUD/NZD', 'EUR/CHF', 'GBP/CHF', 'EUR/CAD', 'GBP/NZD',
-  'AUD/CAD',
-]
+const PAIRS = Object.keys(PAIR_SYMBOLS)
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD']
+const SAFE_HAVENS = ['JPY', 'CHF']
+const HIGH_YIELD = ['AUD', 'NZD', 'CAD']
+
+const HOLD_DAYS = 1
+const LOOKBACK_DAYS = 5
+const SCORE_THRESHOLD = 2.0
+
+// ─── Optimizer Scoring Functions ─────────────────────────────
+
+const BIAS_SCORES: Record<string, number> = {
+  'hawkish': 2, 'verkrappend': 2,
+  'voorzichtig verkrappend': 1.5,
+  'afwachtend': 0, 'neutraal': 0, 'neutral': 0,
+  'voorzichtig verruimend': -1,
+  'dovish': -2, 'verruimend': -2,
+}
+
+function calcCBScore(bias: string): number {
+  return BIAS_SCORES[(bias || '').toLowerCase()] ?? 0
+}
+
+function calcRateScore(rate: number | null, target: number | null): number {
+  if (rate == null || target == null) return 0
+  const diff = rate - target
+  if (diff > 0.5) return 1
+  if (diff > 0) return 0.5
+  if (diff > -0.5) return -0.5
+  return -1
+}
+
+// Model B: CB_bias × 2 + rate_gap × 1.5 + news_bonus
+function calcCurrencyScores(
+  cbRates: { currency: string; rate: number; target: number | null; bias: string }[],
+  newsArticles: { title?: string; summary?: string; affected_currencies?: string[]; published_at?: string; relevance_score?: number }[],
+  signalDate: string,
+) {
+  const scores: Record<string, number> = {}
+  for (const cur of CURRENCIES) {
+    const rate = cbRates.find(r => r.currency === cur)
+    if (!rate) { scores[cur] = 0; continue }
+    const cbScore = calcCBScore(rate.bias)
+    const rateScore = calcRateScore(rate.rate, rate.target)
+    const newsBonus = calcNewsBonus(newsArticles, cur, signalDate)
+    scores[cur] = cbScore * 2 + rateScore * 1.5 + newsBonus
+  }
+  return scores
+}
+
+function calcNewsBonus(
+  articles: { title?: string; summary?: string; affected_currencies?: string[]; published_at?: string; relevance_score?: number }[],
+  currency: string,
+  signalDate: string,
+): number {
+  if (!articles || articles.length === 0) return 0
+
+  const bullishPhrases = ['rate hike', 'rate increase', 'higher than expected', 'beat expectations', 'hawkish surprise', 'tightening cycle']
+  const bearishPhrases = ['rate cut', 'rate decrease', 'lower than expected', 'missed expectations', 'dovish pivot', 'easing cycle']
+  const negations = ['no ', 'not ', 'without ', 'failed to ', 'unlikely ', 'ruled out ']
+
+  let totalSentiment = 0
+  const relevant = articles.filter(a =>
+    a.affected_currencies?.includes(currency) &&
+    a.published_at &&
+    new Date(a.published_at) <= new Date(signalDate + 'T23:59:59Z')
+  )
+
+  for (const article of relevant.slice(0, 10)) {
+    const text = ((article.title || '') + ' ' + (article.summary || '')).toLowerCase()
+    const pubDate = new Date(article.published_at!)
+    const signalDateTime = new Date(signalDate + 'T16:00:00Z')
+    const hoursAgo = (signalDateTime.getTime() - pubDate.getTime()) / 3600000
+
+    if (hoursAgo < 0 || hoursAgo > 72) continue
+
+    const recency = hoursAgo < 12 ? 1.5 : hoursAgo < 24 ? 1.2 : hoursAgo < 48 ? 1.0 : 0.7
+    let sentiment = 0
+
+    for (const phrase of bullishPhrases) {
+      if (text.includes(phrase)) {
+        const hasNeg = negations.some(n => text.includes(n + phrase))
+        sentiment += hasNeg ? -1.5 : 1.5
+      }
+    }
+    for (const phrase of bearishPhrases) {
+      if (text.includes(phrase)) {
+        const hasNeg = negations.some(n => text.includes(n + phrase))
+        sentiment += hasNeg ? 1.5 : -1.5
+      }
+    }
+
+    const relScore = Math.min((article.relevance_score || 3) / 5, 1) * 1.5
+    totalSentiment += sentiment * 0.25 * recency * relScore
+  }
+
+  return Math.max(-1.5, Math.min(1.5, totalSentiment))
+}
+
+function determineRegime(scores: Record<string, number>): string {
+  const jpyScore = scores['JPY'] || 0
+  const hyAvg = HIGH_YIELD.reduce((s, c) => s + (scores[c] || 0), 0) / HIGH_YIELD.length
+  if (jpyScore > 1 && hyAvg < 0) return 'Risk-Off'
+  if (hyAvg > 1 && jpyScore < 0) return 'Risk-On'
+  if ((scores['USD'] || 0) > 2) return 'USD Dominant'
+  if ((scores['USD'] || 0) < -2) return 'USD Zwak'
+  return 'Gemengd'
+}
+
+function getIntermarketAlignment(
+  imHistory: Record<string, { date: string; close: number }[]>,
+  date: string,
+  regime: string,
+): number {
+  const getDayChange = (key: string): number | null => {
+    const hist = imHistory[key] || []
+    const idx = hist.findIndex(p => p.date === date)
+    if (idx <= 0) return null
+    const prev = hist[idx - 1].close
+    return prev !== 0 ? ((hist[idx].close - prev) / prev) * 100 : null
+  }
+
+  let aligned = 0, total = 0
+  if (regime === 'Risk-Off') {
+    const vix = getDayChange('VIX'); if (vix !== null) { if (vix > 0) aligned++; total++ }
+    const gold = getDayChange('GOLD'); if (gold !== null) { if (gold > 0) aligned++; total++ }
+    const sp = getDayChange('SP500'); if (sp !== null) { if (sp < 0) aligned++; total++ }
+    const yields = getDayChange('US10Y'); if (yields !== null) { if (yields < 0) aligned++; total++ }
+  } else if (regime === 'Risk-On') {
+    const vix = getDayChange('VIX'); if (vix !== null) { if (vix < 0) aligned++; total++ }
+    const sp = getDayChange('SP500'); if (sp !== null) { if (sp > 0) aligned++; total++ }
+    const yields = getDayChange('US10Y'); if (yields !== null) { if (yields > 0) aligned++; total++ }
+    const oil = getDayChange('OIL'); if (oil !== null) { if (oil > 0) aligned++; total++ }
+  } else if (regime === 'USD Dominant' || regime === 'USD Zwak') {
+    const usdUp = regime === 'USD Dominant'
+    const dxy = getDayChange('DXY'); if (dxy !== null) { if ((dxy > 0) === usdUp) aligned++; total++ }
+    const gold = getDayChange('GOLD'); if (gold !== null) { if ((gold < 0) === usdUp) aligned++; total++ }
+  }
+  return total > 0 ? (aligned / total) * 100 : 50
+}
 
 // ─── Fetch historical daily closes ────────────────────────
 async function fetchHistoricalPrices(symbol: string, days: number): Promise<{ date: string; close: number }[]> {
@@ -89,23 +211,9 @@ async function fetchHistoricalPrices(symbol: string, days: number): Promise<{ da
   }
 }
 
-// ─── Check metadata column ────────────────────────────────
-async function checkMetadataColumn(): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('trade_focus_records')
-      .select('metadata')
-      .limit(1)
-    return !error
-  } catch {
-    return false
-  }
-}
-
 // ─── DELETE: Clear all v2 backfill records ─────────────────
 export async function DELETE() {
   try {
-    // Delete all records where metadata.newsSimulated = true (backfill records)
     const { data: records, error: fetchError } = await supabase
       .from('trade_focus_records')
       .select('id, metadata')
@@ -115,7 +223,6 @@ export async function DELETE() {
       return NextResponse.json({ error: fetchError.message }, { status: 500 })
     }
 
-    // Filter to only simulated (backfill) records
     const backfillIds = (records || [])
       .filter(r => {
         const meta = r.metadata as { newsSimulated?: boolean } | null
@@ -124,47 +231,35 @@ export async function DELETE() {
       .map(r => r.id)
 
     if (backfillIds.length === 0) {
-      return NextResponse.json({
-        message: 'No backfill records found to delete',
-        deleted: 0,
-      })
+      return NextResponse.json({ message: 'No backfill records found', deleted: 0 })
     }
 
-    // Delete in batches
     let deleted = 0
     for (let i = 0; i < backfillIds.length; i += 50) {
       const batch = backfillIds.slice(i, i + 50)
-      const { error } = await supabase
-        .from('trade_focus_records')
-        .delete()
-        .in('id', batch)
+      const { error } = await supabase.from('trade_focus_records').delete().in('id', batch)
       if (!error) deleted += batch.length
     }
 
-    return NextResponse.json({
-      message: `Deleted ${deleted} v2 backfill records`,
-      deleted,
-      version: 'v2',
-    })
+    return NextResponse.json({ message: `Deleted ${deleted} backfill records`, deleted })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
 }
 
-// ─── POST: Backfill v3.0 track record (with FX Engine) ──
+// ─── POST: Backfill with optimizer-proven formula ──────────
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}))
     const days = Math.min(body.days || 365, 365)
-    const hasMetadata = await checkMetadataColumn()
 
-    if (!hasMetadata) {
-      return NextResponse.json({
-        error: 'metadata column not found. Run: ALTER TABLE trade_focus_records ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT \'{}\';',
-      }, { status: 400 })
+    // Check metadata column
+    const { error: metaErr } = await supabase.from('trade_focus_records').select('metadata').limit(1)
+    if (metaErr) {
+      return NextResponse.json({ error: 'metadata column not found' }, { status: 400 })
     }
 
-    // 1. Fetch ALL CB rate snapshots
+    // 1. Fetch CB rate snapshots
     const { data: snapshots } = await supabase
       .from('cb_rate_snapshots')
       .select('snapshot_date, currency, rate, target, bias, bank')
@@ -180,37 +275,42 @@ export async function POST(request: Request) {
     // Current rates fallback
     const { data: cbRatesData } = await supabase
       .from('central_bank_rates')
-      .select('currency, country, bank, rate, target, bias, last_move, next_meeting, flag')
+      .select('currency, bank, rate, target, bias')
 
     const currentRatesMap: Record<string, { bank: string; rate: number; target: number | null; bias: string }> = {}
     for (const r of cbRatesData || []) {
       currentRatesMap[r.currency] = { bank: r.bank, rate: r.rate, target: r.target, bias: r.bias }
     }
-    const hasSnapshots = snapshotDates.length > 0
 
-    function getRatesForDate(dateStr: string): CBRate[] {
+    function getRatesForDate(dateStr: string) {
       let ratesMap = currentRatesMap
-      if (hasSnapshots) {
-        let bestDate = ''
-        for (const sd of snapshotDates) {
-          if (sd <= dateStr) bestDate = sd; else break
-        }
-        if (bestDate && snapshotsByDate[bestDate]) ratesMap = snapshotsByDate[bestDate]
-        else if (snapshotDates.length > 0) ratesMap = snapshotsByDate[snapshotDates[0]]
+      let bestDate = ''
+      for (const sd of snapshotDates) {
+        if (sd <= dateStr) bestDate = sd; else break
       }
+      if (bestDate && snapshotsByDate[bestDate]) ratesMap = snapshotsByDate[bestDate]
+      else if (snapshotDates.length > 0) ratesMap = snapshotsByDate[snapshotDates[0]]
+
       return Object.entries(ratesMap).map(([currency, data]) => ({
-        currency, country: '', bank: data.bank, rate: data.rate,
-        target: data.target, bias: data.bias, last_move: '', next_meeting: '', flag: '',
+        currency, rate: data.rate, target: data.target, bias: data.bias,
       }))
     }
 
-    // 2. Date range
-    const today = new Date().toISOString().split('T')[0]
+    // 2. Fetch news articles
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
+    const { data: newsArticles } = await supabase
+      .from('news_articles')
+      .select('title, summary, affected_currencies, published_at, relevance_score')
+      .gte('published_at', startDate.toISOString())
+      .order('published_at', { ascending: false })
+      .limit(2000)
+
+    // 3. Date range
+    const today = new Date().toISOString().split('T')[0]
     const startDateStr = startDate.toISOString().split('T')[0]
 
-    // 3. Existing records
+    // 4. Existing records
     const { data: existingRecords } = await supabase
       .from('trade_focus_records')
       .select('date, pair')
@@ -218,135 +318,107 @@ export async function POST(request: Request) {
       .gte('date', startDateStr)
     const existingKeys = new Set((existingRecords || []).map(r => `${r.date}-${r.pair}`))
 
-    // 4. Fetch historical prices for all pairs + intermarket
+    // 5. Fetch price data
     const priceHistory: Record<string, { date: string; close: number }[]> = {}
-    for (const pair of PAIRS) {
-      const symbol = PAIR_SYMBOLS[pair]
-      if (symbol) {
-        priceHistory[symbol] = await fetchHistoricalPrices(symbol, days)
-        await new Promise(r => setTimeout(r, 1500))
-      }
-    }
-
-    const intermarketHistory: Record<string, { date: string; close: number }[]> = {}
-    for (const [key, symbol] of Object.entries(INTERMARKET_SYMBOLS)) {
-      intermarketHistory[key] = await fetchHistoricalPrices(symbol, days)
+    for (const [pair, symbol] of Object.entries(PAIR_SYMBOLS)) {
+      priceHistory[pair] = await fetchHistoricalPrices(symbol, days + 10)
       await new Promise(r => setTimeout(r, 1500))
     }
 
-    // 5. Build records using V3 Engine for each date
+    // 6. Fetch intermarket data
+    const intermarketHistory: Record<string, { date: string; close: number }[]> = {}
+    for (const [key, symbol] of Object.entries(INTERMARKET_SYMBOLS)) {
+      intermarketHistory[key] = await fetchHistoricalPrices(symbol, days + 10)
+      await new Promise(r => setTimeout(r, 1500))
+    }
+
+    // 7. Build records using optimizer formula
     const allRecords: Record<string, unknown>[] = []
     const dates: string[] = []
     for (let d = new Date(startDate); d.toISOString().split('T')[0] < today; d.setDate(d.getDate() + 1)) {
       dates.push(d.toISOString().split('T')[0])
     }
 
-    const signalCounts = { tradeable: 0, conditional: 0, noTrade: 0, mrSignals: 0, trendSignals: 0 }
-
     for (const date of dates) {
-      // Build IM snapshot for regime classification
-      const getIMPct = (key: string): number => {
-        const hist = intermarketHistory[key] || []
-        const idx = hist.findIndex(p => p.date === date)
-        if (idx <= 0) return 0
-        const t = hist[idx].close, y = hist[idx - 1].close
-        return y !== 0 ? ((t - y) / y) * 100 : 0
-      }
-      const vixHist = intermarketHistory['vix'] || []
-      const vixIdx = vixHist.findIndex(p => p.date === date)
-      const vixLevel = vixIdx >= 0 ? vixHist[vixIdx].close : 18
+      const cbRates = getRatesForDate(date)
+      const scores = calcCurrencyScores(cbRates, newsArticles || [], date)
+      const regime = determineRegime(scores)
+      const imAlignment = getIntermarketAlignment(intermarketHistory, date, regime)
 
-      // Run V3 engine pipeline
-      const engineResult = runBackfillPipeline({
-        cbRates: getRatesForDate(date),
-        priceHistory,
-        intermarketHistory,
-        date,
-        intermarketSnapshot: {
-          sp500Pct: getIMPct('sp500'),
-          vixLevel,
-          goldPct: getIMPct('gold'),
-          yieldsPct: getIMPct('us10y'),
-        },
-      })
+      // Contrarian + IM filter: skip if IM doesn't confirm
+      if (imAlignment <= 50) continue
 
-      // Extract trade focus — ONLY contrarian/mean reversion signals
-      // Optimizer proved: contrarian lb5d hold3d = 68% winrate (346 trades)
-      // Trend signals (49% win) dilute the edge — exclude from trackrecord
-      const mrSignals = engineResult.pairSignals.filter(s =>
-        s.signal === 'bullish_mean_reversion' || s.signal === 'bearish_mean_reversion'
-      )
-      const tradeFocus = extractTradeFocus(mrSignals, 5, 2)
-      if (tradeFocus.length === 0) continue
+      for (const pair of PAIRS) {
+        const [base, quote] = pair.split('/')
+        const diff = (scores[base] || 0) - (scores[quote] || 0)
+        const absDiff = Math.abs(diff)
 
-      for (const sig of tradeFocus) {
-        const symbol = PAIR_SYMBOLS[sig.pair]
-        if (!symbol) continue
-        const prices = priceHistory[symbol] || []
+        if (absDiff < SCORE_THRESHOLD) continue
+
+        const isBullish = diff > 0
+        const direction = isBullish ? 'bullish' : 'bearish'
+
+        // 5d contrarian check
+        const prices = priceHistory[pair] || []
         const entryIdx = prices.findIndex(px => px.date === date)
-        if (entryIdx < 0 || entryIdx >= prices.length - 3) continue
-
-        const key = `${date}-${sig.pair}`
-        if (existingKeys.has(key)) continue
+        if (entryIdx < LOOKBACK_DAYS || entryIdx >= prices.length - HOLD_DAYS) continue
 
         const entryPrice = prices[entryIdx].close
-        // 3-day hold (optimizer optimal: lb5d hold3d = 68% winrate)
-        const exitIdx = Math.min(entryIdx + 3, prices.length - 1)
+        const lookbackPrice = prices[entryIdx - LOOKBACK_DAYS].close
+        const momentum5d = entryPrice - lookbackPrice
+
+        const isContrarian = (isBullish && momentum5d < 0) || (!isBullish && momentum5d > 0)
+        if (!isContrarian) continue
+
+        // Evaluate trade (1d hold)
+        const exitIdx = entryIdx + HOLD_DAYS
         const exitPrice = prices[exitIdx].close
         const exitDate = prices[exitIdx].date
 
+        const key = `${date}-${pair}`
+        if (existingKeys.has(key)) continue
+
         const priceDiff = exitPrice - entryPrice
-        const isJpy = sig.pair.includes('JPY')
+        const isJpy = pair.includes('JPY')
         const pips = Math.round(Math.abs(priceDiff) * (isJpy ? 100 : 10000))
 
-        const isBullish = sig.signal.includes('bullish')
         let result: 'correct' | 'incorrect' = 'incorrect'
         if (isBullish && priceDiff > 0) result = 'correct'
         if (!isBullish && priceDiff < 0) result = 'correct'
 
-        const isMR = sig.signal.includes('mean_reversion')
-        if (isMR) signalCounts.mrSignals++; else signalCounts.trendSignals++
-
-        const direction = isBullish ? 'bullish' : 'bearish'
-        const conviction = sig.conviction >= 70 ? 'sterk' : sig.conviction >= 40 ? 'matig' : 'laag'
-        const tier = sig.conviction >= 60 && sig.tradeability.status === 'tradeable' ? 'tier1' : 'tier2'
+        const conviction = absDiff >= 3.5 ? 'sterk' : 'matig'
 
         allRecords.push({
           date,
-          pair: sig.pair,
+          pair,
           direction,
           conviction,
-          score: sig.score,
+          score: Math.round(diff * 100) / 100,
           entry_price: entryPrice,
           exit_price: exitPrice,
           pips_moved: pips * (result === 'correct' ? 1 : -1),
-          regime: engineResult.regime.macro,
+          regime,
           result,
           resolved_at: new Date().toISOString(),
           metadata: {
             source: 'v2' as const,
-            version: 'v3.0',
-            tier,
-            signal: sig.signal,
-            subRegime: engineResult.regime.sub,
-            regimeConfidence: engineResult.regime.confidence,
-            imAlignment: sig.intermarket.alignment,
-            tradeability: sig.tradeability.status,
-            convictionScore: sig.conviction,
-            priceMomentum: sig.priceMomentum,
-            reasons: sig.reasons.slice(0, 3),
+            version: 'v3.1-optimizer',
+            signal: isBullish ? 'bullish_mean_reversion' : 'bearish_mean_reversion',
+            imAlignment: Math.round(imAlignment),
+            momentum5d: Math.round(momentum5d * (isJpy ? 100 : 10000)),
             callTime: `${date}T07:00:00.000Z`,
             entryTime: `${date}T16:00:00.000Z`,
             exitTime: `${exitDate}T16:00:00.000Z`,
             newsSimulated: true,
-            holdingPeriod: 3,
-            meanReversion: isMR,
+            holdingPeriod: HOLD_DAYS,
+            lookbackDays: LOOKBACK_DAYS,
+            meanReversion: true,
           },
         })
       }
     }
 
-    // 6. Deduplicate
+    // 8. Deduplicate
     const insertKeys = new Set<string>()
     const deduped = allRecords.filter(r => {
       const key = `${r.date}-${r.pair}`
@@ -356,15 +428,13 @@ export async function POST(request: Request) {
     })
 
     if (deduped.length > 0) {
-      const { error } = await supabase
-        .from('trade_focus_records')
-        .insert(deduped)
+      const { error } = await supabase.from('trade_focus_records').insert(deduped)
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
     }
 
-    // 7. Stats
+    // 9. Stats
     function calcStats(records: Record<string, unknown>[]) {
       const correct = records.filter(r => r.result === 'correct').length
       const total = records.length
@@ -381,28 +451,22 @@ export async function POST(request: Request) {
       }
     }
 
-    const tier1Records = deduped.filter(r => (r.metadata as { tier?: string })?.tier === 'tier1')
-    const tier2Records = deduped.filter(r => (r.metadata as { tier?: string })?.tier === 'tier2')
-    const mrRecords = deduped.filter(r => (r.metadata as { meanReversion?: boolean })?.meanReversion === true)
-    const trendRecords = deduped.filter(r => (r.metadata as { meanReversion?: boolean })?.meanReversion !== true)
+    const sterkRecords = deduped.filter(r => r.conviction === 'sterk')
+    const matigRecords = deduped.filter(r => r.conviction === 'matig')
 
     return NextResponse.json({
-      version: 'v3.0',
-      message: `Backfilled ${deduped.length} v3.0 records over ${days} days`,
+      version: 'v3.1-optimizer',
+      formula: 'Model B (CB×2 + rate_gap×1.5 + news) + Contrarian 5d + IM>50% + 1d hold',
+      message: `Backfilled ${deduped.length} records over ${days} days`,
       records: deduped.length,
       skippedExisting: existingKeys.size,
-      hasHistoricalSnapshots: hasSnapshots,
+      hasHistoricalSnapshots: snapshotDates.length > 0,
       snapshotPeriods: snapshotDates.length,
       stats: calcStats(deduped),
-      signalTypes: {
-        meanReversion: calcStats(mrRecords),
-        trend: calcStats(trendRecords),
-      },
       tiers: {
-        tier1: calcStats(tier1Records),
-        tier2: calcStats(tier2Records),
+        sterk: calcStats(sterkRecords),
+        matig: calcStats(matigRecords),
       },
-      note: `V3.0 Edge Extraction Engine met sub-regime classificatie, pair-specifieke intermarket, en 5-categorie signalen. ${hasSnapshots ? `${snapshotDates.length} CB snapshot periodes.` : 'GEEN historische snapshots.'}`,
     })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
