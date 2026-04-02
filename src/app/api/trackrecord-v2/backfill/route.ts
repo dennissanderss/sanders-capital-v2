@@ -294,7 +294,7 @@ export async function DELETE() {
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}))
-    const days = Math.min(body.days || 60, 90)
+    const days = Math.min(body.days || 90, 90)
     const hasMetadata = await checkMetadataColumn()
 
     if (!hasMetadata) {
@@ -398,16 +398,10 @@ export async function POST(request: Request) {
         return today > yesterday * 1.001 ? 'up' : today < yesterday * 0.999 ? 'down' : 'flat'
       })()
 
-      // VIX > 25 + S&P down = forced Risk-Off
-      if (vixPrice && vixPrice > 25 && spDir === 'down') {
-        regime = 'Risk-Off'
-      }
-      // VIX < 15 + S&P up = upgrade Gemengd to Risk-On
-      if (vixPrice && vixPrice < 15 && spDir === 'up' && regime === 'Gemengd') {
-        regime = 'Risk-On'
-      }
+      // v2.5: Regime is PURE CB policy — no intermarket override
+      // Intermarket is used only for conviction adjustment (not regime change)
 
-      // V2.1: Check intermarket alignment for this date
+      // Check intermarket alignment for this date (used for conviction only)
       const intermarketAlignment = getIntermarketAlignment(date, regime, intermarketHistory)
       const regimeConfirmed = intermarketAlignment >= 65
       const regimeContradicted = intermarketAlignment <= 35
@@ -587,7 +581,7 @@ export async function POST(request: Request) {
           resolved_at: new Date().toISOString(),
           metadata: {
             source: 'v2' as const,
-            version: 'v2.3',
+            version: 'v2.5',
             scoreWithoutNews: p.scoreWithoutNews,
             newsInfluence: p.newsInfluence,
             confidence: simulatedConfidence,
@@ -629,7 +623,7 @@ export async function POST(request: Request) {
     const totalCount = deduped.length
 
     return NextResponse.json({
-      version: 'v2.3',
+      version: 'v2.5',
       message: `Backfilled ${deduped.length} v2.3 records over ${days} days`,
       records: deduped.length,
       skippedExisting: existingKeys.size,

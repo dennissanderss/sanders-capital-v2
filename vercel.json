@@ -4,5 +4,11 @@
       "runtime": "@vercel/python@4.3.1",
       "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/trackrecord",
+      "schedule": "0 21 * * 1-5"
+    }
+  ]
 }
