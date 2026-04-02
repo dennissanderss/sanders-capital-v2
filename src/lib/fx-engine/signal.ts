@@ -70,37 +70,34 @@ export function classifyPairSignals(opts: ClassifyOptions): PairSignal[] {
       signal = 'no_trade'
       reasons.push('Score verschil te klein voor signaal')
     } else {
-      // Check momentum vs fundamental alignment
-      const momentumAligned = (isBullish && momentum.direction === 'up') ||
-                               (!isBullish && momentum.direction === 'down')
-      const momentumOpposed = (isBullish && momentum.direction === 'down') ||
-                               (!isBullish && momentum.direction === 'up')
+      // Use raw pips5d for contrarian detection (not threshold-based direction)
+      // This matches the optimizer logic: any 5d move against fundamentals = contrarian
+      const rawMomentumBullish = momentum.pips5d > 0
+      const rawMomentumBearish = momentum.pips5d < 0
+      const momentumOpposed = (isBullish && rawMomentumBearish) ||
+                               (!isBullish && rawMomentumBullish)
+      const momentumAligned = (isBullish && rawMomentumBullish) ||
+                               (!isBullish && rawMomentumBearish)
 
-      if (momentumOpposed && momentum.extensionRatio >= THRESHOLDS.mrEntryExtension) {
-        // Mean reversion opportunity
+      if (momentumOpposed) {
+        // Contrarian / Mean reversion opportunity
+        // Any 5d move against fundamentals qualifies (optimizer validated this)
         signal = isBullish ? 'bullish_mean_reversion' : 'bearish_mean_reversion'
         reasons.push(
-          `Fundamenteel ${isBullish ? 'bullish' : 'bearish'} maar prijs overextended`,
-          `Mean reversion kans (extensie ${momentum.extensionRatio.toFixed(1)}x ATR)`,
+          `Fundamenteel ${isBullish ? 'bullish' : 'bearish'} maar 5d prijs ${isBullish ? 'gedaald' : 'gestegen'}`,
+          `Contrarian kans (${Math.abs(momentum.pips5d)} pips in 5d, extensie ${momentum.extensionRatio.toFixed(1)}x ATR)`,
         )
-      } else if (momentumAligned || momentum.direction === 'flat') {
+        // Block if dangerously overextended
+        if (momentum.extensionRatio > THRESHOLDS.mrDangerExtension) {
+          signal = 'no_trade'
+          reasons.push(`Extreme extensie (${momentum.extensionRatio.toFixed(1)}x ATR) — wacht op terugval`)
+        }
+      } else if (momentumAligned || momentum.pips5d === 0) {
         // Trend signal
         signal = isBullish ? 'bullish_trend' : 'bearish_trend'
         reasons.push(
           `Fundamenteel en momentum ${isBullish ? 'bullish' : 'bearish'} aligned`,
         )
-      } else if (momentumOpposed && momentum.extensionRatio < THRESHOLDS.mrEntryExtension) {
-        // Momentum opposed but not extended enough for MR
-        if (absDiff >= THRESHOLDS.strongSignal) {
-          // Strong fundamental conviction overrides weak counter-momentum
-          signal = isBullish ? 'bullish_trend' : 'bearish_trend'
-          reasons.push(
-            'Sterke fundamentele overtuiging ondanks lichte tegenwind',
-          )
-        } else {
-          signal = 'no_trade'
-          reasons.push('Momentum tegenstrijdig, onvoldoende extensie voor MR')
-        }
       }
 
       // Intermarket confirmation/contradiction
