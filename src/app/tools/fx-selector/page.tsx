@@ -126,10 +126,11 @@ export default function DailyBriefingIntroPage() {
           <h1 className="text-3xl sm:text-5xl font-display font-bold text-heading leading-tight mb-4">
             Daily Macro Briefing
           </h1>
+          <p className="text-xs font-mono text-purple-400/80 mb-3">v3.0 — Edge Extraction Engine</p>
           <p className="text-lg sm:text-xl text-text-muted max-w-2xl mx-auto leading-relaxed">
             Elke dag in 60 seconden weten waar de markt staat, welke valuta sterk of zwak is,
-            en waar jouw beste trade setups liggen. Fundamentele analyse, nieuws sentiment,
-            intermarket bevestiging en mean reversion timing — in één overzicht.
+            en waar jouw beste trade setups liggen. Sub-regime classificatie, 7-factor scoring,
+            pair-specifieke intermarket analyse en 5-categorie signaaloutput — in één overzicht.
           </p>
           <div className="mt-8">
             <Link
@@ -172,7 +173,7 @@ export default function DailyBriefingIntroPage() {
               wat vandaag de markt kan bewegen.
             </p>
             <p className="text-accent-light font-medium">
-              De Daily Macro Briefing lost dit op in vier stappen.
+              De Daily Macro Briefing v3.0 lost dit op met een gelaagde Edge Extraction Engine.
             </p>
           </div>
         </div>
@@ -183,15 +184,15 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <StepCard
             step={1}
-            title="Macro Regime"
+            title="Sub-Regime Classificatie"
             color="blue"
             problem="Je weet niet of de markt in risk-on, risk-off of een dollargevoelige fase zit. Je tradet AUD/JPY long terwijl de markt in paniek is."
-            solution="Het model bepaalt automatisch het huidige regime (Risk-On, Risk-Off, USD Dominant, USD Zwak of Gemengd) op basis van centraal bank beleid."
+            solution="Het model classificeert de markt in 6 sub-regimes op basis van CB beleid + intermarket data. Dit bepaalt welke factoren het zwaarst wegen."
             details={[
-              'Puur gebaseerd op centraal bank beleid: de hawkish/dovish bias van elke centrale bank en de rente t.o.v. het target.',
-              'Vergelijkt safe-haven valuta\'s (JPY, CHF) met high-yield valuta\'s (AUD, NZD, CAD) en de USD.',
-              'Regime confidence = hoe groot het verschil is tussen de sterkste en zwakste valuta. Groter verschil = duidelijker regime.',
-              'Intermarket data (VIX, S&P, goud) wordt pas in Stap 3 gebruikt als bevestiging — niet voor het regime zelf.',
+              'Zes sub-regimes: Growth Scare (groeiangst), Geopolitical Stress (VIX spike + goud), Inflation Fear (stijgende yields + olie), Rate Repricing (snelle yield bewegingen), Risk Appetite (aandelen up, VIX laag), Range Chop (geen driver).',
+              'Elk sub-regime heeft eigen gewichten: bij inflation_fear telt CB beleid en inflatiedata 2x zo zwaar. Bij geopolitical_stress domineert haven flow en sentiment.',
+              'De engine bepaalt eerst het sub-regime, en herberekent daarna alle currency scores met de juiste gewichten. Zo past de analyse zich aan de marktomgeving aan.',
+              'Regime confidence geeft aan hoe duidelijk de signalen zijn. Hoe hoger, hoe betrouwbaarder de analyse.',
             ]}
           />
         </FadeIn>
@@ -199,16 +200,19 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <StepCard
             step={2}
-            title="Currency Scorecard & Nieuws"
+            title="7-Factor Currency Scoring"
             color="green"
-            problem="Je hebt geen overzicht van welke valuta fundamenteel sterk of zwak is. Je weet niet of de GBP sterker of zwakker is dan de EUR."
-            solution="Elke major valuta krijgt een score op basis van CB beleid + een nieuws bonus. Per paar zie je de bias: sterkste vs. zwakste valuta."
+            problem="Je hebt geen overzicht van welke valuta fundamenteel sterk of zwak is. Traditionele modellen kijken alleen naar rente — maar in een inflation scare telt inflatiedata veel zwaarder."
+            solution="Elke valuta wordt gescoord op 7 factoren, met gewichten die automatisch verschuiven per sub-regime. De sterkste en zwakste valuta's worden objectief bepaald."
             details={[
-              'Score is gebaseerd op het officiële beleid van de centrale bank: hawkish bias = hogere score, dovish = lagere score. De bias telt dubbel (×2).',
-              'Rente t.o.v. het target telt mee: rente boven target = extra hawkish signaal, rente onder target = extra dovish.',
-              'Nieuws sentiment wordt als bonus meegewogen (max ±2.0 punt): actuele headlines die hawkish of dovish zijn passen de score aan.',
-              'Per valuta zie je de volledige onderbouwing: welke bank, welk beleid, welke headlines, waarom die score.',
-              'Pair bias = score base valuta − score quote valuta. Hoe groter het verschil, hoe sterker de bias voor dat paar.',
+              'Factor 1 — CB Beleid: hawkish/dovish bias van de centrale bank + rente vs target. Dit is de basis.',
+              'Factor 2 — Inflatie: CPI/PPI data uit de economische kalender. Hoger dan verwacht = hawkish druk.',
+              'Factor 3 — Groei: GDP, PMI, employment data. Sterke groei = valuta ondersteund.',
+              'Factor 4 — Sentiment: Nieuws headlines worden geanalyseerd op bullish/bearish impact per valuta.',
+              'Factor 5 — Commodity: Olie en goud impact. CAD volgt olie (0.9 sensitivity), AUD volgt goud (0.8).',
+              'Factor 6 — Haven: Safe-haven flows. JPY (0.9), CHF (0.8) profiteren van risk-off. AUD/NZD (-0.7) lijden.',
+              'Factor 7 — Momentum: 3-daagse prijsrichting als bevestiging of tegensignaal.',
+              'De gewichten per factor worden bepaald door het sub-regime. In range_chop wegen fundamentals licht, in rate_repricing weegt CB beleid 2x.',
             ]}
           />
         </FadeIn>
@@ -216,17 +220,17 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <StepCard
             step={3}
-            title="Intermarket Bevestiging"
+            title="Pair-Specifieke Intermarket"
             color="amber"
-            problem="Je tradet forex in isolatie zonder te kijken of de bredere markten je analyse bevestigen. Je gaat short USD terwijl de dollar-index juist stijgt."
-            solution="Het model checkt of intermarket signalen (DXY, US10Y, goud, S&P 500, VIX, olie) het regime bevestigen of tegenspreken."
+            problem="Je tradet forex in isolatie. Standaard modellen gebruiken dezelfde intermarket check voor alle paren — maar USD/CAD reageert op olie, USD/JPY op yields."
+            solution="Elk van de 21 paren heeft een eigen intermarket gewichtstabel. Het model checkt per paar welke instrumenten relevant zijn en hoeveel ze meewegen."
             details={[
-              'Intermarket verandert het regime NIET — het bevestigt of waarschuwt. Bij bevestiging stijgt de overtuiging, bij tegenspraak daalt die.',
-              'DXY (Dollar Index): stijgende DXY bevestigt USD-sterkte, dalend bevestigt USD-zwakte.',
-              'US10Y (rente op 10-jaars staatsobligaties): stijgende yields = hawkish signaal voor USD.',
-              'Goud: stijgend goud = risk-off / vlucht naar veiligheid. Bevestigt JPY/CHF sterkte.',
-              'S&P 500 + VIX: hoge VIX + dalende S&P = risk-off omgeving. Lage VIX = risk-on.',
-              'Alignment %: per signaal wordt gecheckt of de richting het regime bevestigt, gewogen naar sterkte van de beweging.',
+              'USD/CAD: olie weegt 45%, yields 20%, S&P 15%. Stijgende olie = sterker CAD = pair daalt.',
+              'USD/JPY: yields wegen 40%, S&P 25%, VIX 20%. Stijgende yields = pair stijgt.',
+              'AUD/USD: S&P 25%, goud 25%, olie 20%. Risk-on markten = pair stijgt.',
+              'EUR/USD: DXY 35%, yields 25%, S&P 20%. Stijgende DXY = pair daalt.',
+              'Per instrument wordt gecheckt: bevestigt de richting de fundamentele bias van het paar? Alignment 0-100%.',
+              'Bij alignment < 30% (sterke tegenspraak) kan een signaal geblokkeerd worden. Bij > 70% stijgt de overtuiging.',
             ]}
           />
         </FadeIn>
@@ -234,18 +238,19 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <StepCard
             step={4}
-            title="Trade Focus"
+            title="5-Categorie Signaal Output"
             color="gold"
             problem="Je opent TradingView en zoekt willekeurig door 28 forex paren. Je weet niet waar je moet focussen en mist de beste setups."
-            solution="Het model selecteert automatisch de sterkste divergenties: de sterkste valuta tegenover de zwakste, gefilterd door mean reversion timing."
+            solution="Elk van de 21 paren krijgt een van 5 signaalcategorieën, gefilterd op tradeability. De top 5 paren worden automatisch geselecteerd als Trade Focus."
             details={[
-              'Pair score = score van de base valuta minus de quote valuta. Hoe groter het verschil, hoe sterker de bias.',
-              'Sterke overtuiging: score ≥ 3.5. Matige overtuiging: score ≥ 3.0. Alleen deze worden geselecteerd.',
-              'Confluence meter: 4 factoren moeten bevestigen (Fundamenteel, Regime, Intermarket, Nieuws). Hoe meer bevestiging, hoe sterker het signaal.',
-              'Mean reversion filter: een signaal wordt pas actief als de prijs de afgelopen 2 dagen tégen de fundamentele richting is bewogen.',
-              'Bij elk paar zie je richting (bullish/bearish), overtuiging, entry (dagkoers vandaag) en exit (dagkoers +2 handelsdagen).',
-              'Het trackrecord meet of de fundamentele bias klopte. Volledig transparant, geen cherry-picking.',
-              'Dit geeft je de richting. Jij past je eigen strategie toe in de richting van de bias.',
+              'Bullish Trend: fundamenteel sterk + prijs beweegt al in de juiste richting. Meegaan met de stroom.',
+              'Bullish Mean Reversion: fundamenteel sterk + prijs is de afgelopen 5 dagen gedaald. Contrarian: koop de dip.',
+              'Bearish Trend: fundamenteel zwak + prijs daalt al. Short met de trend mee.',
+              'Bearish Mean Reversion: fundamenteel zwak + prijs is de afgelopen 5 dagen gestegen. Contrarian: verkoop de rally.',
+              'No Trade: geen duidelijk fundamenteel verschil, of tradeability filter blokkeert (te ver uitgelopen, event risk, intermarket conflict).',
+              'Tradeability filter checkt 3 dingen: (1) is de prijs niet te ver uitgelopen (extension > 2× ATR), (2) staat er een high-impact event op de kalender, (3) bevestigt intermarket de richting.',
+              'Trade Focus selecteert max 5 paren met de hoogste conviction, max 2 per valuta om concentratierisico te beperken.',
+              'Bij elk paar zie je signaalcategorie, conviction score, tradeability status, intermarket alignment % en pricemomentum.',
             ]}
           />
         </FadeIn>
@@ -268,48 +273,73 @@ export default function DailyBriefingIntroPage() {
             </div>
             <p className="text-sm text-text-muted leading-relaxed mb-6">
               De Daily Macro Briefing gebruikt geen momentum strategie (kopen omdat de prijs stijgt).
-              In plaats daarvan past het model <strong className="text-heading">mean reversion</strong> toe:
+              In plaats daarvan past het model <strong className="text-heading">contrarian mean reversion</strong> toe:
               het wacht tot de prijs tijdelijk <em>tegen</em> de fundamentele richting ingaat en tradet dan de terugkeer.
+              De V3 engine ondersteunt ook trend-signalen, maar de optimizer bevestigde dat contrarian het sterkst is.
             </p>
 
             {/* Visual diagram */}
             <div className="flex flex-col items-center mb-6">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-text-dim font-medium mb-4">Visueel voorbeeld</p>
+              <p className="text-[10px] uppercase tracking-[0.15em] text-text-dim font-medium mb-4">Visueel voorbeeld — Contrarian Mean Reversion</p>
               <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
                 <div className="p-3 sm:p-4 rounded-xl bg-green-500/10 border border-green-500/15 text-center min-w-[90px]">
                   <p className="text-[10px] text-text-dim mb-1">Fundamenteel</p>
                   <p className="text-base sm:text-lg font-bold text-green-400">Bullish</p>
-                  <p className="text-[9px] text-text-dim mt-0.5">CB = hawkish</p>
+                  <p className="text-[9px] text-text-dim mt-0.5">7-factor score hoog</p>
                 </div>
                 <span className="text-2xl text-text-dim font-mono">+</span>
                 <div className="p-3 sm:p-4 rounded-xl bg-red-500/10 border border-red-500/15 text-center min-w-[90px]">
-                  <p className="text-[10px] text-text-dim mb-1">Prijs (2 dagen)</p>
+                  <p className="text-[10px] text-text-dim mb-1">Prijs (5 dagen)</p>
                   <p className="text-base sm:text-lg font-bold text-red-400">↓ Dalend</p>
                   <p className="text-[9px] text-text-dim mt-0.5">korte dip</p>
                 </div>
                 <span className="text-2xl text-text-dim font-mono">=</span>
                 <div className="p-3 sm:p-4 rounded-xl bg-accent/10 border border-accent/20 text-center min-w-[90px]">
-                  <p className="text-[10px] text-text-dim mb-1">Actie</p>
+                  <p className="text-[10px] text-text-dim mb-1">Signaal</p>
                   <p className="text-base sm:text-lg font-bold text-accent-light">LONG</p>
-                  <p className="text-[9px] text-green-400 mt-0.5">koop de dip</p>
+                  <p className="text-[9px] text-green-400 mt-0.5">bullish MR</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Optimizer results */}
+            <div className="rounded-xl bg-purple-500/[0.06] border border-purple-500/15 p-4 mb-6">
+              <p className="text-[10px] font-semibold text-purple-400/80 uppercase tracking-wider mb-2">Optimizer resultaten — 131 configuraties getest</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-heading font-mono">68%</p>
+                  <p className="text-[10px] text-text-dim">Win Rate</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-heading font-mono">346</p>
+                  <p className="text-[10px] text-text-dim">Trades</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-green-400 font-mono">+16.680</p>
+                  <p className="text-[10px] text-text-dim">Pips totaal</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-heading font-mono">5d / 3d</p>
+                  <p className="text-[10px] text-text-dim">Lookback / Hold</p>
                 </div>
               </div>
             </div>
 
             <div className="space-y-3 text-sm text-text-muted leading-relaxed">
               <p>
-                <strong className="text-heading">Gedachtegang:</strong> Centrale bank beleid bepaalt de langetermijnrichting van een valuta.
-                Als de prijs tijdelijk tegen die richting ingaat, is dat een <em>reversal-kans</em>.
+                <strong className="text-heading">Gedachtegang:</strong> De 7-factor score bepaalt de fundamentele richting van een valuta.
+                Als de prijs de afgelopen 5 dagen tegen die richting ingaat, is dat een <em>reversal-kans</em>.
                 Je koopt niet wanneer iedereen al koopt — je koopt wanneer de markt een dip maakt.
               </p>
               <p>
-                <strong className="text-heading">Waarom werkt dit?</strong> Optimalisatie over 94 scenario&apos;s toonde aan dat mean reversion
-                met een 2-daagse holding periode de beste resultaten geeft. Momentum (kopen omdat het stijgt)
-                scoorde het slechtst. De markt keert terug naar de fundamentele richting — en daar speelt dit model op in.
+                <strong className="text-heading">Waarom werkt dit?</strong> Optimalisatie over 131 configuraties (momentum, contrarian, lookback 2-10d, hold 1-5d)
+                toonde aan dat de contrarian strategie met 5-daagse lookback en 3-daagse holding het sterkst presteert:
+                68% winrate over 346 trades met +16.680 pips. Momentum (kopen omdat het stijgt) scoorde consistent het slechtst.
               </p>
               <p>
-                <strong className="text-heading">Holding periode:</strong> 2 handelsdagen. De entry is de dagkoers op de signaaldag,
-                de exit is de dagkoers 2 handelsdagen later. Dit geeft de mean reversion voldoende tijd om te werken.
+                <strong className="text-heading">Holding periode:</strong> 3 handelsdagen. De entry is de dagkoers op de signaaldag,
+                de exit is de dagkoers 3 handelsdagen later. Dit geeft de mean reversion voldoende tijd om te werken
+                zonder te veel blootstelling aan event risk.
               </p>
             </div>
           </div>
@@ -402,13 +432,13 @@ export default function DailyBriefingIntroPage() {
             />
             <SourceCard
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>}
-              title="Intermarket Data"
-              desc="DXY, US10Y, goud, S&P 500 en VIX via Yahoo Finance. Bevestigt of het macro regime klopt met wat de markten doen."
+              title="Intermarket Data (Pair-Specifiek)"
+              desc="DXY, US10Y, goud, S&P 500, VIX en olie via Yahoo Finance. Elk paar heeft eigen gewichten: USD/CAD weegt olie 45%, USD/JPY weegt yields 40%."
             />
             <SourceCard
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>}
-              title="Yahoo Finance (Dagkoers)"
-              desc="Dagkoersen voor het trackrecord. Meet of de bias klopte: dagkoers op signaaldag vs. dagkoers 2 handelsdagen later."
+              title="Yahoo Finance (Dagkoers + Intermarket)"
+              desc="Dagkoersen voor alle 21 paren + intermarket instrumenten (DXY, US10Y, goud, S&P, VIX, olie). Trackrecord: dagkoers signaaldag vs. 3 handelsdagen later."
             />
           </div>
         </div>
@@ -429,36 +459,36 @@ export default function DailyBriefingIntroPage() {
             <div className="flex items-start gap-4">
               <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">1</span>
               <div>
-                <p className="text-sm font-semibold text-heading">Check het Macro Regime</p>
-                <p className="text-sm text-text-muted mt-0.5">Begin bovenaan. Ben je in Risk-On, Risk-Off of USD Dominant? Dit bepaalt je speelveld voor vandaag.</p>
+                <p className="text-sm font-semibold text-heading">Check het Sub-Regime</p>
+                <p className="text-sm text-text-muted mt-0.5">Begin bovenaan. In welk sub-regime zit de markt? Growth scare, geopolitical stress, inflation fear, rate repricing, risk appetite of range chop? Dit bepaalt welke factoren het zwaarst wegen.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">2</span>
               <div>
-                <p className="text-sm font-semibold text-heading">Bekijk de Currency Scorecard</p>
-                <p className="text-sm text-text-muted mt-0.5">Welke valuta is fundamenteel het sterkst? Welke het zwakst? Klik op een valuta voor de volledige onderbouwing inclusief nieuws sentiment.</p>
+                <p className="text-sm font-semibold text-heading">Bekijk de Currency Scores (7 factoren)</p>
+                <p className="text-sm text-text-muted mt-0.5">Welke valuta scoort het hoogst op de 7-factor analyse? De gewichten zijn automatisch aangepast aan het sub-regime. Klik op een valuta voor de volledige factoronderbouwing.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">3</span>
               <div>
-                <p className="text-sm font-semibold text-heading">Check het Nieuws Sentiment</p>
-                <p className="text-sm text-text-muted mt-0.5">Welke headlines bewegen de markt vandaag? Klik op het sentiment-icoon om te zien welke headlines de score beïnvloeden.</p>
+                <p className="text-sm font-semibold text-heading">Check het V3 Edge Engine Panel</p>
+                <p className="text-sm text-text-muted mt-0.5">Bekijk de signaalverdeling: hoeveel paren zijn tradeable, conditional of no-trade? De top signalen tonen categorie (trend/mean reversion), conviction en intermarket alignment.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">4</span>
               <div>
-                <p className="text-sm font-semibold text-heading">Bevestig met Intermarket Data</p>
-                <p className="text-sm text-text-muted mt-0.5">Bevestigen DXY, yields, goud en de S&amp;P 500 het regime? Bij tegenspraak: extra voorzichtigheid.</p>
+                <p className="text-sm font-semibold text-heading">Bekijk de Pair-Specifieke Intermarket</p>
+                <p className="text-sm text-text-muted mt-0.5">Elk paar heeft een eigen intermarket gewichtstabel. Bij alignment &gt; 70% stijgt de overtuiging, bij &lt; 30% wordt het signaal mogelijk geblokkeerd. Klik op een paar voor details.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">5</span>
               <div>
                 <p className="text-sm font-semibold text-heading">Focus op de Trade Focus paren</p>
-                <p className="text-sm text-text-muted mt-0.5">Open alleen de charts van de paren met sterke bias en mean reversion timing. Pas je eigen strategie toe in de richting van de fundamentele bias.</p>
+                <p className="text-sm text-text-muted mt-0.5">De engine selecteert max 5 paren met de hoogste conviction. Kijk naar de signaalcategorie (bullish/bearish, trend/MR) en pas je eigen strategie toe in die richting. Hold = 3 handelsdagen.</p>
               </div>
             </div>
           </div>
@@ -490,8 +520,8 @@ export default function DailyBriefingIntroPage() {
               onverwachte renteverlaging kan de markt tegen de fundamentele bias in bewegen. Check altijd de kalender.
             </p>
             <p>
-              <strong className="text-heading">Het trackrecord is transparant.</strong> We meten of de bias klopte via een mean reversion model (dagkoers op signaaldag → dagkoers 2 handelsdagen later).
-              Dit geeft je een eerlijk beeld van de nauwkeurigheid. Geen cherry-picking.
+              <strong className="text-heading">Het trackrecord is transparant.</strong> We meten of de bias klopte via een contrarian mean reversion model (dagkoers op signaaldag → dagkoers 3 handelsdagen later).
+              Elke trade bevat de signaalcategorie, conviction score en sub-regime. Geen cherry-picking.
             </p>
           </div>
         </div>

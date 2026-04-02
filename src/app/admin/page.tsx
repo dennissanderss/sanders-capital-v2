@@ -564,10 +564,11 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { name: 'Economische Kalender', desc: 'Events automatisch opgehaald via FairEconomy/ForexFactory API. Klik-uitleg per event. Geen actuele data (API biedt dit niet).', status: 'live' },
-                { name: 'Daily Macro Briefing', desc: 'Regime, currency scores, pair biases en trade focus automatisch berekend o.b.v. CB data + intermarket + kalender.', status: 'live' },
-                { name: 'Trade Focus Trackrecord', desc: 'Meet dagelijks of de fundamentele bias klopt (daily close → close). Bouwt op over maanden/jaren. Backfill beschikbaar.', status: 'live' },
-                { name: 'Intermarket Data (Yahoo)', desc: 'DXY, VIX, S&P 500, US 10Y Yields, Goud en Olie live via Yahoo Finance (5 min cache).', status: 'live' },
-                { name: 'FX Koersen (Yahoo)', desc: 'Live valutakoersen real-time opgehaald via Yahoo Finance.', status: 'live' },
+                { name: 'V3 Edge Extraction Engine', desc: 'Sub-regime classificatie (6 types), 7-factor currency scoring met regime-gewichten, pair-specifieke intermarket (21 paren), 5-categorie signaaloutput en tradeability filter. Volledig automatisch.', status: 'live' },
+                { name: 'Daily Macro Briefing', desc: 'Regime, currency scores, pair signals en trade focus automatisch berekend via V3 engine. Includes sub-regime, conviction scores en IM alignment.', status: 'live' },
+                { name: 'Trade Focus Trackrecord', desc: 'Meet dagelijks of de contrarian mean reversion bias klopt (3-daagse hold). Signaalcategorie, conviction en sub-regime per trade. Backfill 365 dagen beschikbaar.', status: 'live' },
+                { name: 'Intermarket Data (Pair-Specifiek)', desc: 'DXY, VIX, S&P 500, US 10Y Yields, Goud en Olie via Yahoo Finance. Elk paar heeft eigen gewichten (bijv. USD/CAD: olie 45%, USD/JPY: yields 40%).', status: 'live' },
+                { name: 'FX Koersen (21 paren)', desc: 'Live koersen voor alle 21 major/cross paren via Yahoo Finance (5 min cache). 8 valuta\'s: USD, EUR, GBP, JPY, AUD, NZD, CAD, CHF.', status: 'live' },
                 { name: 'Vergaderdata', desc: 'CB meetings automatisch uit economische kalender (komende 2 weken).', status: 'live' },
                 { name: 'Nieuws Aggregatie', desc: 'Automatisch gecureerd FX-relevant nieuws uit 7 bronnen (Fed, ECB, ForexLive, CNBC, Bloomberg, BBC, NYT). 10 min cache, relevantie-filtering.', status: 'live' },
                 { name: 'Auth & Premium gating', desc: 'Supabase Auth + RLS regelt toegang tot premium content en tools.', status: 'live' },
@@ -594,7 +595,7 @@ export default function AdminPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
-                { name: 'Rentetarieven & CB Bias', desc: 'Rente, target, bias en laatste actie per centrale bank. Update via Claude na elk CB besluit. Dit stuurt de hele Daily Macro Briefing aan.', tab: 'rentes' },
+                { name: 'Rentetarieven & CB Bias', desc: 'Rente, target, bias en laatste actie per centrale bank. Update via Claude na elk CB besluit. Dit is de primaire input voor de V3 engine — CB factor weegt het zwaarst.', tab: 'rentes' },
                 { name: 'Artikelen & Blog', desc: 'Blog posts schrijven, publiceren en premium content beheren.', tab: 'articles' },
                 { name: 'Kennisbank content', desc: 'Educatieve artikelen en documenten per categorie.', tab: 'kennisbank' },
                 { name: 'Tool instellingen', desc: 'Premium/gratis status en zichtbaarheid van tools.', tab: 'tools' },
