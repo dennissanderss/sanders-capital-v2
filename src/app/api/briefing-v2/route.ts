@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { runLivePipeline } from '@/lib/fx-engine'
+import type { EngineInput, CBRate as EngineCBRate } from '@/lib/fx-engine'
 
 // ─── Types ──────────────────────────────────────────────────
 interface CBRate {
@@ -49,6 +51,16 @@ const PAIRS = [
   'AUD/NZD', 'EUR/CHF', 'GBP/CHF', 'EUR/CAD', 'GBP/NZD',
   'AUD/CAD',
 ]
+
+const PAIR_SYMBOLS_V3: Record<string, string> = {
+  'EUR/USD': 'EURUSD=X', 'GBP/USD': 'GBPUSD=X', 'USD/JPY': 'USDJPY=X',
+  'AUD/USD': 'AUDUSD=X', 'NZD/USD': 'NZDUSD=X', 'USD/CAD': 'USDCAD=X',
+  'USD/CHF': 'USDCHF=X', 'EUR/GBP': 'EURGBP=X', 'EUR/JPY': 'EURJPY=X',
+  'GBP/JPY': 'GBPJPY=X', 'AUD/JPY': 'AUDJPY=X', 'NZD/JPY': 'NZDJPY=X',
+  'CAD/JPY': 'CADJPY=X', 'EUR/AUD': 'EURAUD=X', 'GBP/AUD': 'GBPAUD=X',
+  'AUD/NZD': 'AUDNZD=X', 'EUR/CHF': 'EURCHF=X', 'GBP/CHF': 'GBPCHF=X',
+  'EUR/CAD': 'EURCAD=X', 'GBP/NZD': 'GBPNZD=X', 'AUD/CAD': 'AUDCAD=X',
+}
 
 const IMPACT_MAP: Record<string, string> = {
   High: 'hoog', Medium: 'medium', Low: 'laag', Holiday: 'feestdag',
@@ -655,8 +667,56 @@ export async function GET() {
       ;(pair as any).confluence = { factors: confluenceFactors, score: confluenceScore, total: 4 }
     }
 
+    // ── V3 Engine: Run the Edge Extraction Engine ──
+    // Provides sub-regime classification, multi-factor scoring,
+    // pair-specific intermarket, tradeability, and 5-category signals.
+    let v3Engine = null
+    try {
+      const engineInput: EngineInput = {
+        cbRates: ratesResult as EngineCBRate[],
+        marketData: marketData as Record<string, import('@/lib/fx-engine').MarketDataPoint>,
+        priceHistory: {},  // Populated below
+        news: recentNews,
+        calendar: allEvents,
+      }
+
+      // Fetch 25-day price history for all pairs (for ATR + momentum)
+      const pairEntries = Object.entries(PAIR_SYMBOLS_V3)
+      const priceResponses = await Promise.allSettled(
+        pairEntries.map(([, symbol]) =>
+          fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1mo`, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+            next: { revalidate: 300 },
+          })
+        )
+      )
+
+      for (let i = 0; i < pairEntries.length; i++) {
+        const [, symbol] = pairEntries[i]
+        const resp = priceResponses[i]
+        if (resp.status !== 'fulfilled' || !resp.value.ok) continue
+        try {
+          const json = await resp.value.json()
+          const result = json?.chart?.result?.[0]
+          if (!result) continue
+          const timestamps = result.timestamp || []
+          const closes = result.indicators?.quote?.[0]?.close || []
+          engineInput.priceHistory[symbol] = timestamps
+            .map((ts: number, idx: number) => ({
+              date: new Date(ts * 1000).toISOString().split('T')[0],
+              close: closes[idx],
+            }))
+            .filter((d: { close: number | null }) => d.close != null)
+        } catch { /* skip */ }
+      }
+
+      v3Engine = runLivePipeline(engineInput)
+    } catch (engineErr) {
+      console.error('V3 Engine error (non-fatal):', engineErr)
+    }
+
     const response = NextResponse.json({
-      version: 'v2.5',
+      version: 'v3.0',
       regime,
       regimeExplain,
       regimeColor,
@@ -689,6 +749,41 @@ export async function GET() {
       newsCount: recentNews.length,
       generatedAt: new Date().toISOString(),
       date: todayStr,
+      // ── V3 Engine Output ──
+      v3: v3Engine ? {
+        regime: v3Engine.regime,
+        currencyScores: v3Engine.currencyScores.map(cs => ({
+          currency: cs.currency,
+          factors: cs.factors,
+          weightedTotal: cs.weightedTotal,
+          rawTotal: cs.rawTotal,
+          rank: cs.rank,
+          reasons: cs.reasons,
+        })),
+        pairSignals: v3Engine.pairSignals.map(ps => ({
+          pair: ps.pair,
+          signal: ps.signal,
+          conviction: ps.conviction,
+          score: ps.score,
+          tradeability: ps.tradeability,
+          intermarket: {
+            pair: ps.intermarket.pair,
+            alignment: ps.intermarket.alignment,
+            signals: ps.intermarket.signals,
+          },
+          reasons: ps.reasons,
+          priceMomentum: ps.priceMomentum,
+        })),
+        tradeFocus: v3Engine.tradeFocus.map(tf => ({
+          pair: tf.pair,
+          signal: tf.signal,
+          conviction: tf.conviction,
+          score: tf.score,
+          tradeability: tf.tradeability.status,
+          reasons: tf.reasons,
+        })),
+        metadata: v3Engine.metadata,
+      } : null,
     })
     response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
     return response

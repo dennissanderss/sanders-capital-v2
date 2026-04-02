@@ -1,0 +1,144 @@
+// ─── FX Edge Extraction Engine v3 — Tradeability Filter ──
+// Determines if a pair signal is tradeable based on:
+// 1. Price extension (3d move vs 20d ATR)
+// 2. Event risk (high-impact event within 24h)
+// 3. Conflicting intermarket signals
+// 4. Minimum conviction threshold
+//
+// Output: tradeable | conditional | not_tradeable
+// ──────────────────────────────────────────────────────────
+
+import type {
+  PriceHistory, CalendarEvent, IntermarketScore,
+  TradeabilityResult, Tradeability,
+} from './types'
+import { THRESHOLDS, PIP_MULTIPLIER } from './constants'
+
+interface PriceMomentum {
+  direction: 'up' | 'down' | 'flat'
+  pips1d: number
+  pips3d: number
+  atr20d: number
+  extensionRatio: number
+}
+
+export function calculatePriceMomentum(
+  pair: string,
+  history: PriceHistory[]
+): PriceMomentum {
+  const mult = PIP_MULTIPLIER[pair] || 10000
+
+  if (history.length < 21) {
+    return { direction: 'flat', pips1d: 0, pips3d: 0, atr20d: 0, extensionRatio: 0 }
+  }
+
+  const recent = history.slice(-21)
+
+  // 1d move
+  const last = recent[recent.length - 1].close
+  const prev1d = recent[recent.length - 2].close
+  const pips1d = Math.round((last - prev1d) * mult)
+
+  // 3d move
+  const prev3d = recent.length >= 4 ? recent[recent.length - 4].close : prev1d
+  const pips3d = Math.round((last - prev3d) * mult)
+
+  // 20d ATR (average true range approximation using daily ranges)
+  let atrSum = 0
+  for (let i = 1; i < recent.length; i++) {
+    atrSum += Math.abs(recent[i].close - recent[i - 1].close) * mult
+  }
+  const atr20d = Math.round(atrSum / (recent.length - 1))
+
+  const extensionRatio = atr20d > 0 ? Math.round(Math.abs(pips3d) / atr20d * 100) / 100 : 0
+
+  const direction: 'up' | 'down' | 'flat' =
+    pips1d > 5 ? 'up' : pips1d < -5 ? 'down' : 'flat'
+
+  return { direction, pips1d, pips3d, atr20d, extensionRatio }
+}
+
+export function assessTradeability(
+  pair: string,
+  conviction: number,
+  momentum: PriceMomentum,
+  intermarket: IntermarketScore,
+  calendar: CalendarEvent[],
+  signalDate?: string
+): TradeabilityResult {
+  const reasons: string[] = []
+  let blockers = 0
+  let warnings = 0
+
+  // 1. Extension check
+  const extensionWarning = momentum.extensionRatio > THRESHOLDS.extensionWarning
+  if (extensionWarning) {
+    warnings++
+    reasons.push(`Prijs overextended (${momentum.extensionRatio.toFixed(1)}x ATR in 3d)`)
+  }
+  if (momentum.extensionRatio > THRESHOLDS.mrDangerExtension) {
+    blockers++
+    reasons.push(`Extreme extensie (${momentum.extensionRatio.toFixed(1)}x ATR) — wacht op terugval`)
+  }
+
+  // 2. Event risk
+  const [base, quote] = pair.split('/')
+  const now = signalDate ? new Date(signalDate) : new Date()
+  const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+  const nowStr = now.toISOString().split('T')[0]
+  const nextStr = next24h.toISOString().split('T')[0]
+
+  const upcomingHighImpact = calendar.filter(e => {
+    const eCcy = e.country?.toUpperCase()
+    if (eCcy !== base && eCcy !== quote) return false
+    if (e.impact !== 'High') return false
+    const eDate = e.date?.split('T')[0] || ''
+    return eDate >= nowStr && eDate <= nextStr
+  })
+
+  const eventRisk = upcomingHighImpact.length > 0
+  if (eventRisk) {
+    warnings++
+    const eventNames = upcomingHighImpact.slice(0, 2).map(e => e.title).join(', ')
+    reasons.push(`Event risico: ${eventNames}`)
+  }
+
+  // Check for rate decisions (critical events that block trading)
+  const rateDecision = upcomingHighImpact.some(e =>
+    e.title.toLowerCase().includes('rate') || e.title.toLowerCase().includes('monetary')
+  )
+  if (rateDecision) {
+    blockers++
+    reasons.push('Rentebeslissing nadert — niet handelen')
+  }
+
+  // 3. Intermarket conflict
+  const conflictingIM = intermarket.alignment < THRESHOLDS.imContradiction
+  if (conflictingIM) {
+    warnings++
+    reasons.push(`Intermarket tegenstrijdig (${intermarket.alignment}% alignment)`)
+  }
+
+  // 4. Conviction check
+  if (conviction < THRESHOLDS.minConviction) {
+    blockers++
+    reasons.push(`Overtuiging te laag (${conviction}%)`)
+  }
+
+  // Determine tradeability status
+  let status: Tradeability
+  if (blockers > 0) {
+    status = 'not_tradeable'
+  } else if (warnings >= 2) {
+    status = 'conditional'
+    reasons.push('Meerdere waarschuwingen — verlaag positiegrootte')
+  } else if (warnings === 1) {
+    status = 'conditional'
+    reasons.push('Één waarschuwing — handel met extra voorzichtigheid')
+  } else {
+    status = 'tradeable'
+    reasons.push('Alle filters doorstaan')
+  }
+
+  return { status, reasons, extensionWarning, eventRisk, conflictingIM }
+}
