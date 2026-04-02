@@ -2215,6 +2215,20 @@ export default function BriefingV2Dashboard() {
                         }
                         const signalDate = formatCallTime()
                         const exitDate = meta?.exitTime ? formatDate(meta.exitTime) : ''
+                        // NY session close = dagkoers tijdstip (~23:00 NL zomertijd, ~22:00 wintertijd)
+                        const formatDagkoersTijd = (dateStr: string | undefined) => {
+                          if (!dateStr) return ''
+                          try {
+                            // Dagkoers = NY close. Set to 22:00 UTC (= ~23:00 CET / 00:00 CEST)
+                            const d = new Date(dateStr.split('T')[0] + 'T22:00:00Z')
+                            return d.toLocaleString('nl-NL', {
+                              day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+                              timeZone: 'Europe/Amsterdam'
+                            }) + ' NL'
+                          } catch { return '' }
+                        }
+                        const entryTimestamp = meta?.entryTime ? formatDagkoersTijd(meta.entryTime) : formatDagkoersTijd(record.date + 'T00:00:00Z')
+                        const exitTimestamp = meta?.exitTime ? formatDagkoersTijd(meta.exitTime) : ''
                         return (
                           <div key={record.id} className="rounded-xl bg-white/[0.02] border border-white/[0.04] overflow-hidden">
                             {/* Header row */}
@@ -2251,12 +2265,14 @@ export default function BriefingV2Dashboard() {
                                   <span className="font-mono text-text-muted font-semibold">
                                     {record.entry_price !== null ? record.entry_price : '—'}
                                   </span>
+                                  {entryTimestamp && <span className="text-[8px] text-text-dim/40 block mt-0.5">{entryTimestamp}</span>}
                                 </div>
                                 <div>
                                   <span className="text-text-dim/60 block">Exit (dagkoers {exitDate || '+2d'})</span>
                                   <span className="font-mono text-text-muted font-semibold">
                                     {record.exit_price !== null ? record.exit_price : '—'}
                                   </span>
+                                  {exitTimestamp && <span className="text-[8px] text-text-dim/40 block mt-0.5">{exitTimestamp}</span>}
                                 </div>
                                 <div>
                                   <span className="text-text-dim/60 block">Pips</span>
@@ -2328,8 +2344,8 @@ export default function BriefingV2Dashboard() {
                             <p>De entry prijs is de <strong className="text-text-muted">dagkoers</strong> (daily close van Yahoo Finance) op de dag dat het signaal wordt gegenereerd. De forex markt draait 24/5, dus &quot;close&quot; is de conventionele NY-sessie sluiting.</p>
                           </div>
                           <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-accent-light font-semibold mb-1">Exit &amp; Resolutie</p>
-                            <p>De exit prijs is de dagkoers <strong className="text-text-muted">2 handelsdagen later</strong>. De 2-daagse holding periode geeft de mean reversion voldoende tijd om te werken.</p>
+                            <p className="text-accent-light font-semibold mb-1">Entry &amp; Exit Tijdstip</p>
+                            <p>De dagkoers is de <strong className="text-text-muted">NY session close (~23:00 NL zomertijd, ~00:00 wintertijd)</strong>. Entry = dagkoers op signaaldag, exit = dagkoers <strong className="text-text-muted">2 handelsdagen later</strong>. Beide tijdstippen staan bij elke trade zodat je het exact kunt terugvinden op je chart.</p>
                           </div>
                           <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
                             <p className="text-accent-light font-semibold mb-1">Mean Reversion</p>
