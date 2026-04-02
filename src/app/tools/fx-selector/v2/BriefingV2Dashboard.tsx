@@ -150,6 +150,14 @@ interface BriefingV2Data {
   }
   divergences?: Record<string, DivergenceInfo>
   currencyMomentum?: Record<string, { direction: string; changePct: number }>
+  // V3 Engine output
+  v3?: {
+    regime: { macro: string; sub: string; confidence: number; drivers: string[]; color: string }
+    currencyScores: { currency: string; factors: Record<string, number>; weightedTotal: number; rawTotal: number; rank: number; reasons: string[] }[]
+    pairSignals: { pair: string; signal: string; conviction: number; score: number; tradeability: { status: string; reasons: string[] }; intermarket: { pair: string; alignment: number; signals: { instrument: string; direction: string; strength: number; relevance: string }[] }; reasons: string[]; priceMomentum: { direction: string; pips1d: number; pips3d: number; atr20d: number; extensionRatio: number } }[]
+    tradeFocus: { pair: string; signal: string; conviction: number; score: number; tradeability: string; reasons: string[] }[]
+    metadata: { version: string; timestamp: string; subRegime: string; signalCount: { tradeable: number; conditional: number; noTrade: number } }
+  } | null
 }
 
 interface TrackRecordMetadata {
@@ -1939,6 +1947,147 @@ export default function BriefingV2Dashboard() {
               </details>
             </div>
           </section>
+
+          {/* ── V3 Edge Engine Panel ── */}
+          {data?.v3 && (
+            <section className="mb-2 mt-6">
+              <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/[0.04] to-transparent p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-400 text-[10px] font-bold">
+                    v3
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-display font-semibold text-heading">Edge Extraction Engine</h3>
+                    <p className="text-[10px] text-text-dim">Sub-regime classificatie, multi-factor scoring, 5-categorie signalen</p>
+                  </div>
+                </div>
+
+                {/* Sub-regime badge */}
+                <div className="flex flex-wrap items-center gap-3 mb-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                  <div>
+                    <span className="text-[9px] text-text-dim uppercase tracking-wider block mb-1">Sub-Regime</span>
+                    <span className={`text-sm font-mono font-bold ${
+                      data.v3.regime.sub === 'geopolitical_stress' || data.v3.regime.sub === 'growth_scare' ? 'text-red-400' :
+                      data.v3.regime.sub === 'risk_appetite' ? 'text-green-400' :
+                      data.v3.regime.sub === 'inflation_fear' || data.v3.regime.sub === 'rate_repricing' ? 'text-amber-400' :
+                      'text-text-muted'
+                    }`}>
+                      {data.v3.regime.sub.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  <div className="ml-auto text-right">
+                    <span className="text-[9px] text-text-dim uppercase tracking-wider block mb-1">Confidence</span>
+                    <span className="text-sm font-mono font-bold text-heading">{data.v3.regime.confidence}%</span>
+                  </div>
+                  <div className="w-full mt-1">
+                    {data.v3.regime.drivers.map((d: string, i: number) => (
+                      <span key={i} className="text-[10px] text-text-dim mr-2">• {d}</span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* V3 Signal counts */}
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="text-center p-2 rounded-lg bg-green-500/[0.06] border border-green-500/10">
+                    <span className="text-lg font-mono font-bold text-green-400">{data.v3.metadata.signalCount.tradeable}</span>
+                    <span className="text-[9px] text-text-dim block">Tradeable</span>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-amber-500/[0.06] border border-amber-500/10">
+                    <span className="text-lg font-mono font-bold text-amber-400">{data.v3.metadata.signalCount.conditional}</span>
+                    <span className="text-[9px] text-text-dim block">Conditional</span>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                    <span className="text-lg font-mono font-bold text-text-dim">{data.v3.metadata.signalCount.noTrade}</span>
+                    <span className="text-[9px] text-text-dim block">No Trade</span>
+                  </div>
+                </div>
+
+                {/* V3 Trade Focus signals */}
+                {data.v3.tradeFocus.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-[10px] text-text-dim uppercase tracking-wider font-semibold">Top Signalen</span>
+                    {data.v3.tradeFocus.map((sig: { pair: string; signal: string; conviction: number; score: number; tradeability: string; reasons: string[] }) => {
+                      const isBull = sig.signal.includes('bullish')
+                      const isMR = sig.signal.includes('mean_reversion')
+                      const signalLabel = isBull
+                        ? (isMR ? 'Bullish MR' : 'Bullish Trend')
+                        : (isMR ? 'Bearish MR' : 'Bearish Trend')
+                      return (
+                        <div key={sig.pair} className={`flex items-center gap-3 p-3 rounded-xl border ${
+                          isBull ? 'bg-green-500/[0.03] border-green-500/10' : 'bg-red-500/[0.03] border-red-500/10'
+                        }`}>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-display font-bold text-heading">{sig.pair}</span>
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                                isBull ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+                              }`}>{signalLabel}</span>
+                              {isMR && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-400">MR</span>}
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+                                sig.tradeability === 'tradeable' ? 'bg-green-500/10 text-green-400' :
+                                sig.tradeability === 'conditional' ? 'bg-amber-500/10 text-amber-400' :
+                                'bg-red-500/10 text-red-400'
+                              }`}>{sig.tradeability}</span>
+                            </div>
+                            <p className="text-[10px] text-text-dim mt-0.5 truncate">{sig.reasons[0]}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className={`text-base font-mono font-bold ${isBull ? 'text-green-400' : 'text-red-400'}`}>
+                              {sig.score > 0 ? '+' : ''}{sig.score}
+                            </span>
+                            <span className="text-[9px] text-text-dim block">{sig.conviction}% conv.</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* V3 Pair signals overview */}
+                <details className="mt-3">
+                  <summary className="text-[10px] text-text-dim cursor-pointer hover:text-text-muted transition-colors">
+                    Alle {data.v3.pairSignals.length} paar signalen bekijken
+                  </summary>
+                  <div className="mt-2 max-h-64 overflow-y-auto">
+                    <table className="w-full text-[10px]">
+                      <thead>
+                        <tr className="text-text-dim border-b border-white/[0.04]">
+                          <th className="text-left py-1 px-1">Paar</th>
+                          <th className="text-left py-1 px-1">Signaal</th>
+                          <th className="text-right py-1 px-1">Score</th>
+                          <th className="text-right py-1 px-1">Conv.</th>
+                          <th className="text-right py-1 px-1">IM%</th>
+                          <th className="text-center py-1 px-1">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.v3.pairSignals.map((sig: { pair: string; signal: string; score: number; conviction: number; intermarket: { alignment: number }; tradeability: { status: string } }) => (
+                          <tr key={sig.pair} className="border-b border-white/[0.02] hover:bg-white/[0.02]">
+                            <td className="py-1 px-1 font-mono text-heading">{sig.pair}</td>
+                            <td className={`py-1 px-1 ${
+                              sig.signal.includes('bullish') ? 'text-green-400' :
+                              sig.signal.includes('bearish') ? 'text-red-400' : 'text-text-dim'
+                            }`}>{sig.signal.replace(/_/g, ' ')}</td>
+                            <td className={`py-1 px-1 text-right font-mono ${sig.score > 0 ? 'text-green-400' : sig.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                              {sig.score > 0 ? '+' : ''}{sig.score}
+                            </td>
+                            <td className="py-1 px-1 text-right font-mono text-text-muted">{sig.conviction}%</td>
+                            <td className="py-1 px-1 text-right font-mono text-text-muted">{sig.intermarket.alignment}%</td>
+                            <td className="py-1 px-1 text-center">
+                              <span className={`inline-block w-2 h-2 rounded-full ${
+                                sig.tradeability.status === 'tradeable' ? 'bg-green-400' :
+                                sig.tradeability.status === 'conditional' ? 'bg-amber-400' : 'bg-red-400'
+                              }`} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              </div>
+            </section>
+          )}
 
           {/* Bridge: Trade Focus → Trackrecord */}
           <StepBridge
