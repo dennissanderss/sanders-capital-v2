@@ -174,6 +174,10 @@ interface TrackRecordMetadata {
   holdingPeriod?: number
   meanReversion?: boolean
   preMomentum?: number
+  imAlignment?: number
+  signal?: string
+  momentum5d?: number
+  lookbackDays?: number
 }
 
 interface TrackRecord {
@@ -484,7 +488,7 @@ export default function BriefingV2Dashboard() {
       const res = await fetch('/api/trackrecord-v2/backfill', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ days: 45 }),
+        body: JSON.stringify({ days: 365 }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Backfill mislukt')
@@ -1948,17 +1952,17 @@ export default function BriefingV2Dashboard() {
             </div>
           </section>
 
-          {/* ── V3 Edge Engine Panel ── */}
+          {/* ── Signaaloverzicht Panel ── */}
           {data?.v3 && (
             <section className="mb-2 mt-6">
               <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/[0.04] to-transparent p-5">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-400 text-[10px] font-bold">
-                    v3
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
                   </div>
                   <div>
-                    <h3 className="text-sm font-display font-semibold text-heading">Edge Extraction Engine</h3>
-                    <p className="text-[10px] text-text-dim">Sub-regime classificatie, multi-factor scoring, 5-categorie signalen</p>
+                    <h3 className="text-sm font-display font-semibold text-heading">Signaaloverzicht</h3>
+                    <p className="text-[10px] text-text-dim">De signalen hieronder komen voort uit de valutascores en intermarket bevestiging hierboven. Alleen paren die aan alle criteria voldoen verschijnen in de Trade Focus.</p>
                   </div>
                 </div>
 
@@ -2201,7 +2205,7 @@ export default function BriefingV2Dashboard() {
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
                           </svg>
-                          Backfill 45 dagen
+                          Backfill 365 dagen
                         </span>
                       )}
                     </button>
@@ -2313,7 +2317,7 @@ export default function BriefingV2Dashboard() {
                                   {entryTimestamp && <span className="text-[8px] text-text-dim/40 block mt-0.5">{entryTimestamp}</span>}
                                 </div>
                                 <div>
-                                  <span className="text-text-dim/60 block">Exit (dagkoers {exitDate || '+2d'})</span>
+                                  <span className="text-text-dim/60 block">Exit (dagkoers {exitDate || '+1d'})</span>
                                   <span className="font-mono text-text-muted font-semibold">
                                     {record.exit_price !== null ? record.exit_price : '—'}
                                   </span>
@@ -2332,33 +2336,25 @@ export default function BriefingV2Dashboard() {
                                   <span className="text-text-dim">{record.regime || '—'}</span>
                                 </div>
                               </div>
-                              {/* Metadata: news influence */}
-                              {meta && meta.newsInfluence !== undefined && Math.abs(meta.newsInfluence) > 0.1 && (
-                                <div className="mt-1.5 flex items-center gap-2 text-[9px]">
-                                  <span className="text-text-dim/50">Nieuws invloed:</span>
-                                  <span className={`font-mono ${meta.newsInfluence > 0 ? 'text-green-400/70' : 'text-red-400/70'}`}>
-                                    {meta.newsInfluence > 0 ? '+' : ''}{meta.newsInfluence}
-                                  </span>
-                                  {meta.confidence !== undefined && (
-                                    <>
-                                      <span className="text-text-dim/30">|</span>
-                                      <span className="text-text-dim/50">Confidence: {meta.confidence}%</span>
-                                    </>
-                                  )}
-                                  {meta.meanReversion && (
-                                    <span className="px-1 py-0.5 rounded bg-purple-500/10 text-purple-400/60 text-[8px]">mean reversion</span>
-                                  )}
-                                  {meta.holdingPeriod && (
-                                    <>
-                                      <span className="text-text-dim/30">|</span>
-                                      <span className="text-text-dim/50">Hold: {meta.holdingPeriod}d</span>
-                                    </>
-                                  )}
-                                  {meta.newsSimulated && (
-                                    <span className="px-1 py-0.5 rounded bg-amber-500/10 text-amber-400/60 text-[8px]">gesimuleerd</span>
-                                  )}
-                                </div>
-                              )}
+                              {/* Filter vinkjes + metadata */}
+                              <div className="mt-1.5 flex items-center gap-2 flex-wrap text-[9px]">
+                                <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-400/70 border border-green-500/10">&#x2713; Fund</span>
+                                <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-400/70 border border-green-500/10">&#x2713; Regime</span>
+                                {meta?.imAlignment && meta.imAlignment > 50 ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-400/70 border border-green-500/10">&#x2713; Inter {meta.imAlignment}%</span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded bg-white/[0.04] text-text-dim/50 border border-white/[0.06]">Inter</span>
+                                )}
+                                {meta?.meanReversion && (
+                                  <span className="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400/70 border border-purple-500/10">&#x2713; Contrarian</span>
+                                )}
+                                {meta?.holdingPeriod && (
+                                  <span className="px-1.5 py-0.5 rounded bg-white/[0.04] text-text-dim/60 border border-white/[0.06]">Hold: {meta.holdingPeriod}d</span>
+                                )}
+                                {meta?.newsSimulated && (
+                                  <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400/60 border border-amber-500/10">backfill</span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         )
@@ -2381,29 +2377,28 @@ export default function BriefingV2Dashboard() {
                     <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
                       <div className="space-y-2 text-[10px] text-text-dim leading-relaxed">
                         <p>
-                          Het trackrecord meet hoe nauwkeurig het mean reversion model is: fundamentele richting + timing via prijsactie. Holding periode: 2 handelsdagen.
+                          Het trackrecord meet hoe nauwkeurig het model is: fundamentele richting + contrarian timing + intermarket bevestiging. Holding periode: 1 handelsdag.
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-accent-light font-semibold mb-1">Entry &amp; Timing</p>
-                            <p>De entry prijs is de <strong className="text-text-muted">dagkoers</strong> (daily close van Yahoo Finance) op de dag dat het signaal wordt gegenereerd. De forex markt draait 24/5, dus &quot;close&quot; is de conventionele NY-sessie sluiting.</p>
+                            <p className="text-accent-light font-semibold mb-1">Entry en exit</p>
+                            <p>Entry = dagkoers (NY session close) op de signaaldag. Exit = dagkoers <strong className="text-text-muted">1 handelsdag later</strong>. Beide tijdstippen staan bij elke trade.</p>
                           </div>
                           <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-accent-light font-semibold mb-1">Entry &amp; Exit Tijdstip</p>
-                            <p>De dagkoers is de <strong className="text-text-muted">NY session close (~23:00 NL zomertijd, ~00:00 wintertijd)</strong>. Entry = dagkoers op signaaldag, exit = dagkoers <strong className="text-text-muted">2 handelsdagen later</strong>. Beide tijdstippen staan bij elke trade zodat je het exact kunt terugvinden op je chart.</p>
+                            <p className="text-accent-light font-semibold mb-1">4 filters per trade</p>
+                            <p>Elke trade moet aan 4 voorwaarden voldoen: (1) fundamenteel scoreverschil &ge;2.0, (2) marktregime bepaald, (3) intermarket bevestiging &gt;50%, (4) contrarian prijsactie (5 dagen).</p>
                           </div>
                           <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-accent-light font-semibold mb-1">Mean Reversion</p>
-                            <p>Het model handelt alleen wanneer de 2-daagse prijsactie <strong className="text-text-muted">tegen</strong> de fundamentele richting ingaat. Score &ge;3.0 vereist. Intermarket+regime+cross-pair filters actief.</p>
+                            <p className="text-accent-light font-semibold mb-1">Waarom contrarian?</p>
+                            <p>CB beleid geeft de richting. Als de prijs tijdelijk daartegen ingaat, is dat een reversal kans. Optimalisatie over 1.260 configuraties bevestigde: <strong className="text-text-muted">56% winrate, PF 1.42</strong>.</p>
                           </div>
                           <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-accent-light font-semibold mb-1">Waarom Mean Reversion?</p>
-                            <p>CB-beleid cre&euml;ert langetermijntrends. Als de prijs tijdelijk dáártegen ingaat, is dat een kans. Optimalisatie toonde <strong className="text-text-muted">62% winrate</strong> vs 44% zonder dit filter.</p>
+                            <p className="text-accent-light font-semibold mb-1">10 major paren</p>
+                            <p>EUR/USD, GBP/USD, USD/JPY, AUD/USD, NZD/USD, USD/CAD, USD/CHF, EUR/GBP, EUR/JPY, GBP/JPY. Gekozen op liquiditeit en voorspelbaarheid.</p>
                           </div>
                         </div>
                         <p>
-                          Een trade is &quot;correct&quot; als de prijs in de verwachte richting bewoog (LONG = prijs steeg, SHORT = prijs daalde).
-                          Scores zijn een combinatie van CB beleid (basis) + nieuws sentiment (bonus, max &plusmn;2.0), gefilterd door intermarket confirmatie.
+                          Een trade is &quot;correct&quot; als de prijs in de verwachte richting bewoog. De vinkjes bij elke trade tonen welke filters zijn voldaan.
                         </p>
                       </div>
                     </div>
@@ -2435,17 +2430,17 @@ export default function BriefingV2Dashboard() {
 
           {/* ── Methodology Footer ── */}
           <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium mb-3">Methode &amp; Databronnen — v2.5</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium mb-3">Methode &amp; Databronnen</p>
 
             <div className="space-y-3 text-[11px] text-text-dim leading-relaxed">
               <div>
                 <p className="font-semibold text-text-muted mb-1">Hoe werkt dit model?</p>
-                <p>Het Daily Macro Briefing analyseert de FX-markt in 4 stappen. Elke stap bouwt voort op de vorige:</p>
+                <p>De briefing analyseert de FX markt in 4 stappen. Elke stap bouwt voort op de vorige:</p>
                 <ol className="list-decimal list-inside mt-1 space-y-0.5 text-[10px]">
-                  <li><strong className="text-text-muted">Macro Regime</strong> — bepaald door centraal bank beleid (hawkish/dovish bias + rente vs doel). Dit verandert niet door dagelijkse markbewegingen.</li>
-                  <li><strong className="text-text-muted">Currency Scorecard &amp; Nieuws</strong> — elke valuta krijgt een score (CB beleid × 2 + rentetarget + nieuwsbonus max ±2.0). Het verschil bepaalt de bias per paar.</li>
-                  <li><strong className="text-text-muted">Intermarket Bevestiging</strong> — VIX, S&amp;P 500, goud, yields en DXY worden gecheckt als bevestiging of waarschuwing. Ze veranderen het regime niet, maar beïnvloeden de overtuiging.</li>
-                  <li><strong className="text-text-muted">Trade Focus</strong> — paren met score ≥3.0 en regime-aligned worden geselecteerd. Het model wacht op mean reversion: pas traden als de prijs tegen de fundamentele richting beweegt.</li>
+                  <li><strong className="text-text-muted">Marktregime</strong> bepaald door CB beleid en intermarket data. Dit geeft context voor alle verdere analyse.</li>
+                  <li><strong className="text-text-muted">Valutascores</strong> elke valuta krijgt een score (CB beleid x 2 + renteverschil x 1.5 + nieuwsbonus). Het verschil bepaalt de bias per paar.</li>
+                  <li><strong className="text-text-muted">Intermarket bevestiging</strong> VIX, S&amp;P 500, goud, yields en DXY worden gecheckt. Alleen bij alignment &gt;50% worden signalen doorgelaten.</li>
+                  <li><strong className="text-text-muted">Trade Focus</strong> paren met score &ge;2.0, contrarian prijsactie (5d lookback) en intermarket bevestiging. Hold: 1 handelsdag.</li>
                 </ol>
               </div>
 
@@ -2453,12 +2448,11 @@ export default function BriefingV2Dashboard() {
                 <p className="font-semibold text-text-muted mb-1">Databronnen</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[10px]">
                   {[
-                    { bron: 'Centraal bank rentetarieven', detail: 'Supabase DB, handmatig bijgewerkt na CB-vergaderingen' },
-                    { bron: 'Intermarket koersen', detail: 'Yahoo Finance API (real-time, cache: 5 min)' },
-                    { bron: 'Nieuws artikelen', detail: 'Bloomberg, ForexLive, CNBC via Supabase (laatste 3 dagen)' },
-                    { bron: 'Economische kalender', detail: 'ForexFactory API (wekelijks ververst)' },
-                    { bron: 'Koers momentum (divergentie)', detail: 'Yahoo Finance 5d chart data, proxy-paren' },
-                    { bron: 'Track Record', detail: 'Supabase DB, dagelijks automatisch geresolved na 2 handelsdagen' },
+                    { bron: 'CB rentetarieven en beleid', detail: 'Supabase DB, bijgewerkt na CB vergaderingen' },
+                    { bron: 'Intermarket koersen', detail: 'Yahoo Finance API (cache: 5 min)' },
+                    { bron: 'Nieuws artikelen', detail: 'Bloomberg, ForexLive, CNBC via Supabase (laatste 72 uur)' },
+                    { bron: 'Dagkoersen (10 major paren)', detail: 'Yahoo Finance, dagelijks vernieuwd' },
+                    { bron: 'Track Record', detail: 'Supabase DB, dagelijks automatisch geresolved na 1 handelsdag' },
                   ].map(item => (
                     <div key={item.bron} className="flex items-start gap-1.5 p-1.5 rounded bg-white/[0.02]">
                       <span className="text-accent-light/40 mt-0.5">&#x2022;</span>
@@ -2474,13 +2468,13 @@ export default function BriefingV2Dashboard() {
               <div>
                 <p className="font-semibold text-text-muted mb-1">Update frequenties</p>
                 <p className="text-[10px]">
-                  CB beleid: na elke vergadering · Intermarket: elke 5 min (Yahoo cache) · Nieuws: continu, analyse afgelopen 72 uur · Kalender: wekelijks · Track record: dagelijks om ~23:00 NL
+                  CB beleid: na elke vergadering · Intermarket: elke 5 min · Nieuws: analyse afgelopen 72 uur · Track record: dagelijks automatisch
                 </p>
               </div>
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              {['CB Beleid ×2', 'Rente vs Target', 'Nieuws ±2.0', 'Intermarket Check', 'Mean Reversion', 'Confluence 4/4', '21 Paren', 'Dagkoers NY Close'].map(tag => (
+              {['CB Beleid x2', 'Rente x1.5', 'Nieuws bonus', 'Intermarket >50%', 'Contrarian 5d', '10 Major Paren', 'Hold 1d', 'Dagkoers NY Close'].map(tag => (
                 <span key={tag} className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">{tag}</span>
               ))}
             </div>
@@ -2492,7 +2486,7 @@ export default function BriefingV2Dashboard() {
               Fundamentals geven de richting, technische analyse (structure breaks) bepaalt de timing en entry.
             </p>
             <p className="text-[9px] text-text-dim/40 mt-1">
-              Versie {data.version} · Gegenereerd: {formatCET(data.generatedAt)} · 21 FX paren · 8 valuta&apos;s · 6 intermarket signalen
+              Sanders Capital Fundamentals · Gegenereerd: {formatCET(data.generatedAt)} · 10 major paren · 8 valuta&apos;s · 6 intermarket instrumenten
             </p>
           </div>
         </>

@@ -14,8 +14,8 @@ interface ToolSetting {
 }
 
 const premiumTools = [
-  { href: '/tools/fx-selector', label: 'Daily Macro Briefing', slug: 'fx-selector' },
   { href: '/tools/fx-analyse', label: 'Macro Fundamentals', slug: 'fx-analyse' },
+  { href: '/tools/fx-selector', label: 'Daily Macro Briefing', slug: 'fx-selector' },
   { href: '/tools/tradescope', label: 'TradeScope', slug: 'tradescope' },
 ]
 

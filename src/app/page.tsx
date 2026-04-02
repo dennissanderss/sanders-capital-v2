@@ -317,7 +317,7 @@ export default async function HomePage() {
               {
                 name: 'Daily Macro Briefing',
                 problem: 'Elke dag macro data verzamelen kost uren en je mist altijd iets.',
-                solution: 'V3 Edge Engine: sub-regime classificatie, 7-factor scoring, pair-specifieke intermarket en 5-categorie signalen. Dagelijks automatisch.',
+                solution: 'Automatische fundamentele analyse: marktregime, valutascores op basis van CB beleid en nieuws, intermarket bevestiging en trade focus. Dagelijks vernieuwd.',
                 href: '/tools/fx-selector',
                 icon: (
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
