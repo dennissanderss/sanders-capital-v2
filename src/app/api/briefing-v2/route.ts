@@ -256,6 +256,9 @@ export async function GET() {
     const nextWeek: CalendarEvent[] = nextWeekRes.ok ? await nextWeekRes.json() : []
     const allEvents = [...thisWeek, ...nextWeek]
 
+    // ── Currency Momentum (depends on marketData, fetched separately with caching) ──
+    const currencyMomentum = await fetchCurrencyMomentum(marketData)
+
     // ── News Sentiment ──
     const newsSentiment = analyzeNewsSentiment(recentNews)
 
@@ -306,20 +309,22 @@ export async function GET() {
       }))
 
     // Currency scores with news integration
-    const currencyScores: Record<string, { score: number; baseScore: number; newsBonus: number; reasons: string[]; newsHeadlines: string[] }> = {}
+    const currencyScores: Record<string, { score: number; baseScore: number; newsBonus: number; reasons: string[]; newsHeadlines: string[]; scoreBreakdown: { biasLabel: string; biasRaw: number; biasMultiplied: number; rateScore: number; rate: number | null; target: number | null; newsRaw: number; newsCapped: number; total: number } }> = {}
     for (const ccy of MAJORS) {
       const rate = ratesMap[ccy]
       const reasons: string[] = []
       let baseScore = 0
+      let bs = 0
+      let rts = 0
 
       if (rate) {
-        const bs = biasScore(rate.bias)
+        bs = biasScore(rate.bias)
         baseScore += bs * 2
         if (bs > 0) reasons.push(`${rate.bank}: ${rate.bias} (hawkish)`)
         else if (bs < 0) reasons.push(`${rate.bank}: ${rate.bias} (dovish)`)
         else if (rate.bias) reasons.push(`${rate.bank}: ${rate.bias}`)
 
-        const rts = rateTargetScore(rate.rate, rate.target)
+        rts = rateTargetScore(rate.rate, rate.target)
         baseScore += rts
         if (rts > 0) reasons.push(`Rente (${rate.rate}%) boven target (${rate.target}%) → restrictief`)
         else if (rts < 0) reasons.push(`Rente (${rate.rate}%) onder target (${rate.target}%) → accommoderend`)
@@ -345,6 +350,17 @@ export async function GET() {
         newsBonus: Math.round(newsBonus * 10) / 10,
         reasons,
         newsHeadlines: newsData?.headlines || [],
+        scoreBreakdown: {
+          biasLabel: rate?.bias || 'onbekend',
+          biasRaw: bs,
+          biasMultiplied: bs * 2,
+          rateScore: rts,
+          rate: rate?.rate ?? null,
+          target: rate?.target ?? null,
+          newsRaw: newsData?.score || 0,
+          newsCapped: newsBonus,
+          total: baseScore + newsBonus,
+        },
       }
     }
 
@@ -408,6 +424,7 @@ export async function GET() {
         newsBonus: currencyScores[ccy]?.newsBonus || 0,
         reasons: currencyScores[ccy]?.reasons || [],
         newsHeadlines: currencyScores[ccy]?.newsHeadlines || [],
+        scoreBreakdown: currencyScores[ccy]?.scoreBreakdown || null,
         rate: ratesMap[ccy]?.rate ?? null,
         bias: ratesMap[ccy]?.bias || '',
         flag: ratesMap[ccy]?.flag || '',
@@ -555,7 +572,35 @@ export async function GET() {
     const newsAlignment = calculateNewsAlignment(newsSentiment, regime)
     const overallConfidence = Math.round((intermarketAlignment + newsAlignment) / 2)
 
-    // ── 9. V2.1 ENHANCEMENT: Intermarket Regime Filter ──────────
+    // ── 9a. Divergence Detection ──
+    // Compute divergences: price direction vs fundamental direction
+    const divergences: Record<string, { hasDivergence: boolean; priceDirection: string; fundamentalDirection: string; pricePct: number; message: string }> = {}
+    for (const ccy of MAJORS) {
+      const score = currencyScores[ccy]?.score || 0
+      const momentum = currencyMomentum[ccy]
+      if (!momentum) continue
+
+      const fundDir = score > 1 ? 'bullish' : score < -1 ? 'bearish' : 'neutral'
+      const priceDir = momentum.direction
+
+      const hasDivergence =
+        (fundDir === 'bullish' && priceDir === 'down') ||
+        (fundDir === 'bearish' && priceDir === 'up')
+
+      if (hasDivergence) {
+        const dirLabel = priceDir === 'up' ? 'stijgt' : 'daalt'
+        const fundLabel = fundDir === 'bullish' ? 'bullish' : 'bearish'
+        divergences[ccy] = {
+          hasDivergence: true,
+          priceDirection: priceDir,
+          fundamentalDirection: fundDir,
+          pricePct: momentum.changePct,
+          message: `${ccy} is fundamenteel ${fundLabel} (${score > 0 ? '+' : ''}${score.toFixed(1)}) maar de koers ${dirLabel} ${Math.abs(momentum.changePct).toFixed(1)}% in 3 dagen → mean reversion kans`
+        }
+      }
+    }
+
+    // ── 9b. V2.1 ENHANCEMENT: Intermarket Regime Filter ──────────
     // If intermarket signals CONTRADICT the regime, downgrade "sterk" to "matig"
     // If they CONFIRM, upgrade "matig" to "sterk" (only for pairs aligned with regime)
     // This is the key improvement: intermarket signals now influence trade selection
@@ -568,6 +613,7 @@ export async function GET() {
     for (const pair of pairBiases) {
       // Check if pair direction aligns with regime
       const pairAligned = isAlignedWithRegime(pair, regime)
+      ;(pair as any).regimeAligned = pairAligned
 
       if (regimeContradicted && pair.conviction === 'sterk') {
         // Intermarket contradicts regime → downgrade strong to moderate
@@ -619,10 +665,23 @@ export async function GET() {
       } else {
         (pair as any).tradeFocusTier = 'none'
       }
+
+      // ── Confluence Data ──
+      const regimeAligned = (pair as any).regimeAligned ?? false
+      const confluenceFactors = {
+        fundamenteel: Math.abs(pair.score) >= 3.0,
+        regime: regimeAligned,
+        intermarket: intermarketAlignment >= 50,
+        news: (pair.direction.includes('bullish') && pair.newsInfluence > 0) ||
+              (pair.direction.includes('bearish') && pair.newsInfluence < 0) ||
+              pair.newsInfluence === 0, // neutral news doesn't hurt
+      }
+      const confluenceScore = Object.values(confluenceFactors).filter(Boolean).length
+      ;(pair as any).confluence = { factors: confluenceFactors, score: confluenceScore, total: 4 }
     }
 
     return NextResponse.json({
-      version: 'v2.3',
+      version: 'v2.4',
       regime,
       regimeExplain,
       regimeColor,
@@ -632,6 +691,8 @@ export async function GET() {
       intermarketSignals,
       currencyRanking,
       pairBiases,
+      currencyMomentum,
+      divergences,
       todayEvents,
       weekEvents,
       topNews,
@@ -810,6 +871,57 @@ async function fetchRecentNews(supabaseUrl?: string, supabaseKey?: string): Prom
     }
   } catch { /* fall through */ }
   return []
+}
+
+async function fetchCurrencyMomentum(marketData: Record<string, MarketQuote>): Promise<Record<string, { direction: 'up' | 'down' | 'flat'; changePct: number }>> {
+  const result: Record<string, { direction: 'up' | 'down' | 'flat'; changePct: number }> = {}
+
+  // Use DXY for USD
+  if (marketData['dxy']) {
+    const d = marketData['dxy']
+    result['USD'] = { direction: d.direction, changePct: d.changePct }
+  }
+
+  // For other currencies, derive from their USD pair moves
+  // If EUR/USD goes up, EUR is strengthening
+  const proxyPairs: Record<string, { symbol: string; invert: boolean }> = {
+    'EUR': { symbol: 'EURUSD%3DX', invert: false },
+    'GBP': { symbol: 'GBPUSD%3DX', invert: false },
+    'JPY': { symbol: 'USDJPY%3DX', invert: true },  // USD/JPY up = JPY weakening
+    'AUD': { symbol: 'AUDUSD%3DX', invert: false },
+  }
+
+  const entries = Object.entries(proxyPairs)
+  const responses = await Promise.allSettled(
+    entries.map(([, { symbol }]) =>
+      fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=5d`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        next: { revalidate: 300 },
+      })
+    )
+  )
+
+  for (let i = 0; i < entries.length; i++) {
+    const [ccy, { invert }] = entries[i]
+    const response = responses[i]
+    if (response.status !== 'fulfilled' || !response.value.ok) continue
+    try {
+      const json = await response.value.json()
+      const closes = json?.chart?.result?.[0]?.indicators?.quote?.[0]?.close
+      if (closes && closes.length >= 3) {
+        const current = closes[closes.length - 1]
+        const prev3 = closes[closes.length - 3] // 3 days ago
+        if (current && prev3 && prev3 !== 0) {
+          let changePct = +((current - prev3) / prev3 * 100).toFixed(2)
+          if (invert) changePct = -changePct // Invert for JPY
+          const dir = changePct > 0.1 ? 'up' : changePct < -0.1 ? 'down' : 'flat'
+          result[ccy] = { direction: dir as 'up' | 'down' | 'flat', changePct }
+        }
+      }
+    } catch { /* skip */ }
+  }
+
+  return result
 }
 
 interface MarketQuote {

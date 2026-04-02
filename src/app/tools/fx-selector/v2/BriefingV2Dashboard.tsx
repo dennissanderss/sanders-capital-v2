@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import SummaryBar from './components/SummaryBar'
+import DivergenceAlert from './components/DivergenceAlert'
+import ConfluenceMeter from './components/ConfluenceMeter'
 
 // ─── Types ──────────────────────────────────────────────────
 interface CurrencyRank {
@@ -11,10 +14,42 @@ interface CurrencyRank {
   newsBonus: number
   reasons: string[]
   newsHeadlines: string[]
+  scoreBreakdown?: ScoreBreakdown | null
   rate: number | null
   bias: string
   flag: string
   bank: string
+}
+
+interface ConfluenceData {
+  factors: {
+    fundamenteel: boolean
+    regime: boolean
+    intermarket: boolean
+    news: boolean
+  }
+  score: number
+  total: number
+}
+
+interface DivergenceInfo {
+  hasDivergence: boolean
+  priceDirection: string
+  fundamentalDirection: string
+  pricePct: number
+  message: string
+}
+
+interface ScoreBreakdown {
+  biasLabel: string
+  biasRaw: number
+  biasMultiplied: number
+  rateScore: number
+  rate: number | null
+  target: number | null
+  newsRaw: number
+  newsCapped: number
+  total: number
 }
 
 interface PairBias {
@@ -30,6 +65,9 @@ interface PairBias {
   rateDiff: number | null
   baseBias: string
   quoteBias: string
+  confluence?: ConfluenceData
+  tradeFocusTier?: string
+  regimeAligned?: boolean
 }
 
 interface TodayEvent {
@@ -99,6 +137,8 @@ interface BriefingV2Data {
   newsCount?: number
   regimeSource?: string
   intermarketAlignment?: number
+  divergences?: Record<string, DivergenceInfo>
+  currencyMomentum?: Record<string, { direction: string; changePct: number }>
 }
 
 interface TrackRecordMetadata {
@@ -592,6 +632,21 @@ export default function BriefingV2Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── Summary Bar ── */}
+      {data && (
+        <SummaryBar
+          regime={data.regime}
+          regimeColor={data.regimeColor}
+          confidence={data.confidence}
+          topPairs={tradeFocus.slice(0, 3).map(t => ({ pair: t.pair, direction: t.isBullish ? 'bullish' : t.isBearish ? 'bearish' : 'neutraal', score: t.score }))}
+          winRate={trackStats.winRate}
+          totalTrades={trackStats.total}
+          generatedAt={data.generatedAt}
+          onRefresh={fetchData}
+          loading={loading}
+        />
+      )}
 
       {loading && !data && (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -1610,6 +1665,9 @@ export default function BriefingV2Dashboard() {
             }
           />
 
+          {/* ── Divergence Alert ── */}
+          {data.divergences && <DivergenceAlert divergences={data.divergences} />}
+
           {/* ════════════════════════════════════════════════════════
               STAP 4: TRADE FOCUS
               ════════════════════════════════════════════════════════ */}
@@ -1661,11 +1719,17 @@ export default function BriefingV2Dashboard() {
                           <p className="text-xs text-text-muted mt-0.5">{trade.action}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className={`text-xl font-mono font-bold ${
-                          trade.score > 0 ? 'text-green-400' : trade.score < 0 ? 'text-red-400' : 'text-text-dim'
-                        }`}>{trade.score > 0 ? '+' : ''}{trade.score}</p>
-                        <p className="text-[9px] text-text-dim">totaal score</p>
+                      <div className="flex items-center gap-3">
+                        {(() => {
+                          const pairData = data.pairBiases.find(p => p.pair === trade.pair)
+                          return pairData?.confluence ? <ConfluenceMeter confluence={pairData.confluence} /> : null
+                        })()}
+                        <div className="text-right">
+                          <p className={`text-xl font-mono font-bold ${
+                            trade.score > 0 ? 'text-green-400' : trade.score < 0 ? 'text-red-400' : 'text-text-dim'
+                          }`}>{trade.score > 0 ? '+' : ''}{trade.score}</p>
+                          <p className="text-[9px] text-text-dim">totaal score</p>
+                        </div>
                       </div>
                     </div>
 
