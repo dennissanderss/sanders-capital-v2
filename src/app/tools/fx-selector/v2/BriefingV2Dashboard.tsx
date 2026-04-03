@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import SummaryBar from './components/SummaryBar'
 import DivergenceAlert from './components/DivergenceAlert'
@@ -386,6 +386,38 @@ function ConfidenceRing({ value, size = 64 }: { value: number; size?: number }) 
   )
 }
 
+// ─── Inline Education Component ────────────────────────────
+function InlineEducation({ text }: { text: string }) {
+  return (
+    <details className="group/edu inline-block align-middle">
+      <summary className="inline-flex items-center gap-1 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+        <span className="w-4 h-4 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-[9px] text-accent-light/70 hover:text-accent-light hover:bg-accent/20 transition-all shrink-0" title="Uitleg">i</span>
+      </summary>
+      <div className="mt-1.5 p-2.5 rounded-lg bg-white/[0.04] border border-accent/15 text-[10px] text-text-dim leading-relaxed max-w-md">
+        {text}
+      </div>
+    </details>
+  )
+}
+
+// ─── Score Legend Component ─────────────────────────────────
+function ScoreLegend() {
+  return (
+    <div className="inline-flex items-center gap-2 text-[8px] text-text-dim/60 ml-1">
+      <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-400/70 border border-green-500/10">&ge;3.0 Trade</span>
+      <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400/70 border border-amber-500/10">2-3 Watch</span>
+      <span className="px-1.5 py-0.5 rounded bg-white/[0.04] text-text-dim/50 border border-white/[0.06]">&lt;2 Geen</span>
+    </div>
+  )
+}
+
+// ─── Alignment Label Helper ────────────────────────────────
+function AlignmentLabel({ value }: { value: number }) {
+  if (value > 60) return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20 font-bold">Sterk</span>
+  if (value >= 30) return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20 font-bold">Gemiddeld</span>
+  return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/20 font-bold">Zwak</span>
+}
+
 // ─── Signal Pill Component ──────────────────────────────────
 function SignalPill({ direction, label, value, unit, changePct, previousClose, change }: {
   direction: string; label: string; value: number | null; unit: string; changePct: number | null; previousClose?: number | null; change?: number | null
@@ -446,6 +478,26 @@ export default function BriefingV2Dashboard() {
   const [expandedPairs, setExpandedPairs] = useState<Set<string>>(new Set())
   const [backfilling, setBackfilling] = useState(false)
   const [backfillMsg, setBackfillMsg] = useState<string | null>(null)
+
+  // Daily change indicators for track record stats
+  const todayChanges = useMemo(() => {
+    if (trackRecords.length === 0) return null
+    const today = new Date().toISOString().split('T')[0]
+    const todayRecords = trackRecords.filter(r => r.date === today)
+    if (todayRecords.length === 0) return null
+    const newTotal = todayRecords.length
+    const newCorrect = todayRecords.filter(r => r.result === 'correct').length
+    const newIncorrect = todayRecords.filter(r => r.result === 'incorrect').length
+    const newPending = todayRecords.filter(r => r.result === 'pending').length
+    // Win rate change: calculate what win rate would be without today's resolved trades
+    const resolvedToday = todayRecords.filter(r => r.result !== 'pending').length
+    const prevTotal = trackStats.total - newTotal
+    const prevCorrect = trackStats.correct - newCorrect
+    const prevResolved = prevTotal - (trackStats.pending - newPending)
+    const prevWinRate = prevResolved > 0 ? Math.round((prevCorrect / prevResolved) * 100) : 0
+    const winRateDiff = trackStats.winRate - prevWinRate
+    return { total: newTotal, correct: newCorrect, incorrect: newIncorrect, pending: newPending, winRateDiff, resolvedToday }
+  }, [trackRecords, trackStats])
 
   const fetchData = async () => {
     setLoading(true)
@@ -626,6 +678,9 @@ export default function BriefingV2Dashboard() {
               title="Macro Regime"
               subtitle="Wat is het huidige marktklimaat? Gebaseerd op centraal bank beleid."
             />
+            <div className="mb-3 ml-11">
+              <InlineEducation text="Het marktregime bepaalt of grote beleggers risico zoeken (risk-on) of vermijden (risk-off). Dit is de basis voor alle verdere analyse. De zekerheid geeft aan hoe eenduidig het beeld is: hoog = duidelijke richting, laag = tegenstrijdige signalen." />
+            </div>
 
             <div className={`rounded-2xl border ${rc.border} ${rc.bg} overflow-hidden shadow-lg ${rc.glow}`}>
               {/* Regime header */}
@@ -649,7 +704,7 @@ export default function BriefingV2Dashboard() {
                   <div className="flex items-center gap-3">
                     <ConfidenceRing value={data.regimeConfidence ?? data.confidence} size={52} />
                     <div className="text-right">
-                      <p className="text-[10px] text-text-dim uppercase tracking-wider">Regime Confidence</p>
+                      <p className="text-[10px] text-text-dim uppercase tracking-wider">Regime Zekerheid</p>
                       <p className="text-xs text-text-muted">
                         {(data.regimeConfidence ?? data.confidence) >= 70 ? 'Sterke consensus' : (data.regimeConfidence ?? data.confidence) >= 45 ? 'Gemengde signalen' : 'Zwakke consensus'}
                       </p>
@@ -684,12 +739,12 @@ export default function BriefingV2Dashboard() {
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${showConfidenceBreakdown ? 'rotate-90' : ''}`}>
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
-                    Hoe berekend? ({data.regimeConfidence ?? data.confidence}% regime confidence)
+                    Hoe berekend? ({data.regimeConfidence ?? data.confidence}% regime zekerheid)
                   </button>
                   {showConfidenceBreakdown && (
                     <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
                       <p className="text-[10px] text-text-dim mb-3 leading-relaxed">
-                        De regime confidence geeft aan hoe duidelijk het centraal bank beeld is. Dit is puur gebaseerd op de spread tussen de sterkste en zwakste valuta. Hoe groter het verschil, hoe duidelijker het regime.
+                        De regime zekerheid geeft aan hoe duidelijk het centraal bank beeld is. Dit is puur gebaseerd op de spread tussen de sterkste en zwakste valuta. Hoe groter het verschil, hoe duidelijker het regime.
                       </p>
                       {/* Breakdown bars */}
                       {(() => {
@@ -711,7 +766,7 @@ export default function BriefingV2Dashboard() {
                               </p>
                             </div>
                             <div className="pt-2 mt-2 border-t border-white/[0.05] text-[10px] font-mono text-text-dim">
-                              Regime confidence: {regConf}%
+                              Regime zekerheid: {regConf}%
                             </div>
                           </div>
                         )
@@ -761,9 +816,13 @@ export default function BriefingV2Dashboard() {
               {/* Currency Strength Ranking — CLICKABLE for score breakdown */}
               {data.currencyRanking && data.currencyRanking.length > 0 && (
                 <div className="px-5 sm:px-6 py-4 border-t border-white/[0.06]">
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-2 mb-2">
                     <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider">Valuta Sterkte: van sterk naar zwak</p>
                     <span className="text-[8px] text-text-dim/50">(klik voor detail)</span>
+                    <InlineEducation text="Rangorde van sterk naar zwak op basis van centraal bank beleid en renteverschillen. Hoe hoger de score, hoe sterker de fundamentele positie van die valuta. Een positieve score wijst op hawkish beleid (hogere rente), negatief op dovish beleid (lagere rente)." />
+                  </div>
+                  <div className="mb-3">
+                    <ScoreLegend />
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {data.currencyRanking.map((ccy, i) => {
@@ -983,6 +1042,9 @@ export default function BriefingV2Dashboard() {
               title="Nieuws Sentiment"
               subtitle="Wat vertelt recent nieuws ons over elke valuta?"
             />
+            <div className="mb-3 ml-11">
+              <InlineEducation text="Recente nieuwsberichten worden geanalyseerd om te bepalen of het sentiment per valuta positief of negatief is. Dit be\u00EFnvloedt de score van elke valuta. Het nieuws-effect is begrensd (max \u00B12.0 punt) zodat fundamentele analyse altijd de basis blijft." />
+            </div>
 
             <div className="rounded-2xl border border-border bg-bg-card overflow-hidden">
               {/* Sentiment Grid */}
@@ -1258,6 +1320,9 @@ export default function BriefingV2Dashboard() {
               title="Intermarket Signalen"
               subtitle="Bevestigen aandelen, yields, VIX en goud het regime?"
             />
+            <div className="mb-3 ml-11">
+              <InlineEducation text="Intermarket indicatoren (goud, VIX, S&P 500, obligaties) worden gecheckt of ze het regime bevestigen. Hoe hoger het alignment percentage, hoe sterker het signaal. <30% = zwak (tegenstrijdige markten), 30-60% = gemiddeld, >60% = sterk (markten bewegen in dezelfde richting)." />
+            </div>
 
             <div className="rounded-2xl border border-border bg-bg-card overflow-hidden">
               <div className="px-5 sm:px-6 py-4">
@@ -1301,9 +1366,12 @@ export default function BriefingV2Dashboard() {
                           <div className="flex items-center gap-2 mb-1.5">
                             <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">Conclusie</p>
                             {alignment !== undefined && (
-                              <span className={`text-sm font-mono font-bold ${alignColor}`}>
-                                {alignment}%
-                              </span>
+                              <>
+                                <span className={`text-sm font-mono font-bold ${alignColor}`}>
+                                  {alignment}%
+                                </span>
+                                <AlignmentLabel value={alignment} />
+                              </>
                             )}
                             {intermarketConclusion.confirmsRegime ? (
                               <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20 font-medium">
@@ -1511,6 +1579,9 @@ export default function BriefingV2Dashboard() {
               title="Trade Focus"
               subtitle="Filterproces: welke paren overleven alle criteria?"
             />
+            <div className="mb-3 ml-11">
+              <InlineEducation text={"Van 10 paren worden alleen de sterkste geselecteerd. Eerst wordt gekeken naar de fundamentele score (moet \u22652.0 zijn), dan intermarket bevestiging (>50%), en tenslotte of de prijs tegen de fundamentele richting beweegt (contrarian filter). Alleen paren die alle filters passeren worden een concrete trade."} />
+            </div>
 
             {(() => {
               const totalPairs = data.pairBiases.length
@@ -1585,8 +1656,8 @@ export default function BriefingV2Dashboard() {
                       <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">
                         Score &ge; 3.0
                       </span>
-                      <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">
-                        IM alignment: {imAlignment}%
+                      <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim inline-flex items-center gap-1.5">
+                        IM alignment: {imAlignment}% <AlignmentLabel value={imAlignment} />
                       </span>
                       <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">
                         Regime: {data.regime}
@@ -1656,7 +1727,10 @@ export default function BriefingV2Dashboard() {
                         </svg>
                         Alle {totalPairs} paren bekijken (gesorteerd op divergentie)
                       </summary>
-                      <div className="mt-1 overflow-x-auto">
+                      <div className="mt-1 mb-2">
+                        <ScoreLegend />
+                      </div>
+                      <div className="overflow-x-auto">
                         <table className="w-full text-[10px]">
                           <thead>
                             <tr className="border-b border-white/[0.04]">
@@ -1758,6 +1832,9 @@ export default function BriefingV2Dashboard() {
               title="Concrete Trades"
               subtitle="Alle kwalificerende signalen met call, tijdstip en entry/exit."
             />
+            <div className="mb-3 ml-11">
+              <InlineEducation text="Dit zijn de uiteindelijke trades die door alle filters zijn gekomen. Elk signaal bevat een richting (long/short), instapmoment en verwacht uitstapmoment na 1 handelsdag. De score geeft de sterkte aan: hoe hoger, hoe sterker de fundamentele onderbouwing." />
+            </div>
 
             {tradeFocus.length > 0 ? (
               <div className="space-y-3">
@@ -1808,6 +1885,7 @@ export default function BriefingV2Dashboard() {
                               trade.score > 0 ? 'text-green-400' : trade.score < 0 ? 'text-red-400' : 'text-text-dim'
                             }`}>{trade.score > 0 ? '+' : ''}{trade.score}</p>
                             <p className="text-[9px] text-text-dim">{trade.conviction} overtuiging</p>
+                            <p className="text-[8px] text-text-dim/50 mt-0.5">{Math.abs(trade.score) >= 3.0 ? 'Trade Focus' : Math.abs(trade.score) >= 2.0 ? 'Watchlist' : 'Geen signaal'}</p>
                           </div>
                         </div>
                       </div>
@@ -2040,15 +2118,22 @@ export default function BriefingV2Dashboard() {
 
                   <div className="grid grid-cols-5 gap-2 mt-3 mb-4">
                     {[
-                      { label: 'Totaal', value: trackStats.total, color: 'text-heading' },
-                      { label: 'Correct', value: trackStats.correct, color: 'text-green-400' },
-                      { label: 'Incorrect', value: trackStats.incorrect, color: 'text-red-400' },
-                      { label: 'Pending', value: trackStats.pending, color: 'text-amber-400' },
-                      { label: 'Win Rate', value: `${trackStats.winRate}%`, color: trackStats.winRate >= 55 ? 'text-green-400' : trackStats.winRate >= 45 ? 'text-amber-400' : 'text-red-400' },
+                      { label: 'Totaal', value: trackStats.total, color: 'text-heading', daily: todayChanges ? todayChanges.total : 0, isPercent: false },
+                      { label: 'Correct', value: trackStats.correct, color: 'text-green-400', daily: todayChanges ? todayChanges.correct : 0, isPercent: false },
+                      { label: 'Incorrect', value: trackStats.incorrect, color: 'text-red-400', daily: todayChanges ? todayChanges.incorrect : 0, isPercent: false },
+                      { label: 'Pending', value: trackStats.pending, color: 'text-amber-400', daily: todayChanges ? todayChanges.pending : 0, isPercent: false },
+                      { label: 'Win Rate', value: `${trackStats.winRate}%`, color: trackStats.winRate >= 55 ? 'text-green-400' : trackStats.winRate >= 45 ? 'text-amber-400' : 'text-red-400', daily: todayChanges ? todayChanges.winRateDiff : 0, isPercent: true },
                     ].map(stat => (
                       <div key={stat.label} className="p-2 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
                         <p className={`text-lg font-mono font-bold ${stat.color}`}>{stat.value}</p>
                         <p className="text-[9px] text-text-dim">{stat.label}</p>
+                        {todayChanges ? (
+                          <p className={`text-[9px] mt-0.5 font-mono ${stat.daily > 0 ? 'text-green-400' : stat.daily < 0 ? 'text-red-400' : 'text-text-dim/50'}`}>
+                            {stat.daily > 0 ? `+${stat.daily}` : stat.daily < 0 ? `${stat.daily}` : '0'}{stat.isPercent ? '%' : ''}
+                          </p>
+                        ) : (
+                          <p className="text-[9px] mt-0.5 text-text-dim/30">geen nieuwe</p>
+                        )}
                       </div>
                     ))}
                   </div>
