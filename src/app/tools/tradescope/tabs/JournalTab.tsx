@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import type { TsTrade, TsAccount, TsStrategy, TsSetup, TradeFilters } from '../types'
 import TradeScreenshots from '../components/TradeScreenshots'
+import QuickTradeForm from '../components/QuickTradeForm'
 
 interface Props {
   accounts: TsAccount[]
@@ -369,6 +370,8 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
   onClose: () => void
   onScreenshotUpdate: () => void
 }) {
+  const [formMode, setFormMode] = useState<'quick' | 'full'>(trade ? 'full' : 'quick')
+
   const [form, setForm] = useState<Record<string, unknown>>(() => {
     if (trade) return { ...trade }
     return {
@@ -564,14 +567,53 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
       <div className="relative w-full max-w-2xl rounded-2xl border border-white/[0.08] shadow-2xl" style={{ background: 'rgba(13, 16, 22, 0.98)', backdropFilter: 'blur(32px)' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-          <h2 className="text-lg font-display font-semibold text-heading">
-            {trade ? 'Trade bewerken' : 'Nieuwe trade'}
-          </h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-lg font-display font-semibold text-heading">
+              {trade ? 'Trade bewerken' : 'Nieuwe trade'}
+            </h2>
+            {/* Mode toggle - only for new trades */}
+            {!trade && (
+              <div className="flex rounded-lg overflow-hidden border border-border">
+                <button
+                  type="button"
+                  onClick={() => setFormMode('quick')}
+                  className={`px-3 py-1 text-[11px] font-medium transition-colors ${
+                    formMode === 'quick'
+                      ? 'bg-accent/20 text-accent-light'
+                      : 'text-text-dim hover:text-heading'
+                  }`}
+                >
+                  Quick Trade
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormMode('full')}
+                  className={`px-3 py-1 text-[11px] font-medium transition-colors ${
+                    formMode === 'full'
+                      ? 'bg-accent/20 text-accent-light'
+                      : 'text-text-dim hover:text-heading'
+                  }`}
+                >
+                  Volledig formulier
+                </button>
+              </div>
+            )}
+          </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
 
+        {/* Quick Trade form */}
+        {formMode === 'quick' && !trade ? (
+          <QuickTradeForm
+            accounts={accounts}
+            defaultAccountId={(form.account_id as string) || null}
+            saving={saving}
+            onSave={onSave}
+            onClose={onClose}
+          />
+        ) : (
         <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
           {/* Trade data section */}
           <div>
@@ -756,6 +798,7 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   )
