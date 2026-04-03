@@ -1825,6 +1825,30 @@ export default function BriefingV2Dashboard() {
             />
             <div className="mb-3 ml-11" />
 
+            {/* Score legenda */}
+            <div className="mb-4 rounded-xl bg-white/[0.02] border border-white/[0.06] px-4 py-3">
+              <p className="text-[10px] font-semibold text-heading uppercase tracking-wider mb-2">Hoe lees je de score?</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
+                  <span className="text-text-muted"><strong className="text-green-400">≥ 5.0</strong> = sterk signaal</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-accent-light shrink-0" />
+                  <span className="text-text-muted"><strong className="text-accent-light">3.0 – 5.0</strong> = goed signaal</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                  <span className="text-text-muted"><strong className="text-amber-400">2.0 – 3.0</strong> = watchlist</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-text-dim shrink-0" />
+                  <span className="text-text-muted"><strong className="text-text-dim">&lt; 2.0</strong> = geen signaal</span>
+                </div>
+              </div>
+              <p className="text-[9px] text-text-dim mt-2">De score is opgebouwd uit: CB beleid (x2) + renteverschil (x1.5) + nieuws bonus. Overtuiging: sterk (&ge;5), matig (3-5). Hoe hoger de score, hoe sterker de fundamentele onderbouwing.</p>
+            </div>
+
             {tradeFocus.length > 0 ? (
               <div className="space-y-3">
                 {tradeFocus.map((trade, i) => {
