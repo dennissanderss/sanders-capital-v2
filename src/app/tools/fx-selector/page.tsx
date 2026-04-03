@@ -356,7 +356,21 @@ export default function DailyBriefingIntroPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2 text-sm text-text-muted leading-relaxed">
+                <div className="space-y-3 text-sm text-text-muted leading-relaxed">
+                  <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
+                    <p className="text-xs font-semibold text-heading mb-2">Hoe wordt de prijsbeweging gemeten?</p>
+                    <p className="text-[11px] text-text-muted leading-relaxed">
+                      Het model haalt via Yahoo Finance de dagelijkse slotkoersen op van elk valutapaar.
+                      Vervolgens vergelijkt het de slotkoers van vandaag met de slotkoers van exact <strong className="text-heading">5 handelsdagen</strong> geleden.
+                      Is de prijs over die 5 dagen gedaald terwijl de fundamentele score bullish is? Dan is er een contrarian signaal (LONG).
+                      Is de prijs gestegen terwijl de score bearish is? Dan een SHORT signaal.
+                    </p>
+                    <p className="text-[11px] text-text-dim mt-2">
+                      Waarom precies 5 dagen? De optimizer testte lookback periodes van 2, 3, 4 en 5 dagen.
+                      5 dagen leverde de beste combinatie van winrate (56%) en profit factor (1.42).
+                      Kortere periodes gaven te veel ruis, langere periodes misten de timing.
+                    </p>
+                  </div>
                   <p>
                     Optimalisatie over 1.260 configuraties toonde aan dat contrarian met 5-daagse lookback,
                     1-dag hold en intermarket bevestiging het sterkst presteert. Momentum scoorde consistent het slechtst.
