@@ -254,6 +254,27 @@ export interface TradeFilters {
 }
 
 // ============================================================
+// Custom filter types
+// ============================================================
+
+export interface TsCustomFilter {
+  id: string
+  user_id: string
+  category: string
+  label: string
+  color: string | null
+  sort_order: number
+  created_at: string
+}
+
+export interface TsTradeFilter {
+  id: string
+  trade_id: string
+  filter_id: string
+  created_at: string
+}
+
+// ============================================================
 // Tab definitions
 // ============================================================
 

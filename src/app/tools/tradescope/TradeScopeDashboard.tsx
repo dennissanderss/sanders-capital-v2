@@ -9,6 +9,7 @@ import { useTrades } from './hooks/useTrades'
 import { useAccounts } from './hooks/useAccounts'
 import { useStrategies } from './hooks/useStrategies'
 import { useSetups } from './hooks/useSetups'
+import { useCustomFilters } from './hooks/useCustomFilters'
 import { dbTradeToAnalytics, type TradeFilters, type TradescopeTab } from './types'
 import dynamic from 'next/dynamic'
 
@@ -101,6 +102,7 @@ export default function TradeScopeDashboard() {
   const { strategies } = useStrategies()
   const { setups } = useSetups()
   const { trades: dbTrades, loading: tradesLoading, refetch: refetchTrades } = useTrades(filters)
+  const customFilters = useCustomFilters()
 
   // CSV data (legacy mode)
   const [csvTrades, setCsvTrades] = useState<ParsedTrade[]>([])
@@ -311,7 +313,8 @@ export default function TradeScopeDashboard() {
               setups={setups}
               filters={filters}
               onFiltersChange={setFilters}
-              onTradeChanged={refetchTrades}
+              onTradeChanged={() => { refetchTrades(); customFilters.refetch() }}
+              customFilters={customFilters}
             />
           )}
 
@@ -327,8 +330,8 @@ export default function TradeScopeDashboard() {
             <OptimizationTab trades={analyticsTrades} metrics={metrics} optimizationData={optimizationData} startingBalance={activeBalance} />
           )}
 
-          {activeTab === 'strategyAnalysis' && hasData && (
-            <StrategyAnalysisTab trades={dbTrades} strategies={strategies} setups={setups} accounts={accounts} />
+          {activeTab === 'strategyAnalysis' && (
+            <StrategyAnalysisTab trades={dbTrades} strategies={strategies} setups={setups} accounts={accounts} customFilters={customFilters} />
           )}
 
           {activeTab === 'psychology' && hasData && (
@@ -350,7 +353,7 @@ export default function TradeScopeDashboard() {
           {activeTab === 'accounts' && <AccountsTab />}
 
           {/* Show empty hint for analytics tabs without data */}
-          {['analytics', 'strategy', 'optimization', 'strategyAnalysis', 'psychology', 'insights', 'playbook'].includes(activeTab) && !hasData && (
+          {['analytics', 'strategy', 'optimization', 'psychology', 'insights', 'playbook'].includes(activeTab) && !hasData && (
             <div className="text-center py-24">
               <p className="text-text-muted mb-2">Geen trades gevonden</p>
               <p className="text-sm text-text-dim">Voeg trades toe via het Journal of importeer een CSV bestand.</p>

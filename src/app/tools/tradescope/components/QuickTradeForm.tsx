@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import type { TsTrade, TsAccount } from '../types'
+import TradeFilterChips from './TradeFilterChips'
+import type { useCustomFilters } from '../hooks/useCustomFilters'
 
 const FX_PAIRS = [
   'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'NZD/USD', 'USD/CAD', 'USD/CHF',
@@ -10,15 +12,18 @@ const FX_PAIRS = [
   'CHF/JPY', 'NZD/JPY', 'XAU/USD', 'XAG/USD',
 ]
 
+type CustomFiltersHook = ReturnType<typeof useCustomFilters>
+
 interface Props {
   accounts: TsAccount[]
   defaultAccountId: string | null
   saving: boolean
-  onSave: (data: Partial<TsTrade>, pendingImages?: File[]) => void
+  onSave: (data: Partial<TsTrade>, pendingImages?: File[], filterIds?: string[]) => void
   onClose: () => void
+  customFilters?: CustomFiltersHook
 }
 
-export default function QuickTradeForm({ accounts, defaultAccountId, saving, onSave, onClose }: Props) {
+export default function QuickTradeForm({ accounts, defaultAccountId, saving, onSave, onClose, customFilters }: Props) {
   const [pair, setPair] = useState('')
   const [customPair, setCustomPair] = useState('')
   const [direction, setDirection] = useState<'buy' | 'sell' | null>(null)
@@ -29,6 +34,7 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
   const [fee, setFee] = useState('')
   const [accountId, setAccountId] = useState(defaultAccountId || accounts[0]?.id || '')
   const [notes, setNotes] = useState('')
+  const [selectedFilterIds, setSelectedFilterIds] = useState<string[]>([])
   const [pendingImages, setPendingImages] = useState<{ file: File; preview: string }[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -186,7 +192,7 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
       status: 'open',
     }
 
-    onSave(data, pendingImages.map(img => img.file))
+    onSave(data, pendingImages.map(img => img.file), selectedFilterIds.length > 0 ? selectedFilterIds : undefined)
   }
 
   const isValid = activePair && direction && entry
@@ -320,6 +326,19 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
           >
             {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
+        </div>
+      )}
+
+      {/* Custom Filters */}
+      {customFilters && customFilters.categories.length > 0 && (
+        <div>
+          <label className="block text-[10px] text-text-dim mb-1.5">Filters</label>
+          <TradeFilterChips
+            filtersByCategory={customFilters.filtersByCategory}
+            selectedIds={selectedFilterIds}
+            onToggle={(id) => setSelectedFilterIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+            compact
+          />
         </div>
       )}
 

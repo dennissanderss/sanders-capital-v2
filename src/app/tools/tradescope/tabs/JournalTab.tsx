@@ -2,9 +2,13 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
-import type { TsTrade, TsAccount, TsStrategy, TsSetup, TradeFilters } from '../types'
+import type { TsTrade, TsAccount, TsStrategy, TsSetup, TsCustomFilter, TradeFilters } from '../types'
 import TradeScreenshots from '../components/TradeScreenshots'
 import QuickTradeForm from '../components/QuickTradeForm'
+import TradeFilterChips from '../components/TradeFilterChips'
+import type { useCustomFilters } from '../hooks/useCustomFilters'
+
+type CustomFiltersHook = ReturnType<typeof useCustomFilters>
 
 interface Props {
   accounts: TsAccount[]
@@ -13,6 +17,7 @@ interface Props {
   filters: TradeFilters
   onFiltersChange: (f: TradeFilters) => void
   onTradeChanged: () => void
+  customFilters: CustomFiltersHook
 }
 
 const SESSIONS = ['London', 'New York', 'Asia', 'Overlap']
@@ -25,7 +30,7 @@ const ENVIRONMENTS = [
 ]
 const EMOTIONS = ['Kalm', 'Gefocust', 'Zelfverzekerd', 'Angstig', 'Gretig', 'Gefrustreerd', 'Verveeld', 'Gestrest', 'Euforisch', 'Neutraal']
 
-export default function JournalTab({ accounts, strategies, setups, filters, onFiltersChange, onTradeChanged }: Props) {
+export default function JournalTab({ accounts, strategies, setups, filters, onFiltersChange, onTradeChanged, customFilters }: Props) {
   const [trades, setTrades] = useState<TsTrade[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -58,7 +63,7 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
     setLoading(false)
   }
 
-  const handleSave = async (formData: Partial<TsTrade>, pendingImages?: File[]) => {
+  const handleSave = async (formData: Partial<TsTrade>, pendingImages?: File[], filterIds?: string[]) => {
     setSaving(true)
     const sb = createClient()
     const { data: { user } } = await sb.auth.getUser()
@@ -72,6 +77,11 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
       } else {
         const { data } = await sb.from('ts_trades').insert({ ...formData, user_id: user.id }).select('id').single()
         tradeId = data?.id || null
+      }
+
+      // Save custom filter assignments
+      if (tradeId && filterIds) {
+        await customFilters.setTradeFilterIds(tradeId, filterIds)
       }
 
       // Upload pending screenshots from Quick Trade
@@ -258,6 +268,7 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
               onEdit={() => { setEditingTrade(trade); setShowForm(true) }}
               onDelete={() => handleDelete(trade.id)}
               onScreenshotUpdate={fetchTrades}
+              tradeCustomFilters={customFilters.getTradeFilters(trade.id)}
             />
           ))}
         </div>
@@ -274,6 +285,7 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditingTrade(null) }}
           onScreenshotUpdate={fetchTrades}
+          customFilters={customFilters}
         />
       )}
     </div>
@@ -388,7 +400,7 @@ function OpenTradeCard({ trade, onClose, onEdit }: { trade: TsTrade; onClose: (i
 }
 
 // ─── Trade row component ───────────────────────────────────
-function TradeRow({ trade, onEdit, onDelete, onScreenshotUpdate }: { trade: TsTrade; onEdit: () => void; onDelete: () => void; onScreenshotUpdate: () => void }) {
+function TradeRow({ trade, onEdit, onDelete, onScreenshotUpdate, tradeCustomFilters }: { trade: TsTrade; onEdit: () => void; onDelete: () => void; onScreenshotUpdate: () => void; tradeCustomFilters: TsCustomFilter[] }) {
   const [expanded, setExpanded] = useState(false)
   const pnl = trade.profit_loss || 0
   const isWin = pnl > 0
@@ -427,6 +439,18 @@ function TradeRow({ trade, onEdit, onDelete, onScreenshotUpdate }: { trade: TsTr
                 {trade.environment}
               </span>
             )}
+            {tradeCustomFilters.map(f => (
+              <span
+                key={f.id}
+                className="text-[10px] px-1.5 py-0.5 rounded"
+                style={{
+                  backgroundColor: f.color ? `${f.color}15` : 'rgba(255,255,255,0.05)',
+                  color: f.color || 'inherit',
+                }}
+              >
+                {f.label}
+              </span>
+            ))}
           </div>
           {trade.account && (
             <p className="text-[10px] text-text-dim">{(trade.account as TsAccount).name}</p>
@@ -562,17 +586,26 @@ function TradeRow({ trade, onEdit, onDelete, onScreenshotUpdate }: { trade: TsTr
 }
 
 // ─── Trade form modal ──────────────────────────────────────
-function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, onClose, onScreenshotUpdate }: {
+function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, onClose, onScreenshotUpdate, customFilters }: {
   trade: TsTrade | null
   accounts: TsAccount[]
   strategies: TsStrategy[]
   setups: TsSetup[]
   saving: boolean
-  onSave: (data: Partial<TsTrade>, pendingImages?: File[]) => void
+  onSave: (data: Partial<TsTrade>, pendingImages?: File[], filterIds?: string[]) => void
   onClose: () => void
   onScreenshotUpdate: () => void
+  customFilters: CustomFiltersHook
 }) {
   const [formMode, setFormMode] = useState<'quick' | 'full'>(trade ? 'full' : 'quick')
+  const [selectedFilterIds, setSelectedFilterIds] = useState<string[]>(() => {
+    if (trade) return customFilters.getTradeFilterIds(trade.id)
+    return []
+  })
+
+  const toggleFilterId = (id: string) => {
+    setSelectedFilterIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
 
   const [form, setForm] = useState<Record<string, unknown>>(() => {
     if (trade) return { ...trade }
@@ -760,7 +793,7 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
       data.day_of_week = new Date(data.open_date).toLocaleDateString('nl-NL', { weekday: 'long' })
     }
 
-    onSave(data)
+    onSave(data, undefined, selectedFilterIds)
   }
 
   return (
@@ -814,6 +847,7 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
             saving={saving}
             onSave={onSave}
             onClose={onClose}
+            customFilters={customFilters}
           />
         ) : (
         <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
@@ -907,6 +941,18 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
               </FormField>
             </div>
           </div>
+
+          {/* Custom Filters */}
+          {customFilters.categories.length > 0 && (
+            <div>
+              <h3 className="text-xs font-semibold text-heading uppercase tracking-wider mb-3">Filters</h3>
+              <TradeFilterChips
+                filtersByCategory={customFilters.filtersByCategory}
+                selectedIds={selectedFilterIds}
+                onToggle={toggleFilterId}
+              />
+            </div>
+          )}
 
           {/* Scoring */}
           <div>

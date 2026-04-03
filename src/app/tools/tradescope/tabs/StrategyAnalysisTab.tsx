@@ -4,12 +4,17 @@ import { useMemo, useState } from 'react'
 import { Bar, Doughnut } from 'react-chartjs-2'
 import { darkThemeDefaults, COLORS } from './ChartSetup'
 import type { TsTrade, TsStrategy, TsSetup, TsAccount } from '../types'
+import FilterManager from '../components/FilterManager'
+import type { useCustomFilters } from '../hooks/useCustomFilters'
+
+type CustomFiltersHook = ReturnType<typeof useCustomFilters>
 
 interface Props {
   trades: TsTrade[]
   strategies: TsStrategy[]
   setups: TsSetup[]
   accounts: TsAccount[]
+  customFilters: CustomFiltersHook
 }
 
 type Dimension = 'strategy' | 'setup' | 'symbol' | 'session' | 'day_of_week' | 'environment' | 'action' | 'account' | 'month' | 'emotion_before'
@@ -72,11 +77,47 @@ function getGroupKey(trade: TsTrade, dim: Dimension, strategies: TsStrategy[], s
   }
 }
 
-export default function StrategyAnalysisTab({ trades, strategies, setups, accounts }: Props) {
+export default function StrategyAnalysisTab({ trades, strategies, setups, accounts, customFilters }: Props) {
   const [dimension, setDimension] = useState<Dimension>('strategy')
   const [sortBy, setSortBy] = useState<'trades' | 'winRate' | 'totalPnl' | 'expectancy' | 'profitFactor'>('totalPnl')
+  const [showFilterManager, setShowFilterManager] = useState(false)
 
   const closedTrades = useMemo(() => trades.filter(t => t.status === 'closed' && t.profit_loss !== null), [trades])
+
+  // ── Custom Filter Analytics ──
+  const filterAnalytics = useMemo(() => {
+    if (customFilters.filters.length === 0 || closedTrades.length === 0) return []
+
+    const results: { category: string; label: string; color: string | null; trades: number; wins: number; winRate: number; avgPnl: number; totalPnl: number; avgR: number; avgPips: number }[] = []
+
+    for (const filter of customFilters.filters) {
+      // Find trades that have this filter assigned
+      const matchedTrades = closedTrades.filter(t =>
+        customFilters.getTradeFilterIds(t.id).includes(filter.id)
+      )
+      if (matchedTrades.length === 0) continue
+
+      const wins = matchedTrades.filter(t => (t.profit_loss || 0) > 0).length
+      const totalPnl = matchedTrades.reduce((s, t) => s + (t.profit_loss || 0), 0)
+      const avgR = matchedTrades.filter(t => t.result_r).reduce((s, t) => s + (t.result_r || 0), 0) / (matchedTrades.filter(t => t.result_r).length || 1)
+      const avgPips = matchedTrades.filter(t => t.pips).reduce((s, t) => s + (t.pips || 0), 0) / (matchedTrades.filter(t => t.pips).length || 1)
+
+      results.push({
+        category: filter.category,
+        label: filter.label,
+        color: filter.color,
+        trades: matchedTrades.length,
+        wins,
+        winRate: (wins / matchedTrades.length) * 100,
+        avgPnl: totalPnl / matchedTrades.length,
+        totalPnl,
+        avgR,
+        avgPips,
+      })
+    }
+
+    return results
+  }, [customFilters.filters, closedTrades, customFilters])
 
   const groups = useMemo(() => {
     const map = new Map<string, TsTrade[]>()
@@ -149,22 +190,128 @@ export default function StrategyAnalysisTab({ trades, strategies, setups, accoun
     }],
   }), [groups])
 
-  if (closedTrades.length === 0) {
-    return (
-      <div className="text-center py-24">
-        <p className="text-text-muted mb-2">Geen trades gevonden</p>
-        <p className="text-sm text-text-dim">Voeg trades toe om strategy analyse te zien.</p>
-      </div>
-    )
-  }
+  // Group analytics by category
+  const analyticsCategories = [...new Set(filterAnalytics.map(a => a.category))]
 
   return (
     <div>
-      {/* Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+      {/* Filter Manager toggle */}
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-lg font-display font-semibold text-heading">Strategy Analyse</h2>
           <p className="text-xs text-text-dim mt-0.5">Breakdown van performance per dimensie</p>
+        </div>
+        <button
+          onClick={() => setShowFilterManager(!showFilterManager)}
+          className={`px-3 py-1.5 rounded-lg text-xs border transition-colors flex items-center gap-1.5 ${
+            showFilterManager ? 'bg-accent/15 text-accent-light border-accent/30' : 'text-text-muted border-border hover:text-heading hover:border-border-light'
+          }`}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+          </svg>
+          Mijn Filters
+        </button>
+      </div>
+
+      {/* Filter Manager */}
+      {showFilterManager && (
+        <div className="mb-8">
+          <FilterManager
+            categories={customFilters.categories}
+            filtersByCategory={customFilters.filtersByCategory}
+            onCreateFilter={customFilters.createFilter}
+            onUpdateFilter={customFilters.updateFilter}
+            onDeleteFilter={customFilters.deleteFilter}
+            onDeleteCategory={customFilters.deleteCategory}
+            onRenameCategory={customFilters.renameCategory}
+          />
+        </div>
+      )}
+
+      {/* Custom Filter Analytics */}
+      {filterAnalytics.length > 0 && (
+        <div className="mb-8">
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-heading">Prestaties per filter</h3>
+            <p className="text-xs text-text-dim mt-0.5">Hoe presteren je custom filters?</p>
+          </div>
+          {analyticsCategories.map(category => {
+            const categoryData = filterAnalytics.filter(a => a.category === category)
+            const best = categoryData.reduce((a, b) => a.totalPnl > b.totalPnl ? a : b)
+            const worst = categoryData.reduce((a, b) => a.totalPnl < b.totalPnl ? a : b)
+            return (
+              <div key={category} className="mb-4">
+                <h4 className="text-xs font-medium text-text-muted mb-2 uppercase tracking-wider">{category}</h4>
+                <div className="glass rounded-xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-white/[0.06]">
+                          <th className="px-3 py-2.5 text-left text-text-dim font-medium">Filter</th>
+                          <th className="px-3 py-2.5 text-right text-text-dim font-medium">Trades</th>
+                          <th className="px-3 py-2.5 text-right text-text-dim font-medium">Win Rate</th>
+                          <th className="px-3 py-2.5 text-right text-text-dim font-medium">Avg Pips</th>
+                          <th className="px-3 py-2.5 text-right text-text-dim font-medium">Avg R</th>
+                          <th className="px-3 py-2.5 text-right text-text-dim font-medium">Totaal P&L</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {categoryData.sort((a, b) => b.totalPnl - a.totalPnl).map((row) => {
+                          const isBest = row === best && categoryData.length > 1
+                          const isWorst = row === worst && categoryData.length > 1 && worst.totalPnl < 0
+                          return (
+                            <tr key={row.label} className={`border-b border-white/[0.03] ${isBest ? 'bg-green-500/[0.03]' : isWorst ? 'bg-red-500/[0.03]' : 'hover:bg-white/[0.02]'}`}>
+                              <td className="px-3 py-2.5">
+                                <div className="flex items-center gap-2">
+                                  {row.color && <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: row.color }} />}
+                                  <span className="text-heading font-medium">{row.label}</span>
+                                  {isBest && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400">beste</span>}
+                                  {isWorst && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">slechtste</span>}
+                                </div>
+                              </td>
+                              <td className="px-3 py-2.5 text-right text-text-muted">{row.trades}</td>
+                              <td className="px-3 py-2.5 text-right">
+                                <span className={row.winRate >= 55 ? 'text-green-400' : row.winRate >= 45 ? 'text-amber-400' : 'text-red-400'}>
+                                  {row.winRate.toFixed(1)}%
+                                </span>
+                              </td>
+                              <td className={`px-3 py-2.5 text-right ${row.avgPips >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                {row.avgPips >= 0 ? '+' : ''}{row.avgPips.toFixed(1)}
+                              </td>
+                              <td className="px-3 py-2.5 text-right text-text-muted">
+                                {row.avgR ? `${row.avgR > 0 ? '+' : ''}${row.avgR.toFixed(2)}R` : '--'}
+                              </td>
+                              <td className={`px-3 py-2.5 text-right font-semibold ${row.totalPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                {row.totalPnl >= 0 ? '+' : ''}{row.totalPnl.toFixed(2)}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {closedTrades.length === 0 && !showFilterManager && filterAnalytics.length === 0 && (
+        <div className="text-center py-24">
+          <p className="text-text-muted mb-2">Geen trades gevonden</p>
+          <p className="text-sm text-text-dim">Voeg trades toe om strategy analyse te zien.</p>
+        </div>
+      )}
+
+      {closedTrades.length > 0 && (
+      <>
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+          <h3 className="text-sm font-semibold text-heading">Dimensie Analyse</h3>
+          <p className="text-xs text-text-dim mt-0.5">Breakdown per categorie</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <select
@@ -284,6 +431,8 @@ export default function StrategyAnalysisTab({ trades, strategies, setups, accoun
             })()}
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   )
