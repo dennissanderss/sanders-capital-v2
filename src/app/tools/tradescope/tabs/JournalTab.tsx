@@ -122,7 +122,7 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
   }
 
   // Open trades quick-close handler
-  const handleQuickClose = async (tradeId: string, closePrice: number) => {
+  const handleQuickClose = async (tradeId: string, closePrice: number, toolBiasCorrect?: boolean | null) => {
     const sb = createClient()
     const trade = trades.find(t => t.id === tradeId)
     if (!trade) return
@@ -163,6 +163,7 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
       profit_loss: profitLoss || null,
       result_r: resultR,
       status: 'closed',
+      tool_bias_correct: toolBiasCorrect ?? null,
       updated_at: new Date().toISOString(),
     }).eq('id', tradeId)
 
@@ -293,15 +294,16 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
 }
 
 // ─── Open Trade Card (quick close) ────────────────────────
-function OpenTradeCard({ trade, onClose, onEdit }: { trade: TsTrade; onClose: (id: string, price: number) => void; onEdit: () => void }) {
+function OpenTradeCard({ trade, onClose, onEdit }: { trade: TsTrade; onClose: (id: string, price: number, toolBiasCorrect: boolean | null) => void; onEdit: () => void }) {
   const [closePrice, setClosePrice] = useState('')
   const [showClose, setShowClose] = useState(false)
+  const [toolBiasCorrect, setToolBiasCorrect] = useState<boolean | null>(null)
   const isBuy = trade.action === 'buy'
 
   const handleClose = () => {
     const price = parseFloat(closePrice)
     if (isNaN(price) || price <= 0) return
-    onClose(trade.id, price)
+    onClose(trade.id, price, toolBiasCorrect)
     setShowClose(false)
   }
 
@@ -364,7 +366,7 @@ function OpenTradeCard({ trade, onClose, onEdit }: { trade: TsTrade; onClose: (i
 
       {/* Quick close panel */}
       {showClose && (
-        <div className="px-4 pb-3 pt-1 border-t border-amber-500/10">
+        <div className="px-4 pb-3 pt-1 border-t border-amber-500/10 space-y-2">
           <div className="flex items-end gap-3">
             <div className="flex-1">
               <label className="block text-[10px] text-text-dim mb-1">Sluitprijs</label>
@@ -392,6 +394,28 @@ function OpenTradeCard({ trade, onClose, onEdit }: { trade: TsTrade; onClose: (i
             >
               Bevestigen
             </button>
+          </div>
+          {/* Tool bias accuracy */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-text-dim">Tool bias correct?</span>
+            <button
+              type="button"
+              onClick={() => setToolBiasCorrect(toolBiasCorrect === true ? null : true)}
+              className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${
+                toolBiasCorrect === true
+                  ? 'bg-green-500/20 text-green-400 border border-green-500/40'
+                  : 'bg-white/[0.04] text-text-dim border border-white/[0.06] hover:border-white/[0.12]'
+              }`}
+            >Ja</button>
+            <button
+              type="button"
+              onClick={() => setToolBiasCorrect(toolBiasCorrect === false ? null : false)}
+              className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${
+                toolBiasCorrect === false
+                  ? 'bg-red-500/20 text-red-400 border border-red-500/40'
+                  : 'bg-white/[0.04] text-text-dim border border-white/[0.06] hover:border-white/[0.12]'
+              }`}
+            >Nee</button>
           </div>
         </div>
       )}
