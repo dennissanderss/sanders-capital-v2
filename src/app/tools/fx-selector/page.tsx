@@ -178,22 +178,22 @@ export default function DailyBriefingIntroPage() {
           <StepCard
             step={1}
             title="Marktregime bepalen"
-            oneLiner="Is het risk-on, risk-off of iets anders? Het regime bepaalt de context voor alle analyse."
+            oneLiner="De basis waar je altijd mee begint. Op basis van centraal bank beleid (rentes, bias, laatste acties) wordt bepaald of de markt Risk-On, Risk-Off, USD Dominant, USD Zwak of Gemengd is."
             color="blue"
             problem="Je weet niet of de markt in risk-on, risk-off of een dollargevoelige fase zit. Je koopt AUD/JPY terwijl de markt in paniek is."
-            solution="Het model bepaalt het huidige marktregime op basis van centraal bankbeleid en intermarket bewegingen."
+            solution="Het model bepaalt het huidige marktregime op basis van centraal bankbeleid. De zekerheid geeft aan hoe eenduidig het beeld is."
             details={[
-              'Zes regimes: groeiangst, geopolitieke stress, inflatiedruk, rente herprijzing, risicobereidheid en zijwaarts.',
-              'Elk regime verschuift de gewichten: bij inflatiedruk telt CB beleid zwaarder, bij geopolitieke stress domineert veilige haven flow.',
+              'Vijf regimes: Risk-Off, Risk-On, USD Dominant, USD Zwak en Gemengd.',
+              'De regime zekerheid is gebaseerd op de spread tussen de sterkste en zwakste valuta. Hoe groter het verschil, hoe duidelijker het regime.',
               'Waarom eerst het regime? Dezelfde data betekent iets heel anders in een ander marktklimaat.',
             ]}
           />
         </FadeIn>
 
         <FadeIn>
-          <div className="flex items-center gap-2 text-text-dim/40 text-xs py-0.5 pl-11">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg>
-            <span>Regime bepaalt gewichten</span>
+          <div className="flex items-center gap-2 text-text-muted text-sm py-1 pl-11">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg>
+            <span>Regime geeft context voor verdere analyse</span>
           </div>
         </FadeIn>
 
@@ -201,7 +201,7 @@ export default function DailyBriefingIntroPage() {
           <StepCard
             step={2}
             title="Nieuws Sentiment"
-            oneLiner="Headlines automatisch geanalyseerd op impact per valuta. Positief/negatief sentiment wordt meegewogen."
+            oneLiner="Headlines worden geanalyseerd per valuta. Het sentiment (positief/negatief) wordt als nieuws bonus verwerkt in de valutascore uit Stap 1. Een positief nieuwsbericht over de dollar verhoogt de USD score."
             color="green"
             problem="Tientallen headlines scannen en interpreteren kost tijd en leidt tot confirmation bias."
             solution="Headlines van 7 bronnen worden automatisch geanalyseerd. Hawkish/dovish sentiment wordt meegewogen in de score."
@@ -214,8 +214,8 @@ export default function DailyBriefingIntroPage() {
         </FadeIn>
 
         <FadeIn>
-          <div className="flex items-center gap-2 text-text-dim/40 text-xs py-0.5 pl-11">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg>
+          <div className="flex items-center gap-2 text-text-muted text-sm py-1 pl-11">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg>
             <span>Sentiment meegewogen in scores</span>
           </div>
         </FadeIn>
@@ -224,7 +224,7 @@ export default function DailyBriefingIntroPage() {
           <StepCard
             step={3}
             title="Intermarket Signalen"
-            oneLiner="DXY, yields, S&P 500, VIX, goud en olie checken of de brede markt het regime bevestigt."
+            oneLiner="DXY, yields, S&P 500, VIX, goud en olie worden gecheckt of ze in lijn bewegen met het marktregime uit Stap 1. Bijvoorbeeld: bij risk-off verwacht je stijgende VIX en dalende S&P 500. Als de intermarket data dit bevestigt (alignment >50%), zijn de signalen betrouwbaarder."
             color="amber"
             problem="Je tradet forex zonder te kijken naar wat aandelen, goud of yields doen."
             solution="Zes instrumenten worden gecheckt op alignment met het regime. Dit bepaalt hoe streng de filters worden."
@@ -237,9 +237,9 @@ export default function DailyBriefingIntroPage() {
         </FadeIn>
 
         <FadeIn>
-          <div className="flex items-center gap-2 text-text-dim/40 text-xs py-0.5 pl-11">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg>
-            <span>Alles naar het filterproces</span>
+          <div className="flex items-center gap-2 text-text-muted text-sm py-1 pl-11">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg>
+            <span>Scores + intermarket + contrarian filter bepalen de sterkste trades</span>
           </div>
         </FadeIn>
 
@@ -260,8 +260,8 @@ export default function DailyBriefingIntroPage() {
         </FadeIn>
 
         <FadeIn>
-          <div className="flex items-center gap-2 text-text-dim/40 text-xs py-0.5 pl-11">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg>
+          <div className="flex items-center gap-2 text-text-muted text-sm py-1 pl-11">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg>
             <span>Uitgewerkt tot concrete trades</span>
           </div>
         </FadeIn>
@@ -282,6 +282,15 @@ export default function DailyBriefingIntroPage() {
           />
         </FadeIn>
       </div>
+
+      {/* Separator between 5 steps and detail sections */}
+      <FadeIn>
+        <div className="flex items-center gap-4 mb-10 sm:mb-14">
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-sm text-text-muted font-medium whitespace-nowrap">Het model in meer detail</span>
+          <div className="flex-1 h-px bg-border" />
+        </div>
+      </FadeIn>
 
       {/* Mean Reversion - collapsed */}
       <FadeIn>
@@ -385,6 +394,7 @@ export default function DailyBriefingIntroPage() {
                   { n: '3', t: 'Bekijk de intermarket signalen', d: 'Bevestigen aandelen, yields, VIX en goud het regime?' },
                   { n: '4', t: 'Bekijk de Trade Focus funnel', d: 'Hoeveel van de 10 paren overleven elke filterlaag?' },
                   { n: '5', t: 'Bekijk de concrete trades', d: 'Trade cards met call, conviction score en timing. Hold: 1 handelsdag.' },
+                  { n: '6', t: 'Pas je eigen technische analyse toe', d: 'De fundamentele richting is bepaald. Gebruik je eigen bewezen technische strategie voor de exacte entry en exit timing.' },
                 ].map(({ n, t, d }) => (
                   <div key={n} className="flex items-start gap-3">
                     <span className="w-6 h-6 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-[10px] font-bold text-accent-light shrink-0 mt-0.5">{n}</span>

@@ -501,10 +501,7 @@ export default function KalenderPage() {
                               </span>
                             </td>
                             <td className="px-3 sm:px-4 py-2.5">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-sm">{flagEmoji(event.flag)}</span>
-                                <span className="text-xs font-mono text-heading">{event.currency}</span>
-                              </div>
+                              <span className="text-xs font-mono text-heading">{event.currency}</span>
                             </td>
                             <td className="px-3 sm:px-4 py-2.5">
                               <div className="flex items-center gap-1.5">
@@ -565,7 +562,7 @@ export default function KalenderPage() {
                                     </svg>
                                   </button>
                                   {expandedWaarom[eventId] && (
-                                    <div className="grid sm:grid-cols-2 gap-3 mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="grid sm:grid-cols-2 gap-3 mt-3">
                                       <div className="rounded-lg bg-green-500/[0.02] border border-green-500/10 px-4 py-3">
                                         <p className="text-green-400 font-semibold mb-1.5 text-[10px] uppercase tracking-wider flex items-center gap-1.5">
                                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>

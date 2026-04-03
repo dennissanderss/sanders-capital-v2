@@ -90,6 +90,7 @@ interface ImpactResult {
   currency: string
   direction: 'bullish' | 'bearish'
   explanation: string
+  waarom: string
 }
 
 interface EconomicRule {
@@ -103,6 +104,8 @@ interface EconomicRule {
   currency: string
   explanationBullish: string
   explanationBearish: string
+  waaromBullish: string
+  waaromBearish: string
 }
 
 const ECONOMIC_RULES: EconomicRule[] = [
@@ -115,6 +118,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Meer banen \u2192 sterkere economie \u2192 Fed houdt rente hoog \u2192 USD sterker',
     explanationBearish: 'Minder banen \u2192 zwakkere economie \u2192 Fed verlaagt rente \u2192 USD zwakker',
+    waaromBullish: 'Als er meer banen bijkomen dan verwacht, wijst dit op een groeiende economie. Bedrijven investeren en nemen personeel aan. De Federal Reserve zal dan minder snel de rente verlagen, omdat de economie geen extra stimulans nodig heeft. Hogere rentes maken het aantrekkelijker om dollars aan te houden (meer rendement), waardoor buitenlands kapitaal instroomt en de dollar sterker wordt.',
+    waaromBearish: 'Als er minder banen bijkomen dan verwacht, wijst dit op een vertragende economie. De Federal Reserve zal dan eerder overwegen om de rente te verlagen om de economie te stimuleren. Lagere rentes maken het minder aantrekkelijk om dollars aan te houden, waardoor de dollar in waarde daalt ten opzichte van andere valuta\u2019s.',
   },
   {
     keywords: ['unemployment', 'werkloosheid', 'jobless'],
@@ -124,6 +129,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Lagere werkloosheid \u2192 sterkere arbeidsmarkt \u2192 Fed hawkish \u2192 USD sterker',
     explanationBearish: 'Hogere werkloosheid \u2192 zwakkere economie \u2192 Fed dovish \u2192 USD zwakker',
+    waaromBullish: 'Dalende werkloosheid betekent dat meer mensen een baan vinden, wat wijst op een gezonde economie. Dit kan ook leiden tot hogere lonen en meer bestedingen, wat inflatiedruk cre\u00ebert. De Fed zal dan eerder geneigd zijn om de rente hoog te houden of te verhogen, wat de dollar aantrekkelijker maakt voor beleggers.',
+    waaromBearish: 'Stijgende werkloosheid wijst erop dat bedrijven minder mensen aannemen of personeel ontslaan. Dit is een teken van economische verzwakking. De Federal Reserve zal in reactie hierop een soepeler monetair beleid voeren (lagere rente) om de economie te ondersteunen, wat de dollar verzwakt doordat beleggers elders hogere rendementen zoeken.',
   },
   {
     keywords: ['jobs report', 'banenrapport', 'employment'],
@@ -133,6 +140,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Sterke arbeidsmarkt \u2192 Fed kan rente hoog houden \u2192 USD sterker',
     explanationBearish: 'Zwakke arbeidsmarkt \u2192 Fed kan rente verlagen \u2192 USD zwakker',
+    waaromBullish: 'Een sterk banenrapport signaleert economische kracht. Wanneer de arbeidsmarkt krap is, stijgen lonen en nemen consumenten meer uit. De Fed zal dan minder reden zien om de rente te verlagen, wat de renteverschillen met andere landen vergroot en de dollar ondersteunt.',
+    waaromBearish: 'Een zwak banenrapport wijst op een afkoelende economie. Minder werkgelegenheid betekent minder inkomen en bestedingen. De Fed zal dan eerder geneigd zijn de rente te verlagen om groei te stimuleren. Lagere rentes verminderen de aantrekkingskracht van dollardenomineerde beleggingen.',
   },
   // ─── Inflation / CPI ──────────────
   {
@@ -143,6 +152,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Hogere inflatie \u2192 Fed verkrapt beleid \u2192 USD sterker (korte termijn)',
     explanationBearish: 'Lagere inflatie \u2192 Fed kan verruimen \u2192 USD zwakker',
+    waaromBullish: 'Hogere inflatie dan verwacht betekent dat prijzen sneller stijgen. De Fed moet dan de rente verhogen of hoog houden om inflatie te bestrijden. Hogere rentes trekken buitenlands kapitaal aan (beleggers zoeken het hoogste rendement), wat de vraag naar dollars verhoogt en de koers opdrijft.',
+    waaromBearish: 'Lagere inflatie dan verwacht geeft de Fed ruimte om de rente te verlagen zonder prijsstabiliteit in gevaar te brengen. Dit vooruitzicht van lagere rentes maakt dollardenomineerde beleggingen minder aantrekkelijk. Beleggers verschuiven kapitaal naar valuta\u2019s met hogere rendementen.',
   },
   {
     keywords: ['inflation', 'inflatie'],
@@ -152,6 +163,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Hogere inflatie \u2192 centrale bank verkrapt \u2192 valuta sterker',
     explanationBearish: 'Lagere inflatie \u2192 centrale bank kan verruimen \u2192 valuta zwakker',
+    waaromBullish: 'Wanneer inflatie oploopt, moet de centrale bank ingrijpen met hogere rentes om de geldhoeveelheid te beperken. Hogere rentes maken beleggingen in die valuta aantrekkelijker voor internationale investeerders, wat de koers ondersteunt. Dit mechanisme staat bekend als het "renteverschil-effect".',
+    waaromBearish: 'Afnemende inflatie vermindert de druk op de centrale bank om de rente hoog te houden. Het vooruitzicht van lagere rentes maakt de valuta minder aantrekkelijk voor beleggers die rendement zoeken. Kapitaalstromen verschuiven richting valuta\u2019s waar hogere rentes verwacht worden.',
   },
   {
     keywords: ['pce', 'core pce'],
@@ -161,6 +174,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Hogere PCE \u2192 Fed houdt vast aan verkrapping \u2192 USD sterker',
     explanationBearish: 'Lagere PCE \u2192 Fed kan versoepelen \u2192 USD zwakker',
+    waaromBullish: 'De PCE-index (Personal Consumption Expenditures) is de favoriete inflatiemeter van de Fed. Een hoger dan verwachte PCE bevestigt dat inflatiedruk aanhoudt, waardoor de Fed minder ruimte heeft om de rente te verlagen. Dit houdt het rentevoordeel van de dollar in stand.',
+    waaromBearish: 'Een lagere PCE-reading dan verwacht suggereert dat inflatie sneller afkoelt. Dit geeft de Fed meer ruimte om de rente te verlagen in de toekomst. Financi\u00eble markten prijzen dan lagere rentes in, wat de dollar verzwakt ten opzichte van valuta\u2019s waar de rente langer hoog blijft.',
   },
   // ─── GDP ──────────────────────────
   {
@@ -171,6 +186,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Hoger BBP \u2192 sterkere economie \u2192 valuta sterker',
     explanationBearish: 'Lager BBP \u2192 zwakkere economie \u2192 valuta zwakker',
+    waaromBullish: 'Een hoger BBP dan verwacht toont aan dat de economie harder groeit. Dit trekt buitenlandse investeringen aan, verhoogt het vertrouwen in de munt en vermindert de kans op renteverlagingen. Sterke economische groei maakt een land aantrekkelijker voor kapitaal, wat de valuta ondersteunt.',
+    waaromBearish: 'Een lager BBP dan verwacht wijst op economische zwakte of krimp. Dit vermindert het vertrouwen van beleggers en vergroot de kans dat de centrale bank de rente verlaagt om groei te stimuleren. Buitenlandse investeerders trekken kapitaal terug naar markten met betere groeivooruitzichten.',
   },
   // ─── Rate decisions ───────────────
   {
@@ -181,6 +198,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Renteverhoging \u2192 hogere yields \u2192 valuta aantrekkelijker \u2192 sterker',
     explanationBearish: '',
+    waaromBullish: 'Een renteverhoging maakt sparen en beleggen in die valuta direct aantrekkelijker. Internationale beleggers verplaatsen kapitaal naar het land met de hogere rente om meer rendement te behalen (dit heet "carry trade"). De toegenomen vraag naar de valuta drijft de koers omhoog.',
+    waaromBearish: '',
   },
   {
     keywords: ['rate cut', 'renteverlaging', 'cuts rate', 'verlaagt rente'],
@@ -190,6 +209,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: '',
     explanationBearish: 'Renteverlaging \u2192 lagere yields \u2192 valuta minder aantrekkelijk \u2192 zwakker',
+    waaromBullish: '',
+    waaromBearish: 'Een renteverlaging vermindert het rendement op beleggingen in die valuta. Beleggers die rendement zoeken verplaatsen hun kapitaal naar landen met hogere rentes. Deze uitstroom van kapitaal vermindert de vraag naar de valuta, waardoor de koers daalt. Hoe groter het renteverschil met andere landen, hoe sterker dit effect.',
   },
   {
     keywords: ['hawkish'],
@@ -199,6 +220,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Hawkish signaal \u2192 rente blijft hoog of stijgt \u2192 valuta sterker',
     explanationBearish: '',
+    waaromBullish: '\u201cHawkish\u201d betekent dat de centrale bank prioriteit geeft aan inflatiebestrijding boven economische groei. Dit signaleert dat rentes hoog blijven of verder stijgen. Markten reageren door de valuta te kopen, omdat hogere rentes meer rendement opleveren voor beleggers.',
+    waaromBearish: '',
   },
   {
     keywords: ['dovish'],
@@ -208,6 +231,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: '',
     explanationBearish: 'Dovish signaal \u2192 rente gaat omlaag \u2192 valuta zwakker',
+    waaromBullish: '',
+    waaromBearish: '\u201cDovish\u201d betekent dat de centrale bank prioriteit geeft aan economische groei boven inflatiebestrijding. Dit signaleert toekomstige renteverlagingen. Markten reageren door de valuta te verkopen, omdat lagere rentes het rendement op beleggingen in die munt verminderen.',
   },
   // ─── PMI ──────────────────────────
   {
@@ -218,6 +243,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'PMI boven 50 / stijgend \u2192 groeiende economie \u2192 valuta sterker',
     explanationBearish: 'PMI onder 50 / dalend \u2192 krimpende economie \u2192 valuta zwakker',
+    waaromBullish: 'De PMI (Purchasing Managers Index) is een voorlopende indicator: inkoopmanagers weten als eersten of er meer of minder geproduceerd gaat worden. Een PMI boven 50 wijst op expansie. Dit signaal geeft beleggers vertrouwen dat de economie groeit, wat investeringen en de valuta ondersteunt.',
+    waaromBearish: 'Een PMI onder 50 wijst op krimp in de productiesector. Inkoopmanagers bestellen minder materialen, wat duidt op afnemende bedrijvigheid. Dit vergroot de kans op economische vertraging en renteverlagingen door de centrale bank, wat de valuta onder druk zet.',
   },
   // ─── Retail Sales ─────────────────
   {
@@ -228,6 +255,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Hogere retail sales \u2192 sterke consument \u2192 economie groeit \u2192 valuta sterker',
     explanationBearish: 'Lagere retail sales \u2192 zwakke consument \u2192 economie verzwakt \u2192 valuta zwakker',
+    waaromBullish: 'Consumentenbestedingen vormen het grootste deel van de economie (circa 70% van het VS-BBP). Hogere detailhandelsverkopen wijzen op consumentenvertrouwen en een gezonde economie. Dit vermindert de noodzaak voor renteverlagingen en trekt buitenlands kapitaal aan.',
+    waaromBearish: 'Dalende detailhandelsverkopen wijzen op een consument die minder uitgeeft, mogelijk door onzekerheid of dalende koopkracht. Omdat consumentenbestedingen de motor van de economie zijn, vergroot dit de kans op een vertraging en stimuleringsmaatregelen van de centrale bank.',
   },
   // ─── Recession ────────────────────
   {
@@ -238,6 +267,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Recessie onwaarschijnlijk \u2192 sterke economie \u2192 valuta sterker',
     explanationBearish: 'Recessierisico \u2192 Fed verlaagt rente \u2192 valuta zwakker',
+    waaromBullish: 'Wanneer recessierisico\u2019s afnemen, groeit het vertrouwen dat de economie op koers blijft. Beleggers zijn bereid meer te investeren in dat land, wat de vraag naar de valuta verhoogt. De centrale bank hoeft ook geen noodmaatregelen te nemen zoals agressieve renteverlagingen.',
+    waaromBearish: 'Recessieangst zorgt voor een vlucht uit risicovolle beleggingen. De centrale bank zal preventief de rente verlagen om de economie te ondersteunen. Daarnaast vermindert economische onzekerheid de aantrekkingskracht van het land voor buitenlandse investeerders, wat de valuta verzwakt.',
   },
   // ─── Tightening / Easing ──────────
   {
@@ -248,6 +279,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Verkrapping monetair beleid \u2192 hogere rentes \u2192 valuta sterker',
     explanationBearish: '',
+    waaromBullish: 'Bij monetaire verkrapping (quantitative tightening) vermindert de centrale bank de geldhoeveelheid door obligaties te verkopen of niet te herfinancieren. Minder geld in omloop maakt elke eenheid meer waard. Gecombineerd met hogere rentes maakt dit de valuta aantrekkelijker voor beleggers.',
+    waaromBearish: '',
   },
   {
     keywords: ['easing', 'verruiming', 'quantitative easing'],
@@ -257,6 +290,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: '',
     explanationBearish: 'Verruiming monetair beleid \u2192 meer liquiditeit \u2192 valuta zwakker',
+    waaromBullish: '',
+    waaromBearish: 'Bij monetaire verruiming (quantitative easing) koopt de centrale bank obligaties op en pompt zo nieuw geld in de economie. Meer geld in omloop vermindert de waarde per eenheid. Daarnaast drukt QE de rente, waardoor beleggers elders hogere rendementen zoeken en de valuta verzwakt.',
   },
   // ─── Treasury / Yields ────────────
   {
@@ -267,6 +302,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Stijgende yields \u2192 hogere rendementen \u2192 USD aantrekkelijker',
     explanationBearish: 'Dalende yields \u2192 lagere rendementen \u2192 USD minder aantrekkelijk',
+    waaromBullish: 'Stijgende obligatierentes bieden beleggers meer rendement op veilige staatsobligaties. Internationale investeerders moeten dollars kopen om Amerikaanse obligaties te kopen, wat de vraag naar de dollar verhoogt. Het renteverschil met andere landen is een van de belangrijkste drijvers van valutakoersen.',
+    waaromBearish: 'Dalende obligatierentes verminderen het rendement op veilige staatsobligaties. Beleggers verkopen deze obligaties en zoeken hogere rendementen elders. De verminderde vraag naar dollars (nodig om obligaties te kopen) zorgt voor een zwakkere dollar.',
   },
   // ─── Tariffs / Trade ──────────────
   {
@@ -277,6 +314,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'USD',
     explanationBullish: 'Hogere tarieven \u2192 risk-off + inflatie \u2192 USD als veilige haven sterker',
     explanationBearish: 'Lagere tarieven \u2192 risk-on \u2192 minder vraag naar USD als veilige haven',
+    waaromBullish: 'Handelstarieven cre\u00ebren onzekerheid op wereldwijde markten. In tijden van onzekerheid vluchten beleggers naar "veilige havens" zoals de dollar en Amerikaanse staatsobligaties. Daarnaast kunnen tarieven de binnenlandse inflatie opdrijven, wat de verwachting van hogere rentes versterkt.',
+    waaromBearish: 'Het verlagen of opheffen van tarieven vermindert handelsrisico\u2019s en bevordert wereldwijde economische groei. In een risk-on omgeving hebben beleggers minder behoefte aan veilige havens zoals de dollar, en investeren ze in hoger-renderende valuta\u2019s van opkomende markten.',
   },
   // ─── Risk sentiment ───────────────
   {
@@ -287,6 +326,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'JPY',
     explanationBullish: 'Risk-off sentiment \u2192 vlucht naar veilige havens \u2192 JPY/CHF sterker',
     explanationBearish: '',
+    waaromBullish: 'Bij risk-off sentiment verkopen beleggers risicovolle beleggingen en kopen ze veilige havens. De Japanse yen is een traditionele veilige haven vanwege Japan\u2019s status als grootste netto-crediteur ter wereld. Beleggers wikkelen ook carry trades af (lenen in JPY om elders te beleggen), waardoor ze JPY terugkopen.',
+    waaromBearish: '',
   },
   {
     keywords: ['risk-on', 'risk appetite'],
@@ -296,6 +337,8 @@ const ECONOMIC_RULES: EconomicRule[] = [
     currency: 'AUD',
     explanationBullish: 'Risk-on sentiment \u2192 meer risicobereidheid \u2192 AUD/NZD sterker',
     explanationBearish: '',
+    waaromBullish: 'Bij risk-on sentiment zoeken beleggers hogere rendementen en accepteren ze meer risico. De Australische dollar profiteert hiervan vanwege de relatief hoge rente, de sterke grondstoffenexport en de nauwe economische banden met het groeiende Azi\u00eb. Beleggers openen ook carry trades, waarbij ze goedkoop lenen in laag-rente valuta\u2019s en beleggen in AUD.',
+    waaromBearish: '',
   },
 ]
 
@@ -357,9 +400,11 @@ function analyzeEconomicImpact(article: NewsArticle): ImpactResult | null {
     const explanation = direction === 'bullish' ? rule.explanationBullish : rule.explanationBearish
     if (!explanation) continue
 
+    const waarom = direction === 'bullish' ? rule.waaromBullish : rule.waaromBearish
+
     // Replace generic "valuta" with the actual currency name
     const bank = CURRENCY_CENTRAL_BANK[currency] || ''
-    const contextExplanation = explanation
+    const replaceContext = (str: string) => str
       .replace(/valuta/g, currency)
       .replace(/centrale bank/g, bank || 'centrale bank')
       .replace(/Fed/g, bank || 'Fed')
@@ -367,7 +412,8 @@ function analyzeEconomicImpact(article: NewsArticle): ImpactResult | null {
     return {
       currency,
       direction,
-      explanation: contextExplanation,
+      explanation: replaceContext(explanation),
+      waarom: waarom ? replaceContext(waarom) : '',
     }
   }
 
@@ -377,6 +423,7 @@ function analyzeEconomicImpact(article: NewsArticle): ImpactResult | null {
 /* ─── Impact Indicator Component ─────────────────────────── */
 function ImpactIndicator({ article, compact = false }: { article: NewsArticle; compact?: boolean }) {
   const [expanded, setExpanded] = useState(false)
+  const [showWaarom, setShowWaarom] = useState(false)
   const impact = useMemo(() => analyzeEconomicImpact(article), [article])
 
   if (!impact) return null
@@ -431,7 +478,33 @@ function ImpactIndicator({ article, compact = false }: { article: NewsArticle; c
           <p className={`text-xs leading-relaxed ${isBullish ? 'text-green-300/80' : 'text-red-300/80'}`}>
             {impact.explanation}
           </p>
-          <p className="text-[9px] text-text-dim/50 mt-1.5 italic">Educatief, geen advies</p>
+          {impact.waarom && (
+            <div className="mt-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowWaarom(!showWaarom) }}
+                className={`inline-flex items-center gap-1 text-[10px] font-medium transition-colors ${
+                  isBullish ? 'text-green-400/60 hover:text-green-400' : 'text-red-400/60 hover:text-red-400'
+                }`}
+              >
+                <svg
+                  width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  className={`transition-transform ${showWaarom ? 'rotate-180' : ''}`}
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+                Waarom?
+              </button>
+              {showWaarom && (
+                <p className={`mt-1.5 text-[11px] leading-relaxed ${isBullish ? 'text-green-300/60' : 'text-red-300/60'}`}>
+                  {impact.waarom}
+                </p>
+              )}
+            </div>
+          )}
+          <p className="text-[8px] text-text-dim/40 mt-3 leading-relaxed">
+            Deze analyse is gebaseerd op standaard economische relaties. Het systeem detecteert automatisch economische termen in het artikel en past de bekende marktlogica toe. Bij complexe of tegenstrijdige situaties kan de werkelijke marktreactie afwijken.
+          </p>
+          <p className="text-[9px] text-text-dim/50 mt-1 italic">Educatief, geen advies</p>
         </div>
       )}
     </div>
