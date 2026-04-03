@@ -1138,44 +1138,49 @@ export default function BriefingV2Dashboard() {
                 })()}
               </div>
 
-              {/* Top News Headlines */}
+              {/* Top News Headlines (collapsible) */}
               {data.topNews.length > 0 && (
                 <div className="border-t border-white/[0.04]">
-                  <div className="px-5 sm:px-6 py-3 border-b border-white/[0.04]">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Belangrijkste Headlines</p>
-                  </div>
-                  <div className="divide-y divide-white/[0.03]">
-                    {data.topNews.slice(0, 8).map(article => (
-                      <a
-                        key={article.id}
-                        href={article.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block px-5 sm:px-6 py-3 hover:bg-white/[0.02] transition-colors group"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.06] text-text-dim font-medium">{article.source}</span>
-                              {article.affectedCurrencies.slice(0, 3).map(c => (
-                                <span key={c} className="text-[9px] px-1.5 py-0.5 rounded bg-accent/10 text-accent-light font-mono font-bold">{c}</span>
-                              ))}
-                              {article.relevanceScore >= 5 && (
-                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-bold">HIGH</span>
+                  <details className="group">
+                    <summary className="px-5 sm:px-6 py-3 flex items-center gap-2 cursor-pointer hover:bg-white/[0.02] transition-colors list-none [&::-webkit-details-marker]:hidden">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-dim transition-transform group-open:rotate-90 shrink-0">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Belangrijkste Headlines ({data.topNews.slice(0, 8).length} artikelen)</p>
+                    </summary>
+                    <div className="divide-y divide-white/[0.03] border-t border-white/[0.04]">
+                      {data.topNews.slice(0, 8).map(article => (
+                        <a
+                          key={article.id}
+                          href={article.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block px-5 sm:px-6 py-3 hover:bg-white/[0.02] transition-colors group/link"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.06] text-text-dim font-medium">{article.source}</span>
+                                {article.affectedCurrencies.slice(0, 3).map(c => (
+                                  <span key={c} className="text-[9px] px-1.5 py-0.5 rounded bg-accent/10 text-accent-light font-mono font-bold">{c}</span>
+                                ))}
+                                {article.relevanceScore >= 5 && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-bold">HIGH</span>
+                                )}
+                              </div>
+                              <p className="text-sm text-heading group-hover/link:text-accent-light transition-colors leading-snug">
+                                {article.title}
+                              </p>
+                              {article.relevanceContext && (
+                                <p className="text-[10px] text-accent-light/60 mt-1">{article.relevanceContext}</p>
                               )}
                             </div>
-                            <p className="text-sm text-heading group-hover:text-accent-light transition-colors leading-snug">
-                              {article.title}
-                            </p>
-                            {article.relevanceContext && (
-                              <p className="text-[10px] text-accent-light/60 mt-1">{article.relevanceContext}</p>
-                            )}
+                            <span className="text-[10px] text-text-dim shrink-0">{timeAgo(article.publishedAt)}</span>
                           </div>
-                          <span className="text-[10px] text-text-dim shrink-0">{timeAgo(article.publishedAt)}</span>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
+                        </a>
+                      ))}
+                    </div>
+                  </details>
                 </div>
               )}
 
@@ -1312,18 +1317,28 @@ export default function BriefingV2Dashboard() {
                           </div>
                           <p className="text-sm text-text-muted leading-relaxed">{intermarketConclusion.text}</p>
                           {alignment !== undefined && (
-                            <div className="mt-1.5">
-                              <p className="text-[10px] text-text-dim">
-                                {alignment > 65
-                                  ? 'Intermarket signalen bevestigen het huidige regime sterk. Hogere overtuiging bij trades.'
-                                  : alignment >= 35
-                                  ? 'Gemengde intermarket signalen. Wees selectiever met posities.'
-                                  : 'Intermarket signalen spreken het regime tegen. Extra voorzichtigheid geboden.'
-                                }
-                              </p>
-                              <p className="text-[9px] text-text-dim/50 mt-1">
-                                Berekening: per signaal wordt gecheckt of de richting het regime bevestigt. De sterkte weegt mee: &gt;1% = vol gewicht, 0.5-1% = 75%, 0.2-0.5% = 50%, &lt;0.2% = 25%. Totaal / maximum = alignment %.
-                              </p>
+                            <div className="mt-2">
+                              <details className="group/im">
+                                <summary className="flex items-center gap-1.5 text-[10px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors list-none [&::-webkit-details-marker]:hidden">
+                                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open/im:rotate-90 shrink-0">
+                                    <polyline points="9 18 15 12 9 6" />
+                                  </svg>
+                                  Wat betekent {alignment}% alignment?
+                                </summary>
+                                <div className="mt-2 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                                  <p className="text-[10px] text-text-dim leading-relaxed">
+                                    {alignment < 30
+                                      ? `Slechts ${alignment}% van de intermarket indicatoren bevestigt het regime. Dit betekent dat goud, VIX, S&P 500 en obligatierentes niet in lijn bewegen met het verwachte patroon. Signalen zijn daardoor minder betrouwbaar.`
+                                      : alignment <= 60
+                                      ? `${alignment}% van de indicatoren bevestigt het regime. Gemengd beeld — sommige instrumenten bewegen mee, andere niet. Voorzichtigheid geboden bij het innemen van posities.`
+                                      : `${alignment}% van de indicatoren bevestigt het regime. Sterk signaal — goud, VIX, S&P 500 en obligatierentes bewegen in lijn met het verwachte patroon. Intermarket data ondersteunt de fundamentele analyse.`
+                                    }
+                                  </p>
+                                  <p className="text-[9px] text-text-dim/50 mt-1.5">
+                                    Berekening: per signaal wordt gecheckt of de richting het regime bevestigt. De sterkte weegt mee: &gt;1% = vol gewicht, 0.5-1% = 75%, 0.2-0.5% = 50%, &lt;0.2% = 25%. Totaal / maximum = alignment %.
+                                  </p>
+                                </div>
+                              </details>
                             </div>
                           )}
                         </div>
@@ -1927,7 +1942,7 @@ export default function BriefingV2Dashboard() {
                   <summary className="px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
                     <div className="flex items-center gap-2">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-                      <span className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Alle Signalen (V3 Engine)</span>
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Alle Signalen (Detail)</span>
                       <span className="text-[9px] text-text-dim/50">
                         {data.v3.metadata.signalCount.tradeable} tradeable / {data.v3.metadata.signalCount.conditional} conditional / {data.v3.metadata.signalCount.noTrade} no-trade
                       </span>
@@ -2016,6 +2031,12 @@ export default function BriefingV2Dashboard() {
                       <span>Tracking actief sinds <strong className="text-text-muted">{trackStats.startDate}</strong></span>
                     </div>
                   )}
+
+                  <div className="mt-2 mb-3 p-2.5 rounded-lg bg-accent/[0.04] border border-accent/10">
+                    <p className="text-[10px] text-text-dim leading-relaxed">
+                      Dit trackrecord wordt automatisch bijgewerkt op elke handelsdag om 23:00 uur (NL tijd). Nieuwe signalen worden dagelijks gegenereerd en openstaande trades worden na 1 handelsdag afgerekend op basis van de slotkoers. Zo blijven de winrate en statistieken altijd actueel.
+                    </p>
+                  </div>
 
                   <div className="grid grid-cols-5 gap-2 mt-3 mb-4">
                     {[

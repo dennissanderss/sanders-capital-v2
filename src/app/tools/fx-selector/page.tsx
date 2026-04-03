@@ -179,7 +179,7 @@ export default function DailyBriefingIntroPage() {
         </div>
       </FadeIn>
 
-      {/* Four Steps with connecting thread */}
+      {/* Five Steps with connecting thread */}
       <FadeIn>
         <div className="flex items-center gap-3 mb-6">
           <span className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
@@ -187,11 +187,11 @@ export default function DailyBriefingIntroPage() {
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
             </svg>
           </span>
-          <h2 className="text-xl sm:text-2xl font-display font-bold text-heading">Hoe werkt het? 4 stappen</h2>
+          <h2 className="text-xl sm:text-2xl font-display font-bold text-heading">Hoe werkt het? 5 stappen</h2>
         </div>
         <p className="text-sm text-text-muted leading-relaxed mb-8">
-          De tool doorloopt elke dag dezelfde 4 stappen, in vaste volgorde. Elke stap bouwt voort op de vorige.
-          Je begint breed (hoe staat de markt erbij?) en eindigt smal (welke paren moet ik vandaag in de gaten houden?).
+          De tool doorloopt elke dag dezelfde 5 stappen, in vaste volgorde. Elke stap bouwt voort op de vorige.
+          Je begint breed (hoe staat de markt erbij?) en eindigt smal (concrete trades met call en tijdstip).
         </p>
       </FadeIn>
 
@@ -224,16 +224,15 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <StepCard
             step={2}
-            title="Valuta scoring"
+            title="Nieuws Sentiment"
             color="green"
-            problem="Je hebt geen overzicht van welke valuta fundamenteel sterk of zwak is. Traditionele modellen kijken alleen naar rente."
-            solution="Elke valuta krijgt een score op basis van meerdere factoren. De gewichten worden automatisch aangepast aan het regime uit stap 1."
+            problem="Elke dag tientallen headlines scannen en interpreteren kost tijd en leidt tot confirmation bias. Je mist wat echt belangrijk is."
+            solution="Recente financiele headlines worden automatisch geanalyseerd op impact per valuta. Positief of negatief sentiment wordt meegewogen in de totaalscore."
             details={[
-              'CB Beleid: hawkish of dovish bias van de centrale bank, plus het verschil tussen huidige rente en target. Dit is de belangrijkste factor.',
-              'Nieuws sentiment: recente headlines worden geanalyseerd op positieve of negatieve impact per valuta.',
-              'Intermarket: olie en goud impact (bijv. CAD volgt olie, AUD volgt goud), safe haven flows (JPY en CHF profiteren van onrust).',
-              'Het verschil tussen twee valutascores bepaalt de bias voor een paar. Hoe groter het verschil, hoe sterker het signaal.',
-              'Wil je de achtergrond begrijpen? In de Macro Fundamentals tool zie je precies welke data per valuta wordt gebruikt.',
+              'Headlines van 7 bronnen (Fed, ECB, ForexLive, CNBC, Bloomberg, BBC, NYT) worden automatisch gecureerd en gefilterd op FX-relevantie.',
+              'Per valuta wordt het sentiment bepaald: hawkish of dovish signalen uit nieuws geven een bonus of malus op de score.',
+              'Het sentiment is een aanvulling op de harde data (rente, CB beleid). Nieuws vangt op wat cijfers nog niet laten zien.',
+              'Je ziet per valuta welke headlines het sentiment bepalen, zodat je altijd kunt controleren waarom een score verandert.',
             ]}
           />
         </FadeIn>
@@ -241,7 +240,7 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <div className="flex items-center justify-center gap-2 text-text-dim/40 text-xs py-1">
             <div className="w-8 h-px bg-border" />
-            <span>De scores gaan naar stap 3 voor bevestiging</span>
+            <span>Sentiment wordt meegewogen in de scores voor stap 3</span>
             <div className="w-8 h-px bg-border" />
           </div>
         </FadeIn>
@@ -249,15 +248,15 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <StepCard
             step={3}
-            title="Intermarket bevestiging"
+            title="Intermarket Signalen"
             color="amber"
             problem="Je tradet forex zonder te kijken naar wat aandelen, goud of yields doen. USD/CAD reageert op olie, USD/JPY op yields."
-            solution="Het model checkt per paar of de brede markt de fundamentele bias bevestigt. Elk paar heeft eigen gewichten per instrument."
+            solution="Het model checkt of de brede markt het regime bevestigt. Zes instrumenten (DXY, US10Y, S&P 500, VIX, goud, olie) worden gecheckt."
             details={[
               'Zes instrumenten worden gecheckt: DXY (dollarindex), US10Y (yields), S&P 500, VIX (volatiliteit), goud en olie.',
               'Voorbeeld: bij een risk-off regime moet VIX stijgen, goud stijgen, aandelen dalen en yields dalen. Als dat klopt, is er bevestiging.',
               'Alignment wordt uitgedrukt als percentage. Boven 50% betekent dat de intermarket data de fundamentele richting bevestigt.',
-              'Zonder intermarket bevestiging wordt er niet gehandeld. Dit filtert valse signalen op dagen dat de brede markt tegenspreekt.',
+              'Zonder intermarket bevestiging wordt de selectie strenger. Dit filtert valse signalen op dagen dat de brede markt tegenspreekt.',
             ]}
           />
         </FadeIn>
@@ -265,7 +264,7 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <div className="flex items-center justify-center gap-2 text-text-dim/40 text-xs py-1">
             <div className="w-8 h-px bg-border" />
-            <span>Alleen bevestigde signalen gaan door naar stap 4</span>
+            <span>Regime + sentiment + intermarket gaan naar het filterproces in stap 4</span>
             <div className="w-8 h-px bg-border" />
           </div>
         </FadeIn>
@@ -273,13 +272,37 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <StepCard
             step={4}
-            title="Trade Focus selectie"
+            title="Trade Focus"
             color="gold"
             problem="Je opent TradingView en zoekt willekeurig door paren. Je weet niet waar je moet focussen en mist de beste setups."
-            solution="De tool selecteert automatisch de paren waar fundamentals, intermarket en prijsactie samenkomen. Maximaal 5 paren per dag."
+            solution="Een compact filterproces selecteert welke van de 10 paren alle criteria overleven: scoreverschil, intermarket bevestiging en contrarian prijsactie."
             details={[
-              'Contrarian filter: het model wacht tot de prijs de afgelopen 5 dagen tegen de fundamentele richting is bewogen. Dan pas wordt er een signaal gegeven (mean reversion).',
-              'Alleen paren met een scoreverschil van minimaal 2.0 komen in aanmerking. Hoe hoger, hoe sterker het signaal.',
+              'Stap 1 van de funnel: alle 10 major paren starten in de pool.',
+              'Stap 2: alleen paren met een scoreverschil van minimaal 2.0 en een duidelijke richting (niet neutraal) gaan door.',
+              'Stap 3: bij sterke intermarket alignment (>50%) gaan alle paren door. Bij zwakke alignment alleen paren met score >= 3.5.',
+              'Het resultaat is een shortlist van paren die zowel fundamenteel, qua sentiment als qua intermarket data sterk genoeg zijn.',
+            ]}
+          />
+        </FadeIn>
+
+        <FadeIn>
+          <div className="flex items-center justify-center gap-2 text-text-dim/40 text-xs py-1">
+            <div className="w-8 h-px bg-border" />
+            <span>Gefilterde paren worden uitgewerkt tot concrete trades in stap 5</span>
+            <div className="w-8 h-px bg-border" />
+          </div>
+        </FadeIn>
+
+        <FadeIn>
+          <StepCard
+            step={5}
+            title="Concrete Trades"
+            color="purple"
+            problem="Je hebt een lijst met interessante paren maar geen concreet plan: welke richting, wanneer in, wanneer uit?"
+            solution="Alle kwalificerende signalen worden uitgewerkt tot professionele trade cards met call (long/short), entry/exit timing en conviction score."
+            details={[
+              'Contrarian mean reversion: het model wacht tot de prijs de afgelopen 5 dagen tegen de fundamentele richting is bewogen. Dan pas wordt er een signaal gegeven.',
+              'Elke trade card toont: paar, richting (long/short), conviction score, regime context en entry/exit timing.',
               'De holding periode is 1 handelsdag. Entry op de dagkoers van de signaaldag, exit op de dagkoers de volgende handelsdag.',
               'Elke trade verschijnt automatisch in het trackrecord, zodat je achteraf kunt zien of het signaal klopte.',
             ]}
@@ -453,22 +476,29 @@ export default function DailyBriefingIntroPage() {
             <div className="flex items-start gap-4">
               <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">2</span>
               <div>
-                <p className="text-sm font-semibold text-heading">Bekijk de valutascores</p>
-                <p className="text-sm text-text-muted mt-0.5">Welke valuta is fundamenteel het sterkst of zwakst? De scores zijn gebaseerd op CB beleid, rentetarieven en nieuws. Klik op een valuta voor de volledige onderbouwing.</p>
+                <p className="text-sm font-semibold text-heading">Bekijk het nieuws sentiment</p>
+                <p className="text-sm text-text-muted mt-0.5">Welke valuta krijgt positief of negatief sentiment uit recent nieuws? Dit wordt meegewogen in de totaalscore van elke valuta.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">3</span>
               <div>
-                <p className="text-sm font-semibold text-heading">Bekijk de signalen en intermarket</p>
-                <p className="text-sm text-text-muted mt-0.5">Hoeveel paren hebben een duidelijk signaal? De intermarket data (VIX, goud, yields, etc.) bevestigt of de brede markt meegaat. Alleen bevestigde signalen verschijnen in de Trade Focus.</p>
+                <p className="text-sm font-semibold text-heading">Bekijk de intermarket signalen</p>
+                <p className="text-sm text-text-muted mt-0.5">Bevestigen aandelen, yields, VIX en goud het huidige regime? De alignment bepaalt hoe streng de filters in de volgende stap worden.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">4</span>
               <div>
-                <p className="text-sm font-semibold text-heading">Focus op de Trade Focus paren</p>
-                <p className="text-sm text-text-muted mt-0.5">De tool selecteert maximaal 5 paren waar alles samenkomt: sterke fundamentele bias, contrarian prijsactie en intermarket bevestiging. Gebruik deze paren als startpunt voor je eigen analyse. Hold: 1 handelsdag.</p>
+                <p className="text-sm font-semibold text-heading">Bekijk de Trade Focus funnel</p>
+                <p className="text-sm text-text-muted mt-0.5">De compact filter funnel toont hoeveel van de 10 paren elke filterlaag overleven: scoreverschil, intermarket alignment en contrarian prijsactie.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <span className="w-7 h-7 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-xs font-bold text-accent-light shrink-0 mt-0.5">5</span>
+              <div>
+                <p className="text-sm font-semibold text-heading">Bekijk de concrete trades</p>
+                <p className="text-sm text-text-muted mt-0.5">De paren die alle filters passeren worden uitgewerkt tot professionele trade cards met call (long/short), conviction score en entry/exit timing. Hold: 1 handelsdag.</p>
               </div>
             </div>
           </div>

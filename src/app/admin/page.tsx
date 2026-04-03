@@ -565,7 +565,7 @@ export default function AdminPage() {
               {[
                 { name: 'Economische Kalender', desc: 'Events automatisch opgehaald via FairEconomy/ForexFactory API. Klik-uitleg per event. Geen actuele data (API biedt dit niet).', status: 'live' },
                 { name: 'Sanders Capital Fundamentals', desc: 'Marktregime classificatie, valutascoring (CB beleid x2, rente x1.5, nieuws), intermarket bevestiging en contrarian signalen. 10 major paren, 1 dag hold. Volledig automatisch.', status: 'live' },
-                { name: 'Daily Macro Briefing', desc: 'Regime, currency scores, pair signals en trade focus automatisch berekend. Inclusief conviction scores en IM alignment.', status: 'live' },
+                { name: 'Daily Macro Briefing', desc: '5-stappen dashboard: regime, nieuws sentiment, intermarket signalen, trade focus filter en concrete trades. Inclusief conviction scores en IM alignment.', status: 'live' },
                 { name: 'Trade Focus Trackrecord', desc: 'Meet dagelijks of de contrarian mean reversion bias klopt (1-dag hold, PF 1.42). Model B scoring + IM bevestiging. Backfill 365 dagen, 10 major pairs.', status: 'live' },
                 { name: 'Intermarket Data (Pair-Specifiek)', desc: 'DXY, VIX, S&P 500, US 10Y Yields, Goud en Olie via Yahoo Finance. Elk paar heeft eigen gewichten (bijv. USD/CAD: olie 45%, USD/JPY: yields 40%).', status: 'live' },
                 { name: 'FX Koersen (10 paren)', desc: 'Live koersen voor alle 10 major paren via Yahoo Finance (5 min cache). 8 valuta\'s: USD, EUR, GBP, JPY, AUD, NZD, CAD, CHF.', status: 'live' },

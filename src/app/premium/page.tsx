@@ -19,7 +19,7 @@ const premiumFeatures = [
   'Daily Macro Briefing',
   'Macro Fundamentals dashboard',
   'TradeMind backtest analyse',
-  'TradeMind trading journal',
+  'TradeMind Journal',
   'Premium artikelen & analyses',
   'Verdiepende kennisbank modules',
   'Exclusieve community kanalen',
@@ -29,7 +29,7 @@ const premiumFeatures = [
 const tools = [
   {
     name: 'Daily Macro Briefing',
-    description: 'Dagelijks overzicht van macro regime, currency scores en trade focus, gebaseerd op centrale bank beleid en rentedata.',
+    description: 'Dagelijkse macro analyse in 5 stappen: regime, nieuws sentiment, intermarket signalen, trade focus filter en concrete trades met call en timing.',
     href: '/tools/fx-selector',
     value: 'Bespaart 1-2 uur dagelijkse research',
     icon: (
@@ -64,7 +64,7 @@ const tools = [
     ),
   },
   {
-    name: 'TradeMind',
+    name: 'TradeMind Journal',
     description: 'Je persoonlijke trading journal. Log trades, analyseer patronen in je gedrag en verbeter je edge structureel.',
     href: '/tools',
     value: 'Vervangt vergelijkbare journal tools (~$170/jaar)',

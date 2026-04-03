@@ -317,7 +317,7 @@ export default async function HomePage() {
               {
                 name: 'Daily Macro Briefing',
                 problem: 'Elke dag macro data verzamelen kost uren en je mist altijd iets.',
-                solution: 'Automatische fundamentele analyse: marktregime, valutascores op basis van CB beleid en nieuws, intermarket bevestiging en trade focus. Dagelijks vernieuwd.',
+                solution: 'Automatische fundamentele analyse in 5 stappen: marktregime, nieuws sentiment, intermarket signalen, trade focus filter en concrete trades. Dagelijks vernieuwd.',
                 href: '/tools/fx-selector',
                 icon: (
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -351,7 +351,7 @@ export default async function HomePage() {
                 ),
               },
               {
-                name: 'TradeMind',
+                name: 'TradeMind Journal',
                 problem: 'Je weet niet waarom je verliest omdat je trades niet structureel logt.',
                 solution: 'Persoonlijk trading journal. Log trades, herken patronen en verbeter je edge.',
                 href: '/tools',
