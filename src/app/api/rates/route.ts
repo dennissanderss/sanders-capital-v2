@@ -55,7 +55,7 @@ export async function GET() {
       }
     }
   } catch (e) {
-    console.log('Supabase fetch failed, using fallback:', e)
+    console.error('Supabase fetch failed, using fallback:', e)
   }
 
   // Sort: majors first, then the rest

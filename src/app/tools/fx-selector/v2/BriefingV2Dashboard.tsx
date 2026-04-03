@@ -386,19 +386,7 @@ function ConfidenceRing({ value, size = 64 }: { value: number; size?: number }) 
   )
 }
 
-// ─── Inline Education Component ────────────────────────────
-function InlineEducation({ text }: { text: string }) {
-  return (
-    <details className="group/edu inline-block align-middle">
-      <summary className="inline-flex items-center gap-1 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
-        <span className="w-4 h-4 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-[9px] text-accent-light/70 hover:text-accent-light hover:bg-accent/20 transition-all shrink-0" title="Uitleg">i</span>
-      </summary>
-      <div className="mt-1.5 p-2.5 rounded-lg bg-white/[0.04] border border-accent/15 text-[10px] text-text-dim leading-relaxed max-w-md">
-        {text}
-      </div>
-    </details>
-  )
-}
+
 
 // ─── Score Legend Component ─────────────────────────────────
 function ScoreLegend() {
