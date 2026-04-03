@@ -135,6 +135,41 @@ export default function PsychologyTab({ trades }: Props) {
     }
   }, [closed, routines])
 
+  // ─── Tool Bias Accuracy (separate from discipline) ────
+  const toolBiasAnalysis = useMemo(() => {
+    const rated = closed.filter(t => t.tool_bias_correct !== null && t.tool_bias_correct !== undefined)
+    if (rated.length === 0) return null
+
+    const correct = rated.filter(t => t.tool_bias_correct === true)
+    const incorrect = rated.filter(t => t.tool_bias_correct === false)
+
+    // 4 quadrants: bias correct/incorrect × win/loss
+    const correctWin = correct.filter(t => (t.profit_loss || 0) > 0)
+    const correctLoss = correct.filter(t => (t.profit_loss || 0) <= 0)
+    const incorrectWin = incorrect.filter(t => (t.profit_loss || 0) > 0)
+    const incorrectLoss = incorrect.filter(t => (t.profit_loss || 0) <= 0)
+
+    const avgPnl = (arr: TsTrade[]) => arr.length > 0 ? arr.reduce((s, t) => s + (t.profit_loss || 0), 0) / arr.length : 0
+    const totalPnl = (arr: TsTrade[]) => arr.reduce((s, t) => s + (t.profit_loss || 0), 0)
+
+    return {
+      total: rated.length,
+      correctCount: correct.length,
+      incorrectCount: incorrect.length,
+      accuracy: (correct.length / rated.length) * 100,
+      quadrants: {
+        correctWin: { count: correctWin.length, avgPnl: avgPnl(correctWin), totalPnl: totalPnl(correctWin) },
+        correctLoss: { count: correctLoss.length, avgPnl: avgPnl(correctLoss), totalPnl: totalPnl(correctLoss) },
+        incorrectWin: { count: incorrectWin.length, avgPnl: avgPnl(incorrectWin), totalPnl: totalPnl(incorrectWin) },
+        incorrectLoss: { count: incorrectLoss.length, avgPnl: avgPnl(incorrectLoss), totalPnl: totalPnl(incorrectLoss) },
+      },
+      correctWinRate: correct.length > 0 ? (correctWin.length / correct.length) * 100 : 0,
+      incorrectWinRate: incorrect.length > 0 ? (incorrectWin.length / incorrect.length) * 100 : 0,
+      correctAvgPnl: avgPnl(correct),
+      incorrectAvgPnl: avgPnl(incorrect),
+    }
+  }, [closed])
+
   // ─── Confidence → Accuracy ────────────────────────────
   const confidenceAccuracy = useMemo(() => {
     return [1, 2, 3, 4, 5].map(level => {
@@ -184,6 +219,124 @@ export default function PsychologyTab({ trades }: Props) {
           ))}
         </div>
       </section>
+
+      {/* Tool Bias Accuracy */}
+      {toolBiasAnalysis && (
+        <section>
+          <h3 className="text-sm font-semibold text-heading mb-1">Fundamental Tool Nauwkeurigheid</h3>
+          <p className="text-xs text-text-dim mb-3">Meet of je Daily Macro Briefing tool de juiste richting gaf — los van je technische entry.</p>
+
+          {/* Top stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div className="glass rounded-xl p-4 text-center">
+              <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Beoordeeld</p>
+              <p className="text-xl font-bold text-heading">{toolBiasAnalysis.total}</p>
+              <p className="text-[10px] text-text-dim">trades</p>
+            </div>
+            <div className="glass rounded-xl p-4 text-center">
+              <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Tool Accuracy</p>
+              <p className={`text-xl font-bold ${toolBiasAnalysis.accuracy >= 60 ? 'text-green-400' : toolBiasAnalysis.accuracy >= 45 ? 'text-amber-400' : 'text-red-400'}`}>
+                {toolBiasAnalysis.accuracy.toFixed(1)}%
+              </p>
+              <p className="text-[10px] text-text-dim">{toolBiasAnalysis.correctCount} van {toolBiasAnalysis.total} correct</p>
+            </div>
+            <div className="glass rounded-xl p-4 text-center">
+              <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">WR bij correct</p>
+              <p className={`text-xl font-bold ${toolBiasAnalysis.correctWinRate >= 50 ? 'text-green-400' : 'text-red-400'}`}>
+                {toolBiasAnalysis.correctWinRate.toFixed(1)}%
+              </p>
+              <p className="text-[10px] text-text-dim">{toolBiasAnalysis.correctCount} trades</p>
+            </div>
+            <div className="glass rounded-xl p-4 text-center">
+              <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">WR bij incorrect</p>
+              <p className={`text-xl font-bold ${toolBiasAnalysis.incorrectWinRate >= 50 ? 'text-green-400' : 'text-red-400'}`}>
+                {toolBiasAnalysis.incorrectWinRate.toFixed(1)}%
+              </p>
+              <p className="text-[10px] text-text-dim">{toolBiasAnalysis.incorrectCount} trades</p>
+            </div>
+          </div>
+
+          {/* 4-quadrant matrix */}
+          <div className="glass rounded-xl p-4">
+            <p className="text-xs font-semibold text-heading mb-3">Bias × Resultaat Matrix</p>
+            <p className="text-[10px] text-text-dim mb-4">Scheidt tool nauwkeurigheid van technische uitvoering. Een verlies bij correcte bias = goede analyse, slechte entry/SL.</p>
+            <div className="grid grid-cols-2 gap-2">
+              {/* Correct + Win */}
+              <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/10">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-green-400 text-xs">✓</span>
+                  <p className="text-[10px] font-semibold text-green-400 uppercase">Bias correct + Win</p>
+                </div>
+                <p className="text-lg font-bold text-heading">{toolBiasAnalysis.quadrants.correctWin.count}</p>
+                <p className="text-[10px] text-text-dim">Alles klopte — tool goed, entry goed</p>
+                {toolBiasAnalysis.quadrants.correctWin.count > 0 && (
+                  <p className="text-[10px] text-green-400 mt-1">gem ${toolBiasAnalysis.quadrants.correctWin.avgPnl.toFixed(2)}</p>
+                )}
+              </div>
+
+              {/* Correct + Loss */}
+              <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-amber-400 text-xs">⚠</span>
+                  <p className="text-[10px] font-semibold text-amber-400 uppercase">Bias correct + Loss</p>
+                </div>
+                <p className="text-lg font-bold text-heading">{toolBiasAnalysis.quadrants.correctLoss.count}</p>
+                <p className="text-[10px] text-text-dim">Tool klopte, maar entry/SL te strak</p>
+                {toolBiasAnalysis.quadrants.correctLoss.count > 0 && (
+                  <p className="text-[10px] text-red-400 mt-1">gem ${toolBiasAnalysis.quadrants.correctLoss.avgPnl.toFixed(2)}</p>
+                )}
+              </div>
+
+              {/* Incorrect + Win */}
+              <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-amber-400 text-xs">⚠</span>
+                  <p className="text-[10px] font-semibold text-amber-400 uppercase">Bias incorrect + Win</p>
+                </div>
+                <p className="text-lg font-bold text-heading">{toolBiasAnalysis.quadrants.incorrectWin.count}</p>
+                <p className="text-[10px] text-text-dim">Geluk of goede technicals ondanks foute bias</p>
+                {toolBiasAnalysis.quadrants.incorrectWin.count > 0 && (
+                  <p className="text-[10px] text-green-400 mt-1">gem ${toolBiasAnalysis.quadrants.incorrectWin.avgPnl.toFixed(2)}</p>
+                )}
+              </div>
+
+              {/* Incorrect + Loss */}
+              <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/10">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-red-400 text-xs">✗</span>
+                  <p className="text-[10px] font-semibold text-red-400 uppercase">Bias incorrect + Loss</p>
+                </div>
+                <p className="text-lg font-bold text-heading">{toolBiasAnalysis.quadrants.incorrectLoss.count}</p>
+                <p className="text-[10px] text-text-dim">Tool fout, trade verloren</p>
+                {toolBiasAnalysis.quadrants.incorrectLoss.count > 0 && (
+                  <p className="text-[10px] text-red-400 mt-1">gem ${toolBiasAnalysis.quadrants.incorrectLoss.avgPnl.toFixed(2)}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Insight */}
+            {toolBiasAnalysis.correctCount >= 3 && toolBiasAnalysis.incorrectCount >= 1 && (
+              <div className="mt-3 space-y-1.5">
+                {toolBiasAnalysis.quadrants.correctLoss.count > toolBiasAnalysis.quadrants.correctWin.count && (
+                  <p className="text-[11px] px-3 py-2 rounded-lg bg-amber-500/10 text-amber-400">
+                    ⚠ Je tool geeft vaak de goede richting maar je verliest toch — werk aan je entry timing en SL placement.
+                  </p>
+                )}
+                {toolBiasAnalysis.accuracy >= 60 && toolBiasAnalysis.correctWinRate < 50 && (
+                  <p className="text-[11px] px-3 py-2 rounded-lg bg-amber-500/10 text-amber-400">
+                    ⚠ Je tool is {toolBiasAnalysis.accuracy.toFixed(0)}% accuraat maar je wint maar {toolBiasAnalysis.correctWinRate.toFixed(0)}% van die trades — je technische uitvoering kan beter.
+                  </p>
+                )}
+                {toolBiasAnalysis.accuracy >= 60 && toolBiasAnalysis.correctWinRate >= 55 && (
+                  <p className="text-[11px] px-3 py-2 rounded-lg bg-green-500/10 text-green-400">
+                    ✓ Sterke combo: tool {toolBiasAnalysis.accuracy.toFixed(0)}% accuraat en {toolBiasAnalysis.correctWinRate.toFixed(0)}% winrate bij correcte bias.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Emotion analysis */}
       {emotionStats.some(e => e.label !== 'Niet ingevuld') && (
