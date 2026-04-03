@@ -21,7 +21,6 @@ const premiumTools = [
 
 const freeTools = [
   { href: '/tools/calculator', label: 'Position Size Calculator', slug: 'calculator' },
-  { href: '/tools/kalender', label: 'Economische Kalender', slug: 'kalender' },
   { href: '/tools/rente', label: 'Rentetarieven', slug: 'rente' },
 ]
 
@@ -137,7 +136,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
             </p>
             <div className="flex items-center justify-center gap-3">
               <button
-                onClick={() => router.push('/tools/kalender')}
+                onClick={() => router.push('/tools/calculator')}
                 className="px-5 py-2.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading transition-colors"
               >
                 Terug naar tools

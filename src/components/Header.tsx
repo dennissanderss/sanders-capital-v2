@@ -17,6 +17,11 @@ const navLinks = [
   { href: '/contact', label: 'Contact' },
 ]
 
+const nieuwsDropdown = [
+  { href: '/nieuws', label: 'Dagelijks Financieel Nieuws', desc: 'Het laatste financiële nieuws', icon: 'pulse' },
+  { href: '/tools/kalender', label: 'Economische Kalender', desc: 'Aankomende events & data', icon: 'calendar' },
+]
+
 const blogDropdown = [
   { href: '/blog', label: 'Artikelen', desc: 'Educatieve artikelen & modules', icon: 'book' },
   { href: '/blog/fx-outlook', label: 'FX Outlook', desc: 'Marktanalyses & macro verwachtingen', icon: 'pulse' },
@@ -27,7 +32,6 @@ const toolsDropdown = [
   { href: '/tools/fx-selector', slug: 'fx-selector', label: 'Daily Macro Briefing', desc: 'Dagelijkse marktanalyse & bias', icon: 'compass', defaultPremium: true },
   { href: '/tools/tradescope', slug: 'tradescope', label: 'TradeMind', desc: 'Analyseer je trades & performance', icon: 'activity', defaultPremium: true },
   { href: '/tools/calculator', slug: 'calculator', label: 'Position Size Calculator', desc: 'Bereken je positiegrootte', icon: 'calculator' },
-  { href: '/tools/kalender', slug: 'kalender', label: 'Economische Kalender', desc: 'Aankomende events & data', icon: 'calendar' },
   { href: '/tools/rente', slug: 'rente', label: 'Rentetarieven', desc: 'Centrale bank rentes', icon: 'percent' },
 ]
 
@@ -150,16 +154,47 @@ export default function Header() {
             {pathname === '/' && <span className="absolute -bottom-1 left-0 right-0 h-px bg-accent" />}
           </Link>
 
-          {/* Nieuws */}
-          <Link
-            href="/nieuws"
-            className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading ${
-              pathname.startsWith('/nieuws') ? 'text-heading' : 'text-text-muted'
-            }`}
-          >
-            Nieuws
-            {pathname.startsWith('/nieuws') && <span className="absolute -bottom-1 left-0 right-0 h-px bg-accent" />}
-          </Link>
+          {/* Nieuws dropdown */}
+          <div className="relative group/nieuws">
+            <button
+              className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading flex items-center gap-1 cursor-pointer ${
+                pathname.startsWith('/nieuws') || pathname === '/tools/kalender' ? 'text-heading' : 'text-text-muted'
+              }`}
+              onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'nieuws' ? null : 'nieuws') }}
+            >
+              Nieuws
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className={`mt-0.5 transition-transform duration-200 ${openDropdown === 'nieuws' ? 'rotate-180' : ''} group-hover/nieuws:rotate-180`}>
+                <path d="M2.5 4 5 6.5 7.5 4" />
+              </svg>
+              {(pathname.startsWith('/nieuws') || pathname === '/tools/kalender') && (
+                <span className="absolute -bottom-1 left-0 right-0 h-px bg-accent" />
+              )}
+            </button>
+
+            <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent ${openDropdown === 'nieuws' ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/nieuws:opacity-100 group-hover/nieuws:visible'}`}>
+              <div className="rounded-xl shadow-2xl border border-white/[0.12] py-2 min-w-[280px]" style={{ background: 'rgba(13, 14, 20, 0.97)', backdropFilter: 'blur(24px)' }}>
+                {nieuwsDropdown.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-white/[0.08] ${
+                      pathname === item.href ? 'bg-white/[0.06]' : ''
+                    }`}
+                  >
+                    <span className={`mt-0.5 flex-shrink-0 ${pathname === item.href ? 'text-accent-light' : 'text-text-dim'}`}>
+                      <NavIcon icon={item.icon} />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-sm font-medium ${pathname === item.href ? 'text-heading' : 'text-text-muted'} transition-colors`}>
+                        {item.label}
+                      </span>
+                      <p className="text-xs text-text-dim mt-0.5 leading-relaxed">{item.desc}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* Blog dropdown */}
           <div className="relative group/blog">
@@ -390,7 +425,6 @@ export default function Header() {
           <div className="w-full flex flex-col items-center gap-1 mb-6">
             {[
               { href: '/', label: 'Home' },
-              { href: '/nieuws', label: 'Nieuws' },
               { href: '/premium', label: 'Premium' },
               { href: '/over', label: 'Over' },
               { href: '/contact', label: 'Contact' },
@@ -411,6 +445,22 @@ export default function Header() {
 
           {/* Divider */}
           <div className="w-16 h-px bg-white/[0.08] mb-6" />
+
+          {/* Nieuws section */}
+          <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim mb-3 font-semibold">Nieuws</p>
+          <div className="w-full flex flex-col items-center gap-1 mb-6">
+            {nieuwsDropdown.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`w-full py-2.5 text-sm rounded-lg transition-colors ${
+                  pathname === item.href ? 'text-heading bg-white/[0.04]' : 'text-text-muted hover:text-heading hover:bg-white/[0.03]'
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
 
           {/* Blog section */}
           <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim mb-3 font-semibold">Blog</p>

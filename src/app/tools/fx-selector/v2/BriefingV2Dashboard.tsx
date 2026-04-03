@@ -1529,7 +1529,7 @@ export default function BriefingV2Dashboard() {
                     <div className="space-y-2 text-[10px] text-text-dim leading-relaxed">
                       <p>
                         Intermarket signalen worden gebruikt als bevestiging van het macro regime dat in Stap 1 is bepaald op basis van centraal bank beleid.
-                        Ze veranderen het regime niet, maar verhogen of verlagen de confidence score.
+                        Ze veranderen het regime niet, maar verhogen of verlagen de zekerheid score.
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
@@ -1550,8 +1550,8 @@ export default function BriefingV2Dashboard() {
                         </div>
                       </div>
                       <p>
-                        Als intermarket signalen het regime bevestigen, wordt de confidence score verhoogd.
-                        Bij conflict blijft het regime gelijk maar de confidence score wordt verlaagd, wat leidt tot meer selectieve trade suggesties.
+                        Als intermarket signalen het regime bevestigen, wordt de zekerheid score verhoogd.
+                        Bij conflict blijft het regime gelijk maar de zekerheid score wordt verlaagd, wat leidt tot meer selectieve trade suggesties.
                       </p>
                     </div>
                   </div>
@@ -2250,12 +2250,13 @@ export default function BriefingV2Dashboard() {
             <div className="space-y-3 text-[11px] text-text-dim leading-relaxed">
               <div>
                 <p className="font-semibold text-text-muted mb-1">Hoe werkt dit model?</p>
-                <p>De briefing analyseert de FX markt in 4 stappen. Elke stap bouwt voort op de vorige:</p>
+                <p>De briefing analyseert de FX markt in 5 stappen. Elke stap bouwt voort op de vorige:</p>
                 <ol className="list-decimal list-inside mt-1 space-y-0.5 text-[10px]">
                   <li><strong className="text-text-muted">Marktregime</strong> bepaald door CB beleid en intermarket data. Dit geeft context voor alle verdere analyse.</li>
-                  <li><strong className="text-text-muted">Valutascores</strong> elke valuta krijgt een score (CB beleid x 2 + renteverschil x 1.5 + nieuwsbonus). Het verschil bepaalt de bias per paar.</li>
+                  <li><strong className="text-text-muted">Nieuws Sentiment</strong> headlines automatisch geanalyseerd op impact per valuta. Positief/negatief sentiment wordt meegewogen in de score.</li>
                   <li><strong className="text-text-muted">Intermarket bevestiging</strong> VIX, S&amp;P 500, goud, yields en DXY worden gecheckt. Alleen bij alignment &gt;50% worden signalen doorgelaten.</li>
-                  <li><strong className="text-text-muted">Trade Focus</strong> paren met score &ge;2.0, contrarian prijsactie (5d lookback) en intermarket bevestiging. Hold: 1 handelsdag.</li>
+                  <li><strong className="text-text-muted">Trade Focus</strong> paren met score &ge;2.0, contrarian prijsactie (5d lookback) en intermarket bevestiging.</li>
+                  <li><strong className="text-text-muted">Concrete Trades</strong> trade cards met call, conviction score en timing. Hold: 1 handelsdag.</li>
                 </ol>
               </div>
 

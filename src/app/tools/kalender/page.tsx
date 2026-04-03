@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, useCallback } from 'react'
 
 interface CalendarEvent {
   title: string
@@ -44,78 +44,152 @@ function ImpactBadge({ impact }: { impact: string }) {
 }
 
 /* ─── Event explanation generator ────────────────────────── */
-function getEventExplanation(event: CalendarEvent): { what: string; betterThanExpected: string; worseThanExpected: string } {
+interface EventExplanation {
+  what: string
+  betterThanExpected: string
+  worseThanExpected: string
+  waaromBeter: string
+  waaromSlechter: string
+}
+
+function getEventExplanation(event: CalendarEvent): EventExplanation {
   const t = event.title.toLowerCase()
   const ccy = event.currency
 
-  if (t.includes('cpi') || t.includes('inflation') || t.includes('price index')) {
+  if (t.includes('cpi') || t.includes('inflation') || t.includes('price index') || t.includes('pce') || t.includes('ppi') || t.includes('producer price')) {
+    const isCore = t.includes('core') || t.includes('kern')
+    const isCpi = t.includes('cpi') || t.includes('consumer price') || t.includes('pce')
+    const isPpi = t.includes('ppi') || t.includes('producer price')
     return {
-      what: `Meet de verandering in consumentenprijzen in ${ccy}. Dit is de belangrijkste indicator voor inflatie en beïnvloedt direct het rentebeleid van de centrale bank.`,
-      betterThanExpected: `Hoger dan verwacht = inflatiedruk = hawkish voor ${ccy} (rente langer hoog). ${ccy} wordt sterker.`,
-      worseThanExpected: `Lager dan verwacht = inflatie daalt = dovish voor ${ccy} (ruimte voor renteverlaging). ${ccy} wordt zwakker.`,
+      what: isPpi
+        ? `Meet de verandering in producentenprijzen. PPI is een voorloper van consumenteninflatie: als fabrieken meer betalen, stijgen uiteindelijk ook de winkelprijzen.${isCore ? ' De kern-variant sluit voedsel en energie uit voor een stabieler beeld.' : ''}`
+        : `Meet de verandering in consumentenprijzen${isCore ? ' (excl. voedsel en energie)' : ''}. Dit is de belangrijkste indicator voor inflatie en beïnvloedt direct het rentebeleid van de centrale bank.`,
+      betterThanExpected: `Hoger dan verwacht = inflatiedruk = hawkish voor ${ccy}. ${ccy} wordt sterker.`,
+      worseThanExpected: `Lager dan verwacht = inflatie daalt = dovish voor ${ccy}. ${ccy} wordt zwakker.`,
+      waaromBeter: `Hogere inflatie dan verwacht betekent dat prijzen sneller stijgen. De centrale bank moet de rente hoog houden (of zelfs verhogen) om de inflatie af te remmen. Hogere rentes trekken buitenlands kapitaal aan, omdat beleggers meer rendement krijgen op obligaties en spaartegoeden in ${ccy}. Die extra vraag naar ${ccy} drijft de koers omhoog.`,
+      waaromSlechter: `Lagere inflatie dan verwacht betekent dat prijzen minder snel stijgen dan gedacht. De centrale bank krijgt ruimte om de rente te verlagen om de economie te stimuleren. Lagere rentes maken beleggen in ${ccy} minder aantrekkelijk vergeleken met andere valuta's. Kapitaal stroomt weg, waardoor ${ccy} zwakker wordt.`,
     }
   }
-  if (t.includes('employment') || t.includes('payroll') || t.includes('nfp') || t.includes('non-farm')) {
+  if (t.includes('employment') || t.includes('payroll') || t.includes('nfp') || t.includes('non-farm') || t.includes('employment change')) {
     return {
-      what: `Meet het aantal nieuwe banen (excl. landbouw) in ${ccy}. Een sterke arbeidsmarkt geeft de centrale bank minder reden om rente te verlagen.`,
-      betterThanExpected: `Meer banen dan verwacht = sterke economie = hawkish. ${ccy} wordt sterker, rente langer hoog.`,
-      worseThanExpected: `Minder banen dan verwacht = zwakkere economie = dovish. ${ccy} wordt zwakker, renteverlaging waarschijnlijker.`,
+      what: `Meet het aantal nieuwe banen (excl. landbouw). Dit is een van de belangrijkste indicatoren voor de gezondheid van de arbeidsmarkt en economie.`,
+      betterThanExpected: `Meer banen dan verwacht = sterke economie = hawkish. ${ccy} wordt sterker.`,
+      worseThanExpected: `Minder banen dan verwacht = zwakkere economie = dovish. ${ccy} wordt zwakker.`,
+      waaromBeter: `Meer banen dan verwacht betekent een sterkere economie. Meer werkenden betekent meer inkomens en meer consumentenbestedingen, wat de economische groei aandrijft. De centrale bank heeft dan minder reden om rentes te verlagen, omdat de economie al goed draait. Hogere rentes (of de verwachting daarvan) maken ${ccy} aantrekkelijker voor internationale beleggers die op zoek zijn naar rendement.`,
+      waaromSlechter: `Minder banen dan verwacht wijst op een vertragende economie. Minder werkenden betekent minder inkomens en minder bestedingen. De centrale bank zal eerder overwegen om rentes te verlagen om de economie te stimuleren en werkgelegenheid te bevorderen. Die verwachting van lagere rentes maakt ${ccy} minder aantrekkelijk voor beleggers, waardoor kapitaal wegstroomt en de valuta zwakker wordt.`,
+    }
+  }
+  if (t.includes('claim') || t.includes('unemployment') || t.includes('jobless')) {
+    const isClaims = t.includes('claim') || t.includes('jobless')
+    return {
+      what: isClaims
+        ? `Wekelijks aantal werkloosheidsaanvragen. Lager = minder mensen worden ontslagen = sterkere arbeidsmarkt. Dit is een van de meest actuele arbeidsmarktindicatoren.`
+        : `Meet het percentage van de beroepsbevolking dat werkloos is. Een lagere werkloosheid wijst op een sterkere economie.`,
+      betterThanExpected: isClaims
+        ? `Minder claims dan verwacht = sterke arbeidsmarkt = hawkish voor ${ccy}.`
+        : `Lagere werkloosheid dan verwacht = sterkere economie = hawkish voor ${ccy}.`,
+      worseThanExpected: isClaims
+        ? `Meer claims dan verwacht = zwakkere arbeidsmarkt = dovish voor ${ccy}.`
+        : `Hogere werkloosheid dan verwacht = zwakkere economie = dovish voor ${ccy}.`,
+      waaromBeter: isClaims
+        ? `Minder werkloosheidsaanvragen dan verwacht wijst erop dat bedrijven minder mensen ontslaan. Dit signaleert vertrouwen bij werkgevers en economische stabiliteit. De centrale bank ziet geen noodzaak om de rente te verlagen ter stimulering. Rentes blijven hoog of gaan omhoog, wat buitenlands kapitaal aantrekt en ${ccy} sterker maakt.`
+        : `Een lagere werkloosheid betekent dat meer mensen werken en geld uitgeven. Dit houdt de economie sterk en geeft de centrale bank ruimte om de rente hoog te houden. Hogere rentes maken ${ccy} aantrekkelijker voor internationale beleggers, wat de koers opdrijft.`,
+      waaromSlechter: isClaims
+        ? `Meer werkloosheidsaanvragen dan verwacht betekent dat meer mensen hun baan verliezen. Dit is een signaal van economische verzwakking. Bedrijven krimpen of gaan failliet. De centrale bank zal de rente eerder verlagen om de economie te ondersteunen en banen te behouden. Lagere rentes maken ${ccy} minder aantrekkelijk, waardoor beleggers hun geld elders beleggen.`
+        : `Hogere werkloosheid betekent dat meer mensen geen baan vinden. Dit remt consumentenbestedingen en economische groei. De centrale bank zal eerder de rente verlagen om bedrijven en consumenten te stimuleren. Lagere rentevooruitzichten maken ${ccy} minder aantrekkelijk voor beleggers.`,
     }
   }
   if (t.includes('gdp') || t.includes('gross domestic')) {
     return {
-      what: `Meet de totale economische output (groei) van ${ccy}. Hogere groei = sterkere economie = meer ruimte om rente hoog te houden.`,
+      what: `Meet de totale economische output (groei) van een land. Het BBP is het meest complete overzicht van de economische gezondheid en beïnvloedt verwachtingen over rentebeleid.`,
       betterThanExpected: `Hogere groei dan verwacht = hawkish. ${ccy} wordt sterker.`,
-      worseThanExpected: `Lagere groei dan verwacht = dovish. ${ccy} wordt zwakker, recessierisico stijgt.`,
+      worseThanExpected: `Lagere groei dan verwacht = dovish. ${ccy} wordt zwakker.`,
+      waaromBeter: `Hogere economische groei dan verwacht betekent dat bedrijven meer produceren, meer mensen werken en consumenten meer besteden. Een sterke economie geeft de centrale bank het vertrouwen om de rente hoog te houden of zelfs te verhogen, omdat er geen stimulering nodig is. Hogere rentes trekken buitenlandse investeringen aan die ${ccy} moeten kopen, waardoor de vraag naar en de waarde van ${ccy} stijgt.`,
+      waaromSlechter: `Lagere groei dan verwacht signaleert dat de economie vertraagt. Bedrijven investeren minder, consumenten worden voorzichtiger. De centrale bank zal eerder de rente verlagen om lenen goedkoper te maken en de economie weer aan te jagen. De verwachting van lagere rentes maakt ${ccy} minder aantrekkelijk voor beleggers die op zoek zijn naar rendement, waardoor de valuta daalt.`,
     }
   }
   if (t.includes('pmi') || t.includes('purchasing manager')) {
+    const isServices = t.includes('service')
+    const isManuf = t.includes('manufactur')
+    const sector = isServices ? 'dienstensector' : isManuf ? 'productiesector' : 'bedrijfssector'
     return {
-      what: `Enquête onder inkoopmanagers. Boven 50 = groei in de sector, onder 50 = krimp. Voorlopende indicator voor economische activiteit.`,
+      what: `Enquete onder inkoopmanagers in de ${sector}. Boven 50 = groei, onder 50 = krimp. Dit is een voorlopende indicator: inkoopmanagers bestellen vandaag wat de economie morgen produceert.`,
       betterThanExpected: `Hoger dan verwacht (zeker boven 50) = economie groeit = hawkish voor ${ccy}.`,
       worseThanExpected: `Lager dan verwacht (zeker onder 50) = economie krimpt = dovish voor ${ccy}.`,
-    }
-  }
-  if (t.includes('rate') || t.includes('interest') || t.includes('monetary policy')) {
-    return {
-      what: `Rentebeslissing! Dit is het belangrijkste event. De centrale bank bepaalt de beleidsrente. Let ook op het bijbehorende statement en persconferentie.`,
-      betterThanExpected: `Rente hoger dan verwacht of hawkish statement = ${ccy} sterker. Markt prijst hogere rente in.`,
-      worseThanExpected: `Rente lager dan verwacht of dovish statement = ${ccy} zwakker. Markt prijst versoepeling in.`,
-    }
-  }
-  if (t.includes('retail') || t.includes('sales') || t.includes('consumer')) {
-    return {
-      what: `Meet de consumptieve bestedingen. Consumptie is ~70% van het BBP; sterke retail sales = sterke economie.`,
-      betterThanExpected: `Hogere verkopen dan verwacht = sterke consument = hawkish voor ${ccy}.`,
-      worseThanExpected: `Lagere verkopen dan verwacht = zwakke consument = dovish voor ${ccy}.`,
-    }
-  }
-  if (t.includes('claim') || t.includes('unemployment') || t.includes('jobless')) {
-    return {
-      what: `Wekelijks aantal werkloosheidsaanvragen in ${ccy}. Lager = sterkere arbeidsmarkt. Hoger = meer ontslagen.`,
-      betterThanExpected: `Minder claims dan verwacht = sterke arbeidsmarkt = hawkish voor ${ccy}.`,
-      worseThanExpected: `Meer claims dan verwacht = zwakkere arbeidsmarkt = dovish voor ${ccy}.`,
-    }
-  }
-  if (t.includes('speak') || t.includes('press conference') || t.includes('testimony')) {
-    return {
-      what: `Toespraak van een centrale bank official. Let op hints over toekomstig rentebeleid; de toon is belangrijker dan specifieke data.`,
-      betterThanExpected: `Hawkish toon (inflatiezorgen, geen haast om te verlagen) = ${ccy} sterker.`,
-      worseThanExpected: `Dovish toon (groeivertraging, openstaan voor verlaging) = ${ccy} zwakker.`,
-    }
-  }
-  if (t.includes('trade balance') || t.includes('export') || t.includes('import')) {
-    return {
-      what: `Het verschil tussen export en import. Een handelsoverschot (meer export) is positief voor de valuta.`,
-      betterThanExpected: `Groter overschot of kleiner tekort dan verwacht = positief voor ${ccy}.`,
-      worseThanExpected: `Groter tekort dan verwacht = negatief voor ${ccy}.`,
+      waaromBeter: `Een hogere PMI dan verwacht betekent dat inkoopmanagers meer orders plaatsen, meer personeel aannemen en hogere productie verwachten. Dit is een vroeg signaal van economische groei. De centrale bank heeft dan minder aanleiding om de rente te verlagen. Stabiele of stijgende rentes houden ${ccy} aantrekkelijk voor internationale beleggers.`,
+      waaromSlechter: `Een lagere PMI dan verwacht (vooral onder 50) signaleert dat bedrijven krimpen: minder orders, minder productie, mogelijk ontslagen. Dit voorspelt economische vertraging. De centrale bank zal eerder ingrijpen met renteverlagingen om groei te stimuleren. De markt anticipeert hierop door ${ccy} te verkopen, waardoor de koers daalt.`,
     }
   }
   if (t.includes('ism') || t.includes('manufacturing')) {
     return {
-      what: `ISM Manufacturing index: meet de gezondheid van de productiesector. Boven 50 = expansie, onder 50 = krimp.`,
+      what: `ISM Manufacturing index: meet de gezondheid van de productiesector. Boven 50 = expansie, onder 50 = krimp. Een breed gevolgde indicator voor de richting van de economie.`,
       betterThanExpected: `Hoger dan verwacht = economie groeit = hawkish voor ${ccy}.`,
       worseThanExpected: `Lager dan verwacht = economie krimpt = dovish voor ${ccy}.`,
+      waaromBeter: `Een hogere ISM dan verwacht betekent dat fabrieken meer produceren, meer bestellingen binnenkrijgen en meer personeel aannemen. Dit signaleert brede economische kracht. De centrale bank zal minder geneigd zijn om de rente te verlagen. Het vooruitzicht van aanhoudend hogere rentes maakt ${ccy} aantrekkelijker voor buitenlandse beleggers die rendement zoeken.`,
+      waaromSlechter: `Een lagere ISM dan verwacht, vooral onder 50, signaleert krimp in de productiesector. Minder orders en productie wijzen op economische vertraging. De centrale bank zal eerder overwegen de rente te verlagen om de economie te ondersteunen. Verwachte lagere rentes verminderen de aantrekkingskracht van ${ccy} voor beleggers.`,
+    }
+  }
+  if (t.includes('rate') || t.includes('interest') || t.includes('monetary policy') || t.includes('rate decision') || t.includes('cash rate')) {
+    return {
+      what: `Rentebeslissing van de centrale bank. Dit is het belangrijkste event op de kalender. De beleidsrente bepaalt direct de kosten van lenen en het rendement op sparen. Let ook op het statement en de persconferentie voor hints over toekomstig beleid.`,
+      betterThanExpected: `Rente hoger dan verwacht of hawkish statement = ${ccy} sterker.`,
+      worseThanExpected: `Rente lager dan verwacht of dovish statement = ${ccy} zwakker.`,
+      waaromBeter: `Een hogere rente (of hawkish toon) dan de markt had ingeprijsd trekt direct internationaal kapitaal aan. Beleggers wereldwijd zoeken het hoogste rendement. Hogere rentes in ${ccy} betekenen hogere obligatierendementen en spaarrentes. Om die te kopen, moeten beleggers eerst ${ccy} kopen. Die extra vraag duwt de koers omhoog. Bovendien signaleert een hawkish bank vertrouwen in de economie.`,
+      waaromSlechter: `Een lagere rente (of dovish toon) dan verwacht maakt ${ccy}-beleggingen minder rendabel. Beleggers verkopen obligaties in ${ccy} en verschuiven naar valuta's met hogere rentes. Die verkoopdruk verzwakt ${ccy}. Een dovish signaal suggereert ook dat de centrale bank zich zorgen maakt over de economische groei, wat het sentiment verder negatief beinvloedt.`,
+    }
+  }
+  if (t.includes('retail') || t.includes('sales')) {
+    return {
+      what: `Meet de consumptieve bestedingen. Consumptie is typisch 60-70% van het BBP, waardoor dit een van de meest directe graadmeters is voor economische gezondheid.`,
+      betterThanExpected: `Hogere verkopen dan verwacht = sterke consument = hawkish voor ${ccy}.`,
+      worseThanExpected: `Lagere verkopen dan verwacht = zwakke consument = dovish voor ${ccy}.`,
+      waaromBeter: `Hogere retail sales dan verwacht betekent dat consumenten meer geld uitgeven. Aangezien consumptie het grootste deel van de economie uitmaakt, signaleert dit economische kracht. Meer bestedingen kunnen ook prijzen opdrijven (inflatie). De centrale bank heeft dan minder reden om rentes te verlagen en kan zelfs hawkisher worden. Die renteverwachting maakt ${ccy} aantrekkelijker voor beleggers.`,
+      waaromSlechter: `Lagere retail sales dan verwacht betekent dat consumenten de hand op de knip houden. Dit kan komen door onzekerheid, werkloosheid of dalend vertrouwen. Minder consumptie remt de economische groei, waardoor de centrale bank druk voelt om de rente te verlagen ter stimulering. Verwachte lagere rentes maken ${ccy} minder aantrekkelijk, wat de koers drukt.`,
+    }
+  }
+  if (t.includes('consumer confidence') || t.includes('consumer sentiment') || t.includes('michigan')) {
+    return {
+      what: `Meet het vertrouwen van consumenten in de economie. Hoog vertrouwen betekent dat mensen bereid zijn geld uit te geven; laag vertrouwen leidt tot voorzichtigheid en minder bestedingen.`,
+      betterThanExpected: `Hoger vertrouwen dan verwacht = positief voor economische groei = hawkish voor ${ccy}.`,
+      worseThanExpected: `Lager vertrouwen dan verwacht = risico op lagere bestedingen = dovish voor ${ccy}.`,
+      waaromBeter: `Hoger consumentenvertrouwen dan verwacht betekent dat mensen optimistisch zijn over hun financiele situatie en de economie. Optimistische consumenten geven meer uit, wat de economische groei stimuleert. De centrale bank heeft dan minder aanleiding om de rente te verlagen. Stabiele of stijgende rentes houden ${ccy} aantrekkelijk voor beleggers.`,
+      waaromSlechter: `Lager consumentenvertrouwen dan verwacht signaleert dat mensen zich zorgen maken over de economie, hun baan of inkomen. Pessimistische consumenten bezuinigen, wat de economische groei remt. De centrale bank zal eerder ingrijpen met renteverlagingen om het vertrouwen en de bestedingen te herstellen. Lagere rentevooruitzichten verzwakken ${ccy}.`,
+    }
+  }
+  if (t.includes('speak') || t.includes('press conference') || t.includes('testimony') || t.includes('member')) {
+    return {
+      what: `Toespraak van een centrale bank official. Let op hints over toekomstig rentebeleid. De toon (hawkish vs. dovish) is belangrijker dan specifieke data.`,
+      betterThanExpected: `Hawkish toon (inflatiezorgen, geen haast om te verlagen) = ${ccy} sterker.`,
+      worseThanExpected: `Dovish toon (groeivertraging, openstaan voor verlaging) = ${ccy} zwakker.`,
+      waaromBeter: `Een hawkish toon betekent dat de spreker zich meer zorgen maakt over inflatie dan over groei. Dit impliceert dat de rente langer hoog blijft of zelfs kan stijgen. De markt past renteverwachtingen omhoog aan, waardoor ${ccy} aantrekkelijker wordt voor beleggers. Obligatierendementen stijgen en internationaal kapitaal stroomt naar ${ccy}.`,
+      waaromSlechter: `Een dovish toon betekent dat de spreker zich meer zorgen maakt over economische groei dan over inflatie. Dit signaleert dat renteverlagingen waarschijnlijker worden. De markt past renteverwachtingen neerwaarts aan. Lagere verwachte rendementen maken ${ccy} minder aantrekkelijk, waardoor beleggers hun kapitaal verplaatsen naar valuta's met hogere rentevooruitzichten.`,
+    }
+  }
+  if (t.includes('trade balance') || t.includes('export') || t.includes('import') || t.includes('current account')) {
+    return {
+      what: `Het verschil tussen export en import. Een handelsoverschot (meer export dan import) creëert vraag naar de eigen valuta, omdat buitenlandse kopers moeten betalen in de lokale munt.`,
+      betterThanExpected: `Groter overschot of kleiner tekort dan verwacht = positief voor ${ccy}.`,
+      worseThanExpected: `Groter tekort dan verwacht = negatief voor ${ccy}.`,
+      waaromBeter: `Een groter handelsoverschot (of kleiner tekort) dan verwacht betekent dat het land meer exporteert dan importeert. Buitenlandse kopers moeten ${ccy} kopen om voor die export te betalen, wat directe vraag creëert naar de valuta. Daarnaast wijst een sterk handelsoverschot op concurrerende industrie en een gezonde economie, wat het vertrouwen van beleggers versterkt.`,
+      waaromSlechter: `Een groter handelstekort dan verwacht betekent dat het land meer importeert dan exporteert. Het land verkoopt meer van zijn eigen valuta om buitenlandse goederen te kopen (betalen in vreemde valuta). Dit creëert verkoopdruk op ${ccy}. Een structureel groeiend tekort kan ook wijzen op verzwakkende concurrentiekracht, wat het langetermijnvertrouwen in de valuta ondermijnt.`,
+    }
+  }
+  if (t.includes('housing') || t.includes('building permit') || t.includes('housing start') || t.includes('home sales') || t.includes('construction')) {
+    return {
+      what: `Woningmarktindicator. De vastgoedsector is een belangrijke economische motor: bouwactiviteit genereert werkgelegenheid en stimuleert gerelateerde sectoren (materialen, meubels, financiering).`,
+      betterThanExpected: `Sterkere woningmarkt dan verwacht = economische groei = hawkish voor ${ccy}.`,
+      worseThanExpected: `Zwakkere woningmarkt dan verwacht = economische vertraging = dovish voor ${ccy}.`,
+      waaromBeter: `Sterkere woningmarktcijfers dan verwacht wijzen op een gezonde economie. Meer bouwactiviteit betekent meer banen in de bouw en gerelateerde sectoren, meer hypotheekaanvragen en hogere consumentenuitgaven. De centrale bank heeft dan minder reden om de rente te verlagen. Aanhoudend hogere rentes houden ${ccy} aantrekkelijk voor beleggers.`,
+      waaromSlechter: `Zwakkere woningmarktcijfers signaleren economische vertraging. Een krimpende vastgoedmarkt raakt veel sectoren: bouw, financiering, detailhandel. Dalende huizenprijzen verminderen het vermogen van huishoudens en remmen bestedingen. De centrale bank zal eerder de rente verlagen om hypotheken betaalbaarder te maken en de markt te stimuleren. Lagere rentevooruitzichten verzwakken ${ccy}.`,
+    }
+  }
+  if (t.includes('wage') || t.includes('earning') || t.includes('average hourly') || t.includes('labor cost') || t.includes('labour cost')) {
+    return {
+      what: `Meet loongroei of arbeidskosten. Stijgende lonen zijn een voorloper van inflatie: werknemers met meer geld besteden meer, wat prijzen opdrijft.`,
+      betterThanExpected: `Hogere loongroei dan verwacht = inflatiedruk = hawkish voor ${ccy}.`,
+      worseThanExpected: `Lagere loongroei dan verwacht = minder inflatiedruk = dovish voor ${ccy}.`,
+      waaromBeter: `Hogere loongroei dan verwacht betekent dat werknemers meer verdienen. Dit leidt tot hogere consumentenbestedingen, maar ook tot hogere kosten voor bedrijven, die deze doorberekenen in hun prijzen. Deze loon-prijsspiraal voedt inflatie. De centrale bank moet de rente hoog houden (of verhogen) om deze inflatie te beteugelen. Hogere rentes trekken kapitaal aan naar ${ccy}.`,
+      waaromSlechter: `Lagere loongroei dan verwacht betekent minder koopkracht voor werknemers en minder opwaartse druk op prijzen. Dit vermindert inflatiezorgen bij de centrale bank, waardoor er meer ruimte ontstaat voor renteverlagingen. De markt anticipeert op een soepeler monetair beleid, wat ${ccy} minder aantrekkelijk maakt voor rendementszoekende beleggers.`,
     }
   }
   // Generic fallback
@@ -123,6 +197,8 @@ function getEventExplanation(event: CalendarEvent): { what: string; betterThanEx
     what: `Economisch datapunt voor ${ccy}. Het verschil tussen de actuele waarde en de verwachting bepaalt de marktreactie.`,
     betterThanExpected: `Beter dan verwacht = positief/hawkish voor ${ccy}. Valuta wordt sterker.`,
     worseThanExpected: `Slechter dan verwacht = negatief/dovish voor ${ccy}. Valuta wordt zwakker.`,
+    waaromBeter: `Wanneer een economisch cijfer beter uitvalt dan verwacht, signaleert dit economische kracht. Een sterke economie geeft de centrale bank de ruimte om rentes hoog te houden, wat buitenlands kapitaal aantrekt. Beleggers moeten ${ccy} kopen om in die markt te investeren, waardoor de vraag naar de valuta stijgt en de koers omhoog gaat.`,
+    waaromSlechter: `Wanneer een economisch cijfer slechter uitvalt dan verwacht, signaleert dit economische zwakte. De centrale bank zal eerder overwegen om de rente te verlagen om de economie te stimuleren. Lagere rentes maken ${ccy} minder aantrekkelijk voor beleggers die rendement zoeken, waardoor kapitaal wegstroomt en de valuta zwakker wordt.`,
   }
 }
 
@@ -204,6 +280,7 @@ export default function KalenderPage() {
   const [impactFilter, setImpactFilter] = useState<'all' | 'high' | 'medium'>('medium')
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([])
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null)
+  const [expandedWaarom, setExpandedWaarom] = useState<Record<string, boolean>>({})
 
   const fetchCalendar = async () => {
     setLoading(true)
@@ -467,6 +544,44 @@ export default function KalenderPage() {
                                     <p className="text-red-400 font-semibold mb-1 uppercase tracking-wider text-[10px]">Slechter dan verwacht</p>
                                     <p className="text-text-muted leading-relaxed">{explanation.worseThanExpected}</p>
                                   </div>
+                                </div>
+                                {/* Collapsible "Waarom?" deep explanation */}
+                                <div className="mt-3">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setExpandedWaarom(prev => ({ ...prev, [eventId]: !prev[eventId] }))
+                                    }}
+                                    className="flex items-center gap-1.5 text-[11px] font-semibold text-accent-light/70 hover:text-accent-light transition-colors group"
+                                  >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                      className={`transition-transform ${expandedWaarom[eventId] ? 'rotate-180' : ''}`}
+                                    >
+                                      <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    <span className="uppercase tracking-wider">Waarom? Diepere uitleg</span>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light/40">
+                                      <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                                    </svg>
+                                  </button>
+                                  {expandedWaarom[eventId] && (
+                                    <div className="grid sm:grid-cols-2 gap-3 mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                      <div className="rounded-lg bg-green-500/[0.02] border border-green-500/10 px-4 py-3">
+                                        <p className="text-green-400 font-semibold mb-1.5 text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
+                                          Waarom sterker bij beter dan verwacht?
+                                        </p>
+                                        <p className="text-text-muted leading-relaxed text-[11px]">{explanation.waaromBeter}</p>
+                                      </div>
+                                      <div className="rounded-lg bg-red-500/[0.02] border border-red-500/10 px-4 py-3">
+                                        <p className="text-red-400 font-semibold mb-1.5 text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+                                          Waarom zwakker bij slechter dan verwacht?
+                                        </p>
+                                        <p className="text-text-muted leading-relaxed text-[11px]">{explanation.waaromSlechter}</p>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </td>
                             </tr>

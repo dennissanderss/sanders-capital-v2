@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 
 interface NewsArticle {
   id: string
@@ -83,6 +83,359 @@ function timeAgo(dateStr: string): string {
   if (days === 1) return 'Gisteren'
   if (days < 7) return `${days} dagen geleden`
   return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+}
+
+/* ─── Economic Impact Analysis ───────────────────────────── */
+interface ImpactResult {
+  currency: string
+  direction: 'bullish' | 'bearish'
+  explanation: string
+}
+
+interface EconomicRule {
+  // Keywords that trigger this rule (matched against lowercased title+summary)
+  keywords: string[]
+  // Direction modifiers: if these words appear, override direction
+  positiveModifiers: string[] // words meaning "higher/increase" -> use baseDirection
+  negativeModifiers: string[] // words meaning "lower/decrease" -> flip baseDirection
+  // Base direction when positive modifiers match (or no modifier context)
+  baseDirection: 'bullish' | 'bearish'
+  currency: string
+  explanationBullish: string
+  explanationBearish: string
+}
+
+const ECONOMIC_RULES: EconomicRule[] = [
+  // ─── US Employment ─────────────────
+  {
+    keywords: ['nonfarm', 'non-farm', 'payrolls', 'nfp'],
+    positiveModifiers: ['rise', 'higher', 'beat', 'strong', 'surge', 'gain', 'add', 'increase', 'stijg', 'hoger', 'boven verwachting'],
+    negativeModifiers: ['fall', 'lower', 'miss', 'weak', 'drop', 'decline', 'below', 'daal', 'lager', 'onder verwachting'],
+    baseDirection: 'bullish',
+    currency: 'USD',
+    explanationBullish: 'Meer banen \u2192 sterkere economie \u2192 Fed houdt rente hoog \u2192 USD sterker',
+    explanationBearish: 'Minder banen \u2192 zwakkere economie \u2192 Fed verlaagt rente \u2192 USD zwakker',
+  },
+  {
+    keywords: ['unemployment', 'werkloosheid', 'jobless'],
+    positiveModifiers: ['rise', 'higher', 'increase', 'stijg', 'hoger', 'up'],
+    negativeModifiers: ['fall', 'lower', 'drop', 'decline', 'daal', 'lager', 'down'],
+    baseDirection: 'bearish',
+    currency: 'USD',
+    explanationBullish: 'Lagere werkloosheid \u2192 sterkere arbeidsmarkt \u2192 Fed hawkish \u2192 USD sterker',
+    explanationBearish: 'Hogere werkloosheid \u2192 zwakkere economie \u2192 Fed dovish \u2192 USD zwakker',
+  },
+  {
+    keywords: ['jobs report', 'banenrapport', 'employment'],
+    positiveModifiers: ['strong', 'beat', 'surge', 'sterk', 'boven'],
+    negativeModifiers: ['weak', 'miss', 'disappointing', 'zwak', 'onder'],
+    baseDirection: 'bullish',
+    currency: 'USD',
+    explanationBullish: 'Sterke arbeidsmarkt \u2192 Fed kan rente hoog houden \u2192 USD sterker',
+    explanationBearish: 'Zwakke arbeidsmarkt \u2192 Fed kan rente verlagen \u2192 USD zwakker',
+  },
+  // ─── Inflation / CPI ──────────────
+  {
+    keywords: ['cpi', 'consumer price', 'consumentenprijzen'],
+    positiveModifiers: ['rise', 'higher', 'hot', 'above', 'beat', 'stijg', 'hoger', 'boven'],
+    negativeModifiers: ['fall', 'lower', 'cool', 'below', 'miss', 'daal', 'lager', 'onder'],
+    baseDirection: 'bullish',
+    currency: 'USD',
+    explanationBullish: 'Hogere inflatie \u2192 Fed verkrapt beleid \u2192 USD sterker (korte termijn)',
+    explanationBearish: 'Lagere inflatie \u2192 Fed kan verruimen \u2192 USD zwakker',
+  },
+  {
+    keywords: ['inflation', 'inflatie'],
+    positiveModifiers: ['rise', 'higher', 'hot', 'surge', 'persistent', 'sticky', 'stijg', 'hoger', 'hardnekkig'],
+    negativeModifiers: ['fall', 'lower', 'cool', 'ease', 'slow', 'daal', 'lager', 'afneem'],
+    baseDirection: 'bullish',
+    currency: 'USD',
+    explanationBullish: 'Hogere inflatie \u2192 centrale bank verkrapt \u2192 valuta sterker',
+    explanationBearish: 'Lagere inflatie \u2192 centrale bank kan verruimen \u2192 valuta zwakker',
+  },
+  {
+    keywords: ['pce', 'core pce'],
+    positiveModifiers: ['rise', 'higher', 'above', 'hot', 'stijg', 'hoger'],
+    negativeModifiers: ['fall', 'lower', 'below', 'cool', 'daal', 'lager'],
+    baseDirection: 'bullish',
+    currency: 'USD',
+    explanationBullish: 'Hogere PCE \u2192 Fed houdt vast aan verkrapping \u2192 USD sterker',
+    explanationBearish: 'Lagere PCE \u2192 Fed kan versoepelen \u2192 USD zwakker',
+  },
+  // ─── GDP ──────────────────────────
+  {
+    keywords: ['gdp', 'bbp', 'gross domestic'],
+    positiveModifiers: ['growth', 'expand', 'beat', 'strong', 'rise', 'groei', 'stijg', 'sterk'],
+    negativeModifiers: ['shrink', 'contract', 'miss', 'weak', 'decline', 'krimp', 'daal', 'zwak'],
+    baseDirection: 'bullish',
+    currency: 'USD',
+    explanationBullish: 'Hoger BBP \u2192 sterkere economie \u2192 valuta sterker',
+    explanationBearish: 'Lager BBP \u2192 zwakkere economie \u2192 valuta zwakker',
+  },
+  // ─── Rate decisions ───────────────
+  {
+    keywords: ['rate hike', 'renteverhoging', 'raises rate', 'verhoogt rente'],
+    positiveModifiers: [],
+    negativeModifiers: [],
+    baseDirection: 'bullish',
+    currency: 'USD',
+    explanationBullish: 'Renteverhoging \u2192 hogere yields \u2192 valuta aantrekkelijker \u2192 sterker',
+    explanationBearish: '',
+  },
+  {
+    keywords: ['rate cut', 'renteverlaging', 'cuts rate', 'verlaagt rente'],
+    positiveModifiers: [],
+    negativeModifiers: [],
+    baseDirection: 'bearish',
+    currency: 'USD',
+    explanationBullish: '',
+    explanationBearish: 'Renteverlaging \u2192 lagere yields \u2192 valuta minder aantrekkelijk \u2192 zwakker',
+  },
+  {
+    keywords: ['hawkish'],
+    positiveModifiers: [],
+    negativeModifiers: [],
+    baseDirection: 'bullish',
+    currency: 'USD',
+    explanationBullish: 'Hawkish signaal \u2192 rente blijft hoog of stijgt \u2192 valuta sterker',
+    explanationBearish: '',
+  },
+  {
+    keywords: ['dovish'],
+    positiveModifiers: [],
+    negativeModifiers: [],
+    baseDirection: 'bearish',
+    currency: 'USD',
+    explanationBullish: '',
+    explanationBearish: 'Dovish signaal \u2192 rente gaat omlaag \u2192 valuta zwakker',
+  },
+  // ─── PMI ──────────────────────────
+  {
+    keywords: ['pmi', 'purchasing manager'],
+    positiveModifiers: ['rise', 'above', 'expand', 'beat', 'stijg', 'boven', 'hoger'],
+    negativeModifiers: ['fall', 'below', 'contract', 'miss', 'daal', 'onder', 'lager'],
+    baseDirection: 'bullish',
+    currency: 'USD',
+    explanationBullish: 'PMI boven 50 / stijgend \u2192 groeiende economie \u2192 valuta sterker',
+    explanationBearish: 'PMI onder 50 / dalend \u2192 krimpende economie \u2192 valuta zwakker',
+  },
+  // ─── Retail Sales ─────────────────
+  {
+    keywords: ['retail sales', 'detailhandel'],
+    positiveModifiers: ['rise', 'higher', 'beat', 'surge', 'strong', 'stijg', 'hoger', 'sterk'],
+    negativeModifiers: ['fall', 'lower', 'miss', 'weak', 'drop', 'daal', 'lager', 'zwak'],
+    baseDirection: 'bullish',
+    currency: 'USD',
+    explanationBullish: 'Hogere retail sales \u2192 sterke consument \u2192 economie groeit \u2192 valuta sterker',
+    explanationBearish: 'Lagere retail sales \u2192 zwakke consument \u2192 economie verzwakt \u2192 valuta zwakker',
+  },
+  // ─── Recession ────────────────────
+  {
+    keywords: ['recession', 'recessie'],
+    positiveModifiers: ['risk', 'fear', 'warning', 'risico', 'angst'],
+    negativeModifiers: ['avoid', 'unlikely', 'onwaarschijnlijk'],
+    baseDirection: 'bearish',
+    currency: 'USD',
+    explanationBullish: 'Recessie onwaarschijnlijk \u2192 sterke economie \u2192 valuta sterker',
+    explanationBearish: 'Recessierisico \u2192 Fed verlaagt rente \u2192 valuta zwakker',
+  },
+  // ─── Tightening / Easing ──────────
+  {
+    keywords: ['tightening', 'verkrapping', 'quantitative tightening'],
+    positiveModifiers: [],
+    negativeModifiers: [],
+    baseDirection: 'bullish',
+    currency: 'USD',
+    explanationBullish: 'Verkrapping monetair beleid \u2192 hogere rentes \u2192 valuta sterker',
+    explanationBearish: '',
+  },
+  {
+    keywords: ['easing', 'verruiming', 'quantitative easing'],
+    positiveModifiers: [],
+    negativeModifiers: [],
+    baseDirection: 'bearish',
+    currency: 'USD',
+    explanationBullish: '',
+    explanationBearish: 'Verruiming monetair beleid \u2192 meer liquiditeit \u2192 valuta zwakker',
+  },
+  // ─── Treasury / Yields ────────────
+  {
+    keywords: ['treasury yield', 'treasury yields', 'bond yield', 'obligatierente'],
+    positiveModifiers: ['rise', 'surge', 'climb', 'stijg', 'hoger'],
+    negativeModifiers: ['fall', 'drop', 'decline', 'daal', 'lager'],
+    baseDirection: 'bullish',
+    currency: 'USD',
+    explanationBullish: 'Stijgende yields \u2192 hogere rendementen \u2192 USD aantrekkelijker',
+    explanationBearish: 'Dalende yields \u2192 lagere rendementen \u2192 USD minder aantrekkelijk',
+  },
+  // ─── Tariffs / Trade ──────────────
+  {
+    keywords: ['tariff', 'tariffs', 'trade war', 'handelsoorlog'],
+    positiveModifiers: ['impose', 'increase', 'new', 'escalat', 'verhoog', 'nieuw'],
+    negativeModifiers: ['remove', 'reduce', 'ease', 'deal', 'verwijder', 'verlaag'],
+    baseDirection: 'bullish',
+    currency: 'USD',
+    explanationBullish: 'Hogere tarieven \u2192 risk-off + inflatie \u2192 USD als veilige haven sterker',
+    explanationBearish: 'Lagere tarieven \u2192 risk-on \u2192 minder vraag naar USD als veilige haven',
+  },
+  // ─── Risk sentiment ───────────────
+  {
+    keywords: ['risk-off', 'safe haven', 'vlucht naar veiligheid'],
+    positiveModifiers: [],
+    negativeModifiers: [],
+    baseDirection: 'bullish',
+    currency: 'JPY',
+    explanationBullish: 'Risk-off sentiment \u2192 vlucht naar veilige havens \u2192 JPY/CHF sterker',
+    explanationBearish: '',
+  },
+  {
+    keywords: ['risk-on', 'risk appetite'],
+    positiveModifiers: [],
+    negativeModifiers: [],
+    baseDirection: 'bullish',
+    currency: 'AUD',
+    explanationBullish: 'Risk-on sentiment \u2192 meer risicobereidheid \u2192 AUD/NZD sterker',
+    explanationBearish: '',
+  },
+]
+
+// Map article currencies to likely central bank context
+const CURRENCY_CENTRAL_BANK: Record<string, string> = {
+  USD: 'Fed', EUR: 'ECB', GBP: 'BoE', JPY: 'BoJ',
+  AUD: 'RBA', NZD: 'RBNZ', CAD: 'BoC', CHF: 'SNB',
+}
+
+// Central bank keywords -> override the currency for a rule
+const CENTRAL_BANK_CURRENCY: Record<string, string> = {
+  'federal reserve': 'USD', 'fed ': 'USD', 'fomc': 'USD', 'powell': 'USD',
+  'ecb': 'EUR', 'lagarde': 'EUR', 'european central bank': 'EUR',
+  'bank of england': 'GBP', 'boe': 'GBP', 'bailey': 'GBP',
+  'bank of japan': 'JPY', 'boj': 'JPY', 'ueda': 'JPY',
+  'rba': 'AUD', 'reserve bank of australia': 'AUD',
+  'rbnz': 'NZD', 'reserve bank of new zealand': 'NZD',
+  'bank of canada': 'CAD', 'boc': 'CAD', 'macklem': 'CAD',
+  'snb': 'CHF', 'swiss national bank': 'CHF',
+}
+
+function analyzeEconomicImpact(article: NewsArticle): ImpactResult | null {
+  const text = `${article.title} ${article.summary}`.toLowerCase()
+
+  // Detect which currency is being discussed (from central bank mentions or article metadata)
+  let detectedCurrency = ''
+  for (const [keyword, currency] of Object.entries(CENTRAL_BANK_CURRENCY)) {
+    if (text.includes(keyword)) {
+      detectedCurrency = currency
+      break
+    }
+  }
+  // Fallback: use first affected currency from the article's metadata
+  if (!detectedCurrency && article.affectedCurrencies.length > 0) {
+    detectedCurrency = article.affectedCurrencies[0]
+  }
+
+  for (const rule of ECONOMIC_RULES) {
+    const matched = rule.keywords.some(kw => text.includes(kw))
+    if (!matched) continue
+
+    // Use detected currency, or fallback to rule default
+    const currency = detectedCurrency || rule.currency
+
+    // Determine direction: check modifiers
+    let direction = rule.baseDirection
+
+    if (rule.positiveModifiers.length > 0 || rule.negativeModifiers.length > 0) {
+      const hasPositive = rule.positiveModifiers.some(m => text.includes(m))
+      const hasNegative = rule.negativeModifiers.some(m => text.includes(m))
+
+      if (hasNegative && !hasPositive) {
+        // Flip direction
+        direction = rule.baseDirection === 'bullish' ? 'bearish' : 'bullish'
+      }
+      // If both or neither modifier found, keep baseDirection (headline is ambiguous, use base assumption)
+    }
+
+    const explanation = direction === 'bullish' ? rule.explanationBullish : rule.explanationBearish
+    if (!explanation) continue
+
+    // Replace generic "valuta" with the actual currency name
+    const bank = CURRENCY_CENTRAL_BANK[currency] || ''
+    const contextExplanation = explanation
+      .replace(/valuta/g, currency)
+      .replace(/centrale bank/g, bank || 'centrale bank')
+      .replace(/Fed/g, bank || 'Fed')
+
+    return {
+      currency,
+      direction,
+      explanation: contextExplanation,
+    }
+  }
+
+  return null
+}
+
+/* ─── Impact Indicator Component ─────────────────────────── */
+function ImpactIndicator({ article, compact = false }: { article: NewsArticle; compact?: boolean }) {
+  const [expanded, setExpanded] = useState(false)
+  const impact = useMemo(() => analyzeEconomicImpact(article), [article])
+
+  if (!impact) return null
+
+  const isBullish = impact.direction === 'bullish'
+
+  if (compact) {
+    // Compact pill for article cards
+    return (
+      <span
+        className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border font-semibold ${
+          isBullish
+            ? 'bg-green-500/10 text-green-400 border-green-500/20'
+            : 'bg-red-500/10 text-red-400 border-red-500/20'
+        }`}
+        title={impact.explanation}
+      >
+        <span>{isBullish ? '\u2191' : '\u2193'}</span>
+        <span>{impact.currency}</span>
+      </span>
+    )
+  }
+
+  // Full impact box for article reader
+  return (
+    <div className={`rounded-lg border p-3 mb-4 ${
+      isBullish
+        ? 'bg-green-500/[0.06] border-green-500/20'
+        : 'bg-red-500/[0.06] border-red-500/20'
+    }`}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between gap-2 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <span className={`text-lg leading-none ${isBullish ? 'text-green-400' : 'text-red-400'}`}>
+            {isBullish ? '\u2191' : '\u2193'}
+          </span>
+          <span className={`text-xs font-semibold ${isBullish ? 'text-green-400' : 'text-red-400'}`}>
+            Impact: {impact.currency} {isBullish ? 'bullish' : 'bearish'}
+          </span>
+        </div>
+        <svg
+          width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          className={`text-text-dim transition-transform ${expanded ? 'rotate-180' : ''}`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {expanded && (
+        <div className="mt-2 pt-2 border-t border-white/[0.06]">
+          <p className={`text-xs leading-relaxed ${isBullish ? 'text-green-300/80' : 'text-red-300/80'}`}>
+            {impact.explanation}
+          </p>
+          <p className="text-[9px] text-text-dim/50 mt-1.5 italic">Educatief, geen advies</p>
+        </div>
+      )}
+    </div>
+  )
 }
 
 /* ─── Live FX Widget ──────────────────────────────────────── */
@@ -371,6 +724,9 @@ export default function NieuwsContent() {
                 </div>
               )}
 
+              {/* Economic impact indicator */}
+              <ImpactIndicator article={selectedArticle} />
+
               {/* Article text */}
               <div className="text-sm text-text leading-relaxed whitespace-pre-line">
                 {getDisplaySummary(selectedArticle, showDutch)}
@@ -633,6 +989,8 @@ export default function NieuwsContent() {
                               {c}
                             </span>
                           ))}
+                          {/* Economic impact indicator */}
+                          <ImpactIndicator article={article} compact />
                         </div>
 
                         {/* Title */}

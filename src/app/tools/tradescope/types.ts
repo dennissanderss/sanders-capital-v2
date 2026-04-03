@@ -1,5 +1,5 @@
 // ============================================================
-// TradeScope Pro - Shared Types
+// TradeMind - Shared Types
 // ============================================================
 
 export interface TsAccount {
