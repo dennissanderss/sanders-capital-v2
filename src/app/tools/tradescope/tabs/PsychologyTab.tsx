@@ -51,6 +51,8 @@ export default function PsychologyTab({ trades }: Props) {
     const revenge = closed.filter(t => t.was_revenge)
     const htfYes = closed.filter(t => t.htf_bias_respected === true)
     const htfNo = closed.filter(t => t.htf_bias_respected === false)
+    const toolBiasYes = closed.filter(t => t.tool_bias_correct === true)
+    const toolBiasNo = closed.filter(t => t.tool_bias_correct === false)
 
     const calcStats = (arr: TsTrade[]) => ({
       count: arr.length,
@@ -64,6 +66,7 @@ export default function PsychologyTab({ trades }: Props) {
       { label: 'Impulsief', positive: calcStats(notImpulsive), negative: calcStats(impulsive), posLabel: 'Nee', negLabel: 'Ja' },
       { label: 'Revenge trading', positive: calcStats(closed.filter(t => !t.was_revenge)), negative: calcStats(revenge), posLabel: 'Nee', negLabel: 'Ja' },
       { label: 'HTF bias gevolgd', positive: calcStats(htfYes), negative: calcStats(htfNo), posLabel: 'Ja', negLabel: 'Nee' },
+      { label: 'Tool bias correct', positive: calcStats(toolBiasYes), negative: calcStats(toolBiasNo), posLabel: 'Ja', negLabel: 'Nee' },
     ]
   }, [closed])
 

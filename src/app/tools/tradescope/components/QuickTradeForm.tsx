@@ -187,6 +187,7 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
       was_revenge: false,
       was_overtrading: false,
       htf_bias_respected: null,
+      tool_bias_correct: null,
       news_checked: null,
       tags: [],
       status: 'open',

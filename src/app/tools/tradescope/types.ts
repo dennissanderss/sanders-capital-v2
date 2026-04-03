@@ -114,6 +114,7 @@ export interface TsTrade {
   was_revenge: boolean
   was_overtrading: boolean
   htf_bias_respected: boolean | null
+  tool_bias_correct: boolean | null
   news_checked: boolean | null
 
   // Status

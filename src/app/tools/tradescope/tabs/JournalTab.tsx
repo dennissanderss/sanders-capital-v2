@@ -536,6 +536,8 @@ function TradeRow({ trade, onEdit, onDelete, onScreenshotUpdate, tradeCustomFilt
             {trade.emotion_after && <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300">Na: {trade.emotion_after}</span>}
             {trade.rules_followed === true && <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400">Regels gevolgd</span>}
             {trade.rules_followed === false && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Regels gebroken</span>}
+            {trade.tool_bias_correct === true && <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400">Tool bias correct</span>}
+            {trade.tool_bias_correct === false && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Tool bias incorrect</span>}
             {trade.was_impulsive && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Impulsief</span>}
             {trade.was_revenge && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Revenge trade</span>}
           </div>
@@ -646,6 +648,7 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
       was_revenge: null,
       was_overtrading: null,
       htf_bias_respected: null,
+      tool_bias_correct: null,
       news_checked: null,
       tags: [],
       status: 'closed',
@@ -769,6 +772,7 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
       was_revenge: form.was_revenge as boolean,
       was_overtrading: form.was_overtrading as boolean,
       htf_bias_respected: form.htf_bias_respected as boolean | null,
+      tool_bias_correct: form.tool_bias_correct as boolean | null,
       news_checked: form.news_checked as boolean | null,
       tags: form.tags as string[],
       status: (form.status as TsTrade['status']) || 'closed',
@@ -995,6 +999,7 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
             <div className="flex flex-wrap gap-2">
               <ToggleChip label="Regels gevolgd" value={form.rules_followed as boolean | null} onChange={(v) => set('rules_followed', v)} colorYes="green" colorNo="red" />
               <ToggleChip label="HTF bias gevolgd" value={form.htf_bias_respected as boolean | null} onChange={(v) => set('htf_bias_respected', v)} colorYes="green" colorNo="red" />
+              <ToggleChip label="Tool bias correct" value={form.tool_bias_correct as boolean | null} onChange={(v) => set('tool_bias_correct', v)} colorYes="green" colorNo="red" />
               <ToggleChip label="Nieuws gecheckt" value={form.news_checked as boolean | null} onChange={(v) => set('news_checked', v)} colorYes="green" colorNo="amber" />
               <ToggleChip label="Impulsief" value={form.was_impulsive as boolean | null} onChange={(v) => set('was_impulsive', v)} colorYes="red" colorNo="green" invert />
               <ToggleChip label="Revenge trade" value={form.was_revenge as boolean | null} onChange={(v) => set('was_revenge', v)} colorYes="red" colorNo="green" invert />
