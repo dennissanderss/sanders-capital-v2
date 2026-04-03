@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import type { TsTrade, TsAccount, TsStrategy, TsSetup, TradeFilters } from '../types'
 import TradeScreenshots from '../components/TradeScreenshots'
