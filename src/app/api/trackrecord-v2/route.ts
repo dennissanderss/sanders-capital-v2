@@ -195,10 +195,19 @@ function getIntermarketAlignment(
   date: string,
   regime: string,
 ): number {
+  // Use the latest available data point instead of exact date match,
+  // because Yahoo Finance timestamps may not align with today's date
+  // (e.g. at 21:00 UTC the candle may still be labeled as previous day)
   const getDayChange = (key: string): number | null => {
     const hist = imData[key] || []
-    const idx = hist.findIndex(p => p.date === date)
-    if (idx <= 0) return null
+    if (hist.length < 2) return null
+    // Try exact date match first, then fall back to most recent data
+    let idx = hist.findIndex(p => p.date === date)
+    if (idx <= 0) {
+      // Use the most recent available data point
+      idx = hist.length - 1
+      if (idx <= 0) return null
+    }
     const prev = hist[idx - 1].close
     return prev !== 0 ? ((hist[idx].close - prev) / prev) * 100 : null
   }
@@ -210,25 +219,38 @@ function getIntermarketAlignment(
     const gold = getDayChange('GOLD')
     const sp = getDayChange('SP500')
     const yields = getDayChange('US10Y')
-    if (vix !== null && vix > 0) aligned++; total++
-    if (gold !== null && gold > 0) aligned++; total++
-    if (sp !== null && sp < 0) aligned++; total++
-    if (yields !== null && yields < 0) aligned++; total++
+    if (vix !== null) { total++; if (vix > 0) aligned++ }
+    if (gold !== null) { total++; if (gold > 0) aligned++ }
+    if (sp !== null) { total++; if (sp < 0) aligned++ }
+    if (yields !== null) { total++; if (yields < 0) aligned++ }
   } else if (regime === 'Risk-On') {
     const vix = getDayChange('VIX')
     const sp = getDayChange('SP500')
     const yields = getDayChange('US10Y')
     const oil = getDayChange('OIL')
-    if (vix !== null && vix < 0) aligned++; total++
-    if (sp !== null && sp > 0) aligned++; total++
-    if (yields !== null && yields > 0) aligned++; total++
-    if (oil !== null && oil > 0) aligned++; total++
+    if (vix !== null) { total++; if (vix < 0) aligned++ }
+    if (sp !== null) { total++; if (sp > 0) aligned++ }
+    if (yields !== null) { total++; if (yields > 0) aligned++ }
+    if (oil !== null) { total++; if (oil > 0) aligned++ }
   } else if (regime === 'USD Dominant' || regime === 'USD Zwak') {
     const usdUp = regime === 'USD Dominant'
     const dxy = getDayChange('DXY')
     const gold = getDayChange('GOLD')
-    if (dxy !== null) { if ((dxy > 0) === usdUp) aligned++; total++ }
-    if (gold !== null) { if ((gold < 0) === usdUp) aligned++; total++ }
+    if (dxy !== null) { total++; if ((dxy > 0) === usdUp) aligned++ }
+    if (gold !== null) { total++; if ((gold < 0) === usdUp) aligned++ }
+  } else {
+    // "Gemengd" (mixed) regime: use broad market indicators
+    // Check VIX stability, DXY trend, and general equity direction
+    const vix = getDayChange('VIX')
+    const dxy = getDayChange('DXY')
+    const sp = getDayChange('SP500')
+    const gold = getDayChange('GOLD')
+    // In mixed regime, alignment = market is not chaotic
+    // Low VIX change + any clear direction in other indicators = aligned
+    if (vix !== null) { total++; if (Math.abs(vix) < 5) aligned++ }   // VIX stable
+    if (dxy !== null) { total++; if (Math.abs(dxy) < 1) aligned++ }   // DXY not extreme
+    if (sp !== null) { total++; if (Math.abs(sp) < 2) aligned++ }     // Equities not crashing/surging
+    if (gold !== null) { total++; if (Math.abs(gold) < 2) aligned++ } // Gold not extreme
   }
   return total > 0 ? (aligned / total) * 100 : 50
 }

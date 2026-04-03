@@ -257,4 +257,26 @@ export interface TradeFilters {
 // Tab definitions
 // ============================================================
 
-export type TradescopeTab = 'dashboard' | 'journal' | 'analytics' | 'strategy' | 'optimization' | 'strategyAnalysis' | 'psychology' | 'insights' | 'routines' | 'accounts' | 'playbook'
+export type TradescopeTab = 'dashboard' | 'journal' | 'analytics' | 'strategy' | 'optimization' | 'strategyAnalysis' | 'psychology' | 'insights' | 'routines' | 'accounts' | 'playbook' | 'notes'
+
+// ============================================================
+// Notes types
+// ============================================================
+
+export interface TsNoteItem {
+  id: string
+  user_id: string
+  text: string
+  checked: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface TsNote {
+  id: string
+  user_id: string
+  content: string
+  created_at: string
+  updated_at: string
+}

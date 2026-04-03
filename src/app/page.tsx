@@ -331,7 +331,7 @@ export default async function HomePage() {
                 name: 'Macro Fundamentals',
                 problem: 'Rentetarieven en CB beleid zijn verspreid over tientallen bronnen.',
                 solution: 'Alle rentedata, inflatiecijfers en centrale bank bias per valuta op één plek.',
-                href: '/tools/rentetarieven',
+                href: '/tools/fx-analyse',
                 icon: (
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="12" y1="1" x2="12" y2="23" />
@@ -340,7 +340,7 @@ export default async function HomePage() {
                 ),
               },
               {
-                name: 'TradeScope',
+                name: 'TradeMind',
                 problem: 'Je hebt backtest data maar geen manier om patronen te zien.',
                 solution: 'Upload je CSV en krijg direct winrate, drawdown, sessie- en dag-analyse.',
                 href: '/tools/tradescope',
@@ -361,7 +361,6 @@ export default async function HomePage() {
                     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
                   </svg>
                 ),
-                comingSoon: true,
               },
             ].map((tool, i) => (
               <FadeIn key={tool.name} delay={i * 100} className="h-full">

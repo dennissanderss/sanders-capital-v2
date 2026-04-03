@@ -1952,19 +1952,47 @@ export default function BriefingV2Dashboard() {
             </div>
           </section>
 
-          {/* ── Signaaloverzicht Panel ── */}
+          {/* ── Bridge: Trade Focus → Alle Signalen ── */}
           {data?.v3 && (
-            <section className="mb-2 mt-6">
-              <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/[0.04] to-transparent p-5">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-400 text-[10px] font-bold">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-display font-semibold text-heading">Signaaloverzicht</h3>
-                    <p className="text-[10px] text-text-dim">De signalen hieronder komen voort uit de valutascores en intermarket bevestiging hierboven. Alleen paren die aan alle criteria voldoen verschijnen in de Trade Focus.</p>
-                  </div>
+            <div className="flex items-center gap-3 py-3 px-2">
+              <div className="flex flex-col items-center gap-1">
+                <div className="w-px h-4 bg-purple-500/20" />
+                <div className="w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-purple-400">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
                 </div>
+                <div className="w-px h-4 bg-purple-500/20" />
+              </div>
+              <p className="text-xs text-text-dim italic leading-relaxed">
+                <strong className="text-purple-400 not-italic">Trade Focus hierboven = jouw actie.</strong>{' '}
+                Dat zijn de sterkste signalen met een concrete call en tijdstip. Hieronder zie je het volledige overzicht van <em>alle</em> geanalyseerde paren, inclusief paren die niet door alle filters kwamen. Dit is ter referentie, niet als directe call.
+              </p>
+            </div>
+          )}
+
+          {/* ── Alle Signalen (volledig overzicht) Panel ── */}
+          {data?.v3 && (
+            <section className="mb-2">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-400 text-sm font-bold shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-display font-semibold text-heading leading-tight">Alle Signalen <span className="text-sm font-normal text-text-dim">(volledig overzicht)</span></h2>
+                  <p className="text-[11px] text-text-dim">Achtergrondoverzicht van alle geanalyseerde paren. Alleen paren die aan alle criteria voldoen verschijnen hierboven in de Trade Focus met een concrete call.</p>
+                </div>
+              </div>
+
+              {/* Info note: no timestamps here */}
+              <div className="flex items-start gap-2 mb-4 px-4 py-2.5 rounded-xl bg-purple-500/[0.04] border border-purple-500/15">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-400 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <p className="text-[10px] text-text-dim leading-relaxed">
+                  <strong className="text-purple-400">Geen tijdstip nodig:</strong> dit overzicht is geen actieve call. Het toont de achterliggende signaaldata ter context. Voor concrete trades met entry/exit timing, kijk naar <strong className="text-accent-light">Stap 4: Trade Focus</strong> hierboven.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/[0.04] to-transparent p-5">
 
                 {/* Sub-regime badge */}
                 <div className="flex flex-wrap items-center gap-3 mb-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
@@ -2093,7 +2121,7 @@ export default function BriefingV2Dashboard() {
             </section>
           )}
 
-          {/* Bridge: Trade Focus → Trackrecord */}
+          {/* Bridge: Alle Signalen → Trackrecord */}
           <StepBridge
             icon="down"
             text="Hoe goed presteert dit model historisch? Bekijk het trackrecord hieronder."

@@ -18,7 +18,7 @@ const freeFeatures = [
 const premiumFeatures = [
   'Daily Macro Briefing',
   'Macro Fundamentals dashboard',
-  'TradeScope backtest analyse',
+  'TradeMind backtest analyse',
   'TradeMind trading journal',
   'Premium artikelen & analyses',
   'Verdiepende kennisbank modules',
@@ -43,7 +43,7 @@ const tools = [
   {
     name: 'Macro Fundamentals',
     description: 'Rentetarieven, inflatiecijfers en centrale bank beleid per valuta. De data achter de scores, inclusief trackrecord.',
-    href: '/tools/rentetarieven',
+    href: '/tools/fx-analyse',
     value: 'LIVE_WIN_RATE winrate op trackrecord',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -53,7 +53,7 @@ const tools = [
     ),
   },
   {
-    name: 'TradeScope',
+    name: 'TradeMind',
     description: 'Upload je backtest CSV en krijg direct inzicht in je performance: winrate, drawdown, sessie-analyse, Monte Carlo en meer.',
     href: '/tools/tradescope',
     value: 'Vergelijkbaar met tools van +$200/jaar',
@@ -317,7 +317,7 @@ export default async function PremiumPage() {
                 <div className="grid sm:grid-cols-2 gap-3">
                   {[
                     { label: 'Trading journal software', price: '~$170/jaar', desc: 'TradeMind vervangt vergelijkbare journal tools volledig' },
-                    { label: 'Backtest analytics platforms', price: '~$200+/jaar', desc: 'TradeScope met Monte Carlo simulatie en optimalisatie' },
+                    { label: 'Backtest analytics platforms', price: '~$200+/jaar', desc: 'TradeMind met Monte Carlo simulatie en optimalisatie' },
                     { label: 'Fundamentele data services', price: '~$500+/jaar', desc: 'Daily Macro Briefing + Macro Fundamentals dashboard' },
                     { label: 'Trading community & begeleiding', price: 'Onbetaalbaar', desc: 'Directe ondersteuning van een ervaren trader' },
                   ].map((item) => (

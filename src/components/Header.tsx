@@ -25,7 +25,7 @@ const blogDropdown = [
 const toolsDropdown = [
   { href: '/tools/fx-analyse', slug: 'fx-analyse', label: 'Macro Fundamentals', desc: 'Valutaparen analyseren op fundamentals', icon: 'layers', defaultPremium: true },
   { href: '/tools/fx-selector', slug: 'fx-selector', label: 'Daily Macro Briefing', desc: 'Dagelijkse marktanalyse & bias', icon: 'compass', defaultPremium: true },
-  { href: '/tools/tradescope', slug: 'tradescope', label: 'TradeScope', desc: 'Analyseer je trades & performance', icon: 'activity', defaultPremium: true },
+  { href: '/tools/tradescope', slug: 'tradescope', label: 'TradeMind', desc: 'Analyseer je trades & performance', icon: 'activity', defaultPremium: true },
   { href: '/tools/calculator', slug: 'calculator', label: 'Position Size Calculator', desc: 'Bereken je positiegrootte', icon: 'calculator' },
   { href: '/tools/kalender', slug: 'kalender', label: 'Economische Kalender', desc: 'Aankomende events & data', icon: 'calendar' },
   { href: '/tools/rente', slug: 'rente', label: 'Rentetarieven', desc: 'Centrale bank rentes', icon: 'percent' },
