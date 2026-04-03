@@ -108,13 +108,18 @@ export interface TsTrade {
   emotion_during: string | null
   emotion_after: string | null
 
+  // Bias tracking
+  fundamental_bias: 'bullish' | 'bearish' | null
+  technical_bias: 'bullish' | 'bearish' | null
+  tool_bias_correct: boolean | null
+  ta_correct: boolean | null
+
   // Discipline
   rules_followed: boolean | null
   was_impulsive: boolean
   was_revenge: boolean
   was_overtrading: boolean
   htf_bias_respected: boolean | null
-  tool_bias_correct: boolean | null
   news_checked: boolean | null
 
   // Status

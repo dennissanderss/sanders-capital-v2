@@ -122,7 +122,7 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
   }
 
   // Open trades quick-close handler
-  const handleQuickClose = async (tradeId: string, closePrice: number, toolBiasCorrect?: boolean | null) => {
+  const handleQuickClose = async (tradeId: string, closePrice: number, toolBiasCorrect?: boolean | null, taCorrect?: boolean | null) => {
     const sb = createClient()
     const trade = trades.find(t => t.id === tradeId)
     if (!trade) return
@@ -164,6 +164,7 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
       result_r: resultR,
       status: 'closed',
       tool_bias_correct: toolBiasCorrect ?? null,
+      ta_correct: taCorrect ?? null,
       updated_at: new Date().toISOString(),
     }).eq('id', tradeId)
 
@@ -294,16 +295,17 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
 }
 
 // ─── Open Trade Card (quick close) ────────────────────────
-function OpenTradeCard({ trade, onClose, onEdit }: { trade: TsTrade; onClose: (id: string, price: number, toolBiasCorrect: boolean | null) => void; onEdit: () => void }) {
+function OpenTradeCard({ trade, onClose, onEdit }: { trade: TsTrade; onClose: (id: string, price: number, toolBiasCorrect: boolean | null, taCorrect: boolean | null) => void; onEdit: () => void }) {
   const [closePrice, setClosePrice] = useState('')
   const [showClose, setShowClose] = useState(false)
   const [toolBiasCorrect, setToolBiasCorrect] = useState<boolean | null>(null)
+  const [taCorrect, setTaCorrect] = useState<boolean | null>(null)
   const isBuy = trade.action === 'buy'
 
   const handleClose = () => {
     const price = parseFloat(closePrice)
     if (isNaN(price) || price <= 0) return
-    onClose(trade.id, price, toolBiasCorrect)
+    onClose(trade.id, price, toolBiasCorrect, taCorrect)
     setShowClose(false)
   }
 
@@ -336,10 +338,12 @@ function OpenTradeCard({ trade, onClose, onEdit }: { trade: TsTrade; onClose: (i
             }`}>{isBuy ? 'LONG' : 'SHORT'}</span>
             <span className="text-[10px] text-text-dim">@ {trade.open_price}</span>
           </div>
-          <div className="flex items-center gap-3 mt-0.5">
+          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
             <span className="text-[10px] text-text-dim">Open sinds {openSince}</span>
             {trade.sl && <span className="text-[10px] text-red-400/60">SL: {trade.sl}</span>}
             {trade.tp && <span className="text-[10px] text-green-400/60">TP: {trade.tp}</span>}
+            {trade.fundamental_bias && <span className={`text-[10px] ${trade.fundamental_bias === 'bullish' ? 'text-green-400/60' : 'text-red-400/60'}`}>Fund: {trade.fundamental_bias}</span>}
+            {trade.technical_bias && <span className={`text-[10px] ${trade.technical_bias === 'bullish' ? 'text-green-400/60' : 'text-red-400/60'}`}>TA: {trade.technical_bias}</span>}
           </div>
         </div>
 
@@ -395,27 +399,18 @@ function OpenTradeCard({ trade, onClose, onEdit }: { trade: TsTrade; onClose: (i
               Bevestigen
             </button>
           </div>
-          {/* Tool bias accuracy */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-text-dim">Tool bias correct?</span>
-            <button
-              type="button"
-              onClick={() => setToolBiasCorrect(toolBiasCorrect === true ? null : true)}
-              className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${
-                toolBiasCorrect === true
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/40'
-                  : 'bg-white/[0.04] text-text-dim border border-white/[0.06] hover:border-white/[0.12]'
-              }`}
-            >Ja</button>
-            <button
-              type="button"
-              onClick={() => setToolBiasCorrect(toolBiasCorrect === false ? null : false)}
-              className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${
-                toolBiasCorrect === false
-                  ? 'bg-red-500/20 text-red-400 border border-red-500/40'
-                  : 'bg-white/[0.04] text-text-dim border border-white/[0.06] hover:border-white/[0.12]'
-              }`}
-            >Nee</button>
+          {/* Bias evaluation */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-text-dim">Fundamental correct?</span>
+              <button type="button" onClick={() => setToolBiasCorrect(toolBiasCorrect === true ? null : true)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${toolBiasCorrect === true ? 'bg-green-500/20 text-green-400 border border-green-500/40' : 'bg-white/[0.04] text-text-dim border border-white/[0.06] hover:border-white/[0.12]'}`}>Ja</button>
+              <button type="button" onClick={() => setToolBiasCorrect(toolBiasCorrect === false ? null : false)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${toolBiasCorrect === false ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-white/[0.04] text-text-dim border border-white/[0.06] hover:border-white/[0.12]'}`}>Nee</button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-text-dim">TA correct?</span>
+              <button type="button" onClick={() => setTaCorrect(taCorrect === true ? null : true)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${taCorrect === true ? 'bg-green-500/20 text-green-400 border border-green-500/40' : 'bg-white/[0.04] text-text-dim border border-white/[0.06] hover:border-white/[0.12]'}`}>Ja</button>
+              <button type="button" onClick={() => setTaCorrect(taCorrect === false ? null : false)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${taCorrect === false ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-white/[0.04] text-text-dim border border-white/[0.06] hover:border-white/[0.12]'}`}>Nee</button>
+            </div>
           </div>
         </div>
       )}
@@ -560,8 +555,12 @@ function TradeRow({ trade, onEdit, onDelete, onScreenshotUpdate, tradeCustomFilt
             {trade.emotion_after && <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300">Na: {trade.emotion_after}</span>}
             {trade.rules_followed === true && <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400">Regels gevolgd</span>}
             {trade.rules_followed === false && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Regels gebroken</span>}
-            {trade.tool_bias_correct === true && <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400">Tool bias correct</span>}
-            {trade.tool_bias_correct === false && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Tool bias incorrect</span>}
+            {trade.fundamental_bias && <span className={`text-[10px] px-2 py-0.5 rounded-full ${trade.fundamental_bias === 'bullish' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>Fund: {trade.fundamental_bias}</span>}
+            {trade.technical_bias && <span className={`text-[10px] px-2 py-0.5 rounded-full ${trade.technical_bias === 'bullish' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>TA: {trade.technical_bias}</span>}
+            {trade.tool_bias_correct === true && <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400">Fund correct</span>}
+            {trade.tool_bias_correct === false && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Fund incorrect</span>}
+            {trade.ta_correct === true && <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400">TA correct</span>}
+            {trade.ta_correct === false && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">TA incorrect</span>}
             {trade.was_impulsive && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Impulsief</span>}
             {trade.was_revenge && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Revenge trade</span>}
           </div>
@@ -667,12 +666,15 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
       confidence_score: null,
       trade_quality: null,
       execution_quality: null,
+      fundamental_bias: null,
+      technical_bias: null,
+      tool_bias_correct: null,
+      ta_correct: null,
       rules_followed: null,
       was_impulsive: null,
       was_revenge: null,
       was_overtrading: null,
       htf_bias_respected: null,
-      tool_bias_correct: null,
       news_checked: null,
       tags: [],
       status: 'closed',
@@ -791,12 +793,15 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
       confidence_score: form.confidence_score as number | null,
       trade_quality: form.trade_quality as number | null,
       execution_quality: form.execution_quality as number | null,
+      fundamental_bias: (form.fundamental_bias as string) || null,
+      technical_bias: (form.technical_bias as string) || null,
+      tool_bias_correct: form.tool_bias_correct as boolean | null,
+      ta_correct: form.ta_correct as boolean | null,
       rules_followed: form.rules_followed as boolean | null,
       was_impulsive: form.was_impulsive as boolean,
       was_revenge: form.was_revenge as boolean,
       was_overtrading: form.was_overtrading as boolean,
       htf_bias_respected: form.htf_bias_respected as boolean | null,
-      tool_bias_correct: form.tool_bias_correct as boolean | null,
       news_checked: form.news_checked as boolean | null,
       tags: form.tags as string[],
       status: (form.status as TsTrade['status']) || 'closed',
@@ -982,6 +987,29 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
             </div>
           )}
 
+          {/* Bias tracking */}
+          <div>
+            <h3 className="text-xs font-semibold text-heading uppercase tracking-wider mb-3">Bias</h3>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <FormField label="Fundamental bias (tool)">
+                <div className="flex rounded-lg overflow-hidden border border-border">
+                  <button type="button" onClick={() => set('fundamental_bias', form.fundamental_bias === 'bullish' ? null : 'bullish')} className={`flex-1 py-2 text-xs font-medium transition-colors ${form.fundamental_bias === 'bullish' ? 'bg-green-500/20 text-green-400' : 'text-text-muted hover:text-heading'}`}>Bullish</button>
+                  <button type="button" onClick={() => set('fundamental_bias', form.fundamental_bias === 'bearish' ? null : 'bearish')} className={`flex-1 py-2 text-xs font-medium transition-colors ${form.fundamental_bias === 'bearish' ? 'bg-red-500/20 text-red-400' : 'text-text-muted hover:text-heading'}`}>Bearish</button>
+                </div>
+              </FormField>
+              <FormField label="Technische bias">
+                <div className="flex rounded-lg overflow-hidden border border-border">
+                  <button type="button" onClick={() => set('technical_bias', form.technical_bias === 'bullish' ? null : 'bullish')} className={`flex-1 py-2 text-xs font-medium transition-colors ${form.technical_bias === 'bullish' ? 'bg-green-500/20 text-green-400' : 'text-text-muted hover:text-heading'}`}>Bullish</button>
+                  <button type="button" onClick={() => set('technical_bias', form.technical_bias === 'bearish' ? null : 'bearish')} className={`flex-1 py-2 text-xs font-medium transition-colors ${form.technical_bias === 'bearish' ? 'bg-red-500/20 text-red-400' : 'text-text-muted hover:text-heading'}`}>Bearish</button>
+                </div>
+              </FormField>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <ToggleChip label="Fundamental correct" value={form.tool_bias_correct as boolean | null} onChange={(v) => set('tool_bias_correct', v)} colorYes="green" colorNo="red" />
+              <ToggleChip label="TA correct" value={form.ta_correct as boolean | null} onChange={(v) => set('ta_correct', v)} colorYes="green" colorNo="red" />
+            </div>
+          </div>
+
           {/* Scoring */}
           <div>
             <h3 className="text-xs font-semibold text-heading uppercase tracking-wider mb-3">Beoordeling</h3>
@@ -1023,7 +1051,6 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
             <div className="flex flex-wrap gap-2">
               <ToggleChip label="Regels gevolgd" value={form.rules_followed as boolean | null} onChange={(v) => set('rules_followed', v)} colorYes="green" colorNo="red" />
               <ToggleChip label="HTF bias gevolgd" value={form.htf_bias_respected as boolean | null} onChange={(v) => set('htf_bias_respected', v)} colorYes="green" colorNo="red" />
-              <ToggleChip label="Tool bias correct" value={form.tool_bias_correct as boolean | null} onChange={(v) => set('tool_bias_correct', v)} colorYes="green" colorNo="red" />
               <ToggleChip label="Nieuws gecheckt" value={form.news_checked as boolean | null} onChange={(v) => set('news_checked', v)} colorYes="green" colorNo="amber" />
               <ToggleChip label="Impulsief" value={form.was_impulsive as boolean | null} onChange={(v) => set('was_impulsive', v)} colorYes="red" colorNo="green" invert />
               <ToggleChip label="Revenge trade" value={form.was_revenge as boolean | null} onChange={(v) => set('was_revenge', v)} colorYes="red" colorNo="green" invert />

@@ -34,6 +34,8 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
   const [fee, setFee] = useState('')
   const [accountId, setAccountId] = useState(defaultAccountId || accounts[0]?.id || '')
   const [notes, setNotes] = useState('')
+  const [fundamentalBias, setFundamentalBias] = useState<'bullish' | 'bearish' | null>(null)
+  const [technicalBias, setTechnicalBias] = useState<'bullish' | 'bearish' | null>(null)
   const [selectedFilterIds, setSelectedFilterIds] = useState<string[]>([])
   const [pendingImages, setPendingImages] = useState<{ file: File; preview: string }[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -186,8 +188,11 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
       was_impulsive: false,
       was_revenge: false,
       was_overtrading: false,
-      htf_bias_respected: null,
+      fundamental_bias: fundamentalBias,
+      technical_bias: technicalBias,
       tool_bias_correct: null,
+      ta_correct: null,
+      htf_bias_respected: null,
       news_checked: null,
       tags: [],
       status: 'open',
@@ -249,6 +254,24 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
           >
             Short
           </button>
+        </div>
+      </div>
+
+      {/* Bias tracking */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-[10px] text-text-dim mb-1.5">Fundamental bias</label>
+          <div className="flex rounded-lg overflow-hidden border border-border">
+            <button type="button" onClick={() => setFundamentalBias(fundamentalBias === 'bullish' ? null : 'bullish')} className={`flex-1 py-2 text-xs font-medium transition-colors ${fundamentalBias === 'bullish' ? 'bg-green-500/20 text-green-400' : 'text-text-muted hover:text-heading'}`}>Bullish</button>
+            <button type="button" onClick={() => setFundamentalBias(fundamentalBias === 'bearish' ? null : 'bearish')} className={`flex-1 py-2 text-xs font-medium transition-colors ${fundamentalBias === 'bearish' ? 'bg-red-500/20 text-red-400' : 'text-text-muted hover:text-heading'}`}>Bearish</button>
+          </div>
+        </div>
+        <div>
+          <label className="block text-[10px] text-text-dim mb-1.5">Technische bias</label>
+          <div className="flex rounded-lg overflow-hidden border border-border">
+            <button type="button" onClick={() => setTechnicalBias(technicalBias === 'bullish' ? null : 'bullish')} className={`flex-1 py-2 text-xs font-medium transition-colors ${technicalBias === 'bullish' ? 'bg-green-500/20 text-green-400' : 'text-text-muted hover:text-heading'}`}>Bullish</button>
+            <button type="button" onClick={() => setTechnicalBias(technicalBias === 'bearish' ? null : 'bearish')} className={`flex-1 py-2 text-xs font-medium transition-colors ${technicalBias === 'bearish' ? 'bg-red-500/20 text-red-400' : 'text-text-muted hover:text-heading'}`}>Bearish</button>
+          </div>
         </div>
       </div>
 
