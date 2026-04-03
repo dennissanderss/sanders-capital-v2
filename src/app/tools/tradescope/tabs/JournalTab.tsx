@@ -111,11 +111,83 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
     onTradeChanged()
   }
 
+  // Open trades quick-close handler
+  const handleQuickClose = async (tradeId: string, closePrice: number) => {
+    const sb = createClient()
+    const trade = trades.find(t => t.id === tradeId)
+    if (!trade) return
+
+    const entryPrice = trade.open_price || 0
+    const isBuy = trade.action === 'buy'
+    const isJPY = trade.symbol?.includes('JPY') || trade.symbol?.includes('XAU')
+    const pipSize = isJPY ? 0.01 : 0.0001
+
+    const pips = isBuy
+      ? (closePrice - entryPrice) / pipSize
+      : (entryPrice - closePrice) / pipSize
+    const pnlPips = Math.round(pips * 10) / 10
+
+    // Calculate P&L in dollars if risk info available
+    let profitLoss = 0
+    if (trade.risk_amount && trade.sl) {
+      const slDistance = Math.abs(entryPrice - trade.sl)
+      const slPips = slDistance / pipSize
+      if (slPips > 0) {
+        const dollarPerPip = trade.risk_amount / slPips
+        profitLoss = Math.round(pnlPips * dollarPerPip * 100) / 100
+      }
+    }
+
+    // Calculate R multiple
+    let resultR = null
+    if (trade.sl) {
+      const slPips = Math.abs(entryPrice - trade.sl) / pipSize
+      if (slPips > 0) resultR = Math.round((pnlPips / slPips) * 100) / 100
+    }
+
+    await sb.from('ts_trades').update({
+      close_price: closePrice,
+      exit_price: closePrice,
+      close_date: new Date().toISOString(),
+      pips: pnlPips,
+      profit_loss: profitLoss || null,
+      result_r: resultR,
+      status: 'closed',
+      updated_at: new Date().toISOString(),
+    }).eq('id', tradeId)
+
+    await fetchTrades()
+    onTradeChanged()
+  }
+
+  // Separate open and closed trades
+  const openTrades = trades.filter(t => t.status === 'open' || (!t.close_price && !t.exit_price && !t.close_date))
+
   // Get unique symbols from trades
   const symbols = [...new Set(trades.map(t => t.symbol))].sort()
 
   return (
     <div>
+      {/* Open Trades Banner */}
+      {openTrades.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <h3 className="text-sm font-semibold text-heading">Open trades ({openTrades.length})</h3>
+          </div>
+          <div className="space-y-2">
+            {openTrades.map(trade => (
+              <OpenTradeCard
+                key={trade.id}
+                trade={trade}
+                onClose={handleQuickClose}
+                onEdit={() => { setEditingTrade(trade); setShowForm(true) }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-2 flex-wrap">
@@ -203,6 +275,113 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
           onClose={() => { setShowForm(false); setEditingTrade(null) }}
           onScreenshotUpdate={fetchTrades}
         />
+      )}
+    </div>
+  )
+}
+
+// ─── Open Trade Card (quick close) ────────────────────────
+function OpenTradeCard({ trade, onClose, onEdit }: { trade: TsTrade; onClose: (id: string, price: number) => void; onEdit: () => void }) {
+  const [closePrice, setClosePrice] = useState('')
+  const [showClose, setShowClose] = useState(false)
+  const isBuy = trade.action === 'buy'
+
+  const handleClose = () => {
+    const price = parseFloat(closePrice)
+    if (isNaN(price) || price <= 0) return
+    onClose(trade.id, price)
+    setShowClose(false)
+  }
+
+  // Quick P&L preview
+  const previewPnl = useMemo(() => {
+    const price = parseFloat(closePrice)
+    if (isNaN(price) || !trade.open_price) return null
+    const isJPY = trade.symbol?.includes('JPY') || trade.symbol?.includes('XAU')
+    const pipSize = isJPY ? 0.01 : 0.0001
+    const pips = isBuy ? (price - trade.open_price) / pipSize : (trade.open_price - price) / pipSize
+    return Math.round(pips * 10) / 10
+  }, [closePrice, trade.open_price, trade.symbol, isBuy])
+
+  const openSince = trade.open_date
+    ? new Date(trade.open_date).toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : ''
+
+  return (
+    <div className="rounded-xl border border-amber-500/20 bg-gradient-to-r from-amber-500/[0.04] to-transparent overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-3">
+        {/* Pulsing indicator */}
+        <div className={`w-1.5 h-8 rounded-full ${isBuy ? 'bg-green-500/60' : 'bg-red-500/60'} animate-pulse`} />
+
+        {/* Trade info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-heading">{trade.symbol}</span>
+            <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${
+              isBuy ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+            }`}>{isBuy ? 'LONG' : 'SHORT'}</span>
+            <span className="text-[10px] text-text-dim">@ {trade.open_price}</span>
+          </div>
+          <div className="flex items-center gap-3 mt-0.5">
+            <span className="text-[10px] text-text-dim">Open sinds {openSince}</span>
+            {trade.sl && <span className="text-[10px] text-red-400/60">SL: {trade.sl}</span>}
+            {trade.tp && <span className="text-[10px] text-green-400/60">TP: {trade.tp}</span>}
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onEdit}
+            className="text-[10px] px-2 py-1 rounded text-text-dim hover:text-heading transition-colors"
+          >
+            Bewerken
+          </button>
+          <button
+            onClick={() => setShowClose(!showClose)}
+            className={`text-[10px] px-3 py-1.5 rounded-lg font-medium transition-all ${
+              showClose
+                ? 'bg-white/[0.06] text-heading border border-white/[0.1]'
+                : 'bg-accent/20 text-accent-light border border-accent/30 hover:bg-accent/30'
+            }`}
+          >
+            {showClose ? 'Annuleren' : 'Sluiten'}
+          </button>
+        </div>
+      </div>
+
+      {/* Quick close panel */}
+      {showClose && (
+        <div className="px-4 pb-3 pt-1 border-t border-amber-500/10">
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <label className="block text-[10px] text-text-dim mb-1">Sluitprijs</label>
+              <input
+                type="number"
+                step="any"
+                value={closePrice}
+                onChange={(e) => setClosePrice(e.target.value)}
+                className="form-input w-full"
+                placeholder={trade.open_price?.toString() || '1.0850'}
+                autoFocus
+              />
+            </div>
+            {previewPnl !== null && (
+              <div className="pb-2">
+                <span className={`text-sm font-bold font-mono ${previewPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {previewPnl >= 0 ? '+' : ''}{previewPnl} pips
+                </span>
+              </div>
+            )}
+            <button
+              onClick={handleClose}
+              disabled={!closePrice || isNaN(parseFloat(closePrice))}
+              className="px-4 py-2 rounded-lg bg-accent/20 border border-accent/30 text-sm font-medium text-accent-light hover:bg-accent/30 transition-colors disabled:opacity-50"
+            >
+              Bevestigen
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
