@@ -58,18 +58,41 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
     setLoading(false)
   }
 
-  const handleSave = async (formData: Partial<TsTrade>) => {
+  const handleSave = async (formData: Partial<TsTrade>, pendingImages?: File[]) => {
     setSaving(true)
     const sb = createClient()
     const { data: { user } } = await sb.auth.getUser()
     if (!user) { setSaving(false); return }
 
     try {
+      let tradeId: string | null = null
       if (editingTrade) {
         await sb.from('ts_trades').update({ ...formData, updated_at: new Date().toISOString() }).eq('id', editingTrade.id)
+        tradeId = editingTrade.id
       } else {
-        await sb.from('ts_trades').insert({ ...formData, user_id: user.id })
+        const { data } = await sb.from('ts_trades').insert({ ...formData, user_id: user.id }).select('id').single()
+        tradeId = data?.id || null
       }
+
+      // Upload pending screenshots from Quick Trade
+      if (tradeId && pendingImages && pendingImages.length > 0) {
+        for (let i = 0; i < pendingImages.length; i++) {
+          const file = pendingImages[i]
+          const ext = file.name?.split('.').pop() || 'png'
+          const path = `${user.id}/${tradeId}/${Date.now()}_${i}.${ext}`
+          const { error: uploadErr } = await sb.storage.from('trade-screenshots').upload(path, file)
+          if (!uploadErr) {
+            await sb.from('ts_trade_screenshots').insert({
+              trade_id: tradeId,
+              user_id: user.id,
+              storage_path: path,
+              label: `Screenshot ${i + 1}`,
+              sort_order: i,
+            })
+          }
+        }
+      }
+
       setShowForm(false)
       setEditingTrade(null)
       await fetchTrades()
@@ -366,7 +389,7 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
   strategies: TsStrategy[]
   setups: TsSetup[]
   saving: boolean
-  onSave: (data: Partial<TsTrade>) => void
+  onSave: (data: Partial<TsTrade>, pendingImages?: File[]) => void
   onClose: () => void
   onScreenshotUpdate: () => void
 }) {

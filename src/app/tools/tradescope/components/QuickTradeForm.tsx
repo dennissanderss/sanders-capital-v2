@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import type { TsTrade, TsAccount } from '../types'
 
 const FX_PAIRS = [
@@ -14,7 +14,7 @@ interface Props {
   accounts: TsAccount[]
   defaultAccountId: string | null
   saving: boolean
-  onSave: (data: Partial<TsTrade>) => void
+  onSave: (data: Partial<TsTrade>, pendingImages?: File[]) => void
   onClose: () => void
 }
 
@@ -28,8 +28,50 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
   const [risk, setRisk] = useState('')
   const [fee, setFee] = useState('')
   const [accountId, setAccountId] = useState(defaultAccountId || accounts[0]?.id || '')
+  const [notes, setNotes] = useState('')
+  const [pendingImages, setPendingImages] = useState<{ file: File; preview: string }[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const activePair = pair === '__custom__' ? customPair.toUpperCase() : pair
+
+  // Ctrl+V paste handler for images
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault()
+          const file = item.getAsFile()
+          if (file) {
+            const preview = URL.createObjectURL(file)
+            setPendingImages(prev => [...prev, { file, preview }])
+          }
+        }
+      }
+    }
+    document.addEventListener('paste', handlePaste)
+    return () => document.removeEventListener('paste', handlePaste)
+  }, [])
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+    for (const file of Array.from(files)) {
+      if (file.type.startsWith('image/')) {
+        const preview = URL.createObjectURL(file)
+        setPendingImages(prev => [...prev, { file, preview }])
+      }
+    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }, [])
+
+  const removeImage = useCallback((idx: number) => {
+    setPendingImages(prev => {
+      URL.revokeObjectURL(prev[idx].preview)
+      return prev.filter((_, i) => i !== idx)
+    })
+  }, [])
 
   // Determine pip size based on pair
   const isJPY = activePair.includes('JPY') || activePair.includes('XAU')
@@ -123,7 +165,7 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
       account_id: accountId || null,
       strategy_id: null,
       setup_id: null,
-      notes: null,
+      notes: notes.trim() || null,
       mistakes: null,
       lessons: null,
       entry_reason: null,
@@ -144,7 +186,7 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
       status: 'open',
     }
 
-    onSave(data)
+    onSave(data, pendingImages.map(img => img.file))
   }
 
   const isValid = activePair && direction && entry
@@ -280,6 +322,57 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
           </select>
         </div>
       )}
+
+      {/* Screenshots - Ctrl+V or upload */}
+      <div>
+        <label className="block text-[10px] text-text-dim mb-1.5">Screenshots <span className="text-text-dim/50">(Ctrl+V om te plakken)</span></label>
+        <div
+          className="rounded-xl border-2 border-dashed border-white/[0.08] hover:border-accent/30 transition-colors p-3 cursor-pointer"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          {pendingImages.length === 0 ? (
+            <div className="text-center py-2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-1 text-text-dim">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+              </svg>
+              <p className="text-[10px] text-text-dim">Klik om te uploaden of plak met Ctrl+V</p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {pendingImages.map((img, idx) => (
+                <div key={idx} className="relative group">
+                  <img src={img.preview} alt={`Screenshot ${idx + 1}`} className="h-16 w-auto rounded-lg border border-white/[0.08] object-cover" />
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); removeImage(idx) }}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500/80 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >×</button>
+                </div>
+              ))}
+              <div className="h-16 w-16 rounded-lg border border-dashed border-white/[0.1] flex items-center justify-center text-text-dim text-lg hover:border-accent/30 transition-colors">+</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Notitie */}
+      <div>
+        <label className="block text-[10px] text-text-dim mb-1.5">Notitie <span className="text-text-dim/50">(optioneel)</span></label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          className="form-input w-full h-16 resize-none"
+          placeholder="Waarom neem je deze trade? Korte notitie..."
+        />
+      </div>
 
       {/* Auto-calculated info */}
       {(calc.rr !== null || calc.pipsSL !== null || calc.pipsTP !== null || calc.positionSize !== null) && (
