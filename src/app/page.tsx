@@ -39,7 +39,7 @@ export default async function HomePage() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-accent-glow via-transparent to-transparent" />
 
-        <div className="relative z-10 text-center max-w-3xl mx-auto px-6">
+        <div className="relative z-10 text-center max-w-3xl mx-auto px-4 sm:px-6">
           <FadeIn>
             <DisclaimerBadge className="mb-6" />
           </FadeIn>
@@ -99,7 +99,7 @@ export default async function HomePage() {
 
       {/* Stats */}
       <section className="border-y border-border bg-bg-elevated/50">
-        <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 text-center">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 text-center">
           {[
             { end: articleCount || 0, suffix: '+', label: 'Artikelen' },
             { end: categoryCount || 0, suffix: '+', label: 'Onderwerpen' },
@@ -120,7 +120,7 @@ export default async function HomePage() {
 
       {/* Three Pillars */}
       <section className="py-24">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeIn>
             <h2 className="text-3xl md:text-4xl font-display font-semibold text-heading text-center mb-4">
               Drie pijlers
@@ -187,7 +187,7 @@ export default async function HomePage() {
       {/* Latest Articles */}
       {articles && articles.length > 0 && (
         <section className="py-24 bg-bg-elevated/30">
-          <div className="max-w-6xl mx-auto px-6">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <FadeIn>
               <div className="flex items-center justify-between mb-12">
                 <h2 className="text-3xl font-display font-semibold text-heading">
@@ -235,7 +235,7 @@ export default async function HomePage() {
 
       {/* FX Outlook */}
       <section className="py-24">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeIn>
             <div className="relative overflow-hidden rounded-2xl border border-accent-dim/30 bg-gradient-to-br from-accent-glow/30 via-bg-card to-bg-card">
               <div className="absolute top-0 right-0 w-1/2 h-full opacity-[0.04]" style={{
@@ -296,7 +296,7 @@ export default async function HomePage() {
 
       {/* Premium Tools */}
       <section className="py-24 bg-bg-elevated/30">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeIn>
             <div className="text-center mb-4">
               <span className="text-xs tracking-[0.2em] uppercase text-accent-light mb-3 block font-body">

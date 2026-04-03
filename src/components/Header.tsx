@@ -126,7 +126,7 @@ export default function Header() {
         transition: 'background 0.4s ease, border-bottom 0.4s ease, backdrop-filter 0.4s ease',
       }}
     >
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 group">
           <Image
             src="/assets/images/logo.png"

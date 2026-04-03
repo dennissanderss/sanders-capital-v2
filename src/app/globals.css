@@ -260,3 +260,29 @@ select option {
     margin-top: 1.25rem;
   }
 }
+
+/* ─── Mobile responsiveness ──────────────────────────────── */
+
+/* Ensure proper tap target sizes on mobile */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    min-height: 36px;
+  }
+
+  /* Prevent horizontal overflow on small screens */
+  .max-w-6xl, .max-w-7xl, .max-w-5xl {
+    overflow-x: hidden;
+  }
+
+  /* Make form inputs larger on mobile for easier tapping */
+  .form-input, select, input[type="text"], input[type="number"], input[type="email"], textarea {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+    min-height: 44px;
+  }
+
+  /* Scrollbar thin for horizontal scroll containers */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+}

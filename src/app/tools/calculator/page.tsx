@@ -61,7 +61,7 @@ export default function CalculatorPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-16">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
       <div className="text-center mb-12">
         <h1 className="text-3xl md:text-4xl font-display font-semibold text-heading mb-4">
           Position Size Calculator

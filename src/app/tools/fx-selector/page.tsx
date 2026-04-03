@@ -128,7 +128,7 @@ function StepCard({
 /* ─── Main page ─────────────────────────────────────────────── */
 export default function DailyBriefingIntroPage() {
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10 sm:py-16">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
       {/* Hero - short and punchy */}
       <FadeIn>
         <div className="text-center mb-10 sm:mb-14">

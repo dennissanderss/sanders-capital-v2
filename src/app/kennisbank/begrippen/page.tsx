@@ -47,7 +47,7 @@ export default async function BegrippenPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-16">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
       <Breadcrumb items={[
         { label: 'Kennisbank', href: '/kennisbank' },
         { label: 'Fundamentals', href: '/kennisbank#fundamentals' },

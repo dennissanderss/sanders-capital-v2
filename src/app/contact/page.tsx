@@ -75,7 +75,7 @@ const contactLinks = [
 
 export default function ContactPage() {
   return (
-    <div className="max-w-3xl mx-auto px-6 py-24">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-24">
       {/* Header */}
       <FadeIn>
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-semibold text-heading mb-6">

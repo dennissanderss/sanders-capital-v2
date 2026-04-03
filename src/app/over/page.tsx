@@ -41,7 +41,7 @@ export default function OverPage() {
   return (
     <div className="py-24">
       {/* Intro */}
-      <section className="max-w-3xl mx-auto px-6 mb-24">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 mb-24">
         <FadeIn>
           <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 md:gap-8">
             {/* Profile photo */}
@@ -74,7 +74,7 @@ export default function OverPage() {
       </section>
 
       {/* Timeline */}
-      <section className="max-w-4xl mx-auto px-6 mb-24">
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 mb-24">
         <FadeIn>
           <h2 className="text-2xl font-display font-semibold text-heading text-center mb-16">
             Het verhaal
@@ -130,7 +130,7 @@ export default function OverPage() {
       </section>
 
       {/* Missie */}
-      <section className="max-w-3xl mx-auto px-6 mb-24">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 mb-24">
         <FadeIn>
           <div className="p-8 rounded-xl bg-bg-card border border-border text-center">
             <h2 className="text-2xl font-display font-semibold text-heading mb-6">
@@ -160,7 +160,7 @@ export default function OverPage() {
       </section>
 
       {/* Huidige focus */}
-      <section className="max-w-3xl mx-auto px-6 mb-24">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 mb-24">
         <FadeIn>
           <h2 className="text-2xl font-display font-semibold text-heading text-center mb-8">
             Waar ik nu mee bezig ben
@@ -184,7 +184,7 @@ export default function OverPage() {
       </section>
 
       {/* Disclaimer */}
-      <section className="max-w-3xl mx-auto px-6">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6">
         <FadeIn>
           <p className="text-xs text-text-dim text-center leading-relaxed">
             Alle content op Sanders Capital is puur educatief van aard en vormt geen financieel

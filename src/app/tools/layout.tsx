@@ -81,7 +81,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
     <div>
       {/* Tools sub-navigation */}
       <div className="border-b border-border bg-bg-elevated/50">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <nav className="flex items-center gap-0.5 overflow-x-auto py-1 -mb-px">
             {allTools.map((link, i) => {
               const isActive = pathname === link.href || pathname.startsWith(link.href + '/')

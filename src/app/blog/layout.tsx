@@ -17,7 +17,7 @@ export default function BlogLayout({ children }: { children: React.ReactNode }) 
       <div>
         {/* Blog sub-navigation */}
         <div className="border-b border-border bg-bg-elevated/50">
-          <div className="max-w-6xl mx-auto px-6">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <nav className="flex items-center gap-0.5 overflow-x-auto py-1 -mb-px">
               {blogTabs.map((tab) => {
                 const isActive = pathname === tab.href

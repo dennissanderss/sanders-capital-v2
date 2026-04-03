@@ -129,7 +129,7 @@ export default async function PremiumPage() {
   const isLoggedIn = !!user
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-24">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-24">
       <FadeIn>
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-display font-semibold text-heading mb-4">

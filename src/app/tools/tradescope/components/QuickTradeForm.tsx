@@ -252,7 +252,7 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
       </div>
 
       {/* Entry, SL, TP in a row */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
           <label className="block text-[10px] text-text-dim mb-1.5">Entry prijs *</label>
           <input

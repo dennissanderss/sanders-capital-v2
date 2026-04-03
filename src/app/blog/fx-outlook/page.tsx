@@ -23,7 +23,7 @@ export default async function FxOutlookPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-24">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-24">
       <FadeIn>
         <div className="mb-16">
           <div className="flex items-center gap-3 mb-4">

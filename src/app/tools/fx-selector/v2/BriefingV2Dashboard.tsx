@@ -429,8 +429,8 @@ function SignalPill({ direction, label, value, unit, changePct, previousClose, c
     return `${unit === '$' ? '$' : ''}${v.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${unit === '%' ? '%' : ''}`
   }
   return (
-    <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-all group">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+    <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-3.5 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-all group">
+      <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 ${
         isUp ? 'bg-green-500/10 text-green-400' : isDown ? 'bg-red-500/10 text-red-400' : 'bg-white/[0.04] text-text-dim'
       }`}>
         {isUp ? (
@@ -683,24 +683,24 @@ export default function BriefingV2Dashboard() {
             <div className={`rounded-2xl border ${rc.border} ${rc.bg} overflow-hidden shadow-lg ${rc.glow}`}>
               {/* Regime header */}
               <div className="px-5 sm:px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full animate-pulse ${
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className={`w-3 h-3 rounded-full animate-pulse shrink-0 ${
                       data.regime === 'Risk-Off' ? 'bg-red-500' :
                       data.regime === 'Risk-On' ? 'bg-green-500' :
                       data.regime === 'USD Dominant' ? 'bg-blue-500' :
                       data.regime === 'USD Zwak' ? 'bg-amber-500' : 'bg-gray-500'
                     }`} />
-                    <h2 className={`text-2xl font-display font-bold ${rc.text}`}>{data.regime}</h2>
+                    <h2 className={`text-xl sm:text-2xl font-display font-bold ${rc.text}`}>{data.regime}</h2>
                     {lastUpdate && (
-                      <span className="text-[9px] text-text-dim/50 font-normal">Laatste update: {lastUpdate}</span>
+                      <span className="text-[9px] text-text-dim/50 font-normal hidden sm:inline">Laatste update: {lastUpdate}</span>
                     )}
                     <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/[0.06] text-text-dim border border-white/[0.06]">
                       Bron: {data.regimeSource || 'centraal bank beleid'}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <ConfidenceRing value={data.regimeConfidence ?? data.confidence} size={52} />
+                    <ConfidenceRing value={data.regimeConfidence ?? data.confidence} size={48} />
                     <div className="text-right">
                       <p className="text-[10px] text-text-dim uppercase tracking-wider">Regime Zekerheid</p>
                       <p className="text-xs text-text-muted">
@@ -1043,14 +1043,14 @@ export default function BriefingV2Dashboard() {
 
             <div className="rounded-2xl border border-border bg-bg-card overflow-hidden">
               {/* Sentiment Grid */}
-              <div className="px-5 sm:px-6 py-4">
-                <div className="flex items-center justify-between mb-4">
+              <div className="px-4 sm:px-6 py-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                   <div className="flex items-center gap-2">
                     <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Sentiment per Valuta</p>
                     <span className="text-[8px] text-text-dim/50">(klik voor detail)</span>
                   </div>
                   {(data.newsLastUpdated || data.newsCount) && (
-                    <div className="text-right">
+                    <div className="sm:text-right">
                       {data.newsLastUpdated && (
                         <p className="text-[9px] text-text-dim/60">
                           Laatste update: <span className="text-text-dim">{timeAgoDutch(data.newsLastUpdated)}</span>
@@ -1118,16 +1118,15 @@ export default function BriefingV2Dashboard() {
                           <span className="text-text-muted">{s.sentiment}</span>
                         </div>
                         {ccyRank && (
-                          <div className="flex items-center gap-3 text-[11px]">
-                            <span className="text-text-dim">CB basis score:</span>
+                          <div className="flex items-center gap-2 sm:gap-3 text-[11px] flex-wrap">
+                            <span className="text-text-dim">CB basis:</span>
                             <span className="font-mono font-bold text-heading">{ccyRank.baseScore > 0 ? '+' : ''}{ccyRank.baseScore.toFixed(1)}</span>
                             <span className="text-text-dim/60">+</span>
-                            <span className="text-text-dim">nieuws bonus:</span>
+                            <span className="text-text-dim">nieuws:</span>
                             <span className={`font-mono font-bold ${ccyRank.newsBonus > 0 ? 'text-green-400' : ccyRank.newsBonus < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                               {ccyRank.newsBonus > 0 ? '+' : ''}{ccyRank.newsBonus.toFixed(1)}
                             </span>
                             <span className="text-text-dim/60">=</span>
-                            <span className="text-text-dim">totaal:</span>
                             <span className={`font-mono font-bold ${ccyRank.score > 0 ? 'text-green-400' : ccyRank.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                               {ccyRank.score > 0 ? '+' : ''}{ccyRank.score.toFixed(1)}
                             </span>
@@ -2129,7 +2128,7 @@ export default function BriefingV2Dashboard() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-5 gap-2 mt-3 mb-4">
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-3 mb-4">
                     {[
                       { label: 'Totaal', value: trackStats.total, color: 'text-heading', daily: todayChanges ? todayChanges.total : 0, isPercent: false },
                       { label: 'Correct', value: trackStats.correct, color: 'text-green-400', daily: todayChanges ? todayChanges.correct : 0, isPercent: false },

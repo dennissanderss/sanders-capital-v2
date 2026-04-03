@@ -72,7 +72,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-24">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-24">
       <FadeIn>
         <div className="flex items-center justify-between mb-12">
           <div>

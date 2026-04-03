@@ -82,7 +82,7 @@ export default async function ArticlePage({ params }: Props) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-24">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-24">
       <FadeIn>
         <Breadcrumb items={[
           { label: 'Blog', href: '/blog' },

@@ -27,7 +27,7 @@ export default function FxSelectorLayout({ children }: { children: React.ReactNo
   return (
     <div>
       {/* Sub-navigation */}
-      <div className="max-w-6xl mx-auto px-6 pt-4">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4">
         <div className="flex items-center gap-2">
           {subPages.map((page) => {
             const isActive = pathname === page.href

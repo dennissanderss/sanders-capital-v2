@@ -737,13 +737,13 @@ export default function NieuwsContent() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10 sm:py-16">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
       {/* Article Reader Modal */}
       {selectedArticle && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm overflow-y-auto py-8 px-4" onClick={() => setSelectedArticle(null)}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm overflow-y-auto py-4 sm:py-8 px-2 sm:px-4" onClick={() => setSelectedArticle(null)}>
           <div className="w-full max-w-2xl rounded-2xl bg-bg-card border border-border shadow-2xl" onClick={e => e.stopPropagation()}>
             {/* Reader header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <span className={`text-[10px] px-2 py-0.5 rounded border font-medium ${sourceColors[selectedArticle.source] || 'bg-white/[0.06] text-text-muted border-white/[0.08]'}`}>
                   {selectedArticle.source}
@@ -767,7 +767,7 @@ export default function NieuwsContent() {
             </div>
 
             {/* Reader content */}
-            <div className="px-6 py-6">
+            <div className="px-4 sm:px-6 py-4 sm:py-6">
               <h2 className="text-xl font-display font-semibold text-heading mb-3 leading-snug">
                 {getDisplayTitle(selectedArticle, showDutch)}
                 {showDutch && !selectedArticle.titleNl && (
@@ -814,7 +814,7 @@ export default function NieuwsContent() {
             </div>
 
             {/* Reader footer */}
-            <div className="px-6 py-4 border-t border-border flex items-center justify-between">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-border flex items-center justify-between gap-3">
               <p className="text-[10px] text-text-dim">Bron: {selectedArticle.source}</p>
               <a
                 href={selectedArticle.url}
