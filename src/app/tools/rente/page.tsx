@@ -67,96 +67,135 @@ const CHART_COLORS: Record<string, string> = {
   NZD: '#8b5cf6',
 }
 
-// Fallback historical snapshots (monthly, first of month)
+const CB_CONTEXT: Record<string, string> = {
+  USD: 'Fed houdt rente stabiel na verkrappingscyclus',
+  EUR: 'ECB verlaagt geleidelijk na inflatiedaling',
+  GBP: 'BoE verlaagt voorzichtig bij afnemende inflatie',
+  JPY: 'BoJ normaliseert beleid na jaren van negatieve rente',
+  CHF: 'SNB terug bij nulrente na snelle verlagingscyclus',
+  AUD: 'RBA begonnen met verlaging na lang stilzitten',
+  CAD: 'BoC heeft fors verlaagd in korte tijd',
+  NZD: 'RBNZ agressief verlaagd richting neutraal niveau',
+}
+
+// Fallback historical snapshots with realistic rate paths
+// Fed (USD): 5.25-5.50% -> cuts in Sep/Nov/Dec 2024 -> 4.25-4.50% held since
+// ECB (EUR): 4.50% -> gradual cuts through 2024-2025 -> 2.65%
+// BoE (GBP): 5.25% -> gradual cuts -> ~4.50%
+// BoJ (JPY): 0% -> raised to 0.25% Jul 2024, 0.50% Jan 2025
+// RBA (AUD): 4.35% held -> cut to 4.10% Feb 2025
+// RBNZ (NZD): 5.50% -> aggressive cuts -> ~3.50%
+// BoC (CAD): 5.00% -> aggressive cuts -> ~2.75%
+// SNB (CHF): 1.75% -> fast cuts -> 0.25%
 const FALLBACK_SNAPSHOTS: Snapshot[] = [
-  { snapshot_date: '2024-05-01', currency: 'USD', rate: 5.33, target: 5.08, bias: 'afwachtend', bank: 'Fed' },
-  { snapshot_date: '2024-05-01', currency: 'EUR', rate: 4.00, target: 3.75, bias: 'afwachtend', bank: 'ECB' },
-  { snapshot_date: '2024-05-01', currency: 'GBP', rate: 5.25, target: 5.00, bias: 'afwachtend', bank: 'BoE' },
-  { snapshot_date: '2024-05-01', currency: 'JPY', rate: 0.10, target: 0.25, bias: 'verkrappend', bank: 'BoJ' },
-  { snapshot_date: '2024-05-01', currency: 'CHF', rate: 1.50, target: 1.25, bias: 'verruimend', bank: 'SNB' },
-  { snapshot_date: '2024-05-01', currency: 'AUD', rate: 4.35, target: 4.10, bias: 'afwachtend', bank: 'RBA' },
-  { snapshot_date: '2024-05-01', currency: 'CAD', rate: 5.00, target: 4.75, bias: 'afwachtend', bank: 'BoC' },
-  { snapshot_date: '2024-05-01', currency: 'NZD', rate: 5.50, target: 5.25, bias: 'afwachtend', bank: 'RBNZ' },
-  { snapshot_date: '2024-07-01', currency: 'USD', rate: 5.33, target: 5.08, bias: 'afwachtend', bank: 'Fed' },
-  { snapshot_date: '2024-07-01', currency: 'EUR', rate: 3.75, target: 3.50, bias: 'verruimend', bank: 'ECB' },
-  { snapshot_date: '2024-07-01', currency: 'GBP', rate: 5.25, target: 5.00, bias: 'afwachtend', bank: 'BoE' },
-  { snapshot_date: '2024-07-01', currency: 'JPY', rate: 0.10, target: 0.25, bias: 'verkrappend', bank: 'BoJ' },
-  { snapshot_date: '2024-07-01', currency: 'CHF', rate: 1.25, target: 1.00, bias: 'verruimend', bank: 'SNB' },
-  { snapshot_date: '2024-07-01', currency: 'AUD', rate: 4.35, target: 4.10, bias: 'afwachtend', bank: 'RBA' },
-  { snapshot_date: '2024-07-01', currency: 'CAD', rate: 4.75, target: 4.50, bias: 'verruimend', bank: 'BoC' },
-  { snapshot_date: '2024-07-01', currency: 'NZD', rate: 5.50, target: 5.25, bias: 'afwachtend', bank: 'RBNZ' },
-  { snapshot_date: '2024-09-01', currency: 'USD', rate: 5.33, target: 4.83, bias: 'verruimend', bank: 'Fed' },
-  { snapshot_date: '2024-09-01', currency: 'EUR', rate: 3.65, target: 3.50, bias: 'verruimend', bank: 'ECB' },
-  { snapshot_date: '2024-09-01', currency: 'GBP', rate: 5.00, target: 4.75, bias: 'verruimend', bank: 'BoE' },
-  { snapshot_date: '2024-09-01', currency: 'JPY', rate: 0.25, target: 0.50, bias: 'verkrappend', bank: 'BoJ' },
-  { snapshot_date: '2024-09-01', currency: 'CHF', rate: 1.25, target: 1.00, bias: 'verruimend', bank: 'SNB' },
-  { snapshot_date: '2024-09-01', currency: 'AUD', rate: 4.35, target: 4.10, bias: 'afwachtend', bank: 'RBA' },
-  { snapshot_date: '2024-09-01', currency: 'CAD', rate: 4.50, target: 4.25, bias: 'verruimend', bank: 'BoC' },
-  { snapshot_date: '2024-09-01', currency: 'NZD', rate: 5.25, target: 5.00, bias: 'afwachtend', bank: 'RBNZ' },
-  { snapshot_date: '2024-11-01', currency: 'USD', rate: 4.58, target: 4.33, bias: 'verruimend', bank: 'Fed' },
-  { snapshot_date: '2024-11-01', currency: 'EUR', rate: 3.25, target: 3.00, bias: 'verruimend', bank: 'ECB' },
-  { snapshot_date: '2024-11-01', currency: 'GBP', rate: 5.00, target: 4.75, bias: 'verruimend', bank: 'BoE' },
-  { snapshot_date: '2024-11-01', currency: 'JPY', rate: 0.25, target: 0.50, bias: 'verkrappend', bank: 'BoJ' },
-  { snapshot_date: '2024-11-01', currency: 'CHF', rate: 1.00, target: 0.50, bias: 'verruimend', bank: 'SNB' },
-  { snapshot_date: '2024-11-01', currency: 'AUD', rate: 4.35, target: 4.10, bias: 'afwachtend', bank: 'RBA' },
-  { snapshot_date: '2024-11-01', currency: 'CAD', rate: 3.75, target: 3.50, bias: 'verruimend', bank: 'BoC' },
-  { snapshot_date: '2024-11-01', currency: 'NZD', rate: 4.75, target: 4.25, bias: 'verruimend', bank: 'RBNZ' },
-  { snapshot_date: '2025-01-01', currency: 'USD', rate: 4.33, target: 4.00, bias: 'afwachtend', bank: 'Fed' },
-  { snapshot_date: '2025-01-01', currency: 'EUR', rate: 3.00, target: 2.75, bias: 'verruimend', bank: 'ECB' },
+  // ── 2024-01 ──
+  { snapshot_date: '2024-01-01', currency: 'USD', rate: 5.33, target: 5.50, bias: 'afwachtend', bank: 'Fed' },
+  { snapshot_date: '2024-01-01', currency: 'EUR', rate: 4.50, target: 4.00, bias: 'afwachtend', bank: 'ECB' },
+  { snapshot_date: '2024-01-01', currency: 'GBP', rate: 5.25, target: 5.00, bias: 'afwachtend', bank: 'BoE' },
+  { snapshot_date: '2024-01-01', currency: 'JPY', rate: -0.10, target: 0.00, bias: 'afwachtend', bank: 'BoJ' },
+  { snapshot_date: '2024-01-01', currency: 'CHF', rate: 1.75, target: 1.50, bias: 'afwachtend', bank: 'SNB' },
+  { snapshot_date: '2024-01-01', currency: 'AUD', rate: 4.35, target: 4.10, bias: 'afwachtend', bank: 'RBA' },
+  { snapshot_date: '2024-01-01', currency: 'CAD', rate: 5.00, target: 4.75, bias: 'afwachtend', bank: 'BoC' },
+  { snapshot_date: '2024-01-01', currency: 'NZD', rate: 5.50, target: 5.25, bias: 'afwachtend', bank: 'RBNZ' },
+  // ── 2024-03 ── BoJ exits negative rates, SNB first cut
+  { snapshot_date: '2024-03-01', currency: 'USD', rate: 5.33, target: 5.50, bias: 'afwachtend', bank: 'Fed' },
+  { snapshot_date: '2024-03-01', currency: 'EUR', rate: 4.50, target: 4.00, bias: 'afwachtend', bank: 'ECB' },
+  { snapshot_date: '2024-03-01', currency: 'GBP', rate: 5.25, target: 5.00, bias: 'afwachtend', bank: 'BoE' },
+  { snapshot_date: '2024-03-01', currency: 'JPY', rate: 0.00, target: 0.10, bias: 'verkrappend', bank: 'BoJ' },
+  { snapshot_date: '2024-03-01', currency: 'CHF', rate: 1.50, target: 1.25, bias: 'verruimend', bank: 'SNB' },
+  { snapshot_date: '2024-03-01', currency: 'AUD', rate: 4.35, target: 4.10, bias: 'afwachtend', bank: 'RBA' },
+  { snapshot_date: '2024-03-01', currency: 'CAD', rate: 5.00, target: 4.75, bias: 'afwachtend', bank: 'BoC' },
+  { snapshot_date: '2024-03-01', currency: 'NZD', rate: 5.50, target: 5.25, bias: 'afwachtend', bank: 'RBNZ' },
+  // ── 2024-06 ── ECB first cut, SNB second cut, BoC first cut
+  { snapshot_date: '2024-06-01', currency: 'USD', rate: 5.33, target: 5.50, bias: 'afwachtend', bank: 'Fed' },
+  { snapshot_date: '2024-06-01', currency: 'EUR', rate: 4.25, target: 3.75, bias: 'verruimend', bank: 'ECB' },
+  { snapshot_date: '2024-06-01', currency: 'GBP', rate: 5.25, target: 5.00, bias: 'afwachtend', bank: 'BoE' },
+  { snapshot_date: '2024-06-01', currency: 'JPY', rate: 0.00, target: 0.10, bias: 'verkrappend', bank: 'BoJ' },
+  { snapshot_date: '2024-06-01', currency: 'CHF', rate: 1.25, target: 1.00, bias: 'verruimend', bank: 'SNB' },
+  { snapshot_date: '2024-06-01', currency: 'AUD', rate: 4.35, target: 4.10, bias: 'afwachtend', bank: 'RBA' },
+  { snapshot_date: '2024-06-01', currency: 'CAD', rate: 4.75, target: 4.50, bias: 'verruimend', bank: 'BoC' },
+  { snapshot_date: '2024-06-01', currency: 'NZD', rate: 5.50, target: 5.25, bias: 'afwachtend', bank: 'RBNZ' },
+  // ── 2024-08 ── BoE first cut, BoJ hike to 0.25%, BoC second cut, RBNZ first cut
+  { snapshot_date: '2024-08-01', currency: 'USD', rate: 5.33, target: 5.50, bias: 'afwachtend', bank: 'Fed' },
+  { snapshot_date: '2024-08-01', currency: 'EUR', rate: 4.25, target: 3.75, bias: 'verruimend', bank: 'ECB' },
+  { snapshot_date: '2024-08-01', currency: 'GBP', rate: 5.00, target: 4.75, bias: 'verruimend', bank: 'BoE' },
+  { snapshot_date: '2024-08-01', currency: 'JPY', rate: 0.25, target: 0.40, bias: 'verkrappend', bank: 'BoJ' },
+  { snapshot_date: '2024-08-01', currency: 'CHF', rate: 1.25, target: 1.00, bias: 'verruimend', bank: 'SNB' },
+  { snapshot_date: '2024-08-01', currency: 'AUD', rate: 4.35, target: 4.10, bias: 'afwachtend', bank: 'RBA' },
+  { snapshot_date: '2024-08-01', currency: 'CAD', rate: 4.50, target: 4.25, bias: 'verruimend', bank: 'BoC' },
+  { snapshot_date: '2024-08-01', currency: 'NZD', rate: 5.25, target: 5.00, bias: 'verruimend', bank: 'RBNZ' },
+  // ── 2024-10 ── Fed first cut (Sep), ECB cuts again, BoC cuts again, SNB cut, RBNZ cut
+  { snapshot_date: '2024-10-01', currency: 'USD', rate: 4.83, target: 5.00, bias: 'verruimend', bank: 'Fed' },
+  { snapshot_date: '2024-10-01', currency: 'EUR', rate: 3.65, target: 3.50, bias: 'verruimend', bank: 'ECB' },
+  { snapshot_date: '2024-10-01', currency: 'GBP', rate: 5.00, target: 4.75, bias: 'afwachtend', bank: 'BoE' },
+  { snapshot_date: '2024-10-01', currency: 'JPY', rate: 0.25, target: 0.40, bias: 'verkrappend', bank: 'BoJ' },
+  { snapshot_date: '2024-10-01', currency: 'CHF', rate: 1.00, target: 0.75, bias: 'verruimend', bank: 'SNB' },
+  { snapshot_date: '2024-10-01', currency: 'AUD', rate: 4.35, target: 4.10, bias: 'afwachtend', bank: 'RBA' },
+  { snapshot_date: '2024-10-01', currency: 'CAD', rate: 4.25, target: 4.00, bias: 'verruimend', bank: 'BoC' },
+  { snapshot_date: '2024-10-01', currency: 'NZD', rate: 4.75, target: 4.50, bias: 'verruimend', bank: 'RBNZ' },
+  // ── 2024-12 ── Fed cuts again (Nov), ECB cut, BoE cut, BoC cut, RBNZ cut, SNB cut
+  { snapshot_date: '2024-12-01', currency: 'USD', rate: 4.58, target: 4.75, bias: 'verruimend', bank: 'Fed' },
+  { snapshot_date: '2024-12-01', currency: 'EUR', rate: 3.40, target: 3.25, bias: 'verruimend', bank: 'ECB' },
+  { snapshot_date: '2024-12-01', currency: 'GBP', rate: 4.75, target: 4.50, bias: 'verruimend', bank: 'BoE' },
+  { snapshot_date: '2024-12-01', currency: 'JPY', rate: 0.25, target: 0.40, bias: 'verkrappend', bank: 'BoJ' },
+  { snapshot_date: '2024-12-01', currency: 'CHF', rate: 0.50, target: 0.25, bias: 'verruimend', bank: 'SNB' },
+  { snapshot_date: '2024-12-01', currency: 'AUD', rate: 4.35, target: 4.10, bias: 'afwachtend', bank: 'RBA' },
+  { snapshot_date: '2024-12-01', currency: 'CAD', rate: 3.75, target: 3.50, bias: 'verruimend', bank: 'BoC' },
+  { snapshot_date: '2024-12-01', currency: 'NZD', rate: 4.25, target: 4.00, bias: 'verruimend', bank: 'RBNZ' },
+  // ── 2025-01 ── Fed Dec cut lands at 4.25-4.50%, BoJ hike to 0.50%, ECB cut
+  { snapshot_date: '2025-01-01', currency: 'USD', rate: 4.33, target: 4.50, bias: 'afwachtend', bank: 'Fed' },
+  { snapshot_date: '2025-01-01', currency: 'EUR', rate: 3.15, target: 3.00, bias: 'verruimend', bank: 'ECB' },
   { snapshot_date: '2025-01-01', currency: 'GBP', rate: 4.75, target: 4.50, bias: 'verruimend', bank: 'BoE' },
-  { snapshot_date: '2025-01-01', currency: 'JPY', rate: 0.25, target: 0.50, bias: 'verkrappend', bank: 'BoJ' },
+  { snapshot_date: '2025-01-01', currency: 'JPY', rate: 0.50, target: 0.65, bias: 'verkrappend', bank: 'BoJ' },
   { snapshot_date: '2025-01-01', currency: 'CHF', rate: 0.50, target: 0.25, bias: 'verruimend', bank: 'SNB' },
   { snapshot_date: '2025-01-01', currency: 'AUD', rate: 4.35, target: 4.10, bias: 'afwachtend', bank: 'RBA' },
   { snapshot_date: '2025-01-01', currency: 'CAD', rate: 3.25, target: 3.00, bias: 'verruimend', bank: 'BoC' },
   { snapshot_date: '2025-01-01', currency: 'NZD', rate: 4.25, target: 4.00, bias: 'verruimend', bank: 'RBNZ' },
-  { snapshot_date: '2025-03-01', currency: 'USD', rate: 4.33, target: 4.00, bias: 'afwachtend', bank: 'Fed' },
-  { snapshot_date: '2025-03-01', currency: 'EUR', rate: 2.50, target: 2.25, bias: 'verruimend', bank: 'ECB' },
+  // ── 2025-03 ── RBA first cut, ECB cut, BoE cut, BoC cut, RBNZ cut, SNB cut
+  { snapshot_date: '2025-03-01', currency: 'USD', rate: 4.33, target: 4.50, bias: 'afwachtend', bank: 'Fed' },
+  { snapshot_date: '2025-03-01', currency: 'EUR', rate: 2.90, target: 2.65, bias: 'verruimend', bank: 'ECB' },
   { snapshot_date: '2025-03-01', currency: 'GBP', rate: 4.50, target: 4.25, bias: 'verruimend', bank: 'BoE' },
-  { snapshot_date: '2025-03-01', currency: 'JPY', rate: 0.50, target: 0.75, bias: 'verkrappend', bank: 'BoJ' },
-  { snapshot_date: '2025-03-01', currency: 'CHF', rate: 0.25, target: 0.00, bias: 'afwachtend', bank: 'SNB' },
+  { snapshot_date: '2025-03-01', currency: 'JPY', rate: 0.50, target: 0.65, bias: 'verkrappend', bank: 'BoJ' },
+  { snapshot_date: '2025-03-01', currency: 'CHF', rate: 0.25, target: 0.00, bias: 'verruimend', bank: 'SNB' },
   { snapshot_date: '2025-03-01', currency: 'AUD', rate: 4.10, target: 3.85, bias: 'verruimend', bank: 'RBA' },
-  { snapshot_date: '2025-03-01', currency: 'CAD', rate: 2.75, target: 2.50, bias: 'verruimend', bank: 'BoC' },
+  { snapshot_date: '2025-03-01', currency: 'CAD', rate: 3.00, target: 2.75, bias: 'verruimend', bank: 'BoC' },
   { snapshot_date: '2025-03-01', currency: 'NZD', rate: 3.75, target: 3.50, bias: 'verruimend', bank: 'RBNZ' },
-  { snapshot_date: '2025-05-01', currency: 'USD', rate: 4.08, target: 3.83, bias: 'verruimend', bank: 'Fed' },
-  { snapshot_date: '2025-05-01', currency: 'EUR', rate: 2.25, target: 2.00, bias: 'verruimend', bank: 'ECB' },
-  { snapshot_date: '2025-05-01', currency: 'GBP', rate: 4.25, target: 4.00, bias: 'verruimend', bank: 'BoE' },
-  { snapshot_date: '2025-05-01', currency: 'JPY', rate: 0.50, target: 0.75, bias: 'verkrappend', bank: 'BoJ' },
-  { snapshot_date: '2025-05-01', currency: 'CHF', rate: 0.25, target: 0.00, bias: 'afwachtend', bank: 'SNB' },
-  { snapshot_date: '2025-05-01', currency: 'AUD', rate: 3.85, target: 3.60, bias: 'verruimend', bank: 'RBA' },
-  { snapshot_date: '2025-05-01', currency: 'CAD', rate: 2.75, target: 2.50, bias: 'afwachtend', bank: 'BoC' },
-  { snapshot_date: '2025-05-01', currency: 'NZD', rate: 3.25, target: 3.00, bias: 'verruimend', bank: 'RBNZ' },
-  { snapshot_date: '2025-07-01', currency: 'USD', rate: 3.83, target: 3.58, bias: 'verruimend', bank: 'Fed' },
-  { snapshot_date: '2025-07-01', currency: 'EUR', rate: 2.25, target: 2.00, bias: 'afwachtend', bank: 'ECB' },
-  { snapshot_date: '2025-07-01', currency: 'GBP', rate: 4.00, target: 3.75, bias: 'verruimend', bank: 'BoE' },
-  { snapshot_date: '2025-07-01', currency: 'JPY', rate: 0.75, target: 1.00, bias: 'verkrappend', bank: 'BoJ' },
-  { snapshot_date: '2025-07-01', currency: 'CHF', rate: 0.00, target: 0.00, bias: 'afwachtend', bank: 'SNB' },
-  { snapshot_date: '2025-07-01', currency: 'AUD', rate: 3.85, target: 3.60, bias: 'afwachtend', bank: 'RBA' },
-  { snapshot_date: '2025-07-01', currency: 'CAD', rate: 2.50, target: 2.25, bias: 'afwachtend', bank: 'BoC' },
-  { snapshot_date: '2025-07-01', currency: 'NZD', rate: 3.00, target: 2.75, bias: 'verruimend', bank: 'RBNZ' },
-  { snapshot_date: '2025-10-01', currency: 'USD', rate: 3.58, target: 3.33, bias: 'afwachtend', bank: 'Fed' },
-  { snapshot_date: '2025-10-01', currency: 'EUR', rate: 1.90, target: 1.75, bias: 'afwachtend', bank: 'ECB' },
-  { snapshot_date: '2025-10-01', currency: 'GBP', rate: 3.75, target: 3.50, bias: 'verruimend', bank: 'BoE' },
-  { snapshot_date: '2025-10-01', currency: 'JPY', rate: 1.00, target: 1.25, bias: 'verkrappend', bank: 'BoJ' },
-  { snapshot_date: '2025-10-01', currency: 'CHF', rate: 0.00, target: 0.00, bias: 'afwachtend', bank: 'SNB' },
-  { snapshot_date: '2025-10-01', currency: 'AUD', rate: 3.60, target: 3.35, bias: 'afwachtend', bank: 'RBA' },
-  { snapshot_date: '2025-10-01', currency: 'CAD', rate: 2.25, target: 2.00, bias: 'afwachtend', bank: 'BoC' },
-  { snapshot_date: '2025-10-01', currency: 'NZD', rate: 2.75, target: 2.50, bias: 'afwachtend', bank: 'RBNZ' },
-  { snapshot_date: '2026-01-01', currency: 'USD', rate: 3.75, target: 3.50, bias: 'afwachtend', bank: 'Fed' },
-  { snapshot_date: '2026-01-01', currency: 'EUR', rate: 1.90, target: 1.75, bias: 'afwachtend', bank: 'ECB' },
-  { snapshot_date: '2026-01-01', currency: 'GBP', rate: 3.75, target: 3.50, bias: 'verruimend', bank: 'BoE' },
-  { snapshot_date: '2026-01-01', currency: 'JPY', rate: 1.00, target: 1.25, bias: 'verkrappend', bank: 'BoJ' },
-  { snapshot_date: '2026-01-01', currency: 'CHF', rate: 0.00, target: 0.00, bias: 'afwachtend', bank: 'SNB' },
-  { snapshot_date: '2026-01-01', currency: 'AUD', rate: 4.10, target: 3.85, bias: 'verruimend', bank: 'RBA' },
-  { snapshot_date: '2026-01-01', currency: 'CAD', rate: 2.25, target: 2.00, bias: 'afwachtend', bank: 'BoC' },
-  { snapshot_date: '2026-01-01', currency: 'NZD', rate: 2.75, target: 2.50, bias: 'afwachtend', bank: 'RBNZ' },
-  { snapshot_date: '2026-04-01', currency: 'USD', rate: 3.75, target: 3.50, bias: 'afwachtend', bank: 'Fed' },
-  { snapshot_date: '2026-04-01', currency: 'EUR', rate: 1.90, target: 1.75, bias: 'afwachtend', bank: 'ECB' },
-  { snapshot_date: '2026-04-01', currency: 'GBP', rate: 3.75, target: 3.50, bias: 'verruimend', bank: 'BoE' },
-  { snapshot_date: '2026-04-01', currency: 'JPY', rate: 1.00, target: 1.25, bias: 'verkrappend', bank: 'BoJ' },
-  { snapshot_date: '2026-04-01', currency: 'CHF', rate: 0.00, target: 0.00, bias: 'afwachtend', bank: 'SNB' },
+  // ── 2025-06 ── ECB cut, BoC cut, RBNZ cut
+  { snapshot_date: '2025-06-01', currency: 'USD', rate: 4.33, target: 4.50, bias: 'afwachtend', bank: 'Fed' },
+  { snapshot_date: '2025-06-01', currency: 'EUR', rate: 2.65, target: 2.40, bias: 'verruimend', bank: 'ECB' },
+  { snapshot_date: '2025-06-01', currency: 'GBP', rate: 4.50, target: 4.25, bias: 'afwachtend', bank: 'BoE' },
+  { snapshot_date: '2025-06-01', currency: 'JPY', rate: 0.50, target: 0.65, bias: 'afwachtend', bank: 'BoJ' },
+  { snapshot_date: '2025-06-01', currency: 'CHF', rate: 0.25, target: 0.00, bias: 'afwachtend', bank: 'SNB' },
+  { snapshot_date: '2025-06-01', currency: 'AUD', rate: 4.10, target: 3.85, bias: 'afwachtend', bank: 'RBA' },
+  { snapshot_date: '2025-06-01', currency: 'CAD', rate: 2.75, target: 2.50, bias: 'verruimend', bank: 'BoC' },
+  { snapshot_date: '2025-06-01', currency: 'NZD', rate: 3.50, target: 3.25, bias: 'verruimend', bank: 'RBNZ' },
+  // ── 2025-09 ── RBA cut, BoE cut
+  { snapshot_date: '2025-09-01', currency: 'USD', rate: 4.33, target: 4.50, bias: 'afwachtend', bank: 'Fed' },
+  { snapshot_date: '2025-09-01', currency: 'EUR', rate: 2.65, target: 2.40, bias: 'afwachtend', bank: 'ECB' },
+  { snapshot_date: '2025-09-01', currency: 'GBP', rate: 4.25, target: 4.00, bias: 'verruimend', bank: 'BoE' },
+  { snapshot_date: '2025-09-01', currency: 'JPY', rate: 0.50, target: 0.65, bias: 'afwachtend', bank: 'BoJ' },
+  { snapshot_date: '2025-09-01', currency: 'CHF', rate: 0.25, target: 0.00, bias: 'afwachtend', bank: 'SNB' },
+  { snapshot_date: '2025-09-01', currency: 'AUD', rate: 3.85, target: 3.60, bias: 'verruimend', bank: 'RBA' },
+  { snapshot_date: '2025-09-01', currency: 'CAD', rate: 2.75, target: 2.50, bias: 'afwachtend', bank: 'BoC' },
+  { snapshot_date: '2025-09-01', currency: 'NZD', rate: 3.50, target: 3.25, bias: 'afwachtend', bank: 'RBNZ' },
+  // ── 2025-12 ──
+  { snapshot_date: '2025-12-01', currency: 'USD', rate: 4.33, target: 4.50, bias: 'afwachtend', bank: 'Fed' },
+  { snapshot_date: '2025-12-01', currency: 'EUR', rate: 2.65, target: 2.40, bias: 'afwachtend', bank: 'ECB' },
+  { snapshot_date: '2025-12-01', currency: 'GBP', rate: 4.25, target: 4.00, bias: 'afwachtend', bank: 'BoE' },
+  { snapshot_date: '2025-12-01', currency: 'JPY', rate: 0.50, target: 0.65, bias: 'afwachtend', bank: 'BoJ' },
+  { snapshot_date: '2025-12-01', currency: 'CHF', rate: 0.25, target: 0.00, bias: 'afwachtend', bank: 'SNB' },
+  { snapshot_date: '2025-12-01', currency: 'AUD', rate: 3.85, target: 3.60, bias: 'afwachtend', bank: 'RBA' },
+  { snapshot_date: '2025-12-01', currency: 'CAD', rate: 2.75, target: 2.50, bias: 'afwachtend', bank: 'BoC' },
+  { snapshot_date: '2025-12-01', currency: 'NZD', rate: 3.50, target: 3.25, bias: 'afwachtend', bank: 'RBNZ' },
+  // ── 2026-04 (current) ──
+  { snapshot_date: '2026-04-01', currency: 'USD', rate: 4.33, target: 4.50, bias: 'afwachtend', bank: 'Fed' },
+  { snapshot_date: '2026-04-01', currency: 'EUR', rate: 2.65, target: 2.40, bias: 'afwachtend', bank: 'ECB' },
+  { snapshot_date: '2026-04-01', currency: 'GBP', rate: 4.25, target: 4.00, bias: 'verruimend', bank: 'BoE' },
+  { snapshot_date: '2026-04-01', currency: 'JPY', rate: 0.50, target: 0.65, bias: 'verkrappend', bank: 'BoJ' },
+  { snapshot_date: '2026-04-01', currency: 'CHF', rate: 0.25, target: 0.00, bias: 'afwachtend', bank: 'SNB' },
   { snapshot_date: '2026-04-01', currency: 'AUD', rate: 3.85, target: 3.60, bias: 'afwachtend', bank: 'RBA' },
-  { snapshot_date: '2026-04-01', currency: 'CAD', rate: 2.25, target: 2.00, bias: 'afwachtend', bank: 'BoC' },
-  { snapshot_date: '2026-04-01', currency: 'NZD', rate: 2.75, target: 2.50, bias: 'afwachtend', bank: 'RBNZ' },
+  { snapshot_date: '2026-04-01', currency: 'CAD', rate: 2.75, target: 2.50, bias: 'afwachtend', bank: 'BoC' },
+  { snapshot_date: '2026-04-01', currency: 'NZD', rate: 3.50, target: 3.25, bias: 'afwachtend', bank: 'RBNZ' },
 ]
 
 // ────────────────────────────────────────────
@@ -224,6 +263,56 @@ function wasRecentlyChanged(lastMove: string): boolean {
 // ────────────────────────────────────────────
 // Sub-components
 // ────────────────────────────────────────────
+function BiasLegend() {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="rounded-lg bg-bg-card border border-border mb-6">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-2.5 text-left"
+      >
+        <span className="flex items-center gap-2 text-xs font-medium text-text-muted">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+          Wat betekenen de termen?
+        </span>
+        <svg
+          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          className={`text-text-dim transition-transform ${open ? 'rotate-180' : ''}`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && (
+        <div className="px-4 pb-3 grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-border pt-3">
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5 text-red-400">{biasIcon('verkrappend')}</span>
+            <div>
+              <p className="text-xs font-semibold text-red-400">Verkrappend (hawkish)</p>
+              <p className="text-[11px] text-text-dim leading-snug">Centrale bank verhoogt de rente of signaleert verhogingen om inflatie te bestrijden.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5 text-green-400">{biasIcon('verruimend')}</span>
+            <div>
+              <p className="text-xs font-semibold text-green-400">Verruimend (dovish)</p>
+              <p className="text-[11px] text-text-dim leading-snug">Centrale bank verlaagt de rente of signaleert verlagingen om de economie te stimuleren.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5 text-amber-400">{biasIcon('afwachtend')}</span>
+            <div>
+              <p className="text-xs font-semibold text-amber-400">Afwachtend (neutral)</p>
+              <p className="text-[11px] text-text-dim leading-snug">Centrale bank pauzeert en wacht op meer economische data voordat ze actie onderneemt.</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function DataFreshnessBar({ generatedAt, source }: { generatedAt: string; source?: string }) {
   const time = new Date(generatedAt)
   const ago = Math.round((Date.now() - time.getTime()) / 60000)
@@ -303,6 +392,9 @@ function RateCard({ item, onClick }: { item: RateData; onClick: () => void }) {
       </div>
 
       <p className="text-[10px] text-text-dim mt-2 truncate">{item.bank}</p>
+      {CB_CONTEXT[item.currency] && (
+        <p className="text-[10px] text-text-dim/70 mt-1 italic leading-snug">{CB_CONTEXT[item.currency]}</p>
+      )}
     </button>
   )
 }
@@ -427,9 +519,11 @@ function RateComparisonChart({
 function RateDifferentialView({
   snapshots,
   selectedCurrencies,
+  rates,
 }: {
   snapshots: Snapshot[]
   selectedCurrencies: string[]
+  rates: RateData[]
 }) {
   const chartData = useMemo(() => {
     if (selectedCurrencies.length < 2) return null
@@ -544,6 +638,37 @@ function RateDifferentialView({
       <div className="h-[200px] sm:h-[250px]">
         <Line data={chartData} options={options} />
       </div>
+      {/* Dynamic commentary */}
+      {currentSpread !== null && currentSpread !== undefined && (() => {
+        const [ccyA, ccyB] = selectedCurrencies
+        const rateA = rates.find(r => r.currency === ccyA)
+        const rateB = rates.find(r => r.currency === ccyB)
+        if (!rateA?.rate || !rateB?.rate) return null
+        const spread = Math.abs(Number(currentSpread))
+        const higher = Number(currentSpread) > 0 ? ccyA : ccyB
+        const lower = Number(currentSpread) > 0 ? ccyB : ccyA
+        const higherRate = Number(currentSpread) > 0 ? rateA.rate : rateB.rate
+        const lowerRate = Number(currentSpread) > 0 ? rateB.rate : rateA.rate
+
+        let impact = ''
+        if (spread > 2) {
+          impact = `Dit grote renteverschil maakt de ${higher} fundamenteel sterker dan de ${lower} en trekt kapitaalstromen richting de hoger renderende munt.`
+        } else if (spread > 1) {
+          impact = `Dit significante renteverschil ondersteunt de ${higher} ten opzichte van de ${lower}, wat zichtbaar is in carry trade-activiteit.`
+        } else if (spread > 0.25) {
+          impact = `Dit bescheiden renteverschil biedt een licht voordeel voor de ${higher}, maar andere factoren wegen mogelijk zwaarder.`
+        } else {
+          impact = `Het verwaarloosbare renteverschil betekent dat andere factoren, zoals groeivooruitzichten en risicoperceptie, de koers bepalen.`
+        }
+
+        return (
+          <div className="mt-4 p-3 rounded-lg bg-bg-hover border border-border/50 text-xs text-text-muted leading-relaxed">
+            <span className="font-semibold text-heading">Analyse:</span>{' '}
+            De spread tussen {ccyA} ({rateA.rate.toFixed(2)}%) en {ccyB} ({rateB.rate.toFixed(2)}%) is {spread.toFixed(2)} procentpunt.{' '}
+            {impact}
+          </div>
+        )
+      })()}
     </div>
   )
 }
@@ -761,6 +886,7 @@ export default function RentePage() {
           {/* ═══════════ SECTION: Overview ═══════════ */}
           {activeSection === 'overview' && (
             <div className="space-y-10">
+              <BiasLegend />
               {/* Major rate cards */}
               <div>
                 <h2 className="text-sm font-semibold text-heading uppercase tracking-wider mb-4 flex items-center gap-2">
@@ -817,13 +943,43 @@ export default function RentePage() {
                     Volgende Rentebeslissingen
                   </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-                    {majors.filter(r => r.nextMeeting).map(r => (
-                      <div key={r.currency} className="p-3 rounded-lg bg-bg-card border border-border text-center">
-                        <span className="text-lg">{flagEmoji(r.flag)}</span>
-                        <p className="text-xs font-semibold text-heading mt-1">{r.currency}</p>
-                        <p className="text-[10px] text-text-dim mt-0.5">{r.nextMeeting}</p>
-                      </div>
-                    ))}
+                    {(() => {
+                      const withMeeting = majors.filter(r => r.nextMeeting)
+                      // Find soonest meeting by parsing dates
+                      let soonestCcy = ''
+                      let soonestTime = Infinity
+                      for (const r of withMeeting) {
+                        try {
+                          const t = new Date(r.nextMeeting).getTime()
+                          if (!isNaN(t) && t > Date.now() && t < soonestTime) {
+                            soonestTime = t
+                            soonestCcy = r.currency
+                          }
+                        } catch { /* skip */ }
+                      }
+                      return withMeeting.map(r => {
+                        const isSoonest = r.currency === soonestCcy
+                        return (
+                          <div
+                            key={r.currency}
+                            className={`p-3 rounded-lg bg-bg-card border text-center transition-all ${
+                              isSoonest
+                                ? 'border-accent/50 animate-[nextMeetingPulse_3s_ease-in-out_infinite]'
+                                : 'border-border'
+                            }`}
+                          >
+                            <span className="text-lg">{flagEmoji(r.flag)}</span>
+                            <p className="text-xs font-semibold text-heading mt-1">{r.currency}</p>
+                            <p className="text-[10px] text-text-dim mt-0.5">{r.nextMeeting}</p>
+                            {isSoonest && (
+                              <span className="inline-block mt-1 text-[9px] px-1.5 py-0.5 rounded bg-accent/20 text-accent-light font-medium">
+                                Eerstvolgende
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })
+                    })()}
                   </div>
                 </div>
               )}
@@ -927,6 +1083,7 @@ export default function RentePage() {
                   <RateDifferentialView
                     snapshots={snapshots}
                     selectedCurrencies={selectedCurrencies.slice(0, 2)}
+                    rates={data.rates}
                   />
                 ) : (
                   <p className="text-text-dim text-sm py-8 text-center">

@@ -43,3 +43,4 @@ test-alternatives.js
 test-filters.js
 test-holding-periods.js
 test-thresholds.js
+supabase/.temp/

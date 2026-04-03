@@ -1482,696 +1482,532 @@ export default function BriefingV2Dashboard() {
             icon={intermarketConclusion?.confirmsRegime ? 'check' : 'arrow'}
             text={
               intermarketConclusion?.confirmsRegime
-                ? `Intermarket bevestigt het ${data.regime} regime. Alle signalen gecombineerd leiden tot onze trade focus...`
-                : `Intermarket geeft gemengde signalen. We focussen op de sterkste fundamentele divergenties, maar wees selectiever.`
+                ? `Intermarket bevestigt het ${data.regime} regime. Nu filteren we de paren naar concrete trades...`
+                : `Intermarket geeft gemengde signalen. Extra streng filteren naar alleen de sterkste setups.`
             }
           />
 
-          {/* ── Divergence Alert ── */}
-          {data.divergences && <DivergenceAlert divergences={data.divergences} />}
-
           {/* ════════════════════════════════════════════════════════
-              STAP 4: TRADE FOCUS
+              STAP 4: TRADE FOCUS (FILTER FUNNEL)
               ════════════════════════════════════════════════════════ */}
           <section className="mb-2">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-accent/15 border border-accent/30 text-accent-light text-sm font-bold shrink-0">
-                4
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-display font-semibold text-heading leading-tight">Trade Focus</h2>
-                  {lastUpdate && <span className="text-[9px] text-text-dim/50 font-normal ml-auto">Laatste update: {lastUpdate}</span>}
-                </div>
-                <p className="text-[11px] text-text-dim">De concrete output: top paren met richting, overtuiging en score.</p>
-              </div>
-            </div>
+            <StepHeader
+              step={4}
+              title="Trade Focus"
+              subtitle="Filterproces: welke paren overleven alle criteria?"
+            />
 
-            {(tradeFocus.length > 0 || watchlist.length > 0) ? (
-              <div className="space-y-4">
-                {tradeFocus.map((trade, i) => (
-                  <div key={trade.pair} className="rounded-2xl border border-border bg-bg-card overflow-hidden">
-                    {/* Trade header */}
-                    <div className={`px-5 py-4 flex items-center justify-between ${
-                      trade.isBullish ? 'bg-gradient-to-r from-green-500/[0.06] to-transparent' :
-                      trade.isBearish ? 'bg-gradient-to-r from-red-500/[0.06] to-transparent' :
-                      'bg-white/[0.02]'
-                    }`}>
+            {(() => {
+              const totalPairs = data.pairBiases.length
+              const scorePass = data.pairBiases.filter(p => Math.abs(p.score) >= 2.0 && p.direction !== 'neutraal')
+              const imAlignment = data.intermarketAlignment ?? 0
+              const imPass = imAlignment > 50 ? scorePass : scorePass.filter(p => Math.abs(p.score) >= 3.5)
+              const finalCount = tradeFocus.length
+
+              return (
+                <div className="rounded-2xl border border-border bg-bg-card overflow-hidden">
+                  {/* Compact funnel visualization */}
+                  <div className="px-5 sm:px-6 py-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Filter Funnel</p>
+                      {lastUpdate && <span className="text-[9px] text-text-dim/50 ml-auto">Update: {lastUpdate}</span>}
+                    </div>
+
+                    {/* Funnel steps */}
+                    <div className="space-y-1.5">
+                      {/* Step: All pairs */}
                       <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-text-dim bg-white/[0.06] w-6 h-6 rounded-full flex items-center justify-center">
-                          {i + 1}
-                        </span>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-lg font-display font-bold text-heading">{trade.pair}</h3>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                              trade.isBullish ? 'bg-green-500/15 text-green-400 border border-green-500/20' :
-                              trade.isBearish ? 'bg-red-500/15 text-red-400 border border-red-500/20' :
-                              'bg-white/[0.06] text-text-dim border border-white/[0.08]'
-                            }`}>
-                              {trade.direction}
-                            </span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                              trade.conviction === 'sterk' ? 'bg-white/[0.08] text-heading' :
-                              'bg-white/[0.04] text-text-dim'
-                            }`}>
-                              {trade.conviction}
-                            </span>
+                        <div className="w-full">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] text-text-dim">Alle geanalyseerde paren</span>
+                            <span className="text-xs font-mono font-bold text-heading">{totalPairs}</span>
                           </div>
-                          <p className="text-xs text-text-muted mt-0.5">{trade.action}</p>
+                          <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                            <div className="h-full rounded-full bg-white/[0.15]" style={{ width: '100%' }} />
+                          </div>
                         </div>
                       </div>
+
+                      <div className="flex items-center justify-center">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim/40"><polyline points="6 9 12 15 18 9" /></svg>
+                        <span className="text-[9px] text-text-dim/50 ml-1">Score &ge; 2.0 + richting</span>
+                      </div>
+
+                      {/* Step: Score filter */}
                       <div className="flex items-center gap-3">
-                        {(() => {
-                          const pairData = data.pairBiases.find(p => p.pair === trade.pair)
-                          return pairData?.confluence ? <ConfluenceMeter confluence={pairData.confluence} /> : null
-                        })()}
-                        <div className="text-right">
-                          <p className={`text-xl font-mono font-bold ${
-                            trade.score > 0 ? 'text-green-400' : trade.score < 0 ? 'text-red-400' : 'text-text-dim'
-                          }`}>{trade.score > 0 ? '+' : ''}{trade.score}</p>
-                          <p className="text-[9px] text-text-dim">totaal score</p>
+                        <div className="w-full">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] text-text-dim">Fundamentele divergentie (score &ge; 2.0)</span>
+                            <span className="text-xs font-mono font-bold text-amber-400">{scorePass.length}</span>
+                          </div>
+                          <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                            <div className="h-full rounded-full bg-amber-500/40" style={{ width: `${Math.max(5, (scorePass.length / totalPairs) * 100)}%` }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-center">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim/40"><polyline points="6 9 12 15 18 9" /></svg>
+                        <span className="text-[9px] text-text-dim/50 ml-1">+ IM bevestiging + regime + contrarian</span>
+                      </div>
+
+                      {/* Step: Final trades */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-full">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] text-text-muted font-semibold">Concrete trades (alle filters)</span>
+                            <span className="text-xs font-mono font-bold text-green-400">{finalCount}</span>
+                          </div>
+                          <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                            <div className="h-full rounded-full bg-green-500/50" style={{ width: `${Math.max(5, (finalCount / totalPairs) * 100)}%` }} />
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Score breakdown + warnings */}
-                    <div className="px-5 py-3 border-t border-white/[0.04]">
-                      {/* Score breakdown: base vs news */}
-                      {/* Call info bar */}
-                      <div className="flex flex-wrap items-center gap-3 mb-2 p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] text-text-dim uppercase tracking-wider">Call:</span>
-                          <span className="text-[10px] font-mono font-semibold text-accent-light/80">
-                            {data.generatedAt
-                              ? new Date(data.generatedAt).toLocaleString('nl-NL', {
-                                  day: 'numeric', month: 'short', year: 'numeric',
-                                  hour: '2-digit', minute: '2-digit',
-                                  timeZone: 'Europe/Amsterdam'
-                                }) + ' NL'
-                              : 'vandaag'
-                            }
-                          </span>
-                        </div>
-                        <span className="text-text-dim/20">|</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] text-text-dim uppercase tracking-wider">Entry:</span>
-                          <span className="text-[10px] font-mono text-text-muted">dagkoers vandaag</span>
-                        </div>
-                        <span className="text-text-dim/20">|</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] text-text-dim uppercase tracking-wider">Exit:</span>
-                          <span className="text-[10px] font-mono text-text-muted">dagkoers +1 handelsdag</span>
-                        </div>
-                        <span className="text-text-dim/20">|</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] text-text-dim uppercase tracking-wider">Methode:</span>
-                          <span className="text-[10px] font-mono text-purple-400/70">mean reversion</span>
-                        </div>
-                      </div>
+                    {/* Compact summary */}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">
+                        Score &ge; 3.0
+                      </span>
+                      <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">
+                        IM alignment: {imAlignment}%
+                      </span>
+                      <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">
+                        Regime: {data.regime}
+                      </span>
+                      <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">
+                        Contrarian timing
+                      </span>
+                    </div>
+                  </div>
 
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] text-text-dim uppercase tracking-wider">Basis:</span>
-                          <span className="text-xs font-mono font-bold text-text-muted">
-                            {trade.scoreWithoutNews > 0 ? '+' : ''}{trade.scoreWithoutNews}
-                          </span>
-                        </div>
-                        {trade.newsInfluence !== 0 && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] text-text-dim uppercase tracking-wider">Nieuws:</span>
-                            <span className={`text-xs font-mono font-bold ${trade.newsInfluence > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                              {trade.newsInfluence > 0 ? '+' : ''}{trade.newsInfluence}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* News influence badge */}
-                      {trade.newsInfluence !== 0 && (
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-light">
-                            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
-                          </svg>
-                          <span className={`text-[10px] font-medium ${trade.newsInfluence > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            Nieuws {trade.newsInfluence > 0 ? 'versterkt' : 'verzwakt'} deze trade met {Math.abs(trade.newsInfluence)} punt
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Event warning */}
-                      {trade.eventWarning && (
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                            <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                          </svg>
-                          <span className="text-[10px] text-amber-300">Let op: {trade.eventWarning}</span>
-                        </div>
-                      )}
-
-                      {/* Expandable: Waarom dit paar? */}
-                      <details className="mt-3 group">
-                        <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
+                  {/* Collapsible: Divergence Alerts */}
+                  {data.divergences && Object.keys(data.divergences).length > 0 && (
+                    <div className="px-5 sm:px-6 pb-3 border-t border-white/[0.04]">
+                      <details className="group">
+                        <summary className="flex items-center gap-2 py-2 text-[11px] text-amber-400/70 cursor-pointer hover:text-amber-400 transition-colors">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
                             <polyline points="9 18 15 12 9 6" />
                           </svg>
-                          Waarom dit paar?
+                          Divergentie alerts ({Object.keys(data.divergences).filter(k => data.divergences![k].hasDivergence).length})
                         </summary>
-                        <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                          <div className="space-y-2">
-                            {/* Full score breakdown */}
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
-                                <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">{trade.base} (base)</p>
-                                <p className={`text-sm font-mono font-bold ${(trade.baseRank?.score || 0) > 0 ? 'text-green-400' : (trade.baseRank?.score || 0) < 0 ? 'text-red-400' : 'text-text-dim'}`}>
-                                  {(trade.baseRank?.score || 0) > 0 ? '+' : ''}{(trade.baseRank?.score || 0).toFixed(1)}
-                                </p>
-                                <p className="text-[9px] text-text-dim mt-0.5">
-                                  Basis: {(trade.baseRank?.baseScore || 0) > 0 ? '+' : ''}{(trade.baseRank?.baseScore || 0).toFixed(1)}
-                                  {(trade.baseRank?.newsBonus || 0) !== 0 && ` | Nieuws: ${(trade.baseRank?.newsBonus || 0) > 0 ? '+' : ''}${(trade.baseRank?.newsBonus || 0).toFixed(1)}`}
-                                </p>
-                              </div>
-                              <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
-                                <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">{trade.quote} (quote)</p>
-                                <p className={`text-sm font-mono font-bold ${(trade.quoteRank?.score || 0) > 0 ? 'text-green-400' : (trade.quoteRank?.score || 0) < 0 ? 'text-red-400' : 'text-text-dim'}`}>
-                                  {(trade.quoteRank?.score || 0) > 0 ? '+' : ''}{(trade.quoteRank?.score || 0).toFixed(1)}
-                                </p>
-                                <p className="text-[9px] text-text-dim mt-0.5">
-                                  Basis: {(trade.quoteRank?.baseScore || 0) > 0 ? '+' : ''}{(trade.quoteRank?.baseScore || 0).toFixed(1)}
-                                  {(trade.quoteRank?.newsBonus || 0) !== 0 && ` | Nieuws: ${(trade.quoteRank?.newsBonus || 0) > 0 ? '+' : ''}${(trade.quoteRank?.newsBonus || 0).toFixed(1)}`}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* CB bias */}
-                            {(trade.baseBias || trade.quoteBias) && (
-                              <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
-                                <p className="text-[10px] text-accent-light font-semibold mb-1">CB Bias</p>
-                                <div className="space-y-0.5 text-[10px] text-text-dim">
-                                  {trade.baseBias && <p>{trade.base}: {trade.baseBias}</p>}
-                                  {trade.quoteBias && <p>{trade.quote}: {trade.quoteBias}</p>}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Rate differential */}
-                            {trade.rateDiff !== null && trade.rateDiff !== 0 && (
-                              <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
-                                <p className="text-[10px] text-accent-light font-semibold mb-1">Renteverschil</p>
-                                <p className="text-[10px] text-text-dim">
-                                  {trade.base} vs {trade.quote}: {trade.rateDiff > 0 ? '+' : ''}{trade.rateDiff}%.
-                                  {trade.rateDiff > 0
-                                    ? ` ${trade.base} biedt een hogere rente, wat carry-trade stromen richting ${trade.base} aantrekt.`
-                                    : ` ${trade.quote} biedt een hogere rente, wat carry-trade stromen richting ${trade.quote} aantrekt.`
-                                  }
-                                </p>
-                              </div>
-                            )}
-
-                            {/* News influence */}
-                            {trade.newsInfluence !== 0 && (
-                              <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
-                                <p className="text-[10px] text-accent-light font-semibold mb-1">Nieuws Invloed</p>
-                                <p className="text-[10px] text-text-dim">
-                                  Het recente nieuws {trade.newsInfluence > 0 ? 'versterkt' : 'verzwakt'} de fundamentele richting met {Math.abs(trade.newsInfluence)} punt.
-                                  {trade.newsInfluence > 0
-                                    ? ' Nieuwssentiment is in lijn met de CB-divergentie, wat de overtuiging verhoogt.'
-                                    : ' Nieuwssentiment gaat tegen de CB-divergentie in, wat de overtuiging verlaagt.'
-                                  }
-                                </p>
-                              </div>
-                            )}
-
-                            {/* Full explanation list */}
-                            {trade.explanation.length > 0 && (
-                              <div className="space-y-1">
-                                {trade.explanation.map((exp, j) => (
-                                  <div key={j} className="flex items-start gap-1.5 text-[11px] text-text-dim leading-relaxed">
-                                    <span className="text-accent-light mt-0.5 shrink-0">&gt;</span>
-                                    <span>{exp}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                        <div className="mt-1">
+                          <DivergenceAlert divergences={data.divergences} />
                         </div>
                       </details>
                     </div>
-                  </div>
-                ))}
+                  )}
 
-                {/* Watchlist Section */}
-                {watchlist.length > 0 && (
-                  <div className="mt-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] overflow-hidden">
-                    <div className="px-4 py-2.5 border-b border-white/[0.04] flex items-center gap-2">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-                      </svg>
-                      <span className="text-[10px] font-semibold text-text-dim uppercase tracking-wider">Watchlist</span>
-                      <span className="text-[9px] text-text-dim/50">paren met potentieel, maar nog niet sterk genoeg voor een call</span>
+                  {/* Collapsible: Watchlist */}
+                  {watchlist.length > 0 && (
+                    <div className="px-5 sm:px-6 pb-3 border-t border-white/[0.04]">
+                      <details className="group">
+                        <summary className="flex items-center gap-2 py-2 text-[11px] text-text-dim cursor-pointer hover:text-text-muted transition-colors">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                          Watchlist ({watchlist.length} paren, score 2.0-3.0)
+                        </summary>
+                        <div className="mt-1 divide-y divide-white/[0.03]">
+                          {watchlist.map(wp => {
+                            const wIsBullish = wp.direction.includes('bullish')
+                            const wIsBearish = wp.direction.includes('bearish')
+                            return (
+                              <div key={wp.pair} className="px-2 py-1.5 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-bold text-[11px] text-text-muted">{wp.pair}</span>
+                                  <span className={`text-[10px] ${wIsBullish ? 'text-green-400' : wIsBearish ? 'text-red-400' : 'text-text-dim'}`}>
+                                    {wIsBullish ? '\u25B2' : wIsBearish ? '\u25BC' : '\u2014'} {wp.direction}
+                                  </span>
+                                </div>
+                                <span className={`text-[10px] font-mono font-bold ${wp.score > 0 ? 'text-green-400/70' : wp.score < 0 ? 'text-red-400/70' : 'text-text-dim'}`}>
+                                  {wp.score > 0 ? '+' : ''}{wp.score}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </details>
                     </div>
-                    <div className="divide-y divide-white/[0.03]">
-                      {watchlist.map(wp => {
-                        const wIsBullish = wp.direction.includes('bullish')
-                        const wIsBearish = wp.direction.includes('bearish')
-                        return (
-                          <div key={wp.pair} className="px-4 py-2 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
-                            <div className="flex items-center gap-3">
-                              <span className="font-mono font-bold text-xs text-text-muted">{wp.pair}</span>
-                              <span className={`text-[10px] ${wIsBullish ? 'text-green-400' : wIsBearish ? 'text-red-400' : 'text-text-dim'}`}>
-                                {wIsBullish ? '\u25B2' : wIsBearish ? '\u25BC' : '\u2014'} {wp.direction}
-                              </span>
+                  )}
+
+                  {/* Collapsible: All pairs table */}
+                  <div className="px-5 sm:px-6 pb-3 border-t border-white/[0.04]">
+                    <details className="group">
+                      <summary className="flex items-center gap-2 py-2 text-[11px] text-text-dim cursor-pointer hover:text-text-muted transition-colors">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                        Alle {totalPairs} paren bekijken (gesorteerd op divergentie)
+                      </summary>
+                      <div className="mt-1 overflow-x-auto">
+                        <table className="w-full text-[10px]">
+                          <thead>
+                            <tr className="border-b border-white/[0.04]">
+                              <th className="px-2 py-1.5 text-left text-text-dim font-medium">Paar</th>
+                              <th className="px-2 py-1.5 text-left text-text-dim font-medium">Richting</th>
+                              <th className="px-2 py-1.5 text-center text-text-dim font-medium">Score</th>
+                              <th className="px-2 py-1.5 text-left text-text-dim font-medium">Overtuiging</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {data.pairBiases.map(pair => (
+                              <tr key={pair.pair} className="border-b border-white/[0.02] hover:bg-white/[0.02]">
+                                <td className="px-2 py-1.5 font-mono font-bold text-heading">{pair.pair}</td>
+                                <td className="px-2 py-1.5">
+                                  <span className={`text-[9px] font-bold ${
+                                    pair.direction.includes('bullish') ? 'text-green-400' :
+                                    pair.direction.includes('bearish') ? 'text-red-400' :
+                                    'text-text-dim'
+                                  }`}>{pair.direction}</span>
+                                </td>
+                                <td className="px-2 py-1.5 text-center font-mono font-bold">
+                                  <span className={pair.score > 0 ? 'text-green-400' : pair.score < 0 ? 'text-red-400' : 'text-text-dim'}>
+                                    {pair.score > 0 ? '+' : ''}{pair.score}
+                                  </span>
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <span className={`text-[9px] ${
+                                    pair.conviction === 'sterk' ? 'text-accent-light font-bold' :
+                                    pair.conviction === 'matig' ? 'text-text-muted' :
+                                    'text-text-dim'
+                                  }`}>{pair.conviction}</span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </details>
+                  </div>
+
+                  {/* Collapsible: How trade focus works */}
+                  <div className="px-5 sm:px-6 pb-4 border-t border-white/[0.04]">
+                    <details className="group">
+                      <summary className="flex items-center gap-2 py-2 text-[11px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                        Hoe werkt het filterproces?
+                      </summary>
+                      <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                        <div className="space-y-2 text-[10px] text-text-dim leading-relaxed">
+                          <p>Elk paar doorloopt 4 filters. Alleen paren die alle 4 passeren worden een concrete trade:</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
+                              <p className="text-accent-light font-semibold">1. Fundamenteel</p>
+                              <p className="text-[9px]">Score &ge; 3.0</p>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <span className={`text-xs font-mono font-bold ${wp.score > 0 ? 'text-green-400/70' : wp.score < 0 ? 'text-red-400/70' : 'text-text-dim'}`}>
-                                {wp.score > 0 ? '+' : ''}{wp.score}
-                              </span>
-                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
-                                wp.conviction === 'sterk' ? 'bg-white/[0.06] text-text-muted' :
-                                wp.conviction === 'matig' ? 'bg-white/[0.04] text-text-dim' :
-                                'bg-white/[0.02] text-text-dim/60'
-                              }`}>
-                                {wp.conviction}
-                              </span>
+                            <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
+                              <p className="text-accent-light font-semibold">2. Regime</p>
+                              <p className="text-[9px]">Past bij huidig regime</p>
+                            </div>
+                            <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
+                              <p className="text-accent-light font-semibold">3. Intermarket</p>
+                              <p className="text-[9px]">IM alignment &gt; 50%</p>
+                            </div>
+                            <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
+                              <p className="text-accent-light font-semibold">4. Contrarian</p>
+                              <p className="text-[9px]">Prijs tegen richting (5d)</p>
                             </div>
                           </div>
-                        )
-                      })}
-                    </div>
-                    <div className="px-4 py-2 bg-white/[0.01] border-t border-white/[0.04]">
-                      <p className="text-[9px] text-text-dim leading-relaxed">
-                        <strong className="text-text-dim/80">Wat doe je hiermee?</strong> Watchlist-paren hebben een score van 2.0-3.0. Er is een fundamentele bias, maar niet sterk genoeg voor een trade call.
-                        Hou ze in de gaten: als het nieuws of de intermarket signalen versterken, kunnen ze naar de Trade Focus promoveren. Ze zijn ook nuttig als bevestiging van het bredere regime.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="p-8 rounded-xl bg-bg-card border border-border text-center">
-                <p className="text-sm text-text-muted">Geen sterke divergenties gevonden vandaag. Wacht op duidelijkere fundamentele signalen.</p>
-              </div>
-            )}
-
-            {/* Expandable: How trade focus pairs are selected */}
-            <div className="mt-4">
-              <details className="mt-3 group">
-                <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                  Hoe worden de trade focus paren geselecteerd?
-                </summary>
-                <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                  <div className="space-y-3 text-[10px] text-text-dim leading-relaxed">
-                    <p>
-                      Een valutapaar zoals <strong className="text-text-muted">EUR/USD</strong> bestaat uit twee valuta&apos;s: de <strong className="text-accent-light">base</strong> (EUR, links) en de <strong className="text-accent-light">quote</strong> (USD, rechts). Als je EUR/USD koopt (LONG), koop je EUR en verkoop je USD.
-                    </p>
-
-                    {/* Visual example */}
-                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-                      <p className="text-[10px] font-semibold text-text-muted mb-2">Voorbeeld berekening:</p>
-                      <div className="flex items-center justify-center gap-2 text-xs mb-2">
-                        <div className="p-2 rounded bg-green-500/10 border border-green-500/15 text-center">
-                          <p className="text-[9px] text-text-dim">Base (EUR)</p>
-                          <p className="text-sm font-mono font-bold text-green-400">+3.0</p>
-                          <p className="text-[8px] text-text-dim">hawkish ECB</p>
-                        </div>
-                        <span className="text-lg text-text-dim font-mono">&minus;</span>
-                        <div className="p-2 rounded bg-red-500/10 border border-red-500/15 text-center">
-                          <p className="text-[9px] text-text-dim">Quote (USD)</p>
-                          <p className="text-sm font-mono font-bold text-red-400">&minus;1.0</p>
-                          <p className="text-[8px] text-text-dim">dovish Fed</p>
-                        </div>
-                        <span className="text-lg text-text-dim font-mono">=</span>
-                        <div className="p-2 rounded bg-accent/10 border border-accent/20 text-center">
-                          <p className="text-[9px] text-text-dim">Paar Score</p>
-                          <p className="text-sm font-mono font-bold text-accent-light">+4.0</p>
-                          <p className="text-[8px] text-green-400">bullish</p>
+                          <p>
+                            <strong className="text-text-muted">Mean Reversion:</strong> Het model koopt wanneer de prijs tijdelijk tegen de fundamentele richting ingaat. Holding: 1 handelsdag.
+                          </p>
                         </div>
                       </div>
-                      <p className="text-[9px] text-text-dim text-center">
-                        EUR is fundamenteel sterker dan USD &rarr; EUR/USD zou moeten stijgen &rarr; <strong className="text-green-400">LONG</strong>
-                      </p>
-                    </div>
-
-                    <p>
-                      <strong className="text-text-muted">Elke valuta krijgt een score</strong> op basis van: (1) het beleid van de centrale bank (hawkish = positief, dovish = negatief), (2) de huidige rente t.o.v. het target, en (3) recent nieuws sentiment (max &plusmn;2.0 bonus).
-                    </p>
-
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
-                        <p className="text-accent-light font-semibold text-[10px]">Sterk</p>
-                        <p className="text-[9px]">Score &ge; 3.5</p>
-                        <p className="text-[8px] text-text-dim">Getrackt (2d hold)</p>
-                      </div>
-                      <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
-                        <p className="text-text-muted font-semibold text-[10px]">Matig</p>
-                        <p className="text-[9px]">Score &ge; 3.0</p>
-                        <p className="text-[8px] text-text-dim">Getrackt (2d hold)</p>
-                      </div>
-                      <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
-                        <p className="text-text-dim font-semibold text-[10px]">Laag</p>
-                        <p className="text-[9px]">Score &lt; 3.0</p>
-                        <p className="text-[8px] text-text-dim">Te zwak signaal</p>
-                      </div>
-                    </div>
-
-                    {/* V2.2 Mean Reversion explanation */}
-                    <div className="p-3 rounded-lg bg-accent/5 border border-accent/10">
-                      <p className="text-[10px] font-semibold text-accent-light mb-2">Mean Reversion Strategie</p>
-                      <p className="text-[9px] text-text-dim leading-relaxed mb-2">
-                        Het model combineert fundamentele analyse met <strong className="text-text-muted">mean reversion timing</strong>.
-                        Een signaal wordt pas geactiveerd als de prijs de afgelopen 2 dagen <em>tegen</em> de fundamentele richting is bewogen.
-                      </p>
-                      <div className="flex items-center justify-center gap-2 text-xs my-2">
-                        <div className="p-2 rounded bg-green-500/10 border border-green-500/15 text-center">
-                          <p className="text-[9px] text-text-dim">Fundamenteel</p>
-                          <p className="text-xs font-bold text-green-400">Bullish</p>
-                        </div>
-                        <span className="text-lg text-text-dim font-mono">+</span>
-                        <div className="p-2 rounded bg-red-500/10 border border-red-500/15 text-center">
-                          <p className="text-[9px] text-text-dim">Prijs (2d)</p>
-                          <p className="text-xs font-bold text-red-400">&darr; Dalend</p>
-                        </div>
-                        <span className="text-lg text-text-dim font-mono">=</span>
-                        <div className="p-2 rounded bg-accent/10 border border-accent/20 text-center">
-                          <p className="text-[9px] text-text-dim">Actie</p>
-                          <p className="text-xs font-bold text-accent-light">LONG</p>
-                          <p className="text-[8px] text-green-400">koop de dip</p>
-                        </div>
-                      </div>
-                      <p className="text-[9px] text-text-dim leading-relaxed">
-                        <strong className="text-text-muted">Gedachtegang:</strong> Centrale bank beleid bepaalt de langetermijnrichting.
-                        Als de prijs tijdelijk tegen die richting ingaat, is dat een <em>reversal-kans</em>.
-                        Je koopt niet wanneer iedereen al koopt &mdash; je koopt wanneer de markt een dip maakt.
-                        Holding periode: <strong className="text-text-muted">2 dagen</strong> (optimaal voor dit model).
-                      </p>
-                    </div>
-
-                    <p>
-                      <strong className="text-text-muted">Filters:</strong> Intermarket signalen moeten het regime bevestigen. Als aandelen, VIX en goud het regime tegenspreken, wordt &quot;sterk&quot; verlaagd naar &quot;matig&quot;. Cross-pair contradicties worden ook gefilterd.
-                    </p>
+                    </details>
                   </div>
                 </div>
-              </details>
-            </div>
-
-            {/* Full Pair Bias Table */}
-            <div className="mt-4 rounded-2xl border border-border bg-bg-card overflow-hidden">
-              <details className="group">
-                <summary className="px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Alle Paren Bekijken (gesorteerd op divergentie)</p>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim transition-transform group-open:rotate-180">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </summary>
-                <div className="overflow-x-auto border-t border-white/[0.04]">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-white/[0.04]">
-                        <th className="px-4 py-2.5 text-left text-text-dim font-medium">Paar</th>
-                        <th className="px-4 py-2.5 text-left text-text-dim font-medium">Richting</th>
-                        <th className="px-4 py-2.5 text-center text-text-dim font-medium">Score</th>
-                        <th className="px-4 py-2.5 text-center text-text-dim font-medium hidden sm:table-cell">Nieuws</th>
-                        <th className="px-4 py-2.5 text-center text-text-dim font-medium hidden md:table-cell">Rente</th>
-                        <th className="px-4 py-2.5 text-left text-text-dim font-medium">Overtuiging</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.pairBiases.map(pair => (
-                        <tr key={pair.pair} className="border-b border-white/[0.02] hover:bg-white/[0.02] transition-colors">
-                          <td className="px-4 py-2.5 font-mono font-bold text-heading">{pair.pair}</td>
-                          <td className="px-4 py-2.5">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              pair.direction.includes('bullish') ? 'bg-green-500/10 text-green-400' :
-                              pair.direction.includes('bearish') ? 'bg-red-500/10 text-red-400' :
-                              'bg-white/[0.04] text-text-dim'
-                            }`}>
-                              {pair.direction}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5 text-center font-mono font-bold">
-                            <span className={pair.score > 0 ? 'text-green-400' : pair.score < 0 ? 'text-red-400' : 'text-text-dim'}>
-                              {pair.score > 0 ? '+' : ''}{pair.score}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5 text-center font-mono hidden sm:table-cell">
-                            {pair.newsInfluence !== 0 ? (
-                              <span className={pair.newsInfluence > 0 ? 'text-green-400' : 'text-red-400'}>
-                                {pair.newsInfluence > 0 ? '+' : ''}{pair.newsInfluence}
-                              </span>
-                            ) : (
-                              <span className="text-text-dim">0</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-2.5 text-center font-mono hidden md:table-cell">
-                            {pair.rateDiff !== null ? (
-                              <span className="text-text-muted">{pair.rateDiff > 0 ? '+' : ''}{pair.rateDiff}%</span>
-                            ) : (
-                              <span className="text-text-dim">-</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                              pair.conviction === 'sterk' ? 'bg-accent/10 text-accent-light font-bold' :
-                              pair.conviction === 'matig' ? 'bg-white/[0.06] text-text-muted' :
-                              pair.conviction === 'laag' ? 'bg-white/[0.03] text-text-dim' :
-                              'text-text-dim'
-                            }`}>
-                              {pair.conviction}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </details>
-            </div>
+              )
+            })()}
           </section>
 
-          {/* ── Bridge: Trade Focus → Alle Signalen ── */}
-          {data?.v3 && (
-            <div className="flex items-center gap-3 py-3 px-2">
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-px h-4 bg-purple-500/20" />
-                <div className="w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-purple-400">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-                <div className="w-px h-4 bg-purple-500/20" />
-              </div>
-              <p className="text-xs text-text-dim italic leading-relaxed">
-                <strong className="text-purple-400 not-italic">Trade Focus hierboven = jouw actie.</strong>{' '}
-                Dat zijn de sterkste signalen met een concrete call en tijdstip. Hieronder zie je het volledige overzicht van <em>alle</em> geanalyseerde paren, inclusief paren die niet door alle filters kwamen. Dit is ter referentie, niet als directe call.
-              </p>
-            </div>
-          )}
-
-          {/* ── Alle Signalen (volledig overzicht) Panel ── */}
-          {data?.v3 && (
-            <section className="mb-2">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-400 text-sm font-bold shrink-0">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-lg font-display font-semibold text-heading leading-tight">Alle Signalen <span className="text-sm font-normal text-text-dim">(volledig overzicht)</span></h2>
-                  <p className="text-[11px] text-text-dim">Achtergrondoverzicht van alle geanalyseerde paren. Alleen paren die aan alle criteria voldoen verschijnen hierboven in de Trade Focus met een concrete call.</p>
-                </div>
-              </div>
-
-              {/* Info note: no timestamps here */}
-              <div className="flex items-start gap-2 mb-4 px-4 py-2.5 rounded-xl bg-purple-500/[0.04] border border-purple-500/15">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-400 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                <p className="text-[10px] text-text-dim leading-relaxed">
-                  <strong className="text-purple-400">Geen tijdstip nodig:</strong> dit overzicht is geen actieve call. Het toont de achterliggende signaaldata ter context. Voor concrete trades met entry/exit timing, kijk naar <strong className="text-accent-light">Stap 4: Trade Focus</strong> hierboven.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/[0.04] to-transparent p-5">
-
-                {/* Sub-regime badge */}
-                <div className="flex flex-wrap items-center gap-3 mb-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                  <div>
-                    <span className="text-[9px] text-text-dim uppercase tracking-wider block mb-1">Sub-Regime</span>
-                    <span className={`text-sm font-mono font-bold ${
-                      data.v3.regime.sub === 'geopolitical_stress' || data.v3.regime.sub === 'growth_scare' ? 'text-red-400' :
-                      data.v3.regime.sub === 'risk_appetite' ? 'text-green-400' :
-                      data.v3.regime.sub === 'inflation_fear' || data.v3.regime.sub === 'rate_repricing' ? 'text-amber-400' :
-                      'text-text-muted'
-                    }`}>
-                      {data.v3.regime.sub.replace(/_/g, ' ')}
-                    </span>
-                  </div>
-                  <div className="ml-auto text-right">
-                    <span className="text-[9px] text-text-dim uppercase tracking-wider block mb-1">Confidence</span>
-                    <span className="text-sm font-mono font-bold text-heading">{data.v3.regime.confidence}%</span>
-                  </div>
-                  <div className="w-full mt-1">
-                    {data.v3.regime.drivers.map((d: string, i: number) => (
-                      <span key={i} className="text-[10px] text-text-dim mr-2">• {d}</span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* V3 Signal counts */}
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  <div className="text-center p-2 rounded-lg bg-green-500/[0.06] border border-green-500/10">
-                    <span className="text-lg font-mono font-bold text-green-400">{data.v3.metadata.signalCount.tradeable}</span>
-                    <span className="text-[9px] text-text-dim block">Tradeable</span>
-                  </div>
-                  <div className="text-center p-2 rounded-lg bg-amber-500/[0.06] border border-amber-500/10">
-                    <span className="text-lg font-mono font-bold text-amber-400">{data.v3.metadata.signalCount.conditional}</span>
-                    <span className="text-[9px] text-text-dim block">Conditional</span>
-                  </div>
-                  <div className="text-center p-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                    <span className="text-lg font-mono font-bold text-text-dim">{data.v3.metadata.signalCount.noTrade}</span>
-                    <span className="text-[9px] text-text-dim block">No Trade</span>
-                  </div>
-                </div>
-
-                {/* V3 Trade Focus signals */}
-                {data.v3.tradeFocus.length > 0 && (
-                  <div className="space-y-2">
-                    <span className="text-[10px] text-text-dim uppercase tracking-wider font-semibold">Top Signalen</span>
-                    {data.v3.tradeFocus.map((sig: { pair: string; signal: string; conviction: number; score: number; tradeability: string; reasons: string[] }) => {
-                      const isBull = sig.signal.includes('bullish')
-                      const isMR = sig.signal.includes('mean_reversion')
-                      const signalLabel = isBull
-                        ? (isMR ? 'Bullish MR' : 'Bullish Trend')
-                        : (isMR ? 'Bearish MR' : 'Bearish Trend')
-                      return (
-                        <div key={sig.pair} className={`flex items-center gap-3 p-3 rounded-xl border ${
-                          isBull ? 'bg-green-500/[0.03] border-green-500/10' : 'bg-red-500/[0.03] border-red-500/10'
-                        }`}>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-display font-bold text-heading">{sig.pair}</span>
-                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
-                                isBull ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
-                              }`}>{signalLabel}</span>
-                              {isMR && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-400">MR</span>}
-                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
-                                sig.tradeability === 'tradeable' ? 'bg-green-500/10 text-green-400' :
-                                sig.tradeability === 'conditional' ? 'bg-amber-500/10 text-amber-400' :
-                                'bg-red-500/10 text-red-400'
-                              }`}>{sig.tradeability}</span>
-                            </div>
-                            <p className="text-[10px] text-text-dim mt-0.5 truncate">{sig.reasons[0]}</p>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className={`text-base font-mono font-bold ${isBull ? 'text-green-400' : 'text-red-400'}`}>
-                              {sig.score > 0 ? '+' : ''}{sig.score}
-                            </span>
-                            <span className="text-[9px] text-text-dim block">{sig.conviction}% conv.</span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-
-                {/* V3 Pair signals overview */}
-                <details className="mt-3">
-                  <summary className="text-[10px] text-text-dim cursor-pointer hover:text-text-muted transition-colors">
-                    Alle {data.v3.pairSignals.length} paar signalen bekijken
-                  </summary>
-                  <div className="mt-2 max-h-64 overflow-y-auto">
-                    <table className="w-full text-[10px]">
-                      <thead>
-                        <tr className="text-text-dim border-b border-white/[0.04]">
-                          <th className="text-left py-1 px-1">Paar</th>
-                          <th className="text-left py-1 px-1">Signaal</th>
-                          <th className="text-right py-1 px-1">Score</th>
-                          <th className="text-right py-1 px-1">Conv.</th>
-                          <th className="text-right py-1 px-1">IM%</th>
-                          <th className="text-center py-1 px-1">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data.v3.pairSignals.map((sig: { pair: string; signal: string; score: number; conviction: number; intermarket: { alignment: number }; tradeability: { status: string } }) => (
-                          <tr key={sig.pair} className="border-b border-white/[0.02] hover:bg-white/[0.02]">
-                            <td className="py-1 px-1 font-mono text-heading">{sig.pair}</td>
-                            <td className={`py-1 px-1 ${
-                              sig.signal.includes('bullish') ? 'text-green-400' :
-                              sig.signal.includes('bearish') ? 'text-red-400' : 'text-text-dim'
-                            }`}>{sig.signal.replace(/_/g, ' ')}</td>
-                            <td className={`py-1 px-1 text-right font-mono ${sig.score > 0 ? 'text-green-400' : sig.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
-                              {sig.score > 0 ? '+' : ''}{sig.score}
-                            </td>
-                            <td className="py-1 px-1 text-right font-mono text-text-muted">{sig.conviction}%</td>
-                            <td className="py-1 px-1 text-right font-mono text-text-muted">{sig.intermarket.alignment}%</td>
-                            <td className="py-1 px-1 text-center">
-                              <span className={`inline-block w-2 h-2 rounded-full ${
-                                sig.tradeability.status === 'tradeable' ? 'bg-green-400' :
-                                sig.tradeability.status === 'conditional' ? 'bg-amber-400' : 'bg-red-400'
-                              }`} />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </details>
-              </div>
-            </section>
-          )}
-
-          {/* Bridge: Alle Signalen → Trackrecord */}
+          {/* Bridge: Filter → Concrete Trades */}
           <StepBridge
-            icon="down"
-            text="Hoe goed presteert dit model historisch? Bekijk het trackrecord hieronder."
+            icon="arrow"
+            text={
+              tradeFocus.length > 0
+                ? `${tradeFocus.length} ${tradeFocus.length === 1 ? 'paar heeft' : 'paren hebben'} alle filters gepasseerd. Hieronder de concrete trades met call en tijdstip.`
+                : 'Geen paren door alle filters. Wacht op duidelijkere setups.'
+            }
           />
 
           {/* ════════════════════════════════════════════════════════
-              STAP 5: TRACKRECORD
+              STAP 5: CONCRETE TRADES (FINAL OUTPUT)
               ════════════════════════════════════════════════════════ */}
           <section className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-accent/15 border border-accent/30 text-accent-light text-sm font-bold shrink-0">
-                5
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-display font-semibold text-heading leading-tight">Trackrecord</h2>
-                  {lastUpdate && <span className="text-[9px] text-text-dim/50 font-normal ml-auto">Laatste update: {lastUpdate}</span>}
-                </div>
-                <p className="text-[11px] text-text-dim">Historische prestaties van het model. Hoe accuraat zijn de trade focus suggesties?</p>
-              </div>
-            </div>
+            <StepHeader
+              step={5}
+              title="Concrete Trades"
+              subtitle="Alle kwalificerende signalen met call, tijdstip en entry/exit."
+            />
 
+            {tradeFocus.length > 0 ? (
+              <div className="space-y-3">
+                {tradeFocus.map((trade, i) => {
+                  const pairData = data.pairBiases.find(p => p.pair === trade.pair)
+                  const callTimestamp = data.generatedAt
+                    ? new Date(data.generatedAt).toLocaleString('nl-NL', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit',
+                        timeZone: 'Europe/Amsterdam'
+                      }) + ' NL'
+                    : 'vandaag'
+
+                  return (
+                    <div key={trade.pair} className={`rounded-2xl border overflow-hidden ${
+                      trade.isBullish ? 'border-green-500/25 bg-gradient-to-br from-green-500/[0.04] to-bg-card' :
+                      trade.isBearish ? 'border-red-500/25 bg-gradient-to-br from-red-500/[0.04] to-bg-card' :
+                      'border-border bg-bg-card'
+                    }`}>
+                      {/* Trade card header */}
+                      <div className="px-5 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold ${
+                            trade.isBullish ? 'bg-green-500/15 text-green-400' :
+                            trade.isBearish ? 'bg-red-500/15 text-red-400' :
+                            'bg-white/[0.06] text-text-dim'
+                          }`}>
+                            {trade.isBullish ? '\u25B2' : trade.isBearish ? '\u25BC' : '\u2014'}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-xl font-display font-bold text-heading">{trade.pair}</h3>
+                              <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                                trade.isBullish ? 'bg-green-500/15 text-green-400 border border-green-500/20' :
+                                trade.isBearish ? 'bg-red-500/15 text-red-400 border border-red-500/20' :
+                                'bg-white/[0.06] text-text-dim border border-white/[0.08]'
+                              }`}>
+                                {trade.isBullish ? 'LONG' : trade.isBearish ? 'SHORT' : 'NEUTRAAL'}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-text-muted mt-0.5">{trade.action}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {pairData?.confluence && <ConfluenceMeter confluence={pairData.confluence} />}
+                          <div className="text-right">
+                            <p className={`text-2xl font-mono font-bold ${
+                              trade.score > 0 ? 'text-green-400' : trade.score < 0 ? 'text-red-400' : 'text-text-dim'
+                            }`}>{trade.score > 0 ? '+' : ''}{trade.score}</p>
+                            <p className="text-[9px] text-text-dim">{trade.conviction} overtuiging</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Trade details grid */}
+                      <div className="px-5 py-3 border-t border-white/[0.06]">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                          <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <span className="text-[9px] text-text-dim uppercase tracking-wider block mb-0.5">Call</span>
+                            <span className="text-[11px] font-mono font-semibold text-accent-light">{callTimestamp}</span>
+                          </div>
+                          <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <span className="text-[9px] text-text-dim uppercase tracking-wider block mb-0.5">Entry</span>
+                            <span className="text-[11px] font-mono font-semibold text-text-muted">dagkoers vandaag</span>
+                          </div>
+                          <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <span className="text-[9px] text-text-dim uppercase tracking-wider block mb-0.5">Exit</span>
+                            <span className="text-[11px] font-mono font-semibold text-text-muted">dagkoers +1 handelsdag</span>
+                          </div>
+                          <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <span className="text-[9px] text-text-dim uppercase tracking-wider block mb-0.5">Methode</span>
+                            <span className="text-[11px] font-mono font-semibold text-purple-400/80">mean reversion</span>
+                          </div>
+                        </div>
+
+                        {/* Regime context */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[9px] text-text-dim uppercase tracking-wider">Regime:</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${rc.bg} ${rc.text} ${rc.border}`}>{data.regime}</span>
+                        </div>
+
+                        {/* Filter badges */}
+                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                          <span className="text-[9px] px-2 py-0.5 rounded bg-green-500/10 text-green-400/80 border border-green-500/15 font-medium">&#x2713; Fund ({trade.score > 0 ? '+' : ''}{trade.score})</span>
+                          <span className="text-[9px] px-2 py-0.5 rounded bg-green-500/10 text-green-400/80 border border-green-500/15 font-medium">&#x2713; Regime</span>
+                          <span className={`text-[9px] px-2 py-0.5 rounded font-medium ${
+                            (data.intermarketAlignment ?? 0) > 50
+                              ? 'bg-green-500/10 text-green-400/80 border border-green-500/15'
+                              : 'bg-amber-500/10 text-amber-400/80 border border-amber-500/15'
+                          }`}>&#x2713; Inter {data.intermarketAlignment ?? '?'}%</span>
+                          <span className="text-[9px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-400/80 border border-purple-500/15 font-medium">&#x2713; Contrarian</span>
+                        </div>
+
+                        {/* Score breakdown compact */}
+                        <div className="flex items-center gap-3 text-[10px]">
+                          <span className="text-text-dim">Basis: <span className="font-mono font-bold text-text-muted">{trade.scoreWithoutNews > 0 ? '+' : ''}{trade.scoreWithoutNews}</span></span>
+                          {trade.newsInfluence !== 0 && (
+                            <span className="text-text-dim">Nieuws: <span className={`font-mono font-bold ${trade.newsInfluence > 0 ? 'text-green-400' : 'text-red-400'}`}>{trade.newsInfluence > 0 ? '+' : ''}{trade.newsInfluence}</span></span>
+                          )}
+                        </div>
+
+                        {/* Event warning */}
+                        {trade.eventWarning && (
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400">
+                              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                              <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            <span className="text-[10px] text-amber-300">Let op: {trade.eventWarning}</span>
+                          </div>
+                        )}
+
+                        {/* Collapsible: Details */}
+                        <details className="mt-3 group">
+                          <summary className="flex items-center gap-2 text-[11px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
+                              <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                            Waarom dit paar?
+                          </summary>
+                          <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                                  <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">{trade.base} (base)</p>
+                                  <p className={`text-sm font-mono font-bold ${(trade.baseRank?.score || 0) > 0 ? 'text-green-400' : (trade.baseRank?.score || 0) < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                                    {(trade.baseRank?.score || 0) > 0 ? '+' : ''}{(trade.baseRank?.score || 0).toFixed(1)}
+                                  </p>
+                                  <p className="text-[9px] text-text-dim mt-0.5">
+                                    Basis: {(trade.baseRank?.baseScore || 0) > 0 ? '+' : ''}{(trade.baseRank?.baseScore || 0).toFixed(1)}
+                                    {(trade.baseRank?.newsBonus || 0) !== 0 && ` | Nieuws: ${(trade.baseRank?.newsBonus || 0) > 0 ? '+' : ''}${(trade.baseRank?.newsBonus || 0).toFixed(1)}`}
+                                  </p>
+                                </div>
+                                <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                                  <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">{trade.quote} (quote)</p>
+                                  <p className={`text-sm font-mono font-bold ${(trade.quoteRank?.score || 0) > 0 ? 'text-green-400' : (trade.quoteRank?.score || 0) < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                                    {(trade.quoteRank?.score || 0) > 0 ? '+' : ''}{(trade.quoteRank?.score || 0).toFixed(1)}
+                                  </p>
+                                  <p className="text-[9px] text-text-dim mt-0.5">
+                                    Basis: {(trade.quoteRank?.baseScore || 0) > 0 ? '+' : ''}{(trade.quoteRank?.baseScore || 0).toFixed(1)}
+                                    {(trade.quoteRank?.newsBonus || 0) !== 0 && ` | Nieuws: ${(trade.quoteRank?.newsBonus || 0) > 0 ? '+' : ''}${(trade.quoteRank?.newsBonus || 0).toFixed(1)}`}
+                                  </p>
+                                </div>
+                              </div>
+                              {(trade.baseBias || trade.quoteBias) && (
+                                <div className="text-[10px] text-text-dim">
+                                  {trade.baseBias && <span className="mr-3">{trade.base}: {trade.baseBias}</span>}
+                                  {trade.quoteBias && <span>{trade.quote}: {trade.quoteBias}</span>}
+                                </div>
+                              )}
+                              {trade.rateDiff !== null && trade.rateDiff !== 0 && (
+                                <p className="text-[10px] text-text-dim">Renteverschil: {trade.rateDiff > 0 ? '+' : ''}{trade.rateDiff}%</p>
+                              )}
+                              {trade.explanation.length > 0 && (
+                                <div className="space-y-0.5">
+                                  {trade.explanation.map((exp, j) => (
+                                    <p key={j} className="text-[10px] text-text-dim flex items-start gap-1">
+                                      <span className="text-accent-light shrink-0">&rsaquo;</span> {exp}
+                                    </p>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </details>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="p-6 rounded-2xl bg-bg-card border border-border text-center">
+                <p className="text-sm text-text-muted">Geen paren door alle filters vandaag.</p>
+                <p className="text-[10px] text-text-dim mt-1">Wacht op duidelijkere fundamentele divergenties of check de watchlist in Stap 4.</p>
+              </div>
+            )}
+
+            {/* V3 signals overview — collapsible */}
+            {data?.v3 && (
+              <div className="mt-4 rounded-2xl border border-border bg-bg-card overflow-hidden">
+                <details className="group">
+                  <summary className="px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
+                    <div className="flex items-center gap-2">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Alle Signalen (V3 Engine)</span>
+                      <span className="text-[9px] text-text-dim/50">
+                        {data.v3.metadata.signalCount.tradeable} tradeable / {data.v3.metadata.signalCount.conditional} conditional / {data.v3.metadata.signalCount.noTrade} no-trade
+                      </span>
+                    </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim transition-transform group-open:rotate-180">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </summary>
+                  <div className="px-5 pb-4 border-t border-white/[0.04]">
+                    <div className="mt-3 overflow-x-auto max-h-64 overflow-y-auto">
+                      <table className="w-full text-[10px]">
+                        <thead>
+                          <tr className="text-text-dim border-b border-white/[0.04]">
+                            <th className="text-left py-1 px-1">Paar</th>
+                            <th className="text-left py-1 px-1">Signaal</th>
+                            <th className="text-right py-1 px-1">Score</th>
+                            <th className="text-right py-1 px-1">Conv.</th>
+                            <th className="text-right py-1 px-1">IM%</th>
+                            <th className="text-center py-1 px-1">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.v3.pairSignals.map((sig: { pair: string; signal: string; score: number; conviction: number; intermarket: { alignment: number }; tradeability: { status: string } }) => (
+                            <tr key={sig.pair} className="border-b border-white/[0.02] hover:bg-white/[0.02]">
+                              <td className="py-1 px-1 font-mono text-heading">{sig.pair}</td>
+                              <td className={`py-1 px-1 ${
+                                sig.signal.includes('bullish') ? 'text-green-400' :
+                                sig.signal.includes('bearish') ? 'text-red-400' : 'text-text-dim'
+                              }`}>{sig.signal.replace(/_/g, ' ')}</td>
+                              <td className={`py-1 px-1 text-right font-mono ${sig.score > 0 ? 'text-green-400' : sig.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                                {sig.score > 0 ? '+' : ''}{sig.score}
+                              </td>
+                              <td className="py-1 px-1 text-right font-mono text-text-muted">{sig.conviction}%</td>
+                              <td className="py-1 px-1 text-right font-mono text-text-muted">{sig.intermarket.alignment}%</td>
+                              <td className="py-1 px-1 text-center">
+                                <span className={`inline-block w-2 h-2 rounded-full ${
+                                  sig.tradeability.status === 'tradeable' ? 'bg-green-400' :
+                                  sig.tradeability.status === 'conditional' ? 'bg-amber-400' : 'bg-red-400'
+                                }`} />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            )}
+          </section>
+
+          {/* ── Trackrecord (collapsible footer section) ── */}
+          <section className="mb-8">
             <div className="rounded-2xl border border-border bg-bg-card overflow-hidden">
               <button
                 onClick={() => setShowTrackRecord(!showTrackRecord)}
-                className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
+                className="w-full px-5 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-light">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-light">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                   </svg>
-                  <span className="text-sm font-semibold text-heading">Trackrecord Bekijken</span>
+                  <span className="text-sm font-semibold text-heading">Trackrecord</span>
                   {trackStats.total > 0 && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                       trackStats.winRate >= 60 ? 'bg-green-500/15 text-green-400' :
                       trackStats.winRate >= 40 ? 'bg-amber-500/15 text-amber-400' :
                       'bg-red-500/15 text-red-400'
                     }`}>
-                      {trackStats.winRate}% win rate
+                      {trackStats.winRate}% win rate ({trackStats.total} trades)
                     </span>
                   )}
                 </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-text-dim transition-transform ${showTrackRecord ? 'rotate-180' : ''}`}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-text-dim transition-transform ${showTrackRecord ? 'rotate-180' : ''}`}>
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </button>
 
               {showTrackRecord && (
                 <div className="px-5 pb-5 border-t border-white/[0.04]">
-                  {/* Tracking since + Stats Grid */}
                   {trackStats.startDate && (
                     <div className="mt-3 mb-2 flex items-center gap-2 text-[10px] text-text-dim">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -2189,199 +2025,82 @@ export default function BriefingV2Dashboard() {
                       { label: 'Pending', value: trackStats.pending, color: 'text-amber-400' },
                       { label: 'Win Rate', value: `${trackStats.winRate}%`, color: trackStats.winRate >= 55 ? 'text-green-400' : trackStats.winRate >= 45 ? 'text-amber-400' : 'text-red-400' },
                     ].map(stat => (
-                      <div key={stat.label} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+                      <div key={stat.label} className="p-2 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
                         <p className={`text-lg font-mono font-bold ${stat.color}`}>{stat.value}</p>
                         <p className="text-[9px] text-text-dim">{stat.label}</p>
                       </div>
                     ))}
                   </div>
 
-                  {/* News influence stats */}
                   {trackStats.newsInfluenced && trackStats.newsInfluenced.total > 0 && (
-                    <div className="mb-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-                      <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Nieuws Impact Analyse</p>
-                      <div className="flex items-center gap-4 text-xs">
-                        <span className="text-text-muted">
-                          Trades met nieuws invloed: <strong className="text-heading">{trackStats.newsInfluenced.total}</strong>
-                        </span>
-                        <span className={`font-mono font-bold ${trackStats.newsInfluenced.winRate >= 55 ? 'text-green-400' : trackStats.newsInfluenced.winRate >= 45 ? 'text-amber-400' : 'text-red-400'}`}>
-                          {trackStats.newsInfluenced.winRate}% win rate
-                        </span>
-                        <span className="text-text-dim text-[10px]">
-                          (vs {trackStats.winRate}% totaal)
-                        </span>
+                    <div className="mb-4 p-2 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                      <div className="flex items-center gap-4 text-[10px]">
+                        <span className="text-text-muted">Trades met nieuws invloed: <strong className="text-heading">{trackStats.newsInfluenced.total}</strong></span>
+                        <span className={`font-mono font-bold ${trackStats.newsInfluenced.winRate >= 55 ? 'text-green-400' : 'text-amber-400'}`}>{trackStats.newsInfluenced.winRate}% win rate</span>
                       </div>
                     </div>
                   )}
 
-                  {/* Backfill Button */}
                   <div className="mb-4 flex items-center gap-3">
-                    <button
-                      onClick={handleBackfill}
-                      disabled={backfilling}
-                      className="px-3 py-1.5 text-[11px] font-medium rounded-lg border border-accent/30 bg-accent/10 text-accent-light hover:bg-accent/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <button onClick={handleBackfill} disabled={backfilling} className="px-3 py-1.5 text-[11px] font-medium rounded-lg border border-accent/30 bg-accent/10 text-accent-light hover:bg-accent/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                       {backfilling ? (
                         <span className="flex items-center gap-1.5">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
-                            <polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                          </svg>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
                           Backfill bezig...
                         </span>
                       ) : (
                         <span className="flex items-center gap-1.5">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                          </svg>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
                           Backfill 365 dagen
                         </span>
                       )}
                     </button>
-                    {backfillMsg && (
-                      <span className="text-[10px] text-text-muted">{backfillMsg}</span>
-                    )}
+                    {backfillMsg && <span className="text-[10px] text-text-muted">{backfillMsg}</span>}
                   </div>
 
-                  {/* Historical Records — DETAILED with timestamps */}
                   {trackRecords.length > 0 && (
-                    <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
                       {trackRecords.slice(0, 40).map(record => {
                         const meta = record.metadata as TrackRecordMetadata | undefined
-                        // Format dates as readable Dutch dates
-                        const formatDate = (dateStr: string | undefined) => {
-                          if (!dateStr) return ''
-                          try {
-                            const d = new Date(dateStr)
-                            return d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', timeZone: 'Europe/Amsterdam' })
-                          } catch { return '' }
-                        }
-                        // Format call time with timestamp if available
                         const formatCallTime = () => {
                           if (meta?.callTime) {
                             try {
-                              const d = new Date(meta.callTime)
-                              return d.toLocaleString('nl-NL', {
-                                day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-                                timeZone: 'Europe/Amsterdam'
-                              }) + ' NL'
+                              return new Date(meta.callTime).toLocaleString('nl-NL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' }) + ' NL'
                             } catch { /* fall through */ }
                           }
-                          if (record.date) {
-                            try {
-                              const d = new Date(record.date + 'T12:00:00Z')
-                              return d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', timeZone: 'Europe/Amsterdam' })
-                            } catch { return '' }
-                          }
-                          return ''
+                          return record.date || ''
                         }
-                        const signalDate = formatCallTime()
-                        const exitDate = meta?.exitTime ? formatDate(meta.exitTime) : ''
-                        // NY session close = dagkoers tijdstip (~23:00 NL zomertijd, ~22:00 wintertijd)
-                        const formatDagkoersTijd = (dateStr: string | undefined) => {
-                          if (!dateStr) return ''
-                          try {
-                            // Dagkoers = NY close. Set to 22:00 UTC (= ~23:00 CET / 00:00 CEST)
-                            const d = new Date(dateStr.split('T')[0] + 'T22:00:00Z')
-                            return d.toLocaleString('nl-NL', {
-                              day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-                              timeZone: 'Europe/Amsterdam'
-                            }) + ' NL'
-                          } catch { return '' }
-                        }
-                        const entryTimestamp = meta?.entryTime ? formatDagkoersTijd(meta.entryTime) : formatDagkoersTijd(record.date + 'T00:00:00Z')
-                        const exitTimestamp = meta?.exitTime ? formatDagkoersTijd(meta.exitTime) : ''
                         return (
-                          <div key={record.id} className="rounded-xl bg-white/[0.02] border border-white/[0.04] overflow-hidden">
-                            {/* Header row */}
-                            <div className={`px-3 py-2 flex items-center justify-between ${
-                              record.direction.includes('bullish') ? 'bg-gradient-to-r from-green-500/[0.04] to-transparent' :
-                              'bg-gradient-to-r from-red-500/[0.04] to-transparent'
+                          <div key={record.id} className="rounded-lg bg-white/[0.02] border border-white/[0.04] overflow-hidden">
+                            <div className={`px-3 py-1.5 flex items-center justify-between ${
+                              record.direction.includes('bullish') ? 'bg-gradient-to-r from-green-500/[0.04] to-transparent' : 'bg-gradient-to-r from-red-500/[0.04] to-transparent'
                             }`}>
                               <div className="flex items-center gap-2">
                                 <span className="text-text-dim font-mono text-[10px]">{record.date}</span>
-                                <span className="font-semibold text-heading font-mono text-xs">{record.pair}</span>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                                  record.direction.includes('bullish')
-                                    ? 'bg-green-500/15 text-green-400 border border-green-500/20'
-                                    : 'bg-red-500/15 text-red-400 border border-red-500/20'
-                                }`}>
-                                  {record.direction.includes('bullish') ? '\u25B2 BULLISH' : '\u25BC BEARISH'}
-                                </span>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                                  record.conviction === 'sterk'
-                                    ? 'bg-white/[0.08] text-heading'
-                                    : 'bg-white/[0.04] text-text-dim'
-                                }`}>
-                                  {record.conviction || 'matig'}
-                                </span>
+                                <span className="font-semibold text-heading font-mono text-[11px]">{record.pair}</span>
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                                  record.direction.includes('bullish') ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+                                }`}>{record.direction.includes('bullish') ? '\u25B2' : '\u25BC'}</span>
                               </div>
-                              <div className="flex items-center gap-2.5">
-                                <span className={`text-sm font-mono font-bold ${
-                                  record.score > 0 ? 'text-green-400' : record.score < 0 ? 'text-red-400' : 'text-text-dim'
-                                }`}>{record.score > 0 ? '+' : ''}{record.score}</span>
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  record.result === 'correct' ? 'bg-green-500/15 text-green-400 border border-green-500/20' :
-                                  record.result === 'incorrect' ? 'bg-red-500/15 text-red-400 border border-red-500/20' :
-                                  'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                }`}>
-                                  {record.result === 'correct' ? '\u2713 Correct' : record.result === 'incorrect' ? '\u2717 Incorrect' : '\u23F3 Pending'}
-                                </span>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[11px] font-mono font-bold ${record.score > 0 ? 'text-green-400' : 'text-red-400'}`}>{record.score > 0 ? '+' : ''}{record.score}</span>
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                                  record.result === 'correct' ? 'bg-green-500/15 text-green-400' : record.result === 'incorrect' ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/10 text-amber-400'
+                                }`}>{record.result === 'correct' ? '\u2713' : record.result === 'incorrect' ? '\u2717' : '\u23F3'}</span>
                               </div>
                             </div>
-                            {/* Detail row: entry, exit, pips, timestamps */}
-                            <div className="px-3 py-2 border-t border-white/[0.03]">
-                              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[10px]">
-                                <div>
-                                  <span className="text-text-dim/60 block">Call (datum + tijd)</span>
-                                  <span className="font-mono text-accent-light/80 font-semibold">
-                                    {signalDate || record.date}
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-text-dim/60 block">Entry (dagkoers)</span>
-                                  <span className="font-mono text-text-muted font-semibold">
-                                    {record.entry_price !== null ? record.entry_price : '—'}
-                                  </span>
-                                  {entryTimestamp && <span className="text-[8px] text-text-dim/40 block mt-0.5">{entryTimestamp}</span>}
-                                </div>
-                                <div>
-                                  <span className="text-text-dim/60 block">Exit (dagkoers {exitDate || '+1d'})</span>
-                                  <span className="font-mono text-text-muted font-semibold">
-                                    {record.exit_price !== null ? record.exit_price : '—'}
-                                  </span>
-                                  {exitTimestamp && <span className="text-[8px] text-text-dim/40 block mt-0.5">{exitTimestamp}</span>}
-                                </div>
-                                <div>
-                                  <span className="text-text-dim/60 block">Pips</span>
-                                  {record.pips_moved !== null ? (
-                                    <span className={`font-mono font-semibold ${record.pips_moved > 0 ? 'text-green-400' : record.pips_moved < 0 ? 'text-red-400' : 'text-text-dim'}`}>
-                                      {record.pips_moved > 0 ? '+' : ''}{record.pips_moved}
-                                    </span>
-                                  ) : <span className="text-text-dim">—</span>}
-                                </div>
-                                <div>
-                                  <span className="text-text-dim/60 block">Regime</span>
-                                  <span className="text-text-dim">{record.regime || '—'}</span>
-                                </div>
-                              </div>
-                              {/* Filter vinkjes + metadata */}
-                              <div className="mt-1.5 flex items-center gap-2 flex-wrap text-[9px]">
-                                <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-400/70 border border-green-500/10">&#x2713; Fund</span>
-                                <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-400/70 border border-green-500/10">&#x2713; Regime</span>
-                                {meta?.imAlignment && meta.imAlignment > 50 ? (
-                                  <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-400/70 border border-green-500/10">&#x2713; Inter {meta.imAlignment}%</span>
-                                ) : (
-                                  <span className="px-1.5 py-0.5 rounded bg-white/[0.04] text-text-dim/50 border border-white/[0.06]">Inter</span>
-                                )}
-                                {meta?.meanReversion && (
-                                  <span className="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400/70 border border-purple-500/10">&#x2713; Contrarian</span>
-                                )}
-                                {meta?.holdingPeriod && (
-                                  <span className="px-1.5 py-0.5 rounded bg-white/[0.04] text-text-dim/60 border border-white/[0.06]">Hold: {meta.holdingPeriod}d</span>
-                                )}
-                                {meta?.newsSimulated && (
-                                  <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400/60 border border-amber-500/10">backfill</span>
-                                )}
+                            <div className="px-3 py-1.5 border-t border-white/[0.03] flex flex-wrap items-center gap-3 text-[9px] text-text-dim">
+                              <span>Call: <span className="font-mono text-accent-light/70">{formatCallTime()}</span></span>
+                              <span>Entry: <span className="font-mono text-text-muted">{record.entry_price ?? '—'}</span></span>
+                              <span>Exit: <span className="font-mono text-text-muted">{record.exit_price ?? '—'}</span></span>
+                              {record.pips_moved !== null && (
+                                <span>Pips: <span className={`font-mono font-bold ${record.pips_moved > 0 ? 'text-green-400' : 'text-red-400'}`}>{record.pips_moved > 0 ? '+' : ''}{record.pips_moved}</span></span>
+                              )}
+                              <div className="flex items-center gap-1 ml-auto">
+                                <span className="px-1 py-0.5 rounded bg-green-500/10 text-green-400/60">&#x2713;F</span>
+                                <span className="px-1 py-0.5 rounded bg-green-500/10 text-green-400/60">&#x2713;R</span>
+                                {meta?.imAlignment && meta.imAlignment > 50 && <span className="px-1 py-0.5 rounded bg-green-500/10 text-green-400/60">&#x2713;I</span>}
+                                {meta?.meanReversion && <span className="px-1 py-0.5 rounded bg-purple-500/10 text-purple-400/60">&#x2713;C</span>}
                               </div>
                             </div>
                           </div>
@@ -2391,46 +2110,8 @@ export default function BriefingV2Dashboard() {
                   )}
 
                   {trackRecords.length === 0 && (
-                    <p className="text-xs text-text-dim text-center py-4">Nog geen trackrecord data beschikbaar. Gebruik de backfill knop of wacht tot data automatisch dagelijks wordt opgeslagen.</p>
+                    <p className="text-xs text-text-dim text-center py-4">Nog geen trackrecord data. Gebruik backfill of wacht tot data automatisch wordt opgeslagen.</p>
                   )}
-
-                  {/* Expandable: How trackrecord is calculated */}
-                  <details className="mt-3 group">
-                    <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
-                      Hoe wordt het trackrecord berekend?
-                    </summary>
-                    <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                      <div className="space-y-2 text-[10px] text-text-dim leading-relaxed">
-                        <p>
-                          Het trackrecord meet hoe nauwkeurig het model is: fundamentele richting + contrarian timing + intermarket bevestiging. Holding periode: 1 handelsdag.
-                        </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-accent-light font-semibold mb-1">Entry en exit</p>
-                            <p>Entry = dagkoers (NY session close) op de signaaldag. Exit = dagkoers <strong className="text-text-muted">1 handelsdag later</strong>. Beide tijdstippen staan bij elke trade.</p>
-                          </div>
-                          <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-accent-light font-semibold mb-1">4 filters per trade</p>
-                            <p>Elke trade moet aan 4 voorwaarden voldoen: (1) fundamenteel scoreverschil &ge;2.0, (2) marktregime bepaald, (3) intermarket bevestiging &gt;50%, (4) contrarian prijsactie (5 dagen).</p>
-                          </div>
-                          <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-accent-light font-semibold mb-1">Waarom contrarian?</p>
-                            <p>CB beleid geeft de richting. Als de prijs tijdelijk daartegen ingaat, is dat een reversal kans. Optimalisatie over 1.260 configuraties bevestigde: <strong className="text-text-muted">56% winrate, PF 1.42</strong>.</p>
-                          </div>
-                          <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-accent-light font-semibold mb-1">10 major paren</p>
-                            <p>EUR/USD, GBP/USD, USD/JPY, AUD/USD, NZD/USD, USD/CAD, USD/CHF, EUR/GBP, EUR/JPY, GBP/JPY. Gekozen op liquiditeit en voorspelbaarheid.</p>
-                          </div>
-                        </div>
-                        <p>
-                          Een trade is &quot;correct&quot; als de prijs in de verwachte richting bewoog. De vinkjes bij elke trade tonen welke filters zijn voldaan.
-                        </p>
-                      </div>
-                    </div>
-                  </details>
                 </div>
               )}
             </div>
