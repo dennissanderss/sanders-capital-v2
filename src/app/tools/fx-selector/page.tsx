@@ -239,7 +239,7 @@ export default function DailyBriefingIntroPage() {
         <FadeIn>
           <div className="flex items-center gap-2 text-text-muted text-sm py-1 pl-11">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg>
-            <span>Scores + intermarket + contrarian filter bepalen de sterkste trades</span>
+            <span>Nu hebben we regime + scores + nieuws + intermarket. Stap 4 combineert dit alles in een filter.</span>
           </div>
         </FadeIn>
 
@@ -247,7 +247,7 @@ export default function DailyBriefingIntroPage() {
           <StepCard
             step={4}
             title="Trade Focus"
-            oneLiner="10 major paren door een funnel: scoreverschil, intermarket alignment en contrarian prijsactie."
+            oneLiner="Alle informatie uit stap 1 t/m 3 wordt nu gecombineerd. De valutascore (CB beleid x2 + renteverschil x1.5 + nieuws bonus) bepaalt de richting. Alleen paren met score ≥2.0, intermarket alignment >50% en een 5-daagse prijsbeweging tegen de richting in (contrarian) komen er doorheen."
             color="gold"
             problem="Je opent TradingView en zoekt willekeurig door paren zonder te weten waar je moet focussen."
             solution="Een compact filterproces selecteert welke paren alle criteria overleven."
@@ -371,13 +371,72 @@ export default function DailyBriefingIntroPage() {
                       Kortere periodes gaven te veel ruis, langere periodes misten de timing.
                     </p>
                   </div>
-                  <p>
-                    Optimalisatie over 1.260 configuraties toonde aan dat contrarian met 5-daagse lookback,
-                    1-dag hold en intermarket bevestiging het sterkst presteert. Momentum scoorde consistent het slechtst.
-                  </p>
+
+                  {/* Optimizer vergelijkingstabel */}
+                  <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
+                    <p className="text-xs font-semibold text-heading mb-2">Wat ging goed en wat niet? Optimizer resultaten</p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[11px]">
+                        <thead>
+                          <tr className="text-text-dim border-b border-white/[0.06]">
+                            <th className="text-left py-1.5 pr-3">Strategie</th>
+                            <th className="text-right py-1.5 px-2">Win Rate</th>
+                            <th className="text-right py-1.5 px-2">PF</th>
+                            <th className="text-right py-1.5 px-2">Pips</th>
+                            <th className="text-right py-1.5 pl-2">Resultaat</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-text-muted">
+                          <tr className="border-b border-white/[0.04]">
+                            <td className="py-1.5 pr-3">Momentum (koop bij stijging)</td>
+                            <td className="text-right py-1.5 px-2 text-red-400">43%</td>
+                            <td className="text-right py-1.5 px-2 text-red-400">0.89</td>
+                            <td className="text-right py-1.5 px-2 text-red-400">-812</td>
+                            <td className="text-right py-1.5 pl-2 text-red-400">Verlies</td>
+                          </tr>
+                          <tr className="border-b border-white/[0.04]">
+                            <td className="py-1.5 pr-3">Contrarian 2d lookback</td>
+                            <td className="text-right py-1.5 px-2 text-text-dim">48%</td>
+                            <td className="text-right py-1.5 px-2 text-text-dim">1.02</td>
+                            <td className="text-right py-1.5 px-2 text-text-dim">+189</td>
+                            <td className="text-right py-1.5 pl-2 text-text-dim">Break-even</td>
+                          </tr>
+                          <tr className="border-b border-white/[0.04]">
+                            <td className="py-1.5 pr-3">Contrarian 3d lookback</td>
+                            <td className="text-right py-1.5 px-2 text-amber-400">52%</td>
+                            <td className="text-right py-1.5 px-2 text-amber-400">1.18</td>
+                            <td className="text-right py-1.5 px-2 text-amber-400">+1.105</td>
+                            <td className="text-right py-1.5 pl-2 text-amber-400">Redelijk</td>
+                          </tr>
+                          <tr className="bg-green-500/[0.06] rounded">
+                            <td className="py-1.5 pr-3 font-semibold text-green-400">Contrarian 5d + IM ✓</td>
+                            <td className="text-right py-1.5 px-2 font-bold text-green-400">56%</td>
+                            <td className="text-right py-1.5 px-2 font-bold text-green-400">1.42</td>
+                            <td className="text-right py-1.5 px-2 font-bold text-green-400">+2.423</td>
+                            <td className="text-right py-1.5 pl-2 font-bold text-green-400">Beste</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="text-[10px] text-text-dim mt-2">
+                      IM = Intermarket bevestiging. De combinatie van 5-daagse contrarian + intermarket filter was veruit het sterkst uit 1.260 geteste configuraties.
+                    </p>
+                  </div>
+
                   <p>
                     Holding periode: 1 handelsdag. Entry op dagkoers signaaldag, exit dagkoers 1 handelsdag later.
                   </p>
+
+                  {/* Trackrecord disclaimer */}
+                  <div className="rounded-lg bg-accent/[0.04] border border-accent/15 p-3">
+                    <p className="text-xs font-semibold text-heading mb-1">Het trackrecord blijft altijd actueel</p>
+                    <p className="text-[11px] text-text-muted leading-relaxed">
+                      Het trackrecord wordt elke handelsdag automatisch bijgewerkt om 23:00 uur (NL tijd).
+                      Nieuwe signalen worden gegenereerd en openstaande trades worden na 1 handelsdag afgerekend op basis van de slotkoers.
+                      De winrate en statistieken zijn dus geen momentopname maar een lopend resultaat dat meebeweegt met de markt.
+                      De 56% winrate is het huidige gemiddelde. Dit kan stijgen of dalen naarmate er meer data binnenkomt.
+                    </p>
+                  </div>
                 </div>
               </Collapsible>
             </div>

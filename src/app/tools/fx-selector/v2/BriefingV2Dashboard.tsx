@@ -678,9 +678,7 @@ export default function BriefingV2Dashboard() {
               title="Macro Regime"
               subtitle="Wat is het huidige marktklimaat? Gebaseerd op centraal bank beleid."
             />
-            <div className="mb-3 ml-11">
-              <InlineEducation text="Het marktregime bepaalt of grote beleggers risico zoeken (risk-on) of vermijden (risk-off). Dit is de basis voor alle verdere analyse. De zekerheid geeft aan hoe eenduidig het beeld is: hoog = duidelijke richting, laag = tegenstrijdige signalen." />
-            </div>
+            <div className="mb-3 ml-11" />
 
             <div className={`rounded-2xl border ${rc.border} ${rc.bg} overflow-hidden shadow-lg ${rc.glow}`}>
               {/* Regime header */}
@@ -819,7 +817,6 @@ export default function BriefingV2Dashboard() {
                   <div className="flex items-center gap-2 mb-2">
                     <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider">Valuta Sterkte: van sterk naar zwak</p>
                     <span className="text-[8px] text-text-dim/50">(klik voor detail)</span>
-                    <InlineEducation text="Rangorde van sterk naar zwak op basis van centraal bank beleid en renteverschillen. Hoe hoger de score, hoe sterker de fundamentele positie van die valuta. Een positieve score wijst op hawkish beleid (hogere rente), negatief op dovish beleid (lagere rente)." />
                   </div>
                   <div className="mb-3">
                     <ScoreLegend />
@@ -1042,9 +1039,7 @@ export default function BriefingV2Dashboard() {
               title="Nieuws Sentiment"
               subtitle="Wat vertelt recent nieuws ons over elke valuta?"
             />
-            <div className="mb-3 ml-11">
-              <InlineEducation text="Recente nieuwsberichten worden geanalyseerd om te bepalen of het sentiment per valuta positief of negatief is. Dit be\u00EFnvloedt de score van elke valuta. Het nieuws-effect is begrensd (max \u00B12.0 punt) zodat fundamentele analyse altijd de basis blijft." />
-            </div>
+            <div className="mb-3 ml-11" />
 
             <div className="rounded-2xl border border-border bg-bg-card overflow-hidden">
               {/* Sentiment Grid */}
@@ -1320,9 +1315,7 @@ export default function BriefingV2Dashboard() {
               title="Intermarket Signalen"
               subtitle="Bevestigen aandelen, yields, VIX en goud het regime?"
             />
-            <div className="mb-3 ml-11">
-              <InlineEducation text="Intermarket indicatoren (goud, VIX, S&P 500, obligaties) worden gecheckt of ze het regime bevestigen. Hoe hoger het alignment percentage, hoe sterker het signaal. <30% = zwak (tegenstrijdige markten), 30-60% = gemiddeld, >60% = sterk (markten bewegen in dezelfde richting)." />
-            </div>
+            <div className="mb-3 ml-11" />
 
             <div className="rounded-2xl border border-border bg-bg-card overflow-hidden">
               <div className="px-5 sm:px-6 py-4">
@@ -1579,9 +1572,7 @@ export default function BriefingV2Dashboard() {
               title="Trade Focus"
               subtitle="Filterproces: welke paren overleven alle criteria?"
             />
-            <div className="mb-3 ml-11">
-              <InlineEducation text={"Van 10 paren worden alleen de sterkste geselecteerd. Eerst wordt gekeken naar de fundamentele score (moet \u22652.0 zijn), dan intermarket bevestiging (>50%), en tenslotte of de prijs tegen de fundamentele richting beweegt (contrarian filter). Alleen paren die alle filters passeren worden een concrete trade."} />
-            </div>
+            <div className="mb-3 ml-11" />
 
             {(() => {
               const totalPairs = data.pairBiases.length
@@ -1832,9 +1823,7 @@ export default function BriefingV2Dashboard() {
               title="Concrete Trades"
               subtitle="Alle kwalificerende signalen met call, tijdstip en entry/exit."
             />
-            <div className="mb-3 ml-11">
-              <InlineEducation text="Dit zijn de uiteindelijke trades die door alle filters zijn gekomen. Elk signaal bevat een richting (long/short), instapmoment en verwacht uitstapmoment na 1 handelsdag. De score geeft de sterkte aan: hoe hoger, hoe sterker de fundamentele onderbouwing." />
-            </div>
+            <div className="mb-3 ml-11" />
 
             {tradeFocus.length > 0 ? (
               <div className="space-y-3">
