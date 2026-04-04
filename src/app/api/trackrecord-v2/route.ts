@@ -1,8 +1,8 @@
-// ─── V2 Track Record API — Optimizer Proven Formula ────────
-// Live daily signal generation using the same formula as backfill:
+// ─── V2 Track Record API — Unified System ─────────────────
+// Live daily signal generation — same criteria as briefing advice:
 //   - Model B scoring: CB_bias × 2 + rate_gap × 1.5 + news_bonus
 //   - Contrarian + Intermarket confirmation (IM alignment > 50%)
-//   - 10 major pairs only, score threshold ≥ 2.0
+//   - 21 pairs, score threshold ≥ 2.0
 //   - 5-day lookback for contrarian detection
 //   - Hold: 1 trading day
 //
@@ -29,6 +29,17 @@ const PAIR_SYMBOLS: Record<string, string> = {
   'EUR/GBP': 'EURGBP=X',
   'EUR/JPY': 'EURJPY=X',
   'GBP/JPY': 'GBPJPY=X',
+  'AUD/JPY': 'AUDJPY=X',
+  'NZD/JPY': 'NZDJPY=X',
+  'CAD/JPY': 'CADJPY=X',
+  'EUR/AUD': 'EURAUD=X',
+  'GBP/AUD': 'GBPAUD=X',
+  'AUD/NZD': 'AUDNZD=X',
+  'EUR/CHF': 'EURCHF=X',
+  'GBP/CHF': 'GBPCHF=X',
+  'EUR/CAD': 'EURCAD=X',
+  'GBP/NZD': 'GBPNZD=X',
+  'AUD/CAD': 'AUDCAD=X',
 }
 
 const INTERMARKET_SYMBOLS: Record<string, string> = {

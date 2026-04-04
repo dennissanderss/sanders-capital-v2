@@ -1,12 +1,8 @@
-// ─── Track Record Backfill — Optimizer Proven Formula ────────
-// Exact formula that achieved 58.9% winrate, PF 1.33 over 214 trades:
-//   - Model B scoring: CB_bias × 2 + rate_gap × 1.5 + news_bonus
-//   - Contrarian + Intermarket confirmation (IM alignment > 50%)
-//   - 10 major pairs only
-//   - 5-day lookback for contrarian detection
-//   - Score threshold: ≥ 2.0 pair difference
-//   - Hold: 1 trading day
-//   - Historical CB rate snapshots for period-correct rates
+// ─── Track Record Backfill — Unified System ─────────────────
+// Model B scoring: CB_bias × 2 + rate_gap × 1.5 + news_bonus
+// Contrarian + Intermarket confirmation (IM alignment > 50%)
+// 21 pairs, score threshold ≥ 2.0, 5-day lookback, 1-day hold
+// Historical CB rate snapshots for period-correct rates
 //
 // DELETE: Clears all v2 backfill records
 // POST:   Backfills with optimizer formula
@@ -20,7 +16,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// 10 major pairs only (optimizer proven)
+// All 21 pairs — unified with briefing system
 const PAIR_SYMBOLS: Record<string, string> = {
   'EUR/USD': 'EURUSD=X',
   'GBP/USD': 'GBPUSD=X',
@@ -32,6 +28,17 @@ const PAIR_SYMBOLS: Record<string, string> = {
   'EUR/GBP': 'EURGBP=X',
   'EUR/JPY': 'EURJPY=X',
   'GBP/JPY': 'GBPJPY=X',
+  'AUD/JPY': 'AUDJPY=X',
+  'NZD/JPY': 'NZDJPY=X',
+  'CAD/JPY': 'CADJPY=X',
+  'EUR/AUD': 'EURAUD=X',
+  'GBP/AUD': 'GBPAUD=X',
+  'AUD/NZD': 'AUDNZD=X',
+  'EUR/CHF': 'EURCHF=X',
+  'GBP/CHF': 'GBPCHF=X',
+  'EUR/CAD': 'EURCAD=X',
+  'GBP/NZD': 'GBPNZD=X',
+  'AUD/CAD': 'AUDCAD=X',
 }
 
 const INTERMARKET_SYMBOLS: Record<string, string> = {

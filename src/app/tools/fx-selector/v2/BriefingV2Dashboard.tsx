@@ -260,15 +260,48 @@ function buildTradeFocusItem(pair: PairBias, events: TodayEvent[], ranking: Curr
   }
 }
 
-function getTradeFocus(pairs: PairBias[], events: TodayEvent[], ranking: CurrencyRank[]) {
-  // Primary: score >= 3.0, sterk or matig conviction
+function getTradeFocus(
+  pairs: PairBias[],
+  events: TodayEvent[],
+  ranking: CurrencyRank[],
+  v3Signals?: { pair: string; signal: string; conviction: number; score: number; tradeability: { status: string; reasons: string[] }; intermarket: { pair: string; alignment: number; signals: { instrument: string; direction: string; strength: number; relevance: string }[] }; reasons: string[]; priceMomentum: { direction: string; pips1d: number; pips5d: number; atr20d: number; extensionRatio: number } }[],
+  globalImAlignment?: number,
+) {
+  // ─── Unified criteria (exact same as trackrecord) ───
+  // 1. Score >= 2.0
+  // 2. IM alignment > 50% (global regime check)
+  // 3. Contrarian: 5d price momentum opposes fundamental direction (mean reversion)
+  // 4. Direction not neutral
+
+  const imOk = (globalImAlignment ?? 0) > 50
+
   const primary = pairs
-    .filter(p => (p.conviction === 'sterk' || p.conviction === 'matig') && Math.abs(p.score) >= 3.0)
+    .filter(p => {
+      // Filter 1: Score >= 2.0 + has direction
+      if (Math.abs(p.score) < 2.0 || p.direction === 'neutraal') return false
+
+      // Filter 2: Global IM alignment > 50%
+      if (!imOk) return false
+
+      // Filter 3: Contrarian check — price must have moved AGAINST fundamentals in 5 days
+      if (v3Signals) {
+        const sig = v3Signals.find(s => s.pair === p.pair)
+        if (sig) {
+          const isBullish = p.direction.includes('bullish')
+          const pips5d = sig.priceMomentum?.pips5d ?? 0
+          // Bullish signal requires price went DOWN (negative pips5d)
+          // Bearish signal requires price went UP (positive pips5d)
+          const isContrarian = (isBullish && pips5d < 0) || (!isBullish && pips5d > 0)
+          if (!isContrarian) return false
+        }
+      }
+
+      return true
+    })
     .sort((a, b) => Math.abs(b.score) - Math.abs(a.score))
-    .slice(0, 5)
     .map(p => buildTradeFocusItem(p, events, ranking))
 
-  // Watchlist: score >= 2.0 but not in primary, not neutral
+  // Watchlist: passes score but failed contrarian or other filter
   const primaryPairs = new Set(primary.map(p => p.pair))
   const watchlist = pairs
     .filter(p => !primaryPairs.has(p.pair) && Math.abs(p.score) >= 2.0 && p.direction !== 'neutraal')
@@ -569,7 +602,7 @@ export default function BriefingV2Dashboard() {
   }
 
   const intermarketConclusion = data?.intermarketSignals ? getIntermarketConclusion(data.intermarketSignals, data.regime) : null
-  const tradeFocusResult = data ? getTradeFocus(data.pairBiases, data.todayEvents, data.currencyRanking) : { primary: [], watchlist: [] }
+  const tradeFocusResult = data ? getTradeFocus(data.pairBiases, data.todayEvents, data.currencyRanking, data.v3?.pairSignals, data.intermarketAlignment) : { primary: [], watchlist: [] }
   const tradeFocus = tradeFocusResult.primary
   const watchlist = tradeFocusResult.watchlist
 
@@ -1632,7 +1665,7 @@ export default function BriefingV2Dashboard() {
                     {/* Compact summary */}
                     <div className="mt-3 flex flex-wrap gap-2">
                       <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">
-                        Score &ge; 3.0
+                        Score &ge; 2.0
                       </span>
                       <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim inline-flex items-center gap-1.5">
                         IM alignment: {imAlignment}% <AlignmentLabel value={imAlignment} />
@@ -1671,7 +1704,7 @@ export default function BriefingV2Dashboard() {
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
                             <polyline points="9 18 15 12 9 6" />
                           </svg>
-                          Watchlist ({watchlist.length} paren, score 2.0-3.0)
+                          Watchlist ({watchlist.length}) — paren met score &ge; 2.0 die niet door alle 4 filters kwamen (bijv. geen contrarian setup of IM te laag)
                         </summary>
                         <div className="mt-1 divide-y divide-white/[0.03]">
                           {watchlist.map(wp => {
@@ -1758,30 +1791,34 @@ export default function BriefingV2Dashboard() {
                         </svg>
                         Hoe werkt het filterproces?
                       </summary>
-                      <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                        <div className="space-y-2 text-[10px] text-text-dim leading-relaxed">
-                          <p>Elk paar doorloopt 4 filters. Alleen paren die alle 4 passeren worden een concrete trade:</p>
+                      <div className="mt-2 p-4 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                        <div className="space-y-3 text-[10px] text-text-dim leading-relaxed">
+                          <p className="text-text-muted">Elk paar doorloopt <strong className="text-heading">4 filters</strong>. Alleen paren die <strong className="text-green-400">alle 4 passeren</strong> worden een concrete trade en opgenomen in het trackrecord.</p>
+
                           <div className="grid grid-cols-2 gap-2">
-                            <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
-                              <p className="text-accent-light font-semibold">1. Fundamenteel</p>
-                              <p className="text-[9px]">Score &ge; 3.0</p>
+                            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                              <p className="text-accent-light font-semibold mb-1">1. Fundamenteel</p>
+                              <p className="text-[9px]">Score verschil tussen valutaparen &ge; 2.0. De score is opgebouwd uit het CB beleid (hawkish/dovish) &times; 2, het renteverschil &times; 1.5, en een nieuws bonus.</p>
                             </div>
-                            <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
-                              <p className="text-accent-light font-semibold">2. Regime</p>
-                              <p className="text-[9px]">Past bij huidig regime</p>
+                            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                              <p className="text-accent-light font-semibold mb-1">2. Intermarket</p>
+                              <p className="text-[9px]">De globale intermarket alignment moet &gt; 50% zijn. Dit meet of VIX, S&amp;P500, Gold, Yields en Oil het macro regime bevestigen.</p>
                             </div>
-                            <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
-                              <p className="text-accent-light font-semibold">3. Intermarket</p>
-                              <p className="text-[9px]">IM alignment &gt; 50%</p>
+                            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                              <p className="text-accent-light font-semibold mb-1">3. Contrarian (Mean Reversion)</p>
+                              <p className="text-[9px]">De prijs moet in de afgelopen 5 handelsdagen <em>tegen</em> de fundamentele richting bewogen hebben. We kopen dips en verkopen rallies.</p>
                             </div>
-                            <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04] text-center">
-                              <p className="text-accent-light font-semibold">4. Contrarian</p>
-                              <p className="text-[9px]">Prijs tegen richting (5d)</p>
+                            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                              <p className="text-accent-light font-semibold mb-1">4. Trackrecord</p>
+                              <p className="text-[9px]">Elke concrete trade wordt automatisch getracked. Na 1 handelsdag meten we of de prijs in de juiste richting bewoog. Dit levert de live winrate.</p>
                             </div>
                           </div>
-                          <p>
-                            <strong className="text-text-muted">Mean Reversion:</strong> Het model koopt wanneer de prijs tijdelijk tegen de fundamentele richting ingaat. Holding: 1 handelsdag.
-                          </p>
+
+                          <div className="p-2.5 rounded-lg bg-accent/5 border border-accent/15">
+                            <p className="text-text-muted text-[10px]">
+                              <strong className="text-accent-light">Waarom mean reversion?</strong> Backtesting over 12 maanden (399 trades, 21 paren) toont aan dat kopen wanneer de prijs tijdelijk tegen de fundamentals ingaat een winrate van ~56% oplevert met 1 dag holding.
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </details>
@@ -1818,22 +1855,22 @@ export default function BriefingV2Dashboard() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
-                  <span className="text-text-muted"><strong className="text-green-400">≥ 5.0</strong> = sterk signaal</span>
+                  <span className="text-text-muted"><strong className="text-green-400">&ge; 3.5</strong> = sterke overtuiging</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-accent-light shrink-0" />
-                  <span className="text-text-muted"><strong className="text-accent-light">3.0 – 5.0</strong> = goed signaal</span>
+                  <span className="text-text-muted"><strong className="text-accent-light">2.0 – 3.5</strong> = matige overtuiging</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                  <span className="text-text-muted"><strong className="text-amber-400">2.0 – 3.0</strong> = watchlist</span>
+                  <span className="text-text-muted"><strong className="text-amber-400">0.5 – 2.0</strong> = licht signaal</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-text-dim shrink-0" />
-                  <span className="text-text-muted"><strong className="text-text-dim">&lt; 2.0</strong> = geen signaal</span>
+                  <span className="text-text-muted"><strong className="text-text-dim">&lt; 0.5</strong> = neutraal</span>
                 </div>
               </div>
-              <p className="text-[9px] text-text-dim mt-2">De score is opgebouwd uit: CB beleid (x2) + renteverschil (x1.5) + nieuws bonus. Overtuiging: sterk (&ge;5), matig (3-5). Hoe hoger de score, hoe sterker de fundamentele onderbouwing.</p>
+              <p className="text-[9px] text-text-dim mt-2">Score = CB beleid (&times;2) + renteverschil (&times;1.5) + nieuws bonus. Paren met score &ge; 2.0 die ook door de contrarian en intermarket filters komen, worden concrete trades en getracked in het trackrecord.</p>
             </div>
 
             {tradeFocus.length > 0 ? (
@@ -1879,13 +1916,13 @@ export default function BriefingV2Dashboard() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          {pairData?.confluence && <ConfluenceMeter confluence={pairData.confluence} />}
+                          {pairData?.confluence && <ConfluenceMeter confluence={pairData.confluence} allFiltersPassed={true} />}
                           <div className="text-right">
                             <p className={`text-2xl font-mono font-bold ${
                               trade.score > 0 ? 'text-green-400' : trade.score < 0 ? 'text-red-400' : 'text-text-dim'
                             }`}>{trade.score > 0 ? '+' : ''}{trade.score}</p>
                             <p className="text-[9px] text-text-dim">{trade.conviction} overtuiging</p>
-                            <p className="text-[8px] text-text-dim/50 mt-0.5">{Math.abs(trade.score) >= 3.0 ? 'Trade Focus' : Math.abs(trade.score) >= 2.0 ? 'Watchlist' : 'Geen signaal'}</p>
+                            <p className="text-[8px] text-text-dim/50 mt-0.5">Trade Focus</p>
                           </div>
                         </div>
                       </div>
@@ -2022,7 +2059,7 @@ export default function BriefingV2Dashboard() {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
                       <span className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Alle Signalen (Detail)</span>
                       <span className="text-[9px] text-text-dim/50">
-                        {data.v3.metadata.signalCount.tradeable} tradeable / {data.v3.metadata.signalCount.conditional} conditional / {data.v3.metadata.signalCount.noTrade} no-trade
+                        {tradeFocus.length} in trackrecord / {data.v3.pairSignals.length} totaal
                       </span>
                     </div>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim transition-transform group-open:rotate-180">
@@ -2030,21 +2067,24 @@ export default function BriefingV2Dashboard() {
                     </svg>
                   </summary>
                   <div className="px-5 pb-4 border-t border-white/[0.04]">
-                    <div className="mt-3 overflow-x-auto max-h-64 overflow-y-auto">
+                    <p className="text-[9px] text-text-dim mt-2 mb-2">Groene status = trade wordt getracked in het trackrecord. Score = fundamentele divergentie. IM% = intermarket bevestiging van het regime.</p>
+                    <div className="mt-1 overflow-x-auto max-h-72 overflow-y-auto">
                       <table className="w-full text-[10px]">
-                        <thead>
+                        <thead className="sticky top-0 bg-bg-card">
                           <tr className="text-text-dim border-b border-white/[0.04]">
-                            <th className="text-left py-1 px-1">Paar</th>
-                            <th className="text-left py-1 px-1">Signaal</th>
-                            <th className="text-right py-1 px-1">Score</th>
-                            <th className="text-right py-1 px-1">Conv.</th>
-                            <th className="text-right py-1 px-1">IM%</th>
-                            <th className="text-center py-1 px-1">Status</th>
+                            <th className="text-left py-1.5 px-1.5">Paar</th>
+                            <th className="text-left py-1.5 px-1.5">Signaal</th>
+                            <th className="text-right py-1.5 px-1.5" title="Fundamentele score: CB beleid x2 + rente x1.5 + nieuws">Score</th>
+                            <th className="text-right py-1.5 px-1.5" title="Confluence: hoeveel factoren de richting bevestigen (0-100%)">Conv.</th>
+                            <th className="text-right py-1.5 px-1.5" title="Intermarket alignment: bevestigen VIX, S&P, Gold etc. het regime?">IM%</th>
+                            <th className="text-center py-1.5 px-1.5" title="Groen = in trackrecord, rood = niet getracked">Tracked</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {data.v3.pairSignals.map((sig: { pair: string; signal: string; score: number; conviction: number; intermarket: { alignment: number }; tradeability: { status: string } }) => (
-                            <tr key={sig.pair} className="border-b border-white/[0.02] hover:bg-white/[0.02]">
+                          {data.v3.pairSignals.map((sig: { pair: string; signal: string; score: number; conviction: number; intermarket: { alignment: number }; tradeability: { status: string }; priceMomentum: { pips5d: number } }) => {
+                            const isInTrackrecord = tradeFocus.some(t => t.pair === sig.pair)
+                            return (
+                            <tr key={sig.pair} className={`border-b border-white/[0.02] hover:bg-white/[0.02] ${isInTrackrecord ? '' : 'opacity-50'}`}>
                               <td className="py-1 px-1 font-mono text-heading">{sig.pair}</td>
                               <td className={`py-1 px-1 ${
                                 sig.signal.includes('bullish') ? 'text-green-400' :
@@ -2057,12 +2097,12 @@ export default function BriefingV2Dashboard() {
                               <td className="py-1 px-1 text-right font-mono text-text-muted">{sig.intermarket.alignment}%</td>
                               <td className="py-1 px-1 text-center">
                                 <span className={`inline-block w-2 h-2 rounded-full ${
-                                  sig.tradeability.status === 'tradeable' ? 'bg-green-400' :
-                                  sig.tradeability.status === 'conditional' ? 'bg-amber-400' : 'bg-red-400'
-                                }`} />
+                                  isInTrackrecord ? 'bg-green-400' : 'bg-red-400/50'
+                                }`} title={isInTrackrecord ? 'In trackrecord' : 'Niet in trackrecord'} />
                               </td>
                             </tr>
-                          ))}
+                            )
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -2302,7 +2342,7 @@ export default function BriefingV2Dashboard() {
               Fundamentals geven de richting, technische analyse (structure breaks) bepaalt de timing en entry.
             </p>
             <p className="text-[9px] text-text-dim/40 mt-1">
-              Sanders Capital Fundamentals · Gegenereerd: {formatCET(data.generatedAt)} · 10 major paren · 8 valuta&apos;s · 6 intermarket instrumenten
+              Sanders Capital Fundamentals · Gegenereerd: {formatCET(data.generatedAt)} · 21 paren · 8 valuta&apos;s · 6 intermarket instrumenten
             </p>
           </div>
         </>
