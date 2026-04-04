@@ -252,9 +252,11 @@ export default function DailyBriefingIntroPage() {
             problem="Je opent TradingView en zoekt willekeurig door paren zonder te weten waar je moet focussen."
             solution="Een compact filterproces selecteert welke paren alle criteria overleven."
             details={[
-              'Alle 10 major paren starten in de pool.',
-              'Filter: minimaal 2.0 scoreverschil en duidelijke richting.',
-              'Bij sterke alignment (>50%) gaan alle paren door. Bij zwak alleen paren met score >= 3.5.',
+              'Alle 21 valutaparen starten in de pool.',
+              'Filter 1: minimaal 2.0 scoreverschil en duidelijke richting (bullish of bearish).',
+              'Filter 2: globale intermarket alignment moet > 50% zijn (bevestigt het regime).',
+              'Filter 3: de prijs moet in de afgelopen 5 dagen tegen de fundamentele richting bewogen hebben (mean reversion setup).',
+              'Elke trade die door alle filters komt wordt automatisch getracked in het live trackrecord.',
             ]}
           />
         </FadeIn>
@@ -465,7 +467,7 @@ export default function DailyBriefingIntroPage() {
                   { n: '1', t: 'Check het marktregime', d: 'In welk regime zit de markt? Dit bepaalt of je agressief of voorzichtig moet zijn.' },
                   { n: '2', t: 'Bekijk het nieuws sentiment', d: 'Welke valuta krijgt positief of negatief sentiment uit recent nieuws?' },
                   { n: '3', t: 'Bekijk de intermarket signalen', d: 'Bevestigen aandelen, yields, VIX en goud het regime?' },
-                  { n: '4', t: 'Bekijk de Trade Focus funnel', d: 'Hoeveel van de 10 paren overleven elke filterlaag?' },
+                  { n: '4', t: 'Bekijk de Trade Focus funnel', d: 'Hoeveel van de 21 paren overleven elke filterlaag?' },
                   { n: '5', t: 'Bekijk de concrete trades', d: 'Trade cards met call, conviction score en timing. Hold: 1 handelsdag.' },
                   { n: '6', t: 'Pas je eigen technische analyse toe', d: 'De fundamentele richting is bepaald. Gebruik je eigen bewezen technische strategie voor de exacte entry en exit timing.' },
                 ].map(({ n, t, d }) => (
@@ -544,7 +546,7 @@ export default function DailyBriefingIntroPage() {
                 </div>
                 <div className="rounded-xl border border-border bg-bg-card px-4 py-3">
                   <p className="text-sm font-semibold text-heading">Yahoo Finance (Dagkoersen)</p>
-                  <p className="text-xs text-text-muted mt-0.5">Dagkoersen voor 10 major paren. Trackrecord: signaaldag vs. 1 handelsdag later.</p>
+                  <p className="text-xs text-text-muted mt-0.5">Dagkoersen voor 21 valutaparen. Trackrecord: signaaldag vs. 1 handelsdag later.</p>
                 </div>
               </div>
             </Collapsible>

@@ -2307,7 +2307,7 @@ export default function BriefingV2Dashboard() {
                     { bron: 'CB rentetarieven en beleid', detail: 'Supabase DB, bijgewerkt na CB vergaderingen' },
                     { bron: 'Intermarket koersen', detail: 'Yahoo Finance API (cache: 5 min)' },
                     { bron: 'Nieuws artikelen', detail: 'Bloomberg, ForexLive, CNBC via Supabase (laatste 72 uur)' },
-                    { bron: 'Dagkoersen (10 major paren)', detail: 'Yahoo Finance, dagelijks vernieuwd' },
+                    { bron: 'Dagkoersen (21 valutaparen)', detail: 'Yahoo Finance, dagelijks vernieuwd' },
                     { bron: 'Track Record', detail: 'Supabase DB, dagelijks automatisch geresolved na 1 handelsdag' },
                   ].map(item => (
                     <div key={item.bron} className="flex items-start gap-1.5 p-1.5 rounded bg-white/[0.02]">
@@ -2330,7 +2330,7 @@ export default function BriefingV2Dashboard() {
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              {['CB Beleid x2', 'Rente x1.5', 'Nieuws bonus', 'Intermarket >50%', 'Contrarian 5d', '10 Major Paren', 'Hold 1d', 'Dagkoers NY Close'].map(tag => (
+              {['CB Beleid x2', 'Rente x1.5', 'Nieuws bonus', 'Intermarket >50%', 'Contrarian 5d', '21 Paren', 'Hold 1d', 'Dagkoers NY Close'].map(tag => (
                 <span key={tag} className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">{tag}</span>
               ))}
             </div>

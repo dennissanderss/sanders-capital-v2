@@ -564,11 +564,11 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { name: 'Economische Kalender', desc: 'Events automatisch opgehaald via FairEconomy/ForexFactory API. Klik-uitleg per event. Geen actuele data (API biedt dit niet).', status: 'live' },
-                { name: 'Sanders Capital Fundamentals', desc: 'Marktregime classificatie, valutascoring (CB beleid x2, rente x1.5, nieuws), intermarket bevestiging en contrarian signalen. 10 major paren, 1 dag hold. Volledig automatisch.', status: 'live' },
+                { name: 'Sanders Capital Fundamentals', desc: 'Marktregime classificatie, valutascoring (CB beleid x2, rente x1.5, nieuws), intermarket bevestiging en contrarian signalen. 21 valutaparen, 1 dag hold. Volledig automatisch.', status: 'live' },
                 { name: 'Daily Macro Briefing', desc: '5-stappen dashboard: regime, nieuws sentiment, intermarket signalen, trade focus filter en concrete trades. Inclusief conviction scores en IM alignment.', status: 'live' },
-                { name: 'Trade Focus Trackrecord', desc: 'Meet dagelijks of de contrarian mean reversion bias klopt (1-dag hold, PF 1.42). Model B scoring + IM bevestiging. Backfill 365 dagen, 10 major pairs.', status: 'live' },
+                { name: 'Trade Focus Trackrecord', desc: 'Meet dagelijks of de contrarian mean reversion bias klopt (1-dag hold). Model B scoring + IM bevestiging. Backfill 365 dagen, 21 paren.', status: 'live' },
                 { name: 'Intermarket Data (Pair-Specifiek)', desc: 'DXY, VIX, S&P 500, US 10Y Yields, Goud en Olie via Yahoo Finance. Elk paar heeft eigen gewichten (bijv. USD/CAD: olie 45%, USD/JPY: yields 40%).', status: 'live' },
-                { name: 'FX Koersen (10 paren)', desc: 'Live koersen voor alle 10 major paren via Yahoo Finance (5 min cache). 8 valuta\'s: USD, EUR, GBP, JPY, AUD, NZD, CAD, CHF.', status: 'live' },
+                { name: 'FX Koersen (21 paren)', desc: 'Live koersen voor alle 21 valutaparen via Yahoo Finance (5 min cache). 8 valuta\'s: USD, EUR, GBP, JPY, AUD, NZD, CAD, CHF.', status: 'live' },
                 { name: 'Vergaderdata', desc: 'CB meetings automatisch uit economische kalender (komende 2 weken).', status: 'live' },
                 { name: 'Nieuws Aggregatie', desc: 'Automatisch gecureerd FX-relevant nieuws uit 7 bronnen (Fed, ECB, ForexLive, CNBC, Bloomberg, BBC, NYT). 10 min cache, relevantie-filtering.', status: 'live' },
                 { name: 'Auth & Premium gating', desc: 'Supabase Auth + RLS regelt toegang tot premium content en tools.', status: 'live' },
