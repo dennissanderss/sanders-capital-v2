@@ -672,26 +672,46 @@ export default function ExecutionPage() {
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-transform group-open:rotate-90"><polyline points="9 18 15 12 9 6" /></svg>
                         Backtest trades ({model.name}): {modelBT.length} trades, {btWR}% WR, {btPips > 0 ? '+' : ''}{btPips} pips
                       </summary>
-                      <div className="mt-2 max-h-64 overflow-y-auto space-y-0.5">
+                      <div className="mt-2 max-h-72 overflow-y-auto">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-3 py-1.5 text-[8px] text-text-dim/40 border-b border-white/[0.04] sticky top-0 bg-bg-card">
+                          <div className="flex items-center gap-2">
+                            <span className="w-1.5" />
+                            <span className="w-[70px]">Datum</span>
+                            <span className="w-[65px]">Pair</span>
+                            <span className="w-4">Dir</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-right">
+                            <span className="w-10">Score</span>
+                            <span className="w-10">Mom</span>
+                            <span className="w-10">Pips</span>
+                            <span className="w-14">Resultaat</span>
+                          </div>
+                        </div>
                         {modelBT.slice().sort((a, b) => b.date.localeCompare(a.date)).map((t, i) => (
-                          <div key={i} className="flex items-center justify-between px-3 py-1 rounded bg-white/[0.02] text-[9px]">
+                          <div key={i} className="flex items-center justify-between px-3 py-1 text-[9px] border-b border-white/[0.02] hover:bg-white/[0.02]">
                             <div className="flex items-center gap-2">
                               <span className={`w-1.5 h-1.5 rounded-full ${t.result === 'correct' ? 'bg-green-400' : 'bg-red-400'}`} />
-                              <span className="text-text-dim/50 font-mono">{t.date}</span>
-                              <span className="font-mono font-bold text-heading">{t.pair}</span>
-                              <span className={t.direction.includes('bullish') ? 'text-green-400' : 'text-red-400'}>{t.direction.includes('bullish') ? '\u25B2' : '\u25BC'}</span>
+                              <span className="text-text-dim/50 font-mono w-[70px]">{t.date}</span>
+                              <span className="font-mono font-bold text-heading w-[65px]">{t.pair}</span>
+                              <span className={`w-4 ${t.direction.includes('bullish') ? 'text-green-400' : 'text-red-400'}`}>{t.direction.includes('bullish') ? '\u25B2' : '\u25BC'}</span>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-text-dim font-mono">S:{t.score > 0 ? '+' : ''}{t.score}</span>
-                              <span className="text-text-dim font-mono">M:{t.momentum}p</span>
-                              <span className={`font-mono font-bold ${t.result === 'correct' ? 'text-green-400' : 'text-red-400'}`}>
-                                {t.result === 'correct' ? '+' + model.tp : '-' + model.sl}p
+                            <div className="flex items-center gap-2 text-right">
+                              <span className="text-text-dim font-mono w-10">{t.score > 0 ? '+' : ''}{t.score}</span>
+                              <span className="text-text-dim font-mono w-10">{t.momentum}p</span>
+                              <span className="text-text-dim font-mono w-10">{t.pips > 0 ? '+' : ''}{t.pips}p</span>
+                              <span className={`font-mono font-bold w-14 ${t.result === 'correct' ? 'text-green-400' : 'text-red-400'}`}>
+                                {t.result === 'correct' ? 'WIN' : 'LOSS'}
                               </span>
                             </div>
                           </div>
                         ))}
                       </div>
-                      <p className="text-[8px] text-text-dim/30 mt-1">Elke trade: entry op dagkoers, exit +1 handelsdag. SL={model.sl}p TP={model.tp}p. Score en momentum uit fundamenteel trackrecord.</p>
+                      <div className="mt-2 p-2 rounded-lg bg-white/[0.02] border border-white/[0.04] text-[8px] text-text-dim/50 space-y-0.5">
+                        <p><strong className="text-text-dim">Methodiek:</strong> Entry op dagkoers (NY close) op de dag van de fundamentele call. Exit op dagkoers +1 handelsdag. Als de prijs in de juiste richting bewoog = WIN, anders = LOSS.</p>
+                        <p><strong className="text-text-dim">SL/TP berekening:</strong> Bij WIN wordt +{model.tp}p gerekend (TP bereikt). Bij LOSS wordt -{model.sl}p gerekend (SL geraakt). Dit is een vereenvoudiging — in werkelijkheid hangt het af van de intraday prijsbeweging.</p>
+                        <p><strong className="text-text-dim">Score:</strong> Fundamentele divergentie (CB beleid &times;2 + rente &times;1.5 + nieuws). <strong className="text-text-dim">Mom:</strong> Momentum = hoeveel pips de prijs tegen de bias bewoog in 5 dagen.</p>
+                      </div>
                     </details>
                   </div>
                 )}
