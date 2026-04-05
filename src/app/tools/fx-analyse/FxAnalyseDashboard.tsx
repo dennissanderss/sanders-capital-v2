@@ -64,7 +64,7 @@ export default function FxAnalyseDashboard() {
         <div className="text-center mb-8 sm:mb-12">
           <p className="text-xs tracking-[0.2em] uppercase text-accent-light mb-3">Educatieve Tool</p>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-semibold text-heading mb-3">
-            Macro Fundamentals
+            Fundamentals
           </h1>
           <p className="text-sm sm:text-base text-text-muted max-w-2xl mx-auto">
             Begrijp wat een valutapaar beweegt. Selecteer een paar en leer hoe centrale banken,

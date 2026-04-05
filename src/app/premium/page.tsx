@@ -329,7 +329,7 @@ export default async function PremiumPage() {
                   {[
                     { label: 'Trading journal software', price: '~$170/jaar', desc: 'TradeMind vervangt vergelijkbare journal tools volledig' },
                     { label: 'Backtest analytics platforms', price: '~$200+/jaar', desc: 'TradeMind met Monte Carlo simulatie en optimalisatie' },
-                    { label: 'Fundamentele data services', price: '~$500+/jaar', desc: 'Daily Macro Briefing + Macro Fundamentals dashboard' },
+                    { label: 'Fundamentele data services', price: '~$500+/jaar', desc: 'Daily Macro Briefing + Fundamentals dashboard' },
                     { label: 'Trading community & begeleiding', price: 'Onbetaalbaar', desc: 'Directe ondersteuning van een ervaren trader' },
                   ].map((item) => (
                     <div key={item.label} className="rounded-lg bg-white/[0.02] border border-white/[0.06] px-4 py-3">
