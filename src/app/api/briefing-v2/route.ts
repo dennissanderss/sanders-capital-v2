@@ -656,7 +656,7 @@ export async function GET() {
       // ── Confluence Data ──
       const regimeAligned = (pair as any).regimeAligned ?? false
       const confluenceFactors = {
-        fundamenteel: Math.abs(pair.score) >= 3.0,
+        fundamenteel: Math.abs(pair.score) >= 2.0,
         regime: regimeAligned,
         intermarket: intermarketAlignment >= 50,
         news: (pair.direction.includes('bullish') && pair.newsInfluence > 0) ||

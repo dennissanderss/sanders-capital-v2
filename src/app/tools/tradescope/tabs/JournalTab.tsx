@@ -54,7 +54,13 @@ export default function JournalTab({ accounts, strategies, setups, filters, onFi
     if (filters.accountId) query = query.eq('account_id', filters.accountId)
     if (filters.strategyId) query = query.eq('strategy_id', filters.strategyId)
     if (filters.symbol) query = query.eq('symbol', filters.symbol)
-    if (filters.isWin !== undefined) query = query.eq('is_win', filters.isWin)
+    if (filters.isWin !== undefined) {
+      if (filters.isWin) {
+        query = query.gt('profit_loss', 0)
+      } else {
+        query = query.not('profit_loss', 'is', null).lte('profit_loss', 0)
+      }
+    }
     if (filters.dateFrom) query = query.gte('open_date', filters.dateFrom)
     if (filters.dateTo) query = query.lte('open_date', filters.dateTo)
 
@@ -716,8 +722,11 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
     const isBuy = form.action === 'buy'
     const symbol = String(form.symbol ?? '').toUpperCase()
 
-    // Determine pip size from symbol
-    const isJPY = symbol.includes('JPY') || symbol.includes('XAU')
+    // Skip auto-calc if symbol is empty or too short (not a valid pair)
+    if (symbol.length < 3) return
+
+    // Determine pip size from symbol — JPY pairs and metals use 0.01, everything else 0.0001
+    const isJPY = symbol.includes('JPY') || symbol.includes('XAU') || symbol.includes('GOLD')
     const pipSize = isJPY ? 0.01 : 0.0001
     const pipValue = isJPY ? (1000 * lot) : (10 * lot)
 

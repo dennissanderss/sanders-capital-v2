@@ -586,7 +586,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
       {selectedDay && (
         <>
           <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setSelectedDay(null)} />
-          <div className="fixed top-0 right-0 z-50 h-full w-full max-w-sm overflow-y-auto transition-transform duration-300 ease-out"
+          <div className="fixed top-0 right-0 z-50 h-full w-[85vw] sm:w-full max-w-sm overflow-y-auto transition-transform duration-300 ease-out"
             style={{ background: 'rgba(10, 12, 16, 0.99)', backdropFilter: 'blur(40px)', borderLeft: '1px solid rgba(255,255,255,0.08)' }}
           >
             {/* Panel header */}
