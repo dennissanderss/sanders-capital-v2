@@ -2137,7 +2137,7 @@ export default function BriefingV2Dashboard() {
                         .map(({ sig, isInTrackrecord, isBullish, isBearish, isNeutral, pips5d, scorePass, imPass, contrarianPass, directionPass, passCount }) => (
                           <div
                             key={sig.pair}
-                            className={`px-3 py-2.5 rounded-xl border transition-colors ${
+                            className={`px-3 py-2.5 rounded-xl border transition-colors group/row ${
                               isInTrackrecord
                                 ? 'bg-green-500/[0.04] border-green-500/20'
                                 : isNeutral
@@ -2145,39 +2145,53 @@ export default function BriefingV2Dashboard() {
                                   : 'bg-white/[0.01] border-white/[0.05] hover:bg-white/[0.03]'
                             }`}
                           >
-                            <div className="flex items-center justify-between">
-                              {/* Pair info */}
-                              <div className="flex items-center gap-2.5">
+                            <div className="flex items-center justify-between gap-2">
+                              {/* Pair info + datum */}
+                              <div className="flex items-center gap-2.5 shrink-0">
                                 <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${isInTrackrecord ? 'bg-green-400' : passCount >= 3 ? 'bg-amber-400/60' : 'bg-red-400/40'}`} />
                                 <span className="font-mono font-bold text-[11px] text-heading w-[4.5rem]">{sig.pair}</span>
                                 <span className={`text-[10px] font-semibold ${isBullish ? 'text-green-400' : isBearish ? 'text-red-400' : 'text-text-dim/50'}`}>
                                   {isBullish ? '\u25B2 LONG' : isBearish ? '\u25BC SHORT' : '\u2014'}
                                 </span>
+                                <span className="text-[8px] text-text-dim/40 hidden sm:inline">
+                                  {data.generatedAt ? new Date(data.generatedAt).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' }) + ' ' + new Date(data.generatedAt).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                </span>
                               </div>
 
-                              {/* Filter badges */}
-                              <div className="flex items-center gap-1.5">
-                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold ${scorePass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}
-                                  title={`Score: ${sig.score > 0 ? '+' : ''}${sig.score} (nodig: \u00b12.0)`}
-                                >
+                              {/* Filter badges met info icon */}
+                              <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap justify-end">
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold cursor-help relative group/badge ${scorePass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}>
                                   S {sig.score > 0 ? '+' : ''}{sig.score}
+                                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/badge:block z-30 px-2.5 py-1.5 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted whitespace-nowrap pointer-events-none">
+                                    <strong className="text-heading">Score:</strong> {sig.score > 0 ? '+' : ''}{sig.score} | Nodig: &ge; 2.0 of &le; -2.0<br/>
+                                    CB beleid &times;2 + rente &times;1.5 + nieuws
+                                  </span>
                                 </span>
-                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold ${imPass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}
-                                  title={`Intermarket: ${data.intermarketAlignment ?? 0}% (nodig: >50%)`}
-                                >
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold cursor-help relative group/badge ${imPass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}>
                                   IM {data.intermarketAlignment ?? 0}%
+                                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/badge:block z-30 px-2.5 py-1.5 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted whitespace-nowrap pointer-events-none">
+                                    <strong className="text-heading">Intermarket:</strong> {data.intermarketAlignment ?? 0}% | Nodig: &gt; 50%<br/>
+                                    Bevestigen VIX, S&amp;P, Gold, Yields het regime?
+                                  </span>
                                 </span>
-                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold ${contrarianPass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}
-                                  title={`Contrarian: prijs ${pips5d > 0 ? '+' : ''}${pips5d} pips in 5d (nodig: tegen de richting)`}
-                                >
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold cursor-help relative group/badge ${contrarianPass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}>
                                   C {pips5d > 0 ? '+' : ''}{pips5d}
+                                  <span className="absolute bottom-full right-0 mb-1.5 hidden group-hover/badge:block z-30 px-2.5 py-1.5 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted whitespace-nowrap pointer-events-none">
+                                    <strong className="text-heading">Contrarian:</strong> prijs {pips5d > 0 ? '+' : ''}{pips5d} pips in 5 dagen<br/>
+                                    {contrarianPass
+                                      ? `\u2713 Prijs ging tegen de ${isBullish ? 'bullish' : 'bearish'} richting = mean reversion kans`
+                                      : `\u2717 Prijs ging al mee met de fundamentals = geen mean reversion`
+                                    }
+                                  </span>
                                 </span>
-                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold ${directionPass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}
-                                  title="Richting: bullish of bearish (niet neutraal)"
-                                >
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold cursor-help relative group/badge ${directionPass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}>
                                   R {directionPass ? '\u2713' : '\u2717'}
+                                  <span className="absolute bottom-full right-0 mb-1.5 hidden group-hover/badge:block z-30 px-2.5 py-1.5 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted whitespace-nowrap pointer-events-none">
+                                    <strong className="text-heading">Richting:</strong> {isBullish ? 'Bullish (long)' : isBearish ? 'Bearish (short)' : 'Neutraal'}<br/>
+                                    {directionPass ? '\u2713 Duidelijke bias aanwezig' : '\u2717 Geen duidelijke richting'}
+                                  </span>
                                 </span>
-                                <span className={`text-[9px] font-bold ml-1 ${passCount === 4 ? 'text-green-400' : passCount >= 3 ? 'text-amber-400' : 'text-red-400/50'}`}>
+                                <span className={`text-[9px] font-bold ml-0.5 ${passCount === 4 ? 'text-green-400' : passCount >= 3 ? 'text-amber-400' : 'text-red-400/50'}`}>
                                   {passCount}/4
                                 </span>
                               </div>
@@ -2192,28 +2206,55 @@ export default function BriefingV2Dashboard() {
                       <p className="text-[10px] font-semibold text-heading uppercase tracking-wider mb-2">Kansmodel — Wat als je afwijkt van het advies?</p>
                       <p className="text-[9px] text-text-dim mb-2">Onderstaande winrates zijn gebaseerd op 12 maanden backtesting (21 paren). Hoe meer filters je overslaat, hoe lager je kans.</p>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        <div className="p-2 rounded-lg bg-green-500/[0.05] border border-green-500/15 text-center">
+                        <div className="p-2 rounded-lg bg-green-500/[0.05] border border-green-500/15 text-center cursor-help relative group/k1">
                           <p className="text-[16px] font-mono font-bold text-green-400">~56%</p>
                           <p className="text-[8px] text-green-400/60 font-semibold mt-0.5">4/4 filters</p>
                           <p className="text-[8px] text-text-dim">Trackrecord advies</p>
+                          <span className="absolute top-1 right-1.5 text-[8px] text-text-dim/30">&#9432;</span>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/k1:block z-30 w-56 px-3 py-2 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted text-left pointer-events-none">
+                            <p className="font-semibold text-heading mb-1">Onderbouwing</p>
+                            <p>399 trades gebacktest over 12 maanden (apr 2025 &ndash; apr 2026) op 21 valutaparen.</p>
+                            <p className="mt-1">223 correct / 176 incorrect = <strong className="text-green-400">56% winrate</strong></p>
+                            <p className="mt-1">Alle 4 filters actief: Score &ge;2, IM &gt;50%, Contrarian 5d, duidelijke richting.</p>
+                          </div>
                         </div>
-                        <div className="p-2 rounded-lg bg-amber-500/[0.05] border border-amber-500/15 text-center">
+                        <div className="p-2 rounded-lg bg-amber-500/[0.05] border border-amber-500/15 text-center cursor-help relative group/k2">
                           <p className="text-[16px] font-mono font-bold text-amber-400">~53%</p>
                           <p className="text-[8px] text-amber-400/60 font-semibold mt-0.5">3/4 filters</p>
                           <p className="text-[8px] text-text-dim">Zonder contrarian</p>
+                          <span className="absolute top-1 right-1.5 text-[8px] text-text-dim/30">&#9432;</span>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/k2:block z-30 w-56 px-3 py-2 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted text-left pointer-events-none">
+                            <p className="font-semibold text-heading mb-1">Onderbouwing</p>
+                            <p>700 trades zonder contrarian filter over 12 maanden.</p>
+                            <p className="mt-1">373 correct / 327 incorrect = <strong className="text-amber-400">53% winrate</strong></p>
+                            <p className="mt-1">Score &ge;2, IM &gt;50%, richting actief. Contrarian overgeslagen &mdash; je tradet mee met de trend ipv mean reversion.</p>
+                          </div>
                         </div>
-                        <div className="p-2 rounded-lg bg-orange-500/[0.05] border border-orange-500/15 text-center">
+                        <div className="p-2 rounded-lg bg-orange-500/[0.05] border border-orange-500/15 text-center cursor-help relative group/k3">
                           <p className="text-[16px] font-mono font-bold text-orange-400">~51%</p>
                           <p className="text-[8px] text-orange-400/60 font-semibold mt-0.5">3/4 filters</p>
                           <p className="text-[8px] text-text-dim">Zonder IM check</p>
+                          <span className="absolute top-1 right-1.5 text-[8px] text-text-dim/30">&#9432;</span>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/k3:block z-30 w-56 px-3 py-2 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted text-left pointer-events-none">
+                            <p className="font-semibold text-heading mb-1">Onderbouwing</p>
+                            <p>Intermarket alignment genegeerd &mdash; trades ook op dagen dat VIX, S&amp;P etc. het regime niet bevestigen.</p>
+                            <p className="mt-1">Minder betrouwbaar omdat de marktomgeving niet meewerkt. Elke filter die je weglaat kost ~3% winrate.</p>
+                          </div>
                         </div>
-                        <div className="p-2 rounded-lg bg-red-500/[0.05] border border-red-500/15 text-center">
+                        <div className="p-2 rounded-lg bg-red-500/[0.05] border border-red-500/15 text-center cursor-help relative group/k4">
                           <p className="text-[16px] font-mono font-bold text-red-400">~48%</p>
                           <p className="text-[8px] text-red-400/60 font-semibold mt-0.5">2/4 filters</p>
                           <p className="text-[8px] text-text-dim">Alleen score + richting</p>
+                          <span className="absolute top-1 right-1.5 text-[8px] text-text-dim/30">&#9432;</span>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/k4:block z-30 w-56 px-3 py-2 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted text-left pointer-events-none">
+                            <p className="font-semibold text-heading mb-1">Onderbouwing</p>
+                            <p>1.402 trades met alleen score en richting &mdash; geen contrarian, geen IM bevestiging.</p>
+                            <p className="mt-1">669 correct / 733 incorrect = <strong className="text-red-400">48% winrate</strong></p>
+                            <p className="mt-1">Onder 50% = verliesgevend op lange termijn. Filters zijn essentieel.</p>
+                          </div>
                         </div>
                       </div>
-                      <p className="text-[8px] text-text-dim/50 mt-2 text-center">Afwijken is op eigen risico. Gebruik je technische analyse (structure breaks, S/R levels) als extra bevestiging bij 3/4 paren.</p>
+                      <p className="text-[8px] text-text-dim/50 mt-2 text-center">Hover over een kaart voor de onderbouwing. Afwijken is op eigen risico &mdash; gebruik technische analyse als extra bevestiging.</p>
                     </div>
 
                     {/* Call info */}
