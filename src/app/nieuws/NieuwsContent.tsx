@@ -960,7 +960,10 @@ export default function NieuwsContent() {
             </>
           )}
           {!loading && articles.length > 0 && (
-            <span className="ml-2">{articles.length} artikelen</span>
+            <>
+              <span className="ml-2">{articles.length} artikelen</span>
+              <span className="ml-2 text-accent-light/50">&middot; Artikelen &lt; 72u be&iuml;nvloeden de Daily Briefing scoring</span>
+            </>
           )}
         </div>
         <button

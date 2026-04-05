@@ -42,6 +42,7 @@ interface RelevanceTag {
 }
 
 const RELEVANCE_TAGS: RelevanceTag[] = [
+  // Central banks — specifiek per valuta
   { keyword: 'federal reserve', label: 'Fed beleid', currencies: ['USD'] },
   { keyword: 'fed ', label: 'Fed beleid', currencies: ['USD'] },
   { keyword: 'fomc', label: 'FOMC besluit', currencies: ['USD'] },
@@ -51,12 +52,17 @@ const RELEVANCE_TAGS: RelevanceTag[] = [
   { keyword: 'european central bank', label: 'ECB beleid', currencies: ['EUR'] },
   { keyword: 'bank of england', label: 'BoE beleid', currencies: ['GBP'] },
   { keyword: 'boe', label: 'BoE beleid', currencies: ['GBP'] },
+  { keyword: 'bailey', label: 'BoE voorzitter', currencies: ['GBP'] },
   { keyword: 'bank of japan', label: 'BoJ beleid', currencies: ['JPY'] },
   { keyword: 'boj', label: 'BoJ beleid', currencies: ['JPY'] },
+  { keyword: 'ueda', label: 'BoJ voorzitter', currencies: ['JPY'] },
   { keyword: 'rba', label: 'RBA beleid', currencies: ['AUD'] },
+  { keyword: 'reserve bank of australia', label: 'RBA beleid', currencies: ['AUD'] },
   { keyword: 'rbnz', label: 'RBNZ beleid', currencies: ['NZD'] },
   { keyword: 'bank of canada', label: 'BoC beleid', currencies: ['CAD'] },
   { keyword: 'snb', label: 'SNB beleid', currencies: ['CHF'] },
+  { keyword: 'swiss national bank', label: 'SNB beleid', currencies: ['CHF'] },
+  // Rente & monetair beleid
   { keyword: 'interest rate', label: 'Rentebeleid', currencies: [] },
   { keyword: 'rate decision', label: 'Rentebesluit', currencies: [] },
   { keyword: 'rate hike', label: 'Renteverhoging', currencies: [] },
@@ -66,47 +72,85 @@ const RELEVANCE_TAGS: RelevanceTag[] = [
   { keyword: 'monetary policy', label: 'Monetair beleid', currencies: [] },
   { keyword: 'tightening', label: 'Verkrapping', currencies: [] },
   { keyword: 'easing', label: 'Verruiming', currencies: [] },
+  { keyword: 'quantitative', label: 'QE/QT beleid', currencies: [] },
+  // Inflatie & data
   { keyword: 'inflation', label: 'Inflatie', currencies: [] },
   { keyword: 'cpi', label: 'CPI data', currencies: [] },
   { keyword: 'pce', label: 'PCE inflatie', currencies: ['USD'] },
   { keyword: 'core inflation', label: 'Kerninflatie', currencies: [] },
+  // Arbeidsmarkt — USD specifiek
   { keyword: 'nonfarm', label: 'NFP arbeidsmarkt', currencies: ['USD'] },
   { keyword: 'non-farm', label: 'NFP arbeidsmarkt', currencies: ['USD'] },
   { keyword: 'payrolls', label: 'Banenrapport', currencies: ['USD'] },
-  { keyword: 'unemployment', label: 'Werkloosheid', currencies: [] },
   { keyword: 'jobs report', label: 'Banenrapport', currencies: ['USD'] },
+  { keyword: 'jobless claims', label: 'Werkloosheidsaanvragen', currencies: ['USD'] },
+  // Economische data
   { keyword: 'gdp', label: 'BBP groei', currencies: [] },
   { keyword: 'recession', label: 'Recessierisico', currencies: [] },
   { keyword: 'pmi', label: 'PMI data', currencies: [] },
-  { keyword: 'manufacturing', label: 'Industrie', currencies: [] },
   { keyword: 'retail sales', label: 'Retail data', currencies: [] },
+  { keyword: 'housing', label: 'Woningmarkt', currencies: [] },
+  { keyword: 'consumer confidence', label: 'Consumentenvertrouwen', currencies: [] },
+  // Obligaties
   { keyword: 'treasury', label: 'US Treasuries', currencies: ['USD'] },
   { keyword: 'yield', label: 'Obligatierentes', currencies: [] },
   { keyword: 'bond', label: 'Obligatiemarkt', currencies: [] },
-  { keyword: 'dollar', label: 'USD beweging', currencies: ['USD'] },
-  { keyword: 'euro', label: 'EUR beweging', currencies: ['EUR'] },
-  { keyword: 'yen', label: 'JPY beweging', currencies: ['JPY'] },
-  { keyword: 'pound', label: 'GBP beweging', currencies: ['GBP'] },
+  { keyword: 'gilt', label: 'UK Gilts', currencies: ['GBP'] },
+  { keyword: 'bund', label: 'Duitse Bunds', currencies: ['EUR'] },
+  // Valuta — met context-checks om false positives te voorkomen
+  { keyword: 'u.s. dollar', label: 'USD beweging', currencies: ['USD'] },
+  { keyword: 'us dollar', label: 'USD beweging', currencies: ['USD'] },
+  { keyword: 'greenback', label: 'USD beweging', currencies: ['USD'] },
+  { keyword: 'euro zone', label: 'EUR economie', currencies: ['EUR'] },
+  { keyword: 'eurozone', label: 'EUR economie', currencies: ['EUR'] },
+  { keyword: 'japanese yen', label: 'JPY beweging', currencies: ['JPY'] },
+  { keyword: 'british pound', label: 'GBP beweging', currencies: ['GBP'] },
   { keyword: 'sterling', label: 'GBP beweging', currencies: ['GBP'] },
+  { keyword: 'australian dollar', label: 'AUD beweging', currencies: ['AUD'] },
+  { keyword: 'new zealand dollar', label: 'NZD beweging', currencies: ['NZD'] },
+  { keyword: 'kiwi dollar', label: 'NZD beweging', currencies: ['NZD'] },
+  { keyword: 'canadian dollar', label: 'CAD beweging', currencies: ['CAD'] },
+  { keyword: 'loonie', label: 'CAD beweging', currencies: ['CAD'] },
+  { keyword: 'swiss franc', label: 'CHF beweging', currencies: ['CHF'] },
+  // Handelsbeleid
   { keyword: 'tariff', label: 'Handelsbeleid', currencies: ['USD'] },
   { keyword: 'trade war', label: 'Handelsoorlog', currencies: ['USD'] },
   { keyword: 'sanctions', label: 'Sancties', currencies: [] },
-  { keyword: 'war', label: 'Conflict', currencies: [] },
-  { keyword: 'conflict', label: 'Geopolitiek conflict', currencies: [] },
+  // Geopolitiek
   { keyword: 'china', label: 'China economie', currencies: ['AUD', 'NZD'] },
   { keyword: 'russia', label: 'Rusland', currencies: ['EUR'] },
   { keyword: 'ukraine', label: 'Oekraïne conflict', currencies: ['EUR'] },
+  // Risk sentiment
   { keyword: 'risk-off', label: 'Risk-off sentiment', currencies: ['JPY', 'CHF'] },
   { keyword: 'risk-on', label: 'Risk-on sentiment', currencies: ['AUD', 'NZD'] },
-  { keyword: 'safe haven', label: 'Vlucht naar veiligheid', currencies: ['JPY', 'CHF', 'USD'] },
-  { keyword: 'gold', label: 'Goudprijs', currencies: ['USD'] },
+  { keyword: 'safe haven', label: 'Vlucht naar veiligheid', currencies: ['JPY', 'CHF'] },
+  { keyword: 'flight to safety', label: 'Vlucht naar veiligheid', currencies: ['JPY', 'CHF'] },
+  // Commodities
+  { keyword: 'gold', label: 'Goudprijs', currencies: ['AUD', 'CHF'] },
   { keyword: 'oil', label: 'Olieprijs', currencies: ['CAD'] },
   { keyword: 'crude', label: 'Olieprijs', currencies: ['CAD'] },
   { keyword: 'opec', label: 'OPEC productie', currencies: ['CAD'] },
+  { keyword: 'iron ore', label: 'IJzererts', currencies: ['AUD'] },
+  { keyword: 'copper', label: 'Koperprijs', currencies: ['AUD'] },
+  { keyword: 'dairy', label: 'Zuivelprijzen', currencies: ['NZD'] },
   { keyword: 'energy crisis', label: 'Energiecrisis', currencies: ['EUR'] },
 ]
 
 const LOW_RELEVANCE = ['crypto', 'bitcoin', 'nft', 'meme', 'celebrity', 'sports', 'entertainment', 'fashion', 'recipe']
+
+// Country/region → currency mapping for contextual tagging
+const COUNTRY_CURRENCIES: Record<string, string[]> = {
+  'united states': ['USD'], 'u.s.': ['USD'], 'american': ['USD'], 'washington': ['USD'],
+  'united kingdom': ['GBP'], 'british': ['GBP'], 'london': ['GBP'], 'uk ': ['GBP'],
+  'japan': ['JPY'], 'japanese': ['JPY'], 'tokyo': ['JPY'],
+  'australia': ['AUD'], 'australian': ['AUD'], 'sydney': ['AUD'],
+  'new zealand': ['NZD'], 'zealand': ['NZD'],
+  'canada': ['CAD'], 'canadian': ['CAD'], 'ottawa': ['CAD'],
+  'switzerland': ['CHF'], 'swiss': ['CHF'],
+  'germany': ['EUR'], 'german': ['EUR'], 'france': ['EUR'], 'french': ['EUR'],
+  'italy': ['EUR'], 'italian': ['EUR'], 'spain': ['EUR'], 'spanish': ['EUR'],
+  'europe': ['EUR'], 'european': ['EUR'], 'brussels': ['EUR'],
+}
 
 function analyzeRelevance(title: string, summary: string) {
   const text = `${title} ${summary}`.toLowerCase()
@@ -116,6 +160,7 @@ function analyzeRelevance(title: string, summary: string) {
   const matchedCurrencies = new Set<string>()
   let score = 0
 
+  // Match keyword tags
   for (const tag of RELEVANCE_TAGS) {
     if (text.includes(tag.keyword)) {
       score += 1
@@ -124,12 +169,30 @@ function analyzeRelevance(title: string, summary: string) {
     }
   }
 
+  // Contextual country/region → currency detection (only if no specific currencies found yet)
+  if (matchedCurrencies.size === 0 && score > 0) {
+    for (const [region, currencies] of Object.entries(COUNTRY_CURRENCIES)) {
+      if (text.includes(region)) {
+        currencies.forEach(c => matchedCurrencies.add(c))
+        break // Take first match to avoid over-tagging
+      }
+    }
+  }
+
+  // Avoid false positive: bare "dollar" without context — check it's not "Australian dollar" etc.
+  if (text.includes('dollar') && !text.includes('australian dollar') && !text.includes('canadian dollar') && !text.includes('new zealand dollar')) {
+    if (!matchedCurrencies.has('USD')) matchedCurrencies.add('USD')
+  }
+
+  // Normalize score to 0-5 range (cap at 5 to prevent outliers)
+  const normalizedScore = Math.min(score, 5)
+
   const tags = Array.from(matchedTags).slice(0, 3)
   const currencies = Array.from(matchedCurrencies).slice(0, 4)
   let context = tags.length > 0 ? tags.join(', ') : ''
   if (context && currencies.length > 0) context += ` · Raakt ${currencies.join(', ')}`
 
-  return { score, tags, currencies: Array.from(matchedCurrencies), context }
+  return { score: normalizedScore, tags, currencies: Array.from(matchedCurrencies), context }
 }
 
 /* ─── Translation ──────────────────────────────────────────── */
@@ -184,7 +247,9 @@ async function fetchAndStoreFeeds(): Promise<void> {
         const analysis = analyzeRelevance(title, summary)
 
         if (analysis.score >= 1 || (source.priority === 1)) {
-          const id = `${source.name.replace(/\s/g, '')}-${Buffer.from(item.guid || item.link || title).toString('base64').slice(0, 40)}`
+          // Use content-based hash to prevent same story from different sources being stored twice
+          const contentKey = title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 60)
+          const id = `${source.name.replace(/\s/g, '')}-${Buffer.from(item.guid || item.link || contentKey).toString('base64').slice(0, 40)}`
           newArticles.push({
             id,
             title,
@@ -194,7 +259,8 @@ async function fetchAndStoreFeeds(): Promise<void> {
             source: source.name,
             category: source.category,
             published_at: item.isoDate || item.pubDate || new Date().toISOString(),
-            relevance_score: analysis.score + (4 - source.priority),
+            // Score 0-5 (keyword matches, capped) + priority bonus (1=CB, 2=forex/macro, 3=geopolitics)
+            relevance_score: Math.min(analysis.score + (4 - source.priority), 5),
             relevance_tags: analysis.tags,
             affected_currencies: analysis.currencies,
             relevance_context: analysis.context,
