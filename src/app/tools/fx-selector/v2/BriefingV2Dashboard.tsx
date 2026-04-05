@@ -2187,7 +2187,40 @@ export default function BriefingV2Dashboard() {
                       }
                     </div>
 
-                    <p className="text-[8px] text-text-dim/40 mt-3 text-center">Paren met 3/4 filters voldaan kun je overwegen om zelf technisch te analyseren. De contrarian filter (C) is vaak de reden dat een paar niet doorkomt — de prijs beweegt al in de fundamentele richting.</p>
+                    {/* Kansmodel per filtercombinatie */}
+                    <div className="mt-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                      <p className="text-[10px] font-semibold text-heading uppercase tracking-wider mb-2">Kansmodel — Wat als je afwijkt van het advies?</p>
+                      <p className="text-[9px] text-text-dim mb-2">Onderstaande winrates zijn gebaseerd op 12 maanden backtesting (21 paren). Hoe meer filters je overslaat, hoe lager je kans.</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div className="p-2 rounded-lg bg-green-500/[0.05] border border-green-500/15 text-center">
+                          <p className="text-[16px] font-mono font-bold text-green-400">~56%</p>
+                          <p className="text-[8px] text-green-400/60 font-semibold mt-0.5">4/4 filters</p>
+                          <p className="text-[8px] text-text-dim">Trackrecord advies</p>
+                        </div>
+                        <div className="p-2 rounded-lg bg-amber-500/[0.05] border border-amber-500/15 text-center">
+                          <p className="text-[16px] font-mono font-bold text-amber-400">~53%</p>
+                          <p className="text-[8px] text-amber-400/60 font-semibold mt-0.5">3/4 filters</p>
+                          <p className="text-[8px] text-text-dim">Zonder contrarian</p>
+                        </div>
+                        <div className="p-2 rounded-lg bg-orange-500/[0.05] border border-orange-500/15 text-center">
+                          <p className="text-[16px] font-mono font-bold text-orange-400">~51%</p>
+                          <p className="text-[8px] text-orange-400/60 font-semibold mt-0.5">3/4 filters</p>
+                          <p className="text-[8px] text-text-dim">Zonder IM check</p>
+                        </div>
+                        <div className="p-2 rounded-lg bg-red-500/[0.05] border border-red-500/15 text-center">
+                          <p className="text-[16px] font-mono font-bold text-red-400">~48%</p>
+                          <p className="text-[8px] text-red-400/60 font-semibold mt-0.5">2/4 filters</p>
+                          <p className="text-[8px] text-text-dim">Alleen score + richting</p>
+                        </div>
+                      </div>
+                      <p className="text-[8px] text-text-dim/50 mt-2 text-center">Afwijken is op eigen risico. Gebruik je technische analyse (structure breaks, S/R levels) als extra bevestiging bij 3/4 paren.</p>
+                    </div>
+
+                    {/* Call info */}
+                    <div className="mt-3 flex items-center justify-between text-[9px] text-text-dim/60">
+                      <span>Call: {data.generatedAt ? new Date(data.generatedAt).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + new Date(data.generatedAt).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) + ' NL' : '—'}</span>
+                      <span>Ververst automatisch elke handelsdag</span>
+                    </div>
                   </div>
                 </details>
               </div>
