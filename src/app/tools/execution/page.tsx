@@ -215,9 +215,41 @@ export default function ExecutionPage() {
           <span className="text-sm font-semibold text-heading">Kies je model</span>
         </div>
         <div className="p-5">
-          <p className="text-[10px] text-text-dim mb-4">
-            Alle 3 modellen gebruiken dezelfde entry methode (1H reversal candle, SL {model.sl}p, TP {model.tp}p). Het enige verschil is de <strong className="text-text-muted">momentum filter</strong>: hoe streng je filtert op hoeveel pips de prijs tegen je fundamentele bias moet bewogen zijn in de afgelopen 5 handelsdagen. Een strengere filter geeft minder trades maar een hogere winrate. Een lossere filter geeft meer trades per week.
-          </p>
+          <div className="mb-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] text-[10px] text-text-dim space-y-2">
+            <p className="text-text-muted font-semibold">Eén strategie, één keuze</p>
+            <p>De 3 modellen zijn <strong className="text-heading">dezelfde strategie</strong> — zelfde entry (1H reversal candle), zelfde SL ({model.sl}p), zelfde TP ({model.tp}p). Het enige verschil is <strong className="text-heading">hoeveel pips de prijs moet gedaald/gestegen zijn</strong> voordat je mag instappen.</p>
+            <p>Stel: de briefing zegt &ldquo;AUD/CAD SHORT&rdquo;. De prijs is 45 pips gestegen in 5 dagen (tegen de bearish bias).</p>
+            <div className="grid grid-cols-3 gap-2 text-[9px]">
+              <div className="p-2 rounded bg-white/[0.03]">
+                <p className="text-heading font-semibold">Selective (30-120p)</p>
+                <p className="text-green-400">45p valt in de zone → <strong>entry</strong></p>
+              </div>
+              <div className="p-2 rounded bg-white/[0.03]">
+                <p className="text-heading font-semibold">Balanced (20-150p)</p>
+                <p className="text-green-400">45p valt in de zone → <strong>entry</strong></p>
+              </div>
+              <div className="p-2 rounded bg-white/[0.03]">
+                <p className="text-heading font-semibold">Aggressive (alle)</p>
+                <p className="text-green-400">Altijd entry → <strong>entry</strong></p>
+              </div>
+            </div>
+            <p>Nu stel: de prijs is maar 15 pips gestegen:</p>
+            <div className="grid grid-cols-3 gap-2 text-[9px]">
+              <div className="p-2 rounded bg-white/[0.03]">
+                <p className="text-heading font-semibold">Selective (30-120p)</p>
+                <p className="text-amber-400">15p &lt; 30p → <strong>wacht</strong></p>
+              </div>
+              <div className="p-2 rounded bg-white/[0.03]">
+                <p className="text-heading font-semibold">Balanced (20-150p)</p>
+                <p className="text-amber-400">15p &lt; 20p → <strong>wacht</strong></p>
+              </div>
+              <div className="p-2 rounded bg-white/[0.03]">
+                <p className="text-heading font-semibold">Aggressive (alle)</p>
+                <p className="text-green-400">Altijd → <strong>entry</strong></p>
+              </div>
+            </div>
+            <p className="text-text-dim/60">Hoe strenger je filtert, hoe minder trades maar hoe hoger je winrate. Kies het model dat bij jou past.</p>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
             {Object.values(TRADE_MODELS).map(m => (
@@ -389,15 +421,20 @@ export default function ExecutionPage() {
           <span className="text-sm font-semibold text-heading">Concrete Trades — Vandaag</span>
         </div>
         <div className="p-5">
-          {/* Context: verschil met briefing */}
-          <div className="mb-4 p-3 rounded-xl bg-accent/5 border border-accent/15">
-            <p className="text-[10px] text-accent-light font-semibold mb-1">Verschil met Daily Macro Briefing</p>
-            <p className="text-[9px] text-text-dim leading-relaxed">
-              De Daily Macro Briefing toont <strong className="text-text-muted">concrete trades</strong> = paren die alle 4 fundamentele filters passeren.
-              De Execution Engine toont <strong className="text-text-muted">dezelfde paren</strong> maar voegt de <strong className="text-text-muted">momentum zone</strong> check toe.
-              <strong className="text-green-400"> Groen</strong> = de prijs is genoeg tegen de bias bewogen en het is het optimale moment om de 1H chart te openen.
-              <strong className="text-amber-400"> Amber</strong> = het pair is fundamenteel correct maar de momentum zone is nog niet bereikt — wacht.
-            </p>
+          {/* Context: verschil met briefing + amber uitleg */}
+          <div className="mb-4 p-3 rounded-xl bg-accent/5 border border-accent/15 text-[9px] text-text-dim space-y-2">
+            <p className="text-[10px] text-accent-light font-semibold">Hoe lees je deze lijst?</p>
+            <p>Hieronder staan de <strong className="text-heading">concrete trades</strong> uit je Daily Macro Briefing — dezelfde paren die alle 4 fundamentele filters passeren. De Execution Engine voegt daar de momentum check aan toe.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="p-2 rounded bg-green-500/5 border border-green-500/10">
+                <p className="text-green-400 font-semibold">● Groen = Entry Ready</p>
+                <p>De prijs is genoeg pips tegen de bias bewogen (in jouw model zone). Open de 1H chart en wacht op een reversal candle. Backtest winrate: <strong className="text-green-400">{model.expectedWR}%</strong></p>
+              </div>
+              <div className="p-2 rounded bg-amber-500/5 border border-amber-500/10">
+                <p className="text-amber-400 font-semibold">● Amber = Wacht op Momentum</p>
+                <p>Het pair is fundamenteel correct (4/4 filters) maar de prijs is nog niet genoeg tegen de bias bewogen. Je kunt de trade wel nemen maar de backtest winrate is lager: <strong className="text-amber-400">~56%</strong> (de fundamentele baseline). Wacht voor betere timing.</p>
+              </div>
+            </div>
           </div>
 
           {/* Legenda */}
