@@ -63,16 +63,19 @@ export default function ExecutionPage() {
       if (!d.error) setTrackRecord(d)
     }).catch(() => {})
 
-    // Backtest trades uit fundamenteel trackrecord (voor geselecteerd model)
-    fetch('/api/trackrecord-v2').then(r => r.json()).then(d => {
-      if (d.records) {
+    // Backtest trades uit fundamenteel trackrecord
+    fetch('/api/trackrecord-v2').then(r => {
+      if (!r.ok) throw new Error('Status ' + r.status)
+      return r.json()
+    }).then(d => {
+      if (d.records && Array.isArray(d.records)) {
         const resolved = d.records.filter((t: { result: string }) => t.result === 'correct' || t.result === 'incorrect')
         setBacktestTrades(resolved.map((t: { date: string; pair: string; direction: string; score: number; metadata?: { momentum5d?: number }; result: string; pips_moved: number }) => ({
           date: t.date, pair: t.pair, direction: t.direction, score: t.score,
           momentum: Math.abs(t.metadata?.momentum5d || 0), result: t.result, pips: t.pips_moved || 0,
         })))
       }
-    }).catch(() => {})
+    }).catch((e) => { console.warn('Backtest fetch failed:', e) })
   }, [])
 
   const fetchData = useCallback(async () => {
@@ -590,7 +593,8 @@ export default function ExecutionPage() {
 
               return modelBT.length === 0 && (!trackRecord || trackRecord.overall.resolved === 0) ? (
               <div className="mt-3 p-4 rounded-xl bg-white/[0.02] text-center">
-                <p className="text-sm text-text-muted">Trackrecord wordt geladen...</p>
+                <p className="text-sm text-text-muted">{backtestTrades.length === 0 ? 'Trackrecord wordt geladen...' : 'Geen trades voor dit model in de backtest data'}</p>
+                <p className="text-[10px] text-text-dim mt-1">Het live trackrecord bouwt zich op zodra er concrete trades zijn (IM &gt; 50%).</p>
               </div>
             ) : (
               <>

@@ -306,7 +306,7 @@ export default function Header() {
               <div className="rounded-xl shadow-2xl border border-white/[0.12] py-2 min-w-[280px]" style={{ background: 'rgba(13, 14, 20, 0.97)', backdropFilter: 'blur(24px)' }}>
                 {toolsDropdown.map((item, i) => (
                   <div key={item.href}>
-                    {i === 3 && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
+                    {i === 4 && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
                     <Link
                       href={item.href}
                       className={`flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-white/[0.08] ${
