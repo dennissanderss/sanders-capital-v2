@@ -17,13 +17,13 @@ const freeFeatures = [
 
 const premiumFeatures = [
   'Daily Macro Briefing',
-  'Macro Fundamentals dashboard',
+  'Execution Engine (3 modellen)',
+  'Fundamentals dashboard',
   'TradeMind backtest analyse',
   'TradeMind Journal',
   'Premium artikelen & analyses',
   'Verdiepende kennisbank modules',
   'Exclusieve community kanalen',
-  'Persoonlijke ondersteuning',
 ]
 
 const tools = [
@@ -41,7 +41,7 @@ const tools = [
     ),
   },
   {
-    name: 'Macro Fundamentals',
+    name: 'Fundamentals',
     description: 'Rentetarieven, inflatiecijfers en centrale bank beleid per valuta. De data achter de scores, inclusief trackrecord.',
     href: '/tools/fx-analyse',
     value: 'LIVE_WIN_RATE winrate op trackrecord',
@@ -49,6 +49,17 @@ const tools = [
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <line x1="12" y1="1" x2="12" y2="23" />
         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+      </svg>
+    ),
+  },
+  {
+    name: 'Execution Engine',
+    description: 'Bewezen technisch timing model gekoppeld aan de Daily Briefing. 3 modellen (58-62% WR), vaste SL/TP, 1:3 RR. Live trackrecord.',
+    href: '/tools/execution',
+    value: '58-62% winrate, PF 4-5',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
       </svg>
     ),
   },

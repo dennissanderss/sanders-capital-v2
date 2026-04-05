@@ -288,6 +288,83 @@ export default function ExecutionPage() {
         </div>
       </section>
 
+      {/* ═══ BACKTEST: BEWIJS DAT HET WERKT ═══ */}
+      <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+        <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-2">
+          <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">Bewijs</span>
+          <span className="text-sm font-semibold text-heading">Backtest: wat voegt de techniek toe?</span>
+        </div>
+        <div className="p-5">
+          <p className="text-[10px] text-text-dim mb-4">
+            Hieronder zie je wat er gebeurt als je <strong className="text-text-muted">alleen de fundamentele bias</strong> volgt versus wanneer je daar het <strong className="text-text-muted">technische timing model</strong> aan toevoegt. Alle cijfers zijn gebaseerd op dezelfde 434 trades uit het fundamentele trackrecord (apr 2025 - mar 2026).
+          </p>
+
+          {/* Vergelijkingstabel */}
+          <div className="overflow-x-auto mb-4">
+            <table className="w-full text-[10px]">
+              <thead>
+                <tr className="border-b border-white/[0.06] text-text-dim">
+                  <th className="text-left py-2 px-2">Methode</th>
+                  <th className="text-right py-2 px-2">Trades</th>
+                  <th className="text-right py-2 px-2">/week</th>
+                  <th className="text-right py-2 px-2">Winrate</th>
+                  <th className="text-right py-2 px-2">PF</th>
+                  <th className="text-right py-2 px-2">Exp/trade</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Baseline */}
+                <tr className="border-b border-white/[0.02] bg-white/[0.01]">
+                  <td className="py-2 px-2 text-text-muted">Alleen fundamenteel (geen techniek)</td>
+                  <td className="py-2 px-2 text-right font-mono text-heading">434</td>
+                  <td className="py-2 px-2 text-right font-mono text-text-muted">9.4</td>
+                  <td className="py-2 px-2 text-right font-mono text-heading">56.2%</td>
+                  <td className="py-2 px-2 text-right font-mono text-text-muted">—</td>
+                  <td className="py-2 px-2 text-right font-mono text-text-muted">—</td>
+                </tr>
+                <tr className="border-b border-white/[0.02] bg-white/[0.01]">
+                  <td className="py-2 px-2 text-text-muted">Score 2-3 (zonder momentum)</td>
+                  <td className="py-2 px-2 text-right font-mono text-heading">262</td>
+                  <td className="py-2 px-2 text-right font-mono text-text-muted">5.7</td>
+                  <td className="py-2 px-2 text-right font-mono text-heading">58.0%</td>
+                  <td className="py-2 px-2 text-right font-mono text-text-muted">—</td>
+                  <td className="py-2 px-2 text-right font-mono text-text-muted">—</td>
+                </tr>
+                {/* Divider */}
+                <tr><td colSpan={6} className="py-1"><div className="border-t border-accent/20" /></td></tr>
+                {/* Models met SL/TP */}
+                {Object.values(TRADE_MODELS).map(m => (
+                  <tr key={m.id} className={`border-b border-white/[0.02] ${selectedModel === m.id ? 'bg-accent/5' : ''}`}>
+                    <td className="py-2 px-2"><span className={selectedModel === m.id ? 'text-accent-light font-bold' : 'text-text-muted'}>{m.name} + techniek</span></td>
+                    <td className="py-2 px-2 text-right font-mono text-heading">{m.sampleSize}</td>
+                    <td className="py-2 px-2 text-right font-mono text-heading">{m.tradesPerWeek}</td>
+                    <td className="py-2 px-2 text-right font-mono text-green-400 font-bold">{m.expectedWR}%</td>
+                    <td className="py-2 px-2 text-right font-mono text-green-400 font-bold">{m.expectedPF}</td>
+                    <td className="py-2 px-2 text-right font-mono text-green-400">+{m.expectedExp}p</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Uitleg */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[9px] text-text-dim">
+            <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+              <p className="text-text-muted font-semibold mb-1">Wat doet de techniek?</p>
+              <p>Het momentum filter selecteert alleen trades waar de prijs eerst <strong className="text-heading">tegen</strong> de fundamentele bias bewoog (mean reversion). Dit verhoogt de winrate van 56% naar 58-62% en voegt een vaste SL (40p) en TP (120p) toe voor een 1:3 RR.</p>
+            </div>
+            <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+              <p className="text-text-muted font-semibold mb-1">Zonder fundamentele bias?</p>
+              <p>Puur op momentum filteren (zonder fundamenele score check) geeft een winrate van 56-60%. De fundamentele bias voegt <strong className="text-heading">+2-6%</strong> winrate toe. De combinatie is sterker dan elk onderdeel apart.</p>
+            </div>
+            <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+              <p className="text-text-muted font-semibold mb-1">Verschil met Daily Briefing</p>
+              <p>De Daily Briefing geeft <strong className="text-heading">de richting</strong> (welke pairs bullish/bearish zijn). De Execution Engine voegt daar <strong className="text-heading">timing</strong> aan toe: wanneer instappen, waar SL/TP zetten, en hoeveel risico nemen.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ═══ STAP 3: CONCRETE TRADES ═══ */}
       <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
         <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-2">
@@ -295,6 +372,17 @@ export default function ExecutionPage() {
           <span className="text-sm font-semibold text-heading">Concrete Trades — Vandaag</span>
         </div>
         <div className="p-5">
+          {/* Context: verschil met briefing */}
+          <div className="mb-4 p-3 rounded-xl bg-accent/5 border border-accent/15">
+            <p className="text-[10px] text-accent-light font-semibold mb-1">Verschil met Daily Macro Briefing</p>
+            <p className="text-[9px] text-text-dim leading-relaxed">
+              De Daily Macro Briefing toont <strong className="text-text-muted">concrete trades</strong> = paren die alle 4 fundamentele filters passeren.
+              De Execution Engine toont <strong className="text-text-muted">dezelfde paren</strong> maar voegt de <strong className="text-text-muted">momentum zone</strong> check toe.
+              <strong className="text-green-400"> Groen</strong> = de prijs is genoeg tegen de bias bewogen en het is het optimale moment om de 1H chart te openen.
+              <strong className="text-amber-400"> Amber</strong> = het pair is fundamenteel correct maar de momentum zone is nog niet bereikt — wacht.
+            </p>
+          </div>
+
           {/* Legenda */}
           <div className="mb-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
             <p className="text-[10px] font-semibold text-heading mb-2">Legenda — Filters &amp; Status</p>

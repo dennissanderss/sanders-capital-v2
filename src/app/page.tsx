@@ -328,7 +328,7 @@ export default async function HomePage() {
                 ),
               },
               {
-                name: 'Macro Fundamentals',
+                name: 'Fundamentals',
                 problem: 'Rentetarieven en CB beleid zijn verspreid over tientallen bronnen.',
                 solution: 'Alle rentedata, inflatiecijfers en centrale bank bias per valuta op één plek.',
                 href: '/tools/fx-analyse',
@@ -340,9 +340,20 @@ export default async function HomePage() {
                 ),
               },
               {
+                name: 'Execution Engine',
+                problem: 'Fundamentele bias is correct maar je weet niet wanneer je moet instappen.',
+                solution: 'Bewezen technisch timing model: 3 modellen (58-62% WR, PF 4-5), vaste SL/TP, 1:3 RR. Automatisch gekoppeld aan de Daily Briefing.',
+                href: '/tools/execution',
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                  </svg>
+                ),
+              },
+              {
                 name: 'TradeMind',
-                problem: 'Je hebt backtest data maar geen manier om patronen te zien.',
-                solution: 'Upload je CSV en krijg direct winrate, drawdown, sessie- en dag-analyse.',
+                problem: 'Je hebt trades maar geen manier om patronen te zien.',
+                solution: 'Trading journal met screenshots, profit kalender, emotie tracking en performance analyse.',
                 href: '/tools/tradescope',
                 icon: (
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
