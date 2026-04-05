@@ -122,6 +122,12 @@ export default function ExecutionPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  // Auto-refresh elke 5 minuten
+  useEffect(() => {
+    const interval = setInterval(() => { fetchData() }, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [fetchData])
+
   const concreteTrades = candidates.filter(c => c.isConcreTrade)
   const nearMisses = candidates.filter(c => !c.isConcreTrade && c.filterCount >= 3)
   const entryReady = candidates.filter(c => c.entryReady)
@@ -331,7 +337,14 @@ export default function ExecutionPage() {
                 </span>
                 <span className="text-[10px] text-text-dim">{concreteTrades.length} concrete · {nearMisses.length} near miss</span>
                 {entryReady.length > 0 && <span className="text-[10px] text-green-400 font-bold animate-pulse">{entryReady.length} entry ready!</span>}
-                <span className="ml-auto text-[8px] text-text-dim/30">{generatedAt ? new Date(generatedAt).toLocaleString('nl-NL') : ''}</span>
+                <span className="ml-auto flex items-center gap-2">
+                  <span className="text-[8px] text-text-dim/30">{generatedAt ? new Date(generatedAt).toLocaleString('nl-NL') : ''}</span>
+                  <button onClick={() => fetchData()} className="text-[9px] text-text-dim/40 hover:text-accent-light transition-colors flex items-center gap-1">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
+                    Ververs
+                  </button>
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400/50 animate-pulse" title="Auto-refresh elke 5 min" />
+                </span>
               </div>
 
               {/* Concrete trades */}
@@ -353,8 +366,8 @@ export default function ExecutionPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className={`text-[9px] px-2 py-0.5 rounded-full font-mono ${trade.inMomentumZone ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}
-                              title={`5-daags momentum: ${trade.momentum5d > 0 ? '+' : ''}${trade.momentum5d} pips. ${trade.inMomentumZone ? 'In de momentum zone — klaar voor entry.' : trade.momentumStatus}`}>
-                              {trade.momentum5d > 0 ? '+' : ''}{trade.momentum5d}p
+                              title={`5-daags momentum: ${trade.momentum5d > 0 ? '+' : ''}${trade.momentum5d} pips tegen de bias.\n${trade.inMomentumZone ? `In de momentum zone (${model.momMin > 0 ? model.momMin + '-' + model.momMax + 'p' : 'alle'}) — klaar voor entry.` : trade.momentumStatus}\nDe prijs is ${Math.abs(trade.momentum5d)} pips ${trade.momentum5d > 0 ? 'gestegen' : 'gedaald'} in 5 dagen.`}>
+                              {trade.inMomentumZone ? '\u2713 ' : ''}{trade.momentum5d > 0 ? '+' : ''}{trade.momentum5d}p {trade.inMomentumZone ? '' : `(nodig: ${model.momMin > 0 ? model.momMin + 'p' : ''})`}
                             </span>
                             <span className="text-sm font-mono font-bold text-heading">{trade.score > 0 ? '+' : ''}{trade.score}</span>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-text-dim transition-transform ${isExp ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9" /></svg>
