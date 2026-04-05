@@ -2067,10 +2067,53 @@ export default function BriefingV2Dashboard() {
                     </svg>
                   </summary>
                   <div className="px-5 pb-4 border-t border-white/[0.04]">
-                    <p className="text-[9px] text-text-dim mt-2 mb-3">Alle 21 paren met hun status. Groene rij = door alle filters (concrete trade). Rode rij = gefilterd met reden. Gebruik je eigen technische analyse om te bepalen of je een gefilterd paar alsnog wilt traden.</p>
+                    {/* Legenda */}
+                    <div className="mt-3 mb-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                      <p className="text-[10px] font-semibold text-heading uppercase tracking-wider mb-2">Legenda — Wat betekenen de 4 filters?</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[9px] text-text-dim">
+                        <div className="flex items-start gap-2">
+                          <span className="text-accent-light font-bold shrink-0 mt-0.5">S</span>
+                          <div>
+                            <p className="text-text-muted font-medium">Score (fundamenteel)</p>
+                            <p>Het verschil in fundamentele kracht tussen twee valuta&apos;s. Berekend uit CB beleid (&times;2) + renteverschil (&times;1.5) + nieuws bonus. <strong className="text-green-400">&ge; 2.0 = voldoende</strong></p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-accent-light font-bold shrink-0 mt-0.5">IM</span>
+                          <div>
+                            <p className="text-text-muted font-medium">Intermarket alignment</p>
+                            <p>Bevestigen VIX, S&amp;P500, Gold, Yields en Oil het huidige marktregime? Vandaag: <strong className={`${(data.intermarketAlignment ?? 0) > 50 ? 'text-green-400' : 'text-red-400'}`}>{data.intermarketAlignment ?? 0}%</strong>. <strong className="text-green-400">&gt; 50% = voldoende</strong></p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-accent-light font-bold shrink-0 mt-0.5">C</span>
+                          <div>
+                            <p className="text-text-muted font-medium">Contrarian (mean reversion)</p>
+                            <p>De prijs moet in de afgelopen 5 dagen <em>tegen</em> de fundamentele richting bewogen hebben. Wij kopen dips en verkopen rallies. <strong className="text-green-400">\u2713 = prijs ging tegen richting</strong></p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-accent-light font-bold shrink-0 mt-0.5">R</span>
+                          <div>
+                            <p className="text-text-muted font-medium">Richting</p>
+                            <p>Het paar moet een duidelijke bullish of bearish richting hebben (niet neutraal). <strong className="text-green-400">\u2713 = duidelijke bias</strong></p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-white/[0.04] flex items-center gap-4 text-[9px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-block w-2 h-2 rounded-full bg-green-400" />
+                          <span className="text-text-dim">Alle 4 filters gepasseerd = concrete trade</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-block w-2 h-2 rounded-full bg-red-400/40" />
+                          <span className="text-text-dim">Minimaal 1 filter gefaald = niet automatisch getracked</span>
+                        </div>
+                      </div>
+                    </div>
 
-                    <div className="mt-1 space-y-1">
-                      {/* Doorgekomen trades eerst */}
+                    {/* Paren lijst met filter checklist */}
+                    <div className="space-y-1.5">
                       {data.v3.pairSignals
                         .map((sig: { pair: string; signal: string; score: number; conviction: number; intermarket: { alignment: number }; tradeability: { status: string }; priceMomentum: { direction: string; pips1d: number; pips5d: number; atr20d: number; extensionRatio: number } }) => {
                           const isInTrackrecord = tradeFocus.some(t => t.pair === sig.pair)
@@ -2081,51 +2124,70 @@ export default function BriefingV2Dashboard() {
                           const imGlobal = data.intermarketAlignment ?? 0
                           const pips5d = sig.priceMomentum?.pips5d ?? 0
 
-                          // Determine which filters failed
-                          const failReasons: string[] = []
-                          if (isNeutral) failReasons.push('Geen duidelijke richting')
-                          else if (absScore < 2.0) failReasons.push('Score te laag (' + sig.score + ')')
-                          else {
-                            if (imGlobal <= 50) failReasons.push('IM alignment te laag (' + imGlobal + '%)')
-                            const isContrarian = (isBullish && pips5d < 0) || (isBearish && pips5d > 0)
-                            if (!isContrarian && absScore >= 2.0) failReasons.push('Geen contrarian setup (prijs ging al ' + (pips5d > 0 ? '+' : '') + pips5d + ' pips)')
-                          }
+                          // Individual filter checks
+                          const scorePass = absScore >= 2.0
+                          const imPass = imGlobal > 50
+                          const contrarianPass = (isBullish && pips5d < 0) || (isBearish && pips5d > 0)
+                          const directionPass = !isNeutral
+                          const passCount = [scorePass, imPass, contrarianPass, directionPass].filter(Boolean).length
 
-                          return { sig, isInTrackrecord, isBullish, isBearish, isNeutral, failReasons, absScore, pips5d }
+                          return { sig, isInTrackrecord, isBullish, isBearish, isNeutral, absScore, pips5d, scorePass, imPass, contrarianPass, directionPass, passCount }
                         })
-                        .sort((a, b) => (a.isInTrackrecord === b.isInTrackrecord ? b.absScore - a.absScore : a.isInTrackrecord ? -1 : 1))
-                        .map(({ sig, isInTrackrecord, isBullish, isBearish, isNeutral, failReasons, pips5d }) => (
+                        .sort((a, b) => a.isInTrackrecord === b.isInTrackrecord ? b.passCount - a.passCount || b.absScore - a.absScore : a.isInTrackrecord ? -1 : 1)
+                        .map(({ sig, isInTrackrecord, isBullish, isBearish, isNeutral, pips5d, scorePass, imPass, contrarianPass, directionPass, passCount }) => (
                           <div
                             key={sig.pair}
-                            className={`flex items-center justify-between px-3 py-2 rounded-lg border transition-colors ${
+                            className={`px-3 py-2.5 rounded-xl border transition-colors ${
                               isInTrackrecord
-                                ? 'bg-green-500/[0.04] border-green-500/15 hover:bg-green-500/[0.07]'
+                                ? 'bg-green-500/[0.04] border-green-500/20'
                                 : isNeutral
-                                  ? 'bg-white/[0.01] border-white/[0.04] opacity-30'
-                                  : 'bg-white/[0.01] border-white/[0.04] hover:bg-white/[0.03]'
+                                  ? 'bg-white/[0.01] border-white/[0.03] opacity-25'
+                                  : 'bg-white/[0.01] border-white/[0.05] hover:bg-white/[0.03]'
                             }`}
                           >
-                            <div className="flex items-center gap-3">
-                              <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${isInTrackrecord ? 'bg-green-400' : 'bg-red-400/40'}`} />
-                              <span className="font-mono font-bold text-[11px] text-heading w-16">{sig.pair}</span>
-                              <span className={`text-[10px] font-medium ${isBullish ? 'text-green-400' : isBearish ? 'text-red-400' : 'text-text-dim'}`}>
-                                {isBullish ? '\u25B2 LONG' : isBearish ? '\u25BC SHORT' : '\u2014 neutraal'}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              {isInTrackrecord ? (
-                                <span className="text-[9px] text-green-400/70 font-medium">Alle filters \u2713</span>
-                              ) : failReasons.length > 0 ? (
-                                <span className="text-[9px] text-red-400/60">{failReasons[0]}</span>
-                              ) : null}
-                              <span className={`text-[11px] font-mono font-bold min-w-[3rem] text-right ${sig.score > 0 ? 'text-green-400' : sig.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
-                                {sig.score > 0 ? '+' : ''}{sig.score}
-                              </span>
+                            <div className="flex items-center justify-between">
+                              {/* Pair info */}
+                              <div className="flex items-center gap-2.5">
+                                <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${isInTrackrecord ? 'bg-green-400' : passCount >= 3 ? 'bg-amber-400/60' : 'bg-red-400/40'}`} />
+                                <span className="font-mono font-bold text-[11px] text-heading w-[4.5rem]">{sig.pair}</span>
+                                <span className={`text-[10px] font-semibold ${isBullish ? 'text-green-400' : isBearish ? 'text-red-400' : 'text-text-dim/50'}`}>
+                                  {isBullish ? '\u25B2 LONG' : isBearish ? '\u25BC SHORT' : '\u2014'}
+                                </span>
+                              </div>
+
+                              {/* Filter badges */}
+                              <div className="flex items-center gap-1.5">
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold ${scorePass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}
+                                  title={`Score: ${sig.score > 0 ? '+' : ''}${sig.score} (nodig: \u00b12.0)`}
+                                >
+                                  S {sig.score > 0 ? '+' : ''}{sig.score}
+                                </span>
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold ${imPass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}
+                                  title={`Intermarket: ${data.intermarketAlignment ?? 0}% (nodig: >50%)`}
+                                >
+                                  IM {data.intermarketAlignment ?? 0}%
+                                </span>
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold ${contrarianPass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}
+                                  title={`Contrarian: prijs ${pips5d > 0 ? '+' : ''}${pips5d} pips in 5d (nodig: tegen de richting)`}
+                                >
+                                  C {pips5d > 0 ? '+' : ''}{pips5d}
+                                </span>
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold ${directionPass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}
+                                  title="Richting: bullish of bearish (niet neutraal)"
+                                >
+                                  R {directionPass ? '\u2713' : '\u2717'}
+                                </span>
+                                <span className={`text-[9px] font-bold ml-1 ${passCount === 4 ? 'text-green-400' : passCount >= 3 ? 'text-amber-400' : 'text-red-400/50'}`}>
+                                  {passCount}/4
+                                </span>
+                              </div>
                             </div>
                           </div>
                         ))
                       }
                     </div>
+
+                    <p className="text-[8px] text-text-dim/40 mt-3 text-center">Paren met 3/4 filters voldaan kun je overwegen om zelf technisch te analyseren. De contrarian filter (C) is vaak de reden dat een paar niet doorkomt — de prijs beweegt al in de fundamentele richting.</p>
                   </div>
                 </details>
               </div>
