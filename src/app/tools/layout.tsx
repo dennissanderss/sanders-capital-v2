@@ -14,11 +14,11 @@ interface ToolSetting {
 }
 
 const premiumTools = [
-  { href: '/tools/fx-analyse', label: 'Macro Fundamentals', slug: 'fx-analyse' },
-  { href: '/tools/fx-selector', label: 'Daily Macro Briefing', slug: 'fx-selector' },
-  { href: '/tools/execution', label: 'Execution Engine', slug: 'execution' },
+  { href: '/tools/fx-selector', label: 'Introductie', slug: 'fx-selector', icon: 'info', isIntro: true },
+  { href: '/tools/fx-analyse', label: 'Fundamentals', slug: 'fx-analyse', flowArrow: true },
+  { href: '/tools/execution', label: 'Execution Engine', slug: 'execution', flowArrow: true },
   { href: '/tools/tradescope', label: 'TradeMind', slug: 'tradescope' },
-]
+] as const
 
 const freeTools = [
   { href: '/tools/calculator', label: 'Position Size Calculator', slug: 'calculator' },
@@ -92,9 +92,14 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
               const prevPremium = i > 0 ? isPremiumTool(allTools[i - 1].slug) : true
               const showDivider = !premium && prevPremium && i > 0
 
+              const tool = link as typeof premiumTools[number] & { flowArrow?: boolean; isIntro?: boolean }
               return (
                 <div key={link.href} className="flex items-center">
                   {showDivider && <div className="w-px h-5 bg-border/50 mx-1.5 shrink-0" />}
+                  {/* Flow arrow between premium tools */}
+                  {'flowArrow' in tool && tool.flowArrow && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-light/30 shrink-0 -mx-0.5 hidden sm:block"><polyline points="9 18 15 12 9 6" /></svg>
+                  )}
                   <Link
                     href={link.href}
                     className={`px-3 sm:px-4 py-2 sm:py-2.5 text-sm whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5 ${
@@ -103,8 +108,11 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
                         : 'border-transparent text-text-muted hover:text-heading hover:border-border-light'
                     }`}
                   >
+                    {'isIntro' in tool && tool.isIntro && (
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
+                    )}
                     {link.label}
-                    {premium && (
+                    {premium && !('isIntro' in tool && tool.isIntro) && (
                       locked ? (
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold/70">
                           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />

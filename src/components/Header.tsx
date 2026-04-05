@@ -28,9 +28,10 @@ const blogDropdown = [
 ]
 
 const toolsDropdown = [
-  { href: '/tools/fx-analyse', slug: 'fx-analyse', label: 'Macro Fundamentals', desc: 'Valutaparen analyseren op fundamentals', icon: 'layers', defaultPremium: true },
-  { href: '/tools/fx-selector', slug: 'fx-selector', label: 'Daily Macro Briefing', desc: 'Dagelijkse marktanalyse & bias', icon: 'compass', defaultPremium: true },
-  { href: '/tools/tradescope', slug: 'tradescope', label: 'TradeMind', desc: 'Analyseer je trades & performance', icon: 'activity', defaultPremium: true },
+  { href: '/tools/fx-analyse', slug: 'fx-analyse', label: 'Fundamentals', desc: 'Fundamentele FX analyse & valutascoring', icon: 'layers', defaultPremium: true },
+  { href: '/tools/fx-selector', slug: 'fx-selector', label: 'Daily Macro Briefing', desc: 'Dagelijkse macro analyse & concrete trades', icon: 'compass', defaultPremium: true },
+  { href: '/tools/execution', slug: 'execution', label: 'Execution Engine', desc: 'Optimale entry, SL & TP berekening', icon: 'target', defaultPremium: true },
+  { href: '/tools/tradescope', slug: 'tradescope', label: 'TradeMind', desc: 'Trading journal & performance analyse', icon: 'activity', defaultPremium: true },
   { href: '/tools/calculator', slug: 'calculator', label: 'Position Size Calculator', desc: 'Bereken je positiegrootte', icon: 'calculator' },
   { href: '/tools/rente', slug: 'rente', label: 'Rentetarieven', desc: 'Centrale bank rentes', icon: 'percent' },
 ]
