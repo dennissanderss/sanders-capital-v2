@@ -682,7 +682,9 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
   })
 
   // Track which fields the user has manually edited
-  const [manualFields, setManualFields] = useState<Set<string>>(new Set(trade ? ['pips', 'profit_loss', 'risk_reward', 'result_r'] : []))
+  // When editing existing trade: all derived fields start as manual (don't overwrite)
+  const isEditing = trade !== null
+  const [manualFields, setManualFields] = useState<Set<string>>(new Set(isEditing ? ['pips', 'profit_loss', 'risk_reward', 'result_r'] : []))
 
   const set = (key: string, value: unknown) => {
     // Mark derived fields as manual when user types in them
@@ -702,7 +704,8 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
   const calcKey = `${form.open_price}|${form.close_price}|${form.sl}|${form.lot_size}|${form.action}|${form.symbol}|${form.commission}|${form.swap}`
   useEffect(() => {
     // Skip auto-calc for existing trades (all derived fields are manual)
-    if (manualFields.size >= 4) return
+    // Skip auto-calc when editing existing trade (unless user cleared a field)
+    if (isEditing && manualFields.size >= 4) return
 
     const entry = parseFloat(String(form.open_price ?? ''))
     const exit = parseFloat(String(form.close_price ?? ''))
@@ -1152,8 +1155,9 @@ function ToggleChip({ label, value, onChange, colorYes, colorNo, invert }: {
     red: 'bg-red-500/10 text-red-400 border-red-500/20',
     amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
   }
-  const isActive = invert ? value === true : value === true
-  const activeColor = invert ? colors[colorYes] : colors[colorYes]
+  // true → colorYes styling, false → colorNo styling, null → neutral
+  // For inverted chips (Impulsief etc.): colorYes=red, colorNo=green (already swapped in caller)
+  const isActive = value === true
   const inactiveColor = value === false ? colors[colorNo] : ''
 
   return (
@@ -1165,7 +1169,7 @@ function ToggleChip({ label, value, onChange, colorYes, colorNo, invert }: {
         else onChange(null)
       }}
       className={`px-3 py-1.5 rounded-lg text-xs border transition-colors ${
-        isActive ? activeColor : value === false ? inactiveColor : 'border-border text-text-dim hover:text-heading'
+        isActive ? colors[colorYes] : value === false ? inactiveColor : 'border-border text-text-dim hover:text-heading'
       }`}
     >
       {label}
