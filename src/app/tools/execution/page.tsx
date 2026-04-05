@@ -54,10 +54,24 @@ export default function ExecutionPage() {
 
   const model = TRADE_MODELS[selectedModel]
 
-  // Fetch trackrecord
+  const [backtestTrades, setBacktestTrades] = useState<{ date: string; pair: string; direction: string; score: number; momentum: number; result: string; pips: number }[]>([])
+
+  // Fetch trackrecord (live + backtest)
   useEffect(() => {
+    // Live trackrecord
     fetch('/api/cron/execution').then(r => r.json()).then(d => {
       if (!d.error) setTrackRecord(d)
+    }).catch(() => {})
+
+    // Backtest trades uit fundamenteel trackrecord (voor geselecteerd model)
+    fetch('/api/trackrecord-v2').then(r => r.json()).then(d => {
+      if (d.records) {
+        const resolved = d.records.filter((t: { result: string }) => t.result === 'correct' || t.result === 'incorrect')
+        setBacktestTrades(resolved.map((t: { date: string; pair: string; direction: string; score: number; metadata?: { momentum5d?: number }; result: string; pips_moved: number }) => ({
+          date: t.date, pair: t.pair, direction: t.direction, score: t.score,
+          momentum: Math.abs(t.metadata?.momentum5d || 0), result: t.result, pips: t.pips_moved || 0,
+        })))
+      }
     }).catch(() => {})
   }, [])
 
@@ -563,10 +577,20 @@ export default function ExecutionPage() {
 
         {showTrackRecord && (
           <div className="px-5 pb-5 border-t border-white/[0.04]">
-            {!trackRecord || trackRecord.overall.resolved === 0 ? (
+            {(() => {
+              // Filter backtest trades per geselecteerd model
+              const modelBT = backtestTrades.filter(t => {
+                const s = Math.abs(t.score), m = t.momentum
+                return s >= model.scoreMin && s < model.scoreMax && m >= model.momMin && m <= model.momMax
+              })
+              const btWins = modelBT.filter(t => t.result === 'correct').length
+              const btLosses = modelBT.length - btWins
+              const btWR = modelBT.length > 0 ? (btWins / modelBT.length * 100).toFixed(1) : '0'
+              const btPips = btWins * model.tp - btLosses * model.sl
+
+              return modelBT.length === 0 && (!trackRecord || trackRecord.overall.resolved === 0) ? (
               <div className="mt-3 p-4 rounded-xl bg-white/[0.02] text-center">
-                <p className="text-sm text-text-muted">Nog geen resolved trades</p>
-                <p className="text-[10px] text-text-dim mt-1">Het trackrecord wordt automatisch bijgehouden. Elke handelsdag worden nieuwe trades opgeslagen en de volgende dag resolved.</p>
+                <p className="text-sm text-text-muted">Trackrecord wordt geladen...</p>
               </div>
             ) : (
               <>
@@ -636,8 +660,40 @@ export default function ExecutionPage() {
                   <p className="text-[8px] text-text-dim/30 mt-1">Gebaseerd op 434 fundamentele trades uit het trackrecord. SL={model.sl}p, TP={model.tp}p, 1:{model.rr} RR. Momentum filter per model.</p>
                 </div>
 
-                {/* Recente trades */}
-                {trackRecord.recentTrades.length > 0 && (
+                {/* Backtest trades (uit fundamenteel trackrecord) */}
+                {modelBT.length > 0 && (
+                  <div className="mb-4">
+                    <details className="group">
+                      <summary className="text-[10px] text-text-dim/50 cursor-pointer hover:text-text-dim flex items-center gap-1">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-transform group-open:rotate-90"><polyline points="9 18 15 12 9 6" /></svg>
+                        Backtest trades ({model.name}): {modelBT.length} trades, {btWR}% WR, {btPips > 0 ? '+' : ''}{btPips} pips
+                      </summary>
+                      <div className="mt-2 max-h-64 overflow-y-auto space-y-0.5">
+                        {modelBT.slice().sort((a, b) => b.date.localeCompare(a.date)).map((t, i) => (
+                          <div key={i} className="flex items-center justify-between px-3 py-1 rounded bg-white/[0.02] text-[9px]">
+                            <div className="flex items-center gap-2">
+                              <span className={`w-1.5 h-1.5 rounded-full ${t.result === 'correct' ? 'bg-green-400' : 'bg-red-400'}`} />
+                              <span className="text-text-dim/50 font-mono">{t.date}</span>
+                              <span className="font-mono font-bold text-heading">{t.pair}</span>
+                              <span className={t.direction.includes('bullish') ? 'text-green-400' : 'text-red-400'}>{t.direction.includes('bullish') ? '\u25B2' : '\u25BC'}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-text-dim font-mono">S:{t.score > 0 ? '+' : ''}{t.score}</span>
+                              <span className="text-text-dim font-mono">M:{t.momentum}p</span>
+                              <span className={`font-mono font-bold ${t.result === 'correct' ? 'text-green-400' : 'text-red-400'}`}>
+                                {t.result === 'correct' ? '+' + model.tp : '-' + model.sl}p
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-[8px] text-text-dim/30 mt-1">Elke trade: entry op dagkoers, exit +1 handelsdag. SL={model.sl}p TP={model.tp}p. Score en momentum uit fundamenteel trackrecord.</p>
+                    </details>
+                  </div>
+                )}
+
+                {/* Live recente trades */}
+                {trackRecord && trackRecord.recentTrades.length > 0 && (
                   <details className="group">
                     <summary className="text-[10px] text-text-dim/50 cursor-pointer hover:text-text-dim flex items-center gap-1">
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-transform group-open:rotate-90"><polyline points="9 18 15 12 9 6" /></svg>
@@ -664,7 +720,8 @@ export default function ExecutionPage() {
                   </details>
                 )}
               </>
-            )}
+            )
+            })()}
           </div>
         )}
       </section>
