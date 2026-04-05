@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "tradingview": {
+      "command": "node",
+      "args": [
+        "C:/Users/denni/tradingview-mcp-jackson/src/server.js"
+      ]
+    }
+  }
+}

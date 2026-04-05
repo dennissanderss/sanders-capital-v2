@@ -1,0 +1,40 @@
+{
+  "models": [
+    {
+      "id": "selective",
+      "name": "Selective",
+      "label": "Hoogste winrate",
+      "scoreMin": 2.0, "scoreMax": 3.0,
+      "momMin": 30, "momMax": 120,
+      "sl": 40, "tp": 120, "rr": 3.0,
+      "winrate": 57.4, "pf": 4.05, "exp": 51.9,
+      "tradesPerWeek": 2.0, "tradesPerMonth": 8.7,
+      "monthlyPips": 450, "monthlyReturn10k": 1126,
+      "sampleSize": 94
+    },
+    {
+      "id": "balanced",
+      "name": "Balanced",
+      "label": "Beste balans",
+      "scoreMin": 2.0, "scoreMax": 3.0,
+      "momMin": 20, "momMax": 150,
+      "sl": 40, "tp": 120, "rr": 3.0,
+      "winrate": 55.5, "pf": 3.74, "exp": 48.8,
+      "tradesPerWeek": 3.0, "tradesPerMonth": 12.6,
+      "monthlyPips": 630, "monthlyReturn10k": 1575,
+      "sampleSize": 137
+    },
+    {
+      "id": "aggressive",
+      "name": "Aggressive",
+      "label": "Maximaal rendement",
+      "scoreMin": 2.0, "scoreMax": 3.0,
+      "momMin": 0, "momMax": 9999,
+      "sl": 40, "tp": 120, "rr": 3.0,
+      "winrate": 50.0, "pf": 3.00, "exp": 40.0,
+      "tradesPerWeek": 4.8, "tradesPerMonth": 20.3,
+      "monthlyPips": 826, "monthlyReturn10k": 2065,
+      "sampleSize": 220
+    }
+  ]
+}

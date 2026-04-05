@@ -1,0 +1,27 @@
+{
+  "name": "Config G — Definitief Model",
+  "date": "2026-04-05",
+  "filters": {
+    "fundamentalScore": "2.0-3.0",
+    "momentum5d": "30-120 pips tegen bias",
+    "entryTrigger": "1H reversal candle (close < open voor short, close > open voor long) die sluit voorbij entry level"
+  },
+  "execution": {
+    "sl": 40,
+    "tp": 120,
+    "rr": "1:3",
+    "noPartials": true,
+    "holdMax": "tot TP of SL geraakt"
+  },
+  "performance": {
+    "winrate": "57.4%",
+    "profitFactor": 4.05,
+    "expectancy": "+51.9 pips/trade",
+    "tradesPerWeek": 2.0,
+    "tradesPerMonth": 8.7,
+    "monthlyPips": "+450",
+    "monthlyReturn10k": "$1126 (11.3%)"
+  },
+  "sampleSize": 94,
+  "period": "apr 2025 - mar 2026"
+}

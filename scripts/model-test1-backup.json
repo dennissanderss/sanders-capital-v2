@@ -1,0 +1,26 @@
+{
+  "name": "Test 1 Model — Sweet Spot Reversal",
+  "date": "2026-04-05",
+  "filters": {
+    "fundamentalScore": "2.0-3.0",
+    "momentum5d": "50-100 pips tegen bias",
+    "entryTrigger": "1H reversal candle (close < open voor short, close > open voor long)",
+    "sessionFilter": "optioneel Asia+London voor 82% WR"
+  },
+  "bestSetup": { "sl": 45, "tp": 80, "rr": "1:1.8" },
+  "performance": {
+    "winrate": "65.5%",
+    "profitFactor": 3.38,
+    "expectancy": "+36.9 pips/trade",
+    "tradesPerMonth": 3.7,
+    "monthlyReturn10k": "$303 (3.0%)"
+  },
+  "sessionVariant": {
+    "winrate": "82.1%",
+    "profitFactor": 9.20,
+    "expectancy": "+58.6 pips/trade",
+    "tradesPerMonth": 1.8
+  },
+  "sampleSize": 58,
+  "period": "apr 2025 - mar 2026"
+}
