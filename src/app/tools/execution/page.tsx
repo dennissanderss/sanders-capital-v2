@@ -45,8 +45,21 @@ export default function ExecutionPage() {
   const [expandedPair, setExpandedPair] = useState<string | null>(null)
   const [accountBalance, setAccountBalance] = useState(10000)
   const [showNonConcrete, setShowNonConcrete] = useState(false)
+  const [showTrackRecord, setShowTrackRecord] = useState(false)
+  const [trackRecord, setTrackRecord] = useState<{
+    overall: { total: number; resolved: number; pending: number; correct: number; winRate: number }
+    models: Record<string, { total: number; correct: number; incorrect: number; winRate: number; totalPips: number }>
+    recentTrades: { date: string; pair: string; direction: string; score: number; momentum: number; result: string; pips: number; selective: boolean; balanced: boolean }[]
+  } | null>(null)
 
   const model = TRADE_MODELS[selectedModel]
+
+  // Fetch trackrecord
+  useEffect(() => {
+    fetch('/api/cron/execution').then(r => r.json()).then(d => {
+      if (!d.error) setTrackRecord(d)
+    }).catch(() => {})
+  }, [])
 
   const fetchData = useCallback(async () => {
     try {
@@ -427,6 +440,95 @@ export default function ExecutionPage() {
             </>
           )}
         </div>
+      </section>
+
+      {/* ═══ TRACKRECORD ═══ */}
+      <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+        <button onClick={() => setShowTrackRecord(!showTrackRecord)} className="w-full px-5 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+          <div className="flex items-center gap-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-light"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+            <span className="text-sm font-semibold text-heading">Live Trackrecord</span>
+            {trackRecord && trackRecord.overall.resolved > 0 && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                trackRecord.overall.winRate >= 55 ? 'bg-green-500/15 text-green-400' : 'bg-amber-500/15 text-amber-400'
+              }`}>{trackRecord.overall.winRate}% winrate ({trackRecord.overall.resolved} trades)</span>
+            )}
+            {trackRecord && trackRecord.overall.pending > 0 && (
+              <span className="text-[10px] text-text-dim">{trackRecord.overall.pending} pending</span>
+            )}
+          </div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-text-dim transition-transform ${showTrackRecord ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9" /></svg>
+        </button>
+
+        {showTrackRecord && (
+          <div className="px-5 pb-5 border-t border-white/[0.04]">
+            {!trackRecord || trackRecord.overall.resolved === 0 ? (
+              <div className="mt-3 p-4 rounded-xl bg-white/[0.02] text-center">
+                <p className="text-sm text-text-muted">Nog geen resolved trades</p>
+                <p className="text-[10px] text-text-dim mt-1">Het trackrecord wordt automatisch bijgehouden. Elke handelsdag worden nieuwe trades opgeslagen en de volgende dag resolved.</p>
+              </div>
+            ) : (
+              <>
+                {/* Per model stats */}
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                  {Object.entries(TRADE_MODELS).map(([id, m]) => {
+                    const stats = trackRecord.models[id]
+                    return (
+                      <div key={id} className={`p-3 rounded-xl border ${selectedModel === id ? 'border-accent/30 bg-accent/5' : 'border-white/[0.06] bg-white/[0.02]'}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold text-heading">{m.name}</span>
+                          {stats && stats.total > 0 && (
+                            <span className={`text-[10px] font-mono font-bold ${stats.winRate >= 55 ? 'text-green-400' : stats.winRate >= 45 ? 'text-amber-400' : 'text-red-400'}`}>
+                              {stats.winRate}%
+                            </span>
+                          )}
+                        </div>
+                        {stats && stats.total > 0 ? (
+                          <div className="grid grid-cols-3 gap-1 text-center text-[9px]">
+                            <div><p className="font-mono font-bold text-heading">{stats.correct}</p><p className="text-text-dim">Wins</p></div>
+                            <div><p className="font-mono font-bold text-heading">{stats.incorrect}</p><p className="text-text-dim">Losses</p></div>
+                            <div><p className="font-mono font-bold text-green-400">{stats.totalPips > 0 ? '+' : ''}{stats.totalPips}</p><p className="text-text-dim">Pips</p></div>
+                          </div>
+                        ) : (
+                          <p className="text-[9px] text-text-dim">Nog geen data</p>
+                        )}
+                        <div className="mt-1 text-[8px] text-text-dim/40">Verwacht: {m.expectedWR}% WR</div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Recente trades */}
+                {trackRecord.recentTrades.length > 0 && (
+                  <details className="group">
+                    <summary className="text-[10px] text-text-dim/50 cursor-pointer hover:text-text-dim flex items-center gap-1">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-transform group-open:rotate-90"><polyline points="9 18 15 12 9 6" /></svg>
+                      Laatste {Math.min(20, trackRecord.recentTrades.length)} trades
+                    </summary>
+                    <div className="mt-2 space-y-1">
+                      {trackRecord.recentTrades.map((t, i) => (
+                        <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-white/[0.02] text-[10px]">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-1.5 h-1.5 rounded-full ${t.result === 'correct' ? 'bg-green-400' : t.result === 'incorrect' ? 'bg-red-400' : 'bg-amber-400'}`} />
+                            <span className="text-text-dim/50">{t.date}</span>
+                            <span className="font-mono font-bold text-heading">{t.pair}</span>
+                            <span className={t.direction?.includes('bullish') ? 'text-green-400' : 'text-red-400'}>{t.direction?.includes('bullish') ? '\u25B2' : '\u25BC'}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-text-dim font-mono">{t.momentum > 0 ? '+' : ''}{t.momentum}p</span>
+                            <span className={`font-mono font-bold ${t.result === 'correct' ? 'text-green-400' : t.result === 'incorrect' ? 'text-red-400' : 'text-amber-400'}`}>
+                              {t.result === 'pending' ? 'pending' : t.pips > 0 ? '+' + t.pips + 'p' : t.pips + 'p'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </section>
 
       {/* ═══ ONDERBOUWING ═══ */}
