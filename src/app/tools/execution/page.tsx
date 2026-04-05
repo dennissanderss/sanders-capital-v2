@@ -707,10 +707,25 @@ export default function ExecutionPage() {
                           </div>
                         ))}
                       </div>
-                      <div className="mt-2 p-2 rounded-lg bg-white/[0.02] border border-white/[0.04] text-[8px] text-text-dim/50 space-y-0.5">
-                        <p><strong className="text-text-dim">Methodiek:</strong> Entry op dagkoers (NY close) op de dag van de fundamentele call. Exit op dagkoers +1 handelsdag. Als de prijs in de juiste richting bewoog = WIN, anders = LOSS.</p>
-                        <p><strong className="text-text-dim">SL/TP berekening:</strong> Bij WIN wordt +{model.tp}p gerekend (TP bereikt). Bij LOSS wordt -{model.sl}p gerekend (SL geraakt). Dit is een vereenvoudiging — in werkelijkheid hangt het af van de intraday prijsbeweging.</p>
-                        <p><strong className="text-text-dim">Score:</strong> Fundamentele divergentie (CB beleid &times;2 + rente &times;1.5 + nieuws). <strong className="text-text-dim">Mom:</strong> Momentum = hoeveel pips de prijs tegen de bias bewoog in 5 dagen.</p>
+                      <div className="mt-2 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] text-[9px] text-text-dim space-y-2">
+                        <p className="text-text-muted font-semibold">Hoe lees je dit trackrecord?</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <p className="text-text-muted font-semibold mb-0.5">Kolommen</p>
+                            <p><strong className="text-heading">Score:</strong> Fundamentele divergentie tussen de twee valuta&apos;s (CB beleid &times;2 + rente &times;1.5 + nieuws)</p>
+                            <p><strong className="text-heading">Mom:</strong> Momentum = hoeveel pips de prijs tegen de fundamentele bias bewoog in 5 dagen. Dit bepaalt of de trade in jouw model valt.</p>
+                            <p><strong className="text-heading">Pips:</strong> Werkelijke prijsbeweging na 1 handelsdag (niet SL/TP)</p>
+                          </div>
+                          <div>
+                            <p className="text-text-muted font-semibold mb-0.5">Methodiek</p>
+                            <p>Entry op dagkoers (NY close). Exit +1 handelsdag. Als de prijs in de juiste richting bewoog = <strong className="text-green-400">WIN</strong>, anders = <strong className="text-red-400">LOSS</strong>.</p>
+                            <p className="mt-1"><strong className="text-heading">Waarom geen SL/TP per trade?</strong> De backtest gebruikt dagkoersen uit het fundamentele trackrecord. De SL ({model.sl}p) en TP ({model.tp}p) zijn gebaseerd op MAE/MFE analyse — jij bepaalt de exacte entry en SL/TP op de 1H chart met de reversal candle methode.</p>
+                          </div>
+                        </div>
+                        <div className="p-2 rounded bg-accent/5 border border-accent/10">
+                          <p className="text-accent-light font-semibold mb-0.5">Wanneer enter je bij jouw model ({model.name})?</p>
+                          <p>De Daily Macro Briefing geeft een concrete trade. Jij checkt de momentum: is de prijs <strong className="text-heading">{model.momMin > 0 ? model.momMin + '-' + model.momMax + ' pips' : 'ongeacht hoeveel pips'}</strong> tegen de bias bewogen in 5 dagen? Zo ja → open de 1H chart → wacht op reversal candle → entry op close → SL {model.sl}p, TP {model.tp}p.</p>
+                        </div>
                       </div>
                     </details>
                   </div>
