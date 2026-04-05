@@ -2067,44 +2067,64 @@ export default function BriefingV2Dashboard() {
                     </svg>
                   </summary>
                   <div className="px-5 pb-4 border-t border-white/[0.04]">
-                    <p className="text-[9px] text-text-dim mt-2 mb-2">Groene status = trade wordt getracked in het trackrecord. Score = fundamentele divergentie. IM% = intermarket bevestiging van het regime.</p>
-                    <div className="mt-1 overflow-x-auto max-h-72 overflow-y-auto">
-                      <table className="w-full text-[10px]">
-                        <thead className="sticky top-0 bg-bg-card">
-                          <tr className="text-text-dim border-b border-white/[0.04]">
-                            <th className="text-left py-1.5 px-1.5">Paar</th>
-                            <th className="text-left py-1.5 px-1.5">Signaal</th>
-                            <th className="text-right py-1.5 px-1.5" title="Fundamentele score: CB beleid x2 + rente x1.5 + nieuws">Score</th>
-                            <th className="text-right py-1.5 px-1.5" title="Confluence: hoeveel factoren de richting bevestigen (0-100%)">Conv.</th>
-                            <th className="text-right py-1.5 px-1.5" title="Intermarket alignment: bevestigen VIX, S&P, Gold etc. het regime?">IM%</th>
-                            <th className="text-center py-1.5 px-1.5" title="Groen = in trackrecord, rood = niet getracked">Tracked</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {data.v3.pairSignals.map((sig: { pair: string; signal: string; score: number; conviction: number; intermarket: { alignment: number }; tradeability: { status: string }; priceMomentum: { pips5d: number } }) => {
-                            const isInTrackrecord = tradeFocus.some(t => t.pair === sig.pair)
-                            return (
-                            <tr key={sig.pair} className={`border-b border-white/[0.02] hover:bg-white/[0.02] ${isInTrackrecord ? '' : 'opacity-50'}`}>
-                              <td className="py-1 px-1 font-mono text-heading">{sig.pair}</td>
-                              <td className={`py-1 px-1 ${
-                                sig.signal.includes('bullish') ? 'text-green-400' :
-                                sig.signal.includes('bearish') ? 'text-red-400' : 'text-text-dim'
-                              }`}>{sig.signal.replace(/_/g, ' ')}</td>
-                              <td className={`py-1 px-1 text-right font-mono ${sig.score > 0 ? 'text-green-400' : sig.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
+                    <p className="text-[9px] text-text-dim mt-2 mb-3">Alle 21 paren met hun status. Groene rij = door alle filters (concrete trade). Rode rij = gefilterd met reden. Gebruik je eigen technische analyse om te bepalen of je een gefilterd paar alsnog wilt traden.</p>
+
+                    <div className="mt-1 space-y-1">
+                      {/* Doorgekomen trades eerst */}
+                      {data.v3.pairSignals
+                        .map((sig: { pair: string; signal: string; score: number; conviction: number; intermarket: { alignment: number }; tradeability: { status: string }; priceMomentum: { direction: string; pips1d: number; pips5d: number; atr20d: number; extensionRatio: number } }) => {
+                          const isInTrackrecord = tradeFocus.some(t => t.pair === sig.pair)
+                          const isBullish = sig.signal.includes('bullish')
+                          const isBearish = sig.signal.includes('bearish')
+                          const isNeutral = !isBullish && !isBearish
+                          const absScore = Math.abs(sig.score)
+                          const imGlobal = data.intermarketAlignment ?? 0
+                          const pips5d = sig.priceMomentum?.pips5d ?? 0
+
+                          // Determine which filters failed
+                          const failReasons: string[] = []
+                          if (isNeutral) failReasons.push('Geen duidelijke richting')
+                          else if (absScore < 2.0) failReasons.push('Score te laag (' + sig.score + ')')
+                          else {
+                            if (imGlobal <= 50) failReasons.push('IM alignment te laag (' + imGlobal + '%)')
+                            const isContrarian = (isBullish && pips5d < 0) || (isBearish && pips5d > 0)
+                            if (!isContrarian && absScore >= 2.0) failReasons.push('Geen contrarian setup (prijs ging al ' + (pips5d > 0 ? '+' : '') + pips5d + ' pips)')
+                          }
+
+                          return { sig, isInTrackrecord, isBullish, isBearish, isNeutral, failReasons, absScore, pips5d }
+                        })
+                        .sort((a, b) => (a.isInTrackrecord === b.isInTrackrecord ? b.absScore - a.absScore : a.isInTrackrecord ? -1 : 1))
+                        .map(({ sig, isInTrackrecord, isBullish, isBearish, isNeutral, failReasons, pips5d }) => (
+                          <div
+                            key={sig.pair}
+                            className={`flex items-center justify-between px-3 py-2 rounded-lg border transition-colors ${
+                              isInTrackrecord
+                                ? 'bg-green-500/[0.04] border-green-500/15 hover:bg-green-500/[0.07]'
+                                : isNeutral
+                                  ? 'bg-white/[0.01] border-white/[0.04] opacity-30'
+                                  : 'bg-white/[0.01] border-white/[0.04] hover:bg-white/[0.03]'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${isInTrackrecord ? 'bg-green-400' : 'bg-red-400/40'}`} />
+                              <span className="font-mono font-bold text-[11px] text-heading w-16">{sig.pair}</span>
+                              <span className={`text-[10px] font-medium ${isBullish ? 'text-green-400' : isBearish ? 'text-red-400' : 'text-text-dim'}`}>
+                                {isBullish ? '\u25B2 LONG' : isBearish ? '\u25BC SHORT' : '\u2014 neutraal'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {isInTrackrecord ? (
+                                <span className="text-[9px] text-green-400/70 font-medium">Alle filters \u2713</span>
+                              ) : failReasons.length > 0 ? (
+                                <span className="text-[9px] text-red-400/60">{failReasons[0]}</span>
+                              ) : null}
+                              <span className={`text-[11px] font-mono font-bold min-w-[3rem] text-right ${sig.score > 0 ? 'text-green-400' : sig.score < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                                 {sig.score > 0 ? '+' : ''}{sig.score}
-                              </td>
-                              <td className="py-1 px-1 text-right font-mono text-text-muted">{sig.conviction}%</td>
-                              <td className="py-1 px-1 text-right font-mono text-text-muted">{sig.intermarket.alignment}%</td>
-                              <td className="py-1 px-1 text-center">
-                                <span className={`inline-block w-2 h-2 rounded-full ${
-                                  isInTrackrecord ? 'bg-green-400' : 'bg-red-400/50'
-                                }`} title={isInTrackrecord ? 'In trackrecord' : 'Niet in trackrecord'} />
-                              </td>
-                            </tr>
-                            )
-                          })}
-                        </tbody>
-                      </table>
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      }
                     </div>
                   </div>
                 </details>
