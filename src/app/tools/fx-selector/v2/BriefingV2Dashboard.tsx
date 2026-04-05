@@ -2112,6 +2112,19 @@ export default function BriefingV2Dashboard() {
                       </div>
                     </div>
 
+                    {/* Kolom headers */}
+                    <div className="flex items-center justify-between px-3 py-1.5 mb-1">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-2" />
+                        <span className="text-[8px] uppercase tracking-wider text-text-dim/50 font-semibold w-[4.5rem]">Paar</span>
+                        <span className="text-[8px] uppercase tracking-wider text-text-dim/50 font-semibold w-16">Bias</span>
+                        <span className="text-[8px] uppercase tracking-wider text-text-dim/50 font-semibold hidden sm:inline">Datum</span>
+                      </div>
+                      <div className="flex items-center gap-1 sm:gap-1.5">
+                        <span className="text-[8px] uppercase tracking-wider text-text-dim/50 font-semibold">Filters</span>
+                      </div>
+                    </div>
+
                     {/* Paren lijst met filter checklist */}
                     <div className="space-y-1.5">
                       {data.v3.pairSignals
