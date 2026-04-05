@@ -45,3 +45,11 @@ test-holding-periods.js
 test-thresholds.js
 supabase/.temp/
 .claude/worktrees/
+
+# Local scripts (contain secrets)
+*.mjs
+!scripts/*.mjs
+optimize-database.sql
+supabase_migration_*.sql
+supabase-schema.sql
+

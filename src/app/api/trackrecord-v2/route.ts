@@ -166,7 +166,7 @@ async function fetchPrice(symbol: string): Promise<number | null> {
       `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,
       {
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-        next: { revalidate: 0 },
+        next: { revalidate: 300 },
       }
     )
     if (!res.ok) return null
@@ -183,7 +183,7 @@ async function fetchRecentPrices(symbol: string, days: number): Promise<{ date: 
       `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${days + 5}d`,
       {
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-        next: { revalidate: 0 },
+        next: { revalidate: 300 },
       }
     )
     if (!res.ok) return []

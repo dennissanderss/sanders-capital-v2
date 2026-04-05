@@ -33,7 +33,7 @@ async function fetchPrice(symbol: string): Promise<number | null> {
   try {
     const res = await fetch(
       `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=5d`,
-      { headers: { 'User-Agent': 'Mozilla/5.0' }, next: { revalidate: 0 } }
+      { headers: { 'User-Agent': 'Mozilla/5.0' }, next: { revalidate: 300 } }
     )
     if (!res.ok) return null
     const json = await res.json()
