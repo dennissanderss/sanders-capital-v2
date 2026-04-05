@@ -14,8 +14,9 @@ interface ToolSetting {
 }
 
 const premiumTools = [
-  { href: '/tools/fx-selector', label: 'Introductie', slug: 'fx-selector', icon: 'info', isIntro: true },
-  { href: '/tools/fx-analyse', label: 'Fundamentals', slug: 'fx-analyse', flowArrow: true },
+  { href: '/tools/fx-selector', label: 'Introductie', slug: 'fx-selector', isIntro: true },
+  { href: '/tools/fx-analyse', label: 'Fundamentals', slug: 'fx-analyse' },
+  { href: '/tools/fx-selector/v2', label: 'Daily Macro Briefing', slug: 'fx-selector-v2', flowArrow: true },
   { href: '/tools/execution', label: 'Execution Engine', slug: 'execution', flowArrow: true },
   { href: '/tools/tradescope', label: 'TradeMind', slug: 'tradescope' },
 ] as const
@@ -74,7 +75,9 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
     return userRole === 'premium' || userRole === 'admin'
   }
 
-  const currentSlug = allTools.find(l => pathname === l.href || pathname.startsWith(l.href + '/'))?.slug
+  // Vind de meest specifieke match (langste href eerst)
+  const sortedTools = [...allTools].sort((a, b) => b.href.length - a.href.length)
+  const currentSlug = sortedTools.find(l => pathname === l.href || pathname.startsWith(l.href + '/'))?.slug
   const blockedPage = currentSlug && !hasAccess(currentSlug)
 
   return (
@@ -85,7 +88,12 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <nav className="flex items-center gap-0.5 overflow-x-auto py-1 -mb-px">
             {allTools.map((link, i) => {
-              const isActive = pathname === link.href || pathname.startsWith(link.href + '/')
+              // Exacte match of startsWith, maar fx-selector mag niet matchen met fx-selector/v2
+              const isActive = pathname === link.href || (
+                pathname.startsWith(link.href + '/') &&
+                // Voorkom dat /tools/fx-selector matcht met /tools/fx-selector/v2
+                !(link.href === '/tools/fx-selector' && pathname.startsWith('/tools/fx-selector/v2'))
+              )
               const premium = isPremiumTool(link.slug)
               const locked = premium && !hasAccess(link.slug)
               // Show divider between premium and free sections
