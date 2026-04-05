@@ -299,9 +299,9 @@ export default function ExecutionPage() {
               <div><span className="text-accent-light font-bold">Momentum</span>: Hoeveel pips tegen de bias ({model.momMin > 0 ? model.momMin + '–' + model.momMax + 'p' : 'alle'}). Hoe meer, hoe beter de mean reversion kans.</div>
             </div>
             <div className="flex items-center gap-4 mt-2 pt-2 border-t border-white/[0.04] text-[8px]">
-              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" /> Entry ready (4/4 + momentum zone)</div>
-              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-accent-light" /> Concrete trade (4/4 filters, wacht op momentum)</div>
-              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400/50" /> 3/4 filters (~53% WR, op eigen risico)</div>
+              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" /> <strong className="text-green-400">Entry ready</strong> — concrete trade + momentum zone bereikt = nu 1H chart openen</div>
+              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> <strong className="text-amber-400">Wacht op momentum</strong> — concrete trade (4/4 filters) maar momentum zone nog niet bereikt</div>
+              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-text-dim/40" /> <strong className="text-text-dim">Near miss</strong> — 3/4 filters (~53% WR, op eigen risico)</div>
             </div>
           </div>
 
@@ -343,10 +343,10 @@ export default function ExecutionPage() {
                     const isExp = expandedPair === trade.pair
                     const absMom = Math.abs(trade.momentum5d)
                     return (
-                      <div key={trade.pair} className={`rounded-xl border ${trade.entryReady ? 'border-green-500/30 bg-green-500/[0.04]' : 'border-accent/20 bg-accent/[0.03]'}`}>
+                      <div key={trade.pair} className={`rounded-xl border ${trade.entryReady ? 'border-green-500/30 bg-green-500/[0.04]' : 'border-amber-500/20 bg-amber-500/[0.03]'}`}>
                         <button onClick={() => setExpandedPair(isExp ? null : trade.pair)} className="w-full px-4 py-3 flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <span className={`w-2.5 h-2.5 rounded-full ${trade.entryReady ? 'bg-green-400 animate-pulse' : 'bg-accent-light'}`} />
+                            <span className={`w-2.5 h-2.5 rounded-full ${trade.entryReady ? 'bg-green-400 animate-pulse' : 'bg-amber-400'}`} />
                             <span className="font-mono font-bold text-sm text-heading">{trade.pair}</span>
                             <span className={`text-xs font-bold ${isBull ? 'text-green-400' : 'text-red-400'}`}>{isBull ? '\u25B2 LONG' : '\u25BC SHORT'}</span>
                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/15 font-mono">4/4</span>
@@ -447,7 +447,7 @@ export default function ExecutionPage() {
         <button onClick={() => setShowTrackRecord(!showTrackRecord)} className="w-full px-5 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
           <div className="flex items-center gap-3">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-light"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-            <span className="text-sm font-semibold text-heading">Live Trackrecord</span>
+            <span className="text-sm font-semibold text-heading">Trackrecord</span>
             {trackRecord && trackRecord.overall.resolved > 0 && (
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                 trackRecord.overall.winRate >= 55 ? 'bg-green-500/15 text-green-400' : 'bg-amber-500/15 text-amber-400'
@@ -496,6 +496,43 @@ export default function ExecutionPage() {
                       </div>
                     )
                   })}
+                </div>
+
+                {/* Backtest overzicht */}
+                <div className="mb-4">
+                  <p className="text-[10px] text-text-dim/50 mb-2">Backtest (apr 2025 - mar 2026, fundamenteel trackrecord + momentum filter)</p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[9px]">
+                      <thead>
+                        <tr className="border-b border-white/[0.06] text-text-dim">
+                          <th className="text-left py-1.5 px-2">Model</th>
+                          <th className="text-right py-1.5 px-2">Trades</th>
+                          <th className="text-right py-1.5 px-2">Winrate</th>
+                          <th className="text-right py-1.5 px-2">PF</th>
+                          <th className="text-right py-1.5 px-2">Pips</th>
+                          <th className="text-right py-1.5 px-2">/week</th>
+                          <th className="text-right py-1.5 px-2">Exp/trade</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.values(TRADE_MODELS).map(m => {
+                          const isSelected = m.id === selectedModel
+                          return (
+                            <tr key={m.id} className={`border-b border-white/[0.02] ${isSelected ? 'bg-accent/5' : ''}`}>
+                              <td className="py-1.5 px-2"><span className={isSelected ? 'text-accent-light font-bold' : 'text-heading'}>{m.name}</span></td>
+                              <td className="py-1.5 px-2 text-right font-mono text-heading">{m.sampleSize}</td>
+                              <td className="py-1.5 px-2 text-right font-mono text-green-400 font-bold">{m.expectedWR}%</td>
+                              <td className="py-1.5 px-2 text-right font-mono text-heading">{m.expectedPF}</td>
+                              <td className="py-1.5 px-2 text-right font-mono text-green-400">+{m.monthlyPips * Math.round(325/30)}</td>
+                              <td className="py-1.5 px-2 text-right font-mono text-text-muted">{m.tradesPerWeek}</td>
+                              <td className="py-1.5 px-2 text-right font-mono text-green-400">+{m.expectedExp}p</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-[8px] text-text-dim/30 mt-1">Gebaseerd op 434 fundamentele trades uit het trackrecord. SL={model.sl}p, TP={model.tp}p, 1:{model.rr} RR. Momentum filter per model.</p>
                 </div>
 
                 {/* Recente trades */}
