@@ -87,8 +87,9 @@ export default function RootLayout({
   return (
     <html lang="nl" className={`${cormorant.variable} ${dmSans.variable}`}>
       <head>
-        {/* 1. Google Consent Mode default (EERST — vóór alles) */}
+        {/* Alle consent + analytics scripts in één block zodat Next.js de volgorde niet verandert */}
         <script dangerouslySetInnerHTML={{ __html: `
+          // 1. Google Consent Mode default (EERST)
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('consent', 'default', {
@@ -103,34 +104,31 @@ export default function RootLayout({
           });
           gtag('set', 'ads_data_redaction', true);
           gtag('set', 'url_passthrough', true);
-        `}} />
-        {/* 2. CookieYes banner script */}
-        <script id="cookieyes" src="https://cdn-cookieyes.com/client_data/956ffa0d845583fb24c80defb450883b/script.js" />
-        {/* 3. Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-9XPW26WZ3D" />
-        <script dangerouslySetInnerHTML={{ __html: `
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
+
+          // 2. CookieYes laden
+          (function(){var s=document.createElement('script');s.id='cookieyes';s.src='https://cdn-cookieyes.com/client_data/956ffa0d845583fb24c80defb450883b/script.js';document.head.appendChild(s);})();
+
+          // 3. Google Analytics laden
+          (function(){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-9XPW26WZ3D';document.head.appendChild(s);})();
           gtag('js', new Date());
           gtag('config', 'G-9XPW26WZ3D');
-        `}} />
-        {/* 4. CookieYes consent update listener → stuurt consent door naar Google */}
-        <script dangerouslySetInnerHTML={{ __html: `
-          document.addEventListener("cookieyes_consent_update", function(eventData) {
+
+          // 4. CookieYes consent update listener
+          document.addEventListener('cookieyes_consent_update', function(eventData) {
             var detail = eventData.detail;
             if (!detail) return;
             var consentObj = {};
             (detail.accepted || []).forEach(function(cat) {
-              if (cat === "analytics") { consentObj.analytics_storage = "granted"; consentObj.personalization_storage = "granted"; }
-              if (cat === "advertisement") { consentObj.ad_storage = "granted"; consentObj.ad_user_data = "granted"; consentObj.ad_personalization = "granted"; }
-              if (cat === "functional") { consentObj.functionality_storage = "granted"; }
+              if (cat === 'analytics') { consentObj.analytics_storage = 'granted'; consentObj.personalization_storage = 'granted'; }
+              if (cat === 'advertisement') { consentObj.ad_storage = 'granted'; consentObj.ad_user_data = 'granted'; consentObj.ad_personalization = 'granted'; }
+              if (cat === 'functional') { consentObj.functionality_storage = 'granted'; }
             });
             (detail.rejected || []).forEach(function(cat) {
-              if (cat === "analytics") { consentObj.analytics_storage = "denied"; consentObj.personalization_storage = "denied"; }
-              if (cat === "advertisement") { consentObj.ad_storage = "denied"; consentObj.ad_user_data = "denied"; consentObj.ad_personalization = "denied"; }
-              if (cat === "functional") { consentObj.functionality_storage = "denied"; }
+              if (cat === 'analytics') { consentObj.analytics_storage = 'denied'; consentObj.personalization_storage = 'denied'; }
+              if (cat === 'advertisement') { consentObj.ad_storage = 'denied'; consentObj.ad_user_data = 'denied'; consentObj.ad_personalization = 'denied'; }
+              if (cat === 'functional') { consentObj.functionality_storage = 'denied'; }
             });
-            gtag("consent", "update", consentObj);
+            gtag('consent', 'update', consentObj);
           });
         `}} />
       </head>
