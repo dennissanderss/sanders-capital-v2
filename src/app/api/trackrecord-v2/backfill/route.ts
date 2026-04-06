@@ -172,34 +172,33 @@ function getIntermarketAlignment(
     return prev !== 0 ? ((hist[idx].close - prev) / prev) * 100 : null
   }
 
-  // Must match optimizer exactly: total always increments per indicator,
-  // even if data is missing (undefined > 0 = false, so aligned stays same)
   let aligned = 0, total = 0
   if (regime === 'Risk-Off') {
     const vix = getDayChange('VIX')
     const gold = getDayChange('GOLD')
     const sp = getDayChange('SP500')
     const yields = getDayChange('US10Y')
-    if (vix !== null && vix > 0) aligned++; total++
-    if (gold !== null && gold > 0) aligned++; total++
-    if (sp !== null && sp < 0) aligned++; total++
-    if (yields !== null && yields < 0) aligned++; total++
+    if (vix !== null) { total++; if (vix > 0) aligned++ }
+    if (gold !== null) { total++; if (gold > 0) aligned++ }
+    if (sp !== null) { total++; if (sp < 0) aligned++ }
+    if (yields !== null) { total++; if (yields < 0) aligned++ }
   } else if (regime === 'Risk-On') {
     const vix = getDayChange('VIX')
     const sp = getDayChange('SP500')
     const yields = getDayChange('US10Y')
     const oil = getDayChange('OIL')
-    if (vix !== null && vix < 0) aligned++; total++
-    if (sp !== null && sp > 0) aligned++; total++
-    if (yields !== null && yields > 0) aligned++; total++
-    if (oil !== null && oil > 0) aligned++; total++
+    if (vix !== null) { total++; if (vix < 0) aligned++ }
+    if (sp !== null) { total++; if (sp > 0) aligned++ }
+    if (yields !== null) { total++; if (yields > 0) aligned++ }
+    if (oil !== null) { total++; if (oil > 0) aligned++ }
   } else if (regime === 'USD Dominant' || regime === 'USD Zwak') {
     const usdUp = regime === 'USD Dominant'
     const dxy = getDayChange('DXY')
     const gold = getDayChange('GOLD')
-    if (dxy !== null) { if ((dxy > 0) === usdUp) aligned++; total++ }
-    if (gold !== null) { if ((gold < 0) === usdUp) aligned++; total++ }
+    if (dxy !== null) { total++; if ((dxy > 0) === usdUp) aligned++ }
+    if (gold !== null) { total++; if ((gold < 0) === usdUp) aligned++ }
   }
+  // Gemengd regime: geen IM check, default 50%
   return total > 0 ? (aligned / total) * 100 : 50
 }
 
