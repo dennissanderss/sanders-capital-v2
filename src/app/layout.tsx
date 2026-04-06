@@ -87,6 +87,24 @@ export default function RootLayout({
   return (
     <html lang="nl" className={`${cormorant.variable} ${dmSans.variable}`}>
       <body className="min-h-screen flex flex-col antialiased">
+        <Script id="gcm-default" strategy="beforeInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('consent', 'default', {
+              ad_storage: 'denied',
+              ad_user_data: 'denied',
+              ad_personalization: 'denied',
+              analytics_storage: 'denied',
+              functionality_storage: 'denied',
+              personalization_storage: 'denied',
+              security_storage: 'granted',
+              wait_for_update: 500
+            });
+            gtag('set', 'ads_data_redaction', true);
+            gtag('set', 'url_passthrough', true);
+          `}
+        </Script>
         <Script
           id="cookieyes"
           src="https://cdn-cookieyes.com/client_data/956ffa0d845583fb24c80defb450883b/script.js"
