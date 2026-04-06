@@ -851,6 +851,56 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
             <h2 className="text-lg font-display font-semibold text-heading">
               {trade ? 'Trade bewerken' : 'Nieuwe trade'}
             </h2>
+            {/* Screenshot analyze button */}
+            {!trade && (
+              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-[11px] text-purple-400 hover:bg-purple-500/20 transition-colors cursor-pointer">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
+                Analyseer Screenshot
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const reader = new FileReader()
+                    reader.onload = async () => {
+                      const base64 = reader.result as string
+                      try {
+                        const res = await fetch('/api/analyze-screenshot', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ image: base64 }),
+                        })
+                        const data = await res.json()
+                        if (data.success && data.trade) {
+                          const t = data.trade
+                          setForm(f => ({
+                            ...f,
+                            symbol: t.symbol || f.symbol,
+                            action: t.action || f.action,
+                            open_price: t.open_price?.toString() || f.open_price,
+                            close_price: t.close_price?.toString() || f.close_price,
+                            sl: t.sl?.toString() || f.sl,
+                            tp: t.tp?.toString() || f.tp,
+                            lot_size: t.lot_size?.toString() || f.lot_size,
+                            entry_reason: t.entry_reason || f.entry_reason,
+                            notes: t.notes || f.notes,
+                            session: t.session || f.session,
+                            environment: t.environment || f.environment,
+                          }))
+                        } else {
+                          alert('Kon screenshot niet analyseren: ' + (data.error || 'onbekende fout'))
+                        }
+                      } catch (err) {
+                        alert('Fout bij analyseren: ' + err)
+                      }
+                    }
+                    reader.readAsDataURL(file)
+                  }}
+                />
+              </label>
+            )}
             {/* Mode toggle - only for new trades */}
             {!trade && (
               <div className="flex rounded-lg overflow-hidden border border-border">
