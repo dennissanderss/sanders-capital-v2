@@ -340,8 +340,15 @@ export async function GET(request: Request) {
   const days = parseInt(searchParams.get('days') || '30')
 
   try {
-    // Trigger background fetch & store
-    fetchAndStoreFeeds().catch(() => {})
+    // Bij refresh=true (cron): reset throttle en wacht op resultaat
+    const refresh = searchParams.get('refresh') === 'true'
+    if (refresh) {
+      lastFetchTimestamp = 0
+      await fetchAndStoreFeeds()
+    } else {
+      // Normale pageload: background fetch
+      fetchAndStoreFeeds().catch(() => {})
+    }
 
     // Read from DB with date range
     const since = new Date(Date.now() - days * 86400000).toISOString()
