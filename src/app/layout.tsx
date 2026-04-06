@@ -86,40 +86,34 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="nl" className={`${cormorant.variable} ${dmSans.variable}`}>
+      <head>
+        {/* 1. Google Consent Mode default (EERST) */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('consent', 'default', {
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            analytics_storage: 'denied',
+            functionality_storage: 'denied',
+            personalization_storage: 'denied',
+            security_storage: 'granted',
+            wait_for_update: 2000
+          });
+          gtag('set', 'ads_data_redaction', true);
+          gtag('set', 'url_passthrough', true);
+        `}} />
+        {/* 2. CookieYes (TWEEDE) */}
+        <script id="cookieyes" src="https://cdn-cookieyes.com/client_data/956ffa0d845583fb24c80defb450883b/script.js" />
+        {/* 3. Google Analytics (DERDE) */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-9XPW26WZ3D" />
+        <script dangerouslySetInnerHTML={{ __html: `
+          gtag('js', new Date());
+          gtag('config', 'G-9XPW26WZ3D');
+        `}} />
+      </head>
       <body className="min-h-screen flex flex-col antialiased">
-        <Script id="gcm-and-gtag" strategy="beforeInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('consent', 'default', {
-              ad_storage: 'denied',
-              ad_user_data: 'denied',
-              ad_personalization: 'denied',
-              analytics_storage: 'denied',
-              functionality_storage: 'denied',
-              personalization_storage: 'denied',
-              security_storage: 'granted',
-              wait_for_update: 2000
-            });
-            gtag('set', 'ads_data_redaction', true);
-            gtag('set', 'url_passthrough', true);
-          `}
-        </Script>
-        <Script
-          id="cookieyes"
-          src="https://cdn-cookieyes.com/client_data/956ffa0d845583fb24c80defb450883b/script.js"
-          strategy="beforeInteractive"
-        />
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-9XPW26WZ3D"
-          strategy="beforeInteractive"
-        />
-        <Script id="gtag-init" strategy="beforeInteractive">
-          {`
-            gtag('js', new Date());
-            gtag('config', 'G-9XPW26WZ3D');
-          `}
-        </Script>
         <ScrollProgress />
         <Header />
         <main className="flex-1 pt-16">{children}</main>
