@@ -87,7 +87,7 @@ export default function RootLayout({
   return (
     <html lang="nl" className={`${cormorant.variable} ${dmSans.variable}`}>
       <body className="min-h-screen flex flex-col antialiased">
-        <Script id="gcm-default" strategy="beforeInteractive">
+        <Script id="gcm-and-gtag" strategy="beforeInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
@@ -112,12 +112,10 @@ export default function RootLayout({
         />
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-9XPW26WZ3D"
-          strategy="afterInteractive"
+          strategy="beforeInteractive"
         />
-        <Script id="gtag-init" strategy="afterInteractive">
+        <Script id="gtag-init" strategy="beforeInteractive">
           {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', 'G-9XPW26WZ3D');
           `}
