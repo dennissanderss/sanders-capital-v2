@@ -1031,7 +1031,7 @@ async function fetchMarketData(): Promise<Record<string, MarketQuote>> {
     const entries = Object.entries(YAHOO_SYMBOLS)
     const responses = await Promise.allSettled(
       entries.map(([, symbol]) =>
-        fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`, {
+        fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=5d`, {
           headers: { 'User-Agent': 'Mozilla/5.0' },
           next: { revalidate: 300 },
         })
@@ -1048,9 +1048,11 @@ async function fetchMarketData(): Promise<Record<string, MarketQuote>> {
         const meta = json?.chart?.result?.[0]?.meta
         const closes = json?.chart?.result?.[0]?.indicators?.quote?.[0]?.close
 
-        if (meta && closes && closes.length >= 2) {
-          const current = meta.regularMarketPrice ?? closes[closes.length - 1]
-          const previous = closes[closes.length - 2] ?? closes[0]
+        if (meta && closes && closes.length >= 1) {
+          // Filter null values (weekends/holidays)
+          const validCloses = closes.filter((c: number | null) => c != null) as number[]
+          const current = meta.regularMarketPrice ?? validCloses[validCloses.length - 1]
+          const previous = validCloses.length >= 2 ? validCloses[validCloses.length - 2] : validCloses[0]
 
           if (current != null && previous != null && previous !== 0) {
             const change = +(current - previous).toFixed(2)
