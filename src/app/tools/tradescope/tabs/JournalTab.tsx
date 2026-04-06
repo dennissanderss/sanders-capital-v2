@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import type { TsTrade, TsAccount, TsStrategy, TsSetup, TsCustomFilter, TradeFilters } from '../types'
 import TradeScreenshots from '../components/TradeScreenshots'
@@ -638,6 +638,78 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
     setSelectedFilterIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
+  // ── AI Screenshot analyse state ──
+  const [analyzing, setAnalyzing] = useState(false)
+
+  const analyzeImage = useCallback(async (base64: string) => {
+    setAnalyzing(true)
+    try {
+      const res = await fetch('/api/analyze-screenshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64 }),
+      })
+      const data = await res.json()
+      if (data.success && data.trade) {
+        const t = data.trade
+        setForm(f => ({
+          ...f,
+          symbol: t.symbol || f.symbol,
+          action: t.action || f.action,
+          open_price: t.open_price?.toString() || f.open_price,
+          close_price: t.close_price?.toString() || f.close_price,
+          sl: t.sl?.toString() || f.sl,
+          tp: t.tp?.toString() || f.tp,
+          lot_size: t.lot_size?.toString() || f.lot_size,
+          entry_reason: t.entry_reason || f.entry_reason,
+          notes: t.notes ? `${t.notes}${t.timeframe ? ` [${t.timeframe}]` : ''}` : f.notes,
+          session: t.session || f.session,
+          environment: t.environment || f.environment,
+          open_date: t.open_date || f.open_date,
+        }))
+        if (formMode === 'quick') setFormMode('full')
+      } else {
+        alert('Kon screenshot niet analyseren: ' + (data.error || 'onbekende fout'))
+      }
+    } catch (err) {
+      alert('Fout bij analyseren: ' + err)
+    } finally {
+      setAnalyzing(false)
+    }
+  }, [formMode])
+
+  // Document-level paste handler for AI analyse — capture phase intercepts
+  // BEFORE TradeScreenshots & QuickTradeForm handlers (which use bubble phase)
+  useEffect(() => {
+    if (trade) return // only for new trades (AI analysis visible)
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          // Intercept: stop other paste handlers from also processing this
+          e.preventDefault()
+          e.stopImmediatePropagation()
+
+          const blob = item.getAsFile()
+          if (blob) {
+            const reader = new FileReader()
+            reader.onload = () => analyzeImage(reader.result as string)
+            reader.readAsDataURL(blob)
+          }
+          return
+        }
+      }
+    }
+
+    // capture: true ensures this runs BEFORE bubble-phase handlers in
+    // TradeScreenshots and QuickTradeForm
+    document.addEventListener('paste', handlePaste, { capture: true })
+    return () => document.removeEventListener('paste', handlePaste, { capture: true })
+  }, [trade, analyzeImage])
+
   const [form, setForm] = useState<Record<string, unknown>>(() => {
     if (trade) return { ...trade }
     return {
@@ -885,69 +957,29 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
         </div>
 
         {/* Screenshot analyse balk */}
-        {!trade && (() => {
-          const [analyzing, setAnalyzing] = [false, () => {}] // placeholder, real state below
-
-          const analyzeImage = async (base64: string) => {
-            try {
-              const res = await fetch('/api/analyze-screenshot', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: base64 }),
-              })
-              const data = await res.json()
-              if (data.success && data.trade) {
-                const t = data.trade
-                setForm(f => ({
-                  ...f,
-                  symbol: t.symbol || f.symbol,
-                  action: t.action || f.action,
-                  open_price: t.open_price?.toString() || f.open_price,
-                  close_price: t.close_price?.toString() || f.close_price,
-                  sl: t.sl?.toString() || f.sl,
-                  tp: t.tp?.toString() || f.tp,
-                  lot_size: t.lot_size?.toString() || f.lot_size,
-                  entry_reason: t.entry_reason || f.entry_reason,
-                  notes: t.notes || f.notes,
-                  session: t.session || f.session,
-                  environment: t.environment || f.environment,
-                }))
-                if (formMode === 'quick') setFormMode('full')
-              } else {
-                alert('Kon screenshot niet analyseren: ' + (data.error || 'onbekende fout'))
-              }
-            } catch (err) {
-              alert('Fout bij analyseren: ' + err)
-            }
-          }
-
-          return (
-          <div
-            className="px-6 py-2 border-b border-white/[0.04] bg-purple-500/[0.03]"
-            onPaste={async (e) => {
-              const items = e.clipboardData?.items
-              if (!items) return
-              for (const item of Array.from(items)) {
-                if (item.type.startsWith('image/')) {
-                  e.preventDefault()
-                  const blob = item.getAsFile()
-                  if (!blob) return
-                  const reader = new FileReader()
-                  reader.onload = () => analyzeImage(reader.result as string)
-                  reader.readAsDataURL(blob)
-                  return
-                }
-              }
-            }}
-            tabIndex={0}
-          >
-            <label className="flex items-center justify-center gap-2 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-xs text-purple-400 hover:bg-purple-500/20 transition-colors cursor-pointer">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
-              Screenshot uploaden of plak met Ctrl+V — AI vult het formulier in
+        {!trade && (
+          <div className="px-6 py-2 border-b border-white/[0.04] bg-purple-500/[0.03]">
+            <label className={`flex items-center justify-center gap-2 py-1.5 rounded-lg border text-xs transition-colors ${
+              analyzing
+                ? 'bg-purple-500/20 border-purple-500/40 text-purple-300 animate-pulse cursor-wait'
+                : 'bg-purple-500/10 border-purple-500/20 text-purple-400 hover:bg-purple-500/20 cursor-pointer'
+            }`}>
+              {analyzing ? (
+                <>
+                  <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
+                  AI analyseert screenshot...
+                </>
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
+                  Screenshot uploaden of plak met Ctrl+V — AI vult het formulier in
+                </>
+              )}
               <input
                 type="file"
                 accept="image/*"
                 className="hidden"
+                disabled={analyzing}
                 onChange={async (e) => {
                   const file = e.target.files?.[0]
                   if (!file) return
@@ -958,8 +990,7 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
               />
             </label>
           </div>
-          )
-        })()}
+        )}
 
         {/* Quick Trade form */}
         {formMode === 'quick' && !trade ? (

@@ -53,6 +53,11 @@ BELANGRIJK — Hoe je de chart leest:
 7. FIB LEVELS: Labels als "0.5", "0.618", "0.75", "0.786" zijn fibonacci retracement levels
 8. ANNOTATIES: Tekst als "1e break", "Check", "Liq" zijn trade notities
 9. ENTRY: De prijs waar de groene zone begint, of waar "1e break" staat
+10. DATUM/TIJD: Lees de datum en tijd linksboven op de chart (bijv. "Apr 07, 2026 01:20 UTC+2")
+    - Of lees de datum van de x-as (onderaan de chart) bij de meest recente candle
+    - Converteer naar ISO 8601 formaat: "2026-04-07T01:20"
+    - Let op de tijdzone indicator (bijv. UTC+2) en geef de lokale tijd
+11. TIMEFRAME: Lees het timeframe linksboven (bijv. "2h", "1h", "15m", "D")
 
 Retourneer ALLEEN deze JSON (geen andere tekst):
 {
@@ -67,6 +72,8 @@ Retourneer ALLEEN deze JSON (geen andere tekst):
   "risk_reward": "1:2",
   "session": "London",
   "environment": "live",
+  "open_date": "2026-04-07T01:20",
+  "timeframe": "2h",
   "entry_reason": "Beschrijf de setup: structure break, fib retracement, zones etc.",
   "notes": "Beschrijf annotaties en zones die je ziet op de chart",
   "confidence": "hoog"
@@ -76,7 +83,9 @@ KRITISCH:
 - Lees EXACTE prijzen van de y-as (rechts op de chart)
 - SL en TP zijn de rode/groene horizontale lijnen of zone grenzen
 - Als je een prijs label ziet (bijv. "1.60215" in rood rechts), gebruik DIE exacte prijs
-- Kijk naar ALLE horizontale lijnen en hun prijzen op de y-as`
+- Kijk naar ALLE horizontale lijnen en hun prijzen op de y-as
+- Lees de DATUM en TIJD van de chart header linksboven (formaat: "Mon DD, YYYY HH:MM UTC+X")
+- Converteer de datum naar ISO formaat: "YYYY-MM-DDTHH:MM"`
           },
           {
             role: 'user',
