@@ -53,11 +53,18 @@ BELANGRIJK — Hoe je de chart leest:
 7. FIB LEVELS: Labels als "0.5", "0.618", "0.75", "0.786" zijn fibonacci retracement levels
 8. ANNOTATIES: Tekst als "1e break", "Check", "Liq" zijn trade notities
 9. ENTRY: De prijs waar de groene zone begint, of waar "1e break" staat
-10. DATUM/TIJD: Lees de datum en tijd linksboven op de chart (bijv. "Apr 07, 2026 01:20 UTC+2")
-    - Of lees de datum van de x-as (onderaan de chart) bij de meest recente candle
-    - Converteer naar ISO 8601 formaat: "2026-04-07T01:20"
-    - Let op de tijdzone indicator (bijv. UTC+2) en geef de lokale tijd
-11. TIMEFRAME: Lees het timeframe linksboven (bijv. "2h", "1h", "15m", "D")
+10. ENTRY DATUM/TIJD (open_date):
+    - Kijk naar de X-AS (onderaan de chart) op de positie waar de ENTRY is (bijv. waar "1e break" staat, of waar de groene zone begint)
+    - De x-as toont datums en tijden. Lees de datum en tijd van de candle waar de entry plaatsvindt
+    - Combineer de datum van de x-as met het jaar uit de chart header linksboven
+    - Voorbeeld: als de x-as "3" toont bij "Apr" en de header zegt "2026", dan is de entry datum "2026-04-03"
+    - Schat het tijdstip op basis van de positie tussen de x-as labels en het timeframe
+    - Converteer naar ISO formaat: "2026-04-03T13:00"
+    - Dit is NIET de huidige chart tijd (header linksboven), maar de tijd van de ENTRY candle
+11. TRADE STATUS:
+    - Als de prijs nog beweegt en er geen duidelijke exit is → close_price = null, close_date = null (trade loopt nog)
+    - Als de prijs SL of TP heeft bereikt → vul close_price in met die prijs
+12. TIMEFRAME: Lees het timeframe linksboven (bijv. "2h", "1h", "15m", "D")
 
 Retourneer ALLEEN deze JSON (geen andere tekst):
 {
@@ -67,12 +74,13 @@ Retourneer ALLEEN deze JSON (geen andere tekst):
   "sl": 1.6021,
   "tp": 1.6146,
   "close_price": null,
+  "close_date": null,
   "lot_size": null,
   "pips": null,
   "risk_reward": "1:2",
   "session": "London",
   "environment": "live",
-  "open_date": "2026-04-07T01:20",
+  "open_date": "2026-04-03T13:00",
   "timeframe": "2h",
   "entry_reason": "Beschrijf de setup: structure break, fib retracement, zones etc.",
   "notes": "Beschrijf annotaties en zones die je ziet op de chart",
@@ -84,8 +92,9 @@ KRITISCH:
 - SL en TP zijn de rode/groene horizontale lijnen of zone grenzen
 - Als je een prijs label ziet (bijv. "1.60215" in rood rechts), gebruik DIE exacte prijs
 - Kijk naar ALLE horizontale lijnen en hun prijzen op de y-as
-- Lees de DATUM en TIJD van de chart header linksboven (formaat: "Mon DD, YYYY HH:MM UTC+X")
-- Converteer de datum naar ISO formaat: "YYYY-MM-DDTHH:MM"`
+- open_date = ENTRY datum van de x-as (NIET de huidige chart datum linksboven!)
+- close_date = null als de trade nog loopt (geen exit zichtbaar)
+- Lees de x-as goed: de getallen zijn dag-nummers, combineer met de maand en het jaar uit de chart`
           },
           {
             role: 'user',
