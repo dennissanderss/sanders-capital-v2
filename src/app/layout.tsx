@@ -88,6 +88,11 @@ export default function RootLayout({
     <html lang="nl" className={`${cormorant.variable} ${dmSans.variable}`}>
       <body className="min-h-screen flex flex-col antialiased">
         <Script
+          id="cookieyes"
+          src="https://cdn-cookieyes.com/client_data/956ffa0d845583fb24c80defb450883b/script.js"
+          strategy="beforeInteractive"
+        />
+        <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-9XPW26WZ3D"
           strategy="afterInteractive"
         />
