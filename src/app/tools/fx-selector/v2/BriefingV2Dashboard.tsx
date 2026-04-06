@@ -585,7 +585,7 @@ export default function BriefingV2Dashboard() {
       const lastSave = localStorage.getItem('track_last_save_v2')
       const today = new Date().toISOString().split('T')[0]
       if (lastSave !== today) {
-        fetch('/api/trackrecord', { method: 'POST' }).then(() => fetchTrackRecord())
+        fetch('/api/trackrecord-v2', { method: 'POST' }).then(() => fetchTrackRecord())
         localStorage.setItem('track_last_save_v2', today)
       }
     }
@@ -1598,7 +1598,7 @@ export default function BriefingV2Dashboard() {
               const totalPairs = data.pairBiases.length
               const scorePass = data.pairBiases.filter(p => Math.abs(p.score) >= 2.0 && p.direction !== 'neutraal')
               const imAlignment = data.intermarketAlignment ?? 0
-              const imPass = imAlignment > 50 ? scorePass : scorePass.filter(p => Math.abs(p.score) >= 3.5)
+              const imPass = imAlignment > 50 ? scorePass : [] // IM <= 50% = geen trades
               const finalCount = tradeFocus.length
 
               return (

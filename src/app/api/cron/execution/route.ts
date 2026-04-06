@@ -186,8 +186,19 @@ export async function POST(request: Request) {
   }
 }
 
-// GET: Haal trackrecord stats op
-export async function GET() {
+// GET: Vercel cron trigger + trackrecord stats
+// Vercel cron roept altijd GET aan, dus we genereren hier ook signals
+export async function GET(request: Request) {
+  // Als het een cron call is (heeft CRON_SECRET of is scheduled), genereer signals
+  const authHeader = request.headers.get('authorization')
+  const isCron = authHeader === `Bearer ${process.env.CRON_SECRET}` || request.headers.get('x-vercel-cron')
+
+  if (isCron) {
+    // Delegate naar de POST logica
+    return POST(new Request(request.url, { method: 'POST', headers: request.headers }))
+  }
+
+  // Anders: retourneer stats
   try {
     const { data: signals } = await supabase
       .from('execution_signals')
