@@ -2109,6 +2109,10 @@ export default function BriefingV2Dashboard() {
                           <span className="inline-block w-2 h-2 rounded-full bg-red-400/40" />
                           <span className="text-text-dim">Minimaal 1 filter gefaald = niet automatisch getracked</span>
                         </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center justify-center w-5 h-4 rounded bg-green-500/15 text-[8px] font-mono font-bold text-green-400">7.2</span>
+                          <span className="text-text-dim">Quality Score (1-10) — eindscore op basis van alle factoren. <strong className="text-text-muted">Hover voor breakdown.</strong></span>
+                        </div>
                       </div>
                     </div>
 
@@ -2149,7 +2153,9 @@ export default function BriefingV2Dashboard() {
                           const absMom = Math.abs(pips5d)
                           const contrarianPts = contrarianPass ? (absMom >= 30 && absMom <= 120 ? 2.5 : 1.5) : 0
                           const imPts = (imGlobal / 100) * 2
-                          const regimePts = sig.tradeability?.status === 'tradeable' ? 1.5 : sig.tradeability?.status === 'conditional' ? 0.75 : 0
+                          // Regime alignment: check of de pair richting past bij het macro regime
+                          const pairBias = data.pairBiases?.find((pb: PairBias) => pb.pair === sig.pair)
+                          const regimePts = pairBias?.regimeAligned ? 1.5 : 0.5
                           const qualityScore = Math.min(10, Math.round((fundPts + contrarianPts + imPts + regimePts) * 10) / 10)
 
                           return { sig, isInTrackrecord, isBullish, isBearish, isNeutral, absScore, pips5d, scorePass, imPass, contrarianPass, directionPass, passCount, qualityScore }

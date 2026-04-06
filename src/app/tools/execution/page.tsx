@@ -459,6 +459,7 @@ export default function ExecutionPage() {
               <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" /> <strong className="text-green-400">Entry ready</strong> — concrete trade + momentum zone bereikt = nu 1H chart openen</div>
               <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> <strong className="text-amber-400">Wacht op momentum</strong> — concrete trade (4/4 filters) maar momentum zone nog niet bereikt</div>
               <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-text-dim/40" /> <strong className="text-text-dim">Near miss</strong> — 3/4 filters (~53% WR, op eigen risico)</div>
+              <div className="flex items-center gap-1"><span className="inline-flex items-center justify-center w-5 h-4 rounded bg-green-500/15 text-[8px] font-mono font-bold text-green-400">7.2</span> <strong className="text-text-muted">Quality Score</strong> — eindscore 1-10, hover voor breakdown</div>
             </div>
           </div>
 
@@ -739,7 +740,12 @@ export default function ExecutionPage() {
                             <span className="w-14">Resultaat</span>
                           </div>
                         </div>
-                        {modelBT.slice().sort((a, b) => b.date.localeCompare(a.date)).map((t, i) => (
+                        {modelBT.slice().sort((a, b) => b.date.localeCompare(a.date)).map((t, i) => {
+                          // Quality score per backtest trade
+                          const tFund = Math.min(Math.abs(t.score) / 5, 1) * 4
+                          const tContr = t.momentum >= 30 && t.momentum <= 120 ? 2.5 : 1.5
+                          const tQS = Math.min(10, Math.round((tFund + tContr + 1.5) * 10) / 10) // IM en regime niet beschikbaar in backtest, schat op 1.5
+                          return (
                           <div key={i} className="flex items-center justify-between px-3 py-1 text-[9px] border-b border-white/[0.02] hover:bg-white/[0.02]">
                             <div className="flex items-center gap-2">
                               <span className={`w-1.5 h-1.5 rounded-full ${t.result === 'correct' ? 'bg-green-400' : 'bg-red-400'}`} />
@@ -748,6 +754,7 @@ export default function ExecutionPage() {
                               <span className={`w-4 ${t.direction.includes('bullish') ? 'text-green-400' : 'text-red-400'}`}>{t.direction.includes('bullish') ? '\u25B2' : '\u25BC'}</span>
                             </div>
                             <div className="flex items-center gap-2 text-right">
+                              <span className={`font-mono font-bold w-8 text-[8px] px-1 rounded ${tQS >= 7 ? 'bg-green-500/15 text-green-400' : tQS >= 5 ? 'bg-amber-500/15 text-amber-400' : 'bg-white/[0.06] text-text-dim'}`}>{tQS.toFixed(1)}</span>
                               <span className="text-text-dim font-mono w-10">{t.score > 0 ? '+' : ''}{t.score}</span>
                               <span className="text-text-dim font-mono w-10">{t.momentum}p</span>
                               <span className="text-text-dim font-mono w-10">{t.pips > 0 ? '+' : ''}{t.pips}p</span>
@@ -756,7 +763,8 @@ export default function ExecutionPage() {
                               </span>
                             </div>
                           </div>
-                        ))}
+                          )
+                        })}
                       </div>
                       <div className="mt-2 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] text-[9px] text-text-dim space-y-2">
                         <p className="text-text-muted font-semibold">Hoe lees je dit trackrecord?</p>
