@@ -21,6 +21,7 @@ interface TradeCandidate {
   scorePass: boolean; imPass: boolean; contrarianPass: boolean; directionPass: boolean
   filterCount: number; isConcreTrade: boolean
   inMomentumZone: boolean; momentumStatus: string; entryReady: boolean
+  qualityScore: number
 }
 
 // ─── Tooltip ─────────────────────────────────────────────────
@@ -115,12 +116,20 @@ export default function ExecutionPage() {
           else if (absMom < model.momMin) { momentumStatus = `${absMom}p — nodig: ${model.momMin}p` }
           else { momentumStatus = `${absMom}p — te ver (max ${model.momMax}p)` }
 
+          // Quality score 1-10
+          const fundPts = Math.min(absScore / 5, 1) * 4
+          const contrarianPts = contrarianPass ? (absMom >= 30 && absMom <= 120 ? 2.5 : 1.5) : 0
+          const imPts = (imAlignment / 100) * 2
+          const regimePts = p.regimeAligned ? 1.5 : 0.5
+          const qualityScore = Math.min(10, Math.round((fundPts + contrarianPts + imPts + regimePts) * 10) / 10)
+
           return {
             pair: p.pair, base: p.base, quote: p.quote, direction: p.direction,
             conviction: p.conviction, score: p.score, baseBias: p.baseBias,
             quoteBias: p.quoteBias, rateDiff: p.rateDiff, momentum5d: pips5d, atr,
             scorePass, imPass, contrarianPass, directionPass, filterCount, isConcreTrade,
             inMomentumZone, momentumStatus, entryReady: isConcreTrade && inMomentumZone,
+            qualityScore,
           }
         })
 
@@ -511,6 +520,11 @@ export default function ExecutionPage() {
                               title={`5-daags momentum: ${trade.momentum5d > 0 ? '+' : ''}${trade.momentum5d} pips tegen de bias.\n${trade.inMomentumZone ? `In de momentum zone (${model.momMin > 0 ? model.momMin + '-' + model.momMax + 'p' : 'alle'}) — klaar voor entry.` : trade.momentumStatus}\nDe prijs is ${Math.abs(trade.momentum5d)} pips ${trade.momentum5d > 0 ? 'gestegen' : 'gedaald'} in 5 dagen.`}>
                               {trade.inMomentumZone ? '\u2713 ' : ''}{trade.momentum5d > 0 ? '+' : ''}{trade.momentum5d}p {trade.inMomentumZone ? '' : `(nodig: ${model.momMin > 0 ? model.momMin + 'p' : ''})`}
                             </span>
+                            <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                              trade.qualityScore >= 7 ? 'bg-green-500/15 text-green-400' :
+                              trade.qualityScore >= 5 ? 'bg-amber-500/15 text-amber-400' :
+                              'bg-white/[0.06] text-text-dim'
+                            }`} title="Quality Score (1-10)">{trade.qualityScore.toFixed(1)}</span>
                             <span className="text-sm font-mono font-bold text-heading">{trade.score > 0 ? '+' : ''}{trade.score}</span>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-text-dim transition-transform ${isExp ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9" /></svg>
                           </div>

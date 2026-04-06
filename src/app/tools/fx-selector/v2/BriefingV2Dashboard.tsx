@@ -2144,10 +2144,18 @@ export default function BriefingV2Dashboard() {
                           const directionPass = !isNeutral
                           const passCount = [scorePass, imPass, contrarianPass, directionPass].filter(Boolean).length
 
-                          return { sig, isInTrackrecord, isBullish, isBearish, isNeutral, absScore, pips5d, scorePass, imPass, contrarianPass, directionPass, passCount }
+                          // Quality score 1-10
+                          const fundPts = Math.min(absScore / 5, 1) * 4
+                          const absMom = Math.abs(pips5d)
+                          const contrarianPts = contrarianPass ? (absMom >= 30 && absMom <= 120 ? 2.5 : 1.5) : 0
+                          const imPts = (imGlobal / 100) * 2
+                          const regimePts = sig.tradeability?.status === 'tradeable' ? 1.5 : sig.tradeability?.status === 'conditional' ? 0.75 : 0
+                          const qualityScore = Math.min(10, Math.round((fundPts + contrarianPts + imPts + regimePts) * 10) / 10)
+
+                          return { sig, isInTrackrecord, isBullish, isBearish, isNeutral, absScore, pips5d, scorePass, imPass, contrarianPass, directionPass, passCount, qualityScore }
                         })
-                        .sort((a, b) => a.isInTrackrecord === b.isInTrackrecord ? b.passCount - a.passCount || b.absScore - a.absScore : a.isInTrackrecord ? -1 : 1)
-                        .map(({ sig, isInTrackrecord, isBullish, isBearish, isNeutral, pips5d, scorePass, imPass, contrarianPass, directionPass, passCount }) => (
+                        .sort((a, b) => a.isInTrackrecord === b.isInTrackrecord ? b.qualityScore - a.qualityScore : a.isInTrackrecord ? -1 : 1)
+                        .map(({ sig, isInTrackrecord, isBullish, isBearish, isNeutral, pips5d, scorePass, imPass, contrarianPass, directionPass, passCount, qualityScore }) => (
                           <div
                             key={sig.pair}
                             className={`px-3 py-2.5 rounded-xl border transition-colors group/row ${
@@ -2206,6 +2214,15 @@ export default function BriefingV2Dashboard() {
                                 </span>
                                 <span className={`text-[9px] font-bold ml-0.5 ${passCount === 4 ? 'text-green-400' : passCount >= 3 ? 'text-amber-400' : 'text-red-400/50'}`}>
                                   {passCount}/4
+                                </span>
+                                {/* Quality Score */}
+                                <span className={`text-[10px] font-mono font-bold ml-1.5 px-1.5 py-0.5 rounded ${
+                                  qualityScore >= 7 ? 'bg-green-500/15 text-green-400' :
+                                  qualityScore >= 5 ? 'bg-amber-500/15 text-amber-400' :
+                                  qualityScore >= 3 ? 'bg-orange-500/15 text-orange-400' :
+                                  'bg-red-500/15 text-red-400/60'
+                                }`} title={`Quality Score: fundamenteel (${Math.min(Math.abs(sig.score)/5,1)*4|0}/4) + contrarian (${contrarianPass ? (Math.abs(pips5d)>=30&&Math.abs(pips5d)<=120?'2.5':'1.5') : '0'}/2.5) + IM (${((data.intermarketAlignment??0)/100*2).toFixed(1)}/2) + regime (${sig.tradeability?.status==='tradeable'?'1.5':'0'}/1.5)`}>
+                                  {qualityScore.toFixed(1)}
                                 </span>
                               </div>
                             </div>
