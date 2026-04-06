@@ -99,7 +99,7 @@ export default function RootLayout({
               functionality_storage: 'denied',
               personalization_storage: 'denied',
               security_storage: 'granted',
-              wait_for_update: 500
+              wait_for_update: 2000
             });
             gtag('set', 'ads_data_redaction', true);
             gtag('set', 'url_passthrough', true);
@@ -110,21 +110,6 @@ export default function RootLayout({
           src="https://cdn-cookieyes.com/client_data/956ffa0d845583fb24c80defb450883b/script.js"
           strategy="beforeInteractive"
         />
-        <Script id="cookieyes-gcm-update" strategy="afterInteractive">
-          {`
-            document.addEventListener('cookieyes_consent_update', function(e) {
-              var detail = e.detail || {};
-              gtag('consent', 'update', {
-                analytics_storage: detail.accepted?.includes('analytics') ? 'granted' : 'denied',
-                ad_storage: detail.accepted?.includes('advertisement') ? 'granted' : 'denied',
-                ad_user_data: detail.accepted?.includes('advertisement') ? 'granted' : 'denied',
-                ad_personalization: detail.accepted?.includes('advertisement') ? 'granted' : 'denied',
-                functionality_storage: detail.accepted?.includes('functional') ? 'granted' : 'denied',
-                personalization_storage: detail.accepted?.includes('functional') ? 'granted' : 'denied',
-              });
-            });
-          `}
-        </Script>
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-9XPW26WZ3D"
           strategy="afterInteractive"
