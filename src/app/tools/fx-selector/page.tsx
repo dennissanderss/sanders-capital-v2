@@ -140,7 +140,7 @@ export default function IntroductionPage() {
 
             <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
               {[
-                { v: '56%', l: 'Winrate', s: '434 trades' },
+                { v: '56%', l: 'Winrate', s: '400 trades' },
                 { v: '21', l: 'Paren', s: '8 valuta\'s' },
                 { v: '1 dag', l: 'Hold', s: 'Dagkoers NY close' },
                 { v: 'Live', l: 'Trackrecord', s: 'Auto-updated' },
@@ -168,7 +168,7 @@ export default function IntroductionPage() {
           <SectionHead badge="Tool 2" badgeColor="text-green-400 bg-green-500/15" title="Execution Engine" sub="Van fundamentele bias naar optimale entry" />
           <div className="p-5 sm:p-6 space-y-4">
             <p className="text-[10px] text-text-dim leading-relaxed">
-              De Execution Engine neemt de concrete trades uit de Daily Macro Briefing en voegt daar een <strong className="text-text-muted">bewezen technisch timing model</strong> aan toe. Het model is gebaseerd op analyse van 434 fundamentele trades met echte Yahoo Finance prijsdata (intraday high/low).
+              De Execution Engine neemt de concrete trades uit de Daily Macro Briefing en voegt daar een <strong className="text-text-muted">bewezen technisch timing model</strong> aan toe. Het model is gebaseerd op analyse van 400 fundamentele trades met echte Yahoo Finance prijsdata (intraday high/low).
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
@@ -188,6 +188,7 @@ export default function IntroductionPage() {
             </div>
 
             {/* 3 modellen */}
+            <p className="text-[9px] text-text-dim mb-2">De winrates hieronder zijn de <strong className="text-text-muted">gecombineerde scores</strong> van de fundamentele bias + het technische timing model samen. Puur fundamenteel = 56% winrate. Met techniek erbij = 58-62%.</p>
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
                 { n: 'Selective', wr: '62.4%', pf: '4.98', wk: '2.5', tr: 117 },
@@ -220,11 +221,11 @@ export default function IntroductionPage() {
               <div className="space-y-3">
                 <div>
                   <p className="text-text-muted font-semibold mb-1">Fundamentele scoring (Model B)</p>
-                  <p>Score = CB beleid (&times;2) + renteverschil (&times;1.5) + nieuws bonus (&plusmn;1.5). Geoptimaliseerd over 434 trades en 2.100 configuraties. Bewezen winrate: 56%.</p>
+                  <p>Score = CB beleid (&times;2) + renteverschil (&times;1.5) + nieuws bonus (&plusmn;1.5). Geoptimaliseerd over 400 trades en 2.100 configuraties. Bewezen winrate: 56%.</p>
                 </div>
                 <div>
                   <p className="text-text-muted font-semibold mb-1">Technisch timing model</p>
-                  <p>Gebaseerd op MAE/MFE analyse van echte intraday high/low data (Yahoo Finance) voor 434 trades. Ontdekking: trades met 30-120 pips momentum tegen de bias hebben 62% winrate met PF 4.98.</p>
+                  <p>Gebaseerd op MAE/MFE analyse van echte intraday high/low data (Yahoo Finance) voor 400 trades. Ontdekking: trades met 30-120 pips momentum tegen de bias hebben 62% winrate met PF 4.98.</p>
                 </div>
                 <div>
                   <p className="text-text-muted font-semibold mb-1">Waarom mean reversion?</p>

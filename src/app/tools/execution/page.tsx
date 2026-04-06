@@ -206,7 +206,7 @@ export default function ExecutionPage() {
               </div>
               <div>
                 <p className="text-text-muted font-semibold mb-1">Waar zet je de stop loss?</p>
-                <p>Exact <strong className="text-heading">{model.sl} pips</strong> van je entry. Bij long: {model.sl}p onder je entry. Bij short: {model.sl}p boven je entry. Dit is gebaseerd op analyse van 434 trades — winnende trades bewegen gemiddeld maar 15-19 pips tegen je.</p>
+                <p>Exact <strong className="text-heading">{model.sl} pips</strong> van je entry. Bij long: {model.sl}p onder je entry. Bij short: {model.sl}p boven je entry. Dit is gebaseerd op analyse van 400 trades — winnende trades bewegen gemiddeld maar 15-19 pips tegen je.</p>
               </div>
               <div>
                 <p className="text-text-muted font-semibold mb-1">Waar zet je de take profit?</p>
@@ -354,7 +354,7 @@ export default function ExecutionPage() {
         </div>
         <div className="p-5">
           <p className="text-[10px] text-text-dim mb-4">
-            Hieronder zie je wat er gebeurt als je <strong className="text-text-muted">alleen de fundamentele bias</strong> volgt versus wanneer je daar het <strong className="text-text-muted">technische timing model</strong> aan toevoegt. Alle cijfers zijn gebaseerd op dezelfde 434 trades uit het fundamentele trackrecord (apr 2025 - mar 2026).
+            Hieronder zie je wat er gebeurt als je <strong className="text-text-muted">alleen de fundamentele bias</strong> volgt versus wanneer je daar het <strong className="text-text-muted">technische timing model</strong> aan toevoegt. Alle cijfers zijn gebaseerd op dezelfde 400 trades uit het fundamentele trackrecord (apr 2025 - mar 2026).
           </p>
 
           {/* Vergelijkingstabel */}
@@ -374,7 +374,7 @@ export default function ExecutionPage() {
                 {/* Baseline */}
                 <tr className="border-b border-white/[0.02] bg-white/[0.01]">
                   <td className="py-2 px-2 text-text-muted">Alleen fundamenteel (geen techniek)</td>
-                  <td className="py-2 px-2 text-right font-mono text-heading">434</td>
+                  <td className="py-2 px-2 text-right font-mono text-heading">400</td>
                   <td className="py-2 px-2 text-right font-mono text-text-muted">9.4</td>
                   <td className="py-2 px-2 text-right font-mono text-heading">56.2%</td>
                   <td className="py-2 px-2 text-right font-mono text-text-muted">—</td>
@@ -582,7 +582,7 @@ export default function ExecutionPage() {
                     <div className="space-y-1.5">
                       <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/10 mb-2">
                         <p className="text-[10px] text-amber-400 font-semibold mb-1">Kansmodel: 3/4 filters</p>
-                        <p className="text-[9px] text-text-dim">Op basis van backtesting (434 trades) is de verwachte winrate bij 3/4 filters <strong className="text-amber-400">~53%</strong> (vs. ~56% bij 4/4). De ontbrekende filter staat in rood. Trade alleen als je eigen technische analyse de richting bevestigt.</p>
+                        <p className="text-[9px] text-text-dim">Op basis van backtesting (400 trades) is de verwachte winrate bij 3/4 filters <strong className="text-amber-400">~53%</strong> (vs. ~56% bij 4/4). De ontbrekende filter staat in rood. Trade alleen als je eigen technische analyse de richting bevestigt.</p>
                       </div>
                       {nearMisses.map(trade => {
                         const isBull = trade.direction.includes('bullish')
@@ -718,7 +718,7 @@ export default function ExecutionPage() {
                       </tbody>
                     </table>
                   </div>
-                  <p className="text-[8px] text-text-dim/30 mt-1">Gebaseerd op 434 fundamentele trades uit het trackrecord. SL={model.sl}p, TP={model.tp}p, 1:{model.rr} RR. Momentum filter per model.</p>
+                  <p className="text-[8px] text-text-dim/30 mt-1">Winrates = gecombineerd (fundamentele bias + technisch timing model samen). Puur fundamenteel = 56%. Met momentum filter + SL/TP = 58-62%. SL={model.sl}p, TP={model.tp}p, 1:{model.rr} RR.</p>
                 </div>
 
                 {/* Backtest trades (uit fundamenteel trackrecord) */}

@@ -18,7 +18,7 @@ const premiumTools = [
   { href: '/tools/fx-analyse', label: 'Fundamentals', slug: 'fx-analyse' },
   { href: '/tools/fx-selector/v2', label: 'Daily Macro Briefing', slug: 'fx-selector-v2', flowArrow: true },
   { href: '/tools/execution', label: 'Execution Engine', slug: 'execution', flowArrow: true },
-  { href: '/tools/tradescope', label: 'TradeMind', slug: 'tradescope' },
+  { href: '/tools/tradescope', label: 'TradeMind', slug: 'tradescope', flowArrow: true },
 ] as const
 
 const freeTools = [
