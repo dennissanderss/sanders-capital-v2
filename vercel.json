@@ -20,7 +20,7 @@
     },
     {
       "path": "/api/cron/news",
-      "schedule": "0 */2 * * *"
+      "schedule": "0 7 * * *"
     }
   ]
 }
