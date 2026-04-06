@@ -30,34 +30,53 @@ export async function POST(request: Request) {
         messages: [
           {
             role: 'system',
-            content: `Je bent een trading screenshot analyzer. Analyseer het TradingView screenshot en extraheer de volgende trade gegevens in JSON format:
+            content: `Je bent een expert FX trading chart analyzer. Analyseer het TradingView screenshot en extraheer trade gegevens.
 
+BELANGRIJK — Hoe je de chart leest:
+1. SYMBOOL: Lees het pair linksboven (bijv. "Euro / Canadian Dollar" = EUR/CAD, "Australian Dollar / U.S. Dollar" = AUD/USD)
+2. TIMEFRAME: Lees het timeframe linksboven (1m, 5m, 15m, 30m, 1h, 2h, 4h, D, W)
+3. HUIDIGE PRIJS: Lees de prijs rechts op de y-as waar de huidige candle staat (vaak met een gekleurd label)
+4. RICHTING:
+   - Groene zone/box op de chart = bullish richting = BUY
+   - Rode zone/box op de chart = bearish richting = SELL
+   - Als er zowel groen (boven) als rood (onder) is, kijk waar de prijs nu is
+5. STOP LOSS:
+   - Rode horizontale lijn ONDER de huidige prijs (bij buy) = SL
+   - Rode horizontale lijn BOVEN de huidige prijs (bij sell) = SL
+   - Labels met rode achtergrond aan de rechterkant tonen exacte prijs
+   - De ONDERSTE rode lijn bij een buy trade is de SL
+   - De BOVENSTE rode lijn bij een sell trade is de SL
+6. TAKE PROFIT:
+   - Labels met "1" of markering bovenaan de groene zone = TP bij buy
+   - Labels met "1" of markering onderaan de groene zone = TP bij sell
+   - Als er een "1" label staat, lees de prijs op die hoogte van de y-as
+7. FIB LEVELS: Labels als "0.5", "0.618", "0.75", "0.786" zijn fibonacci retracement levels
+8. ANNOTATIES: Tekst als "1e break", "Check", "Liq" zijn trade notities
+9. ENTRY: De prijs waar de groene zone begint, of waar "1e break" staat
+
+Retourneer ALLEEN deze JSON (geen andere tekst):
 {
-  "symbol": "EUR/USD",
-  "action": "buy" of "sell",
-  "open_price": 1.0850,
+  "symbol": "EUR/CAD",
+  "action": "buy",
+  "open_price": 1.6070,
+  "sl": 1.6021,
+  "tp": 1.6146,
   "close_price": null,
-  "sl": 1.0810,
-  "tp": 1.0930,
   "lot_size": null,
   "pips": null,
   "risk_reward": "1:2",
-  "session": "London" of "New York" of "Asia" of "Overlap",
+  "session": "London",
   "environment": "live",
-  "entry_reason": "Korte beschrijving van de setup die je ziet",
-  "notes": "Eventuele observaties over de chart",
-  "confidence": "hoog" of "gemiddeld" of "laag"
+  "entry_reason": "Beschrijf de setup: structure break, fib retracement, zones etc.",
+  "notes": "Beschrijf annotaties en zones die je ziet op de chart",
+  "confidence": "hoog"
 }
 
-Regels:
-- Kijk naar het symbool linksboven in de chart
-- Bepaal buy/sell op basis van pijlen, kleuren, annotaties of marktstructuur
-- Zoek naar horizontale lijnen voor SL en TP levels
-- Zoek naar fib levels (0.5, 0.618, 0.786 etc.)
-- Identificeer de sessie op basis van het tijdstip
-- Geef ALLEEN de JSON terug, geen andere tekst
-- Als je iets niet kunt bepalen, gebruik null
-- Prijzen moeten exact zijn zoals weergegeven op de chart`
+KRITISCH:
+- Lees EXACTE prijzen van de y-as (rechts op de chart)
+- SL en TP zijn de rode/groene horizontale lijnen of zone grenzen
+- Als je een prijs label ziet (bijv. "1.60215" in rood rechts), gebruik DIE exacte prijs
+- Kijk naar ALLE horizontale lijnen en hun prijzen op de y-as`
           },
           {
             role: 'user',
