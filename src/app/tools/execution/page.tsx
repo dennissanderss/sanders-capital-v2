@@ -596,6 +596,11 @@ export default function ExecutionPage() {
                               <span className="text-[9px] font-mono text-heading">{trade.score > 0 ? '+' : ''}{trade.score}</span>
                             </div>
                             <div className="flex items-center gap-2">
+                              <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                                trade.qualityScore >= 7 ? 'bg-green-500/15 text-green-400' :
+                                trade.qualityScore >= 5 ? 'bg-amber-500/15 text-amber-400' :
+                                'bg-white/[0.06] text-text-dim'
+                              }`} title="Quality Score (1-10)">{trade.qualityScore.toFixed(1)}</span>
                               <span className="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400/70 font-mono border border-amber-500/15">{trade.momentum5d > 0 ? '+' : ''}{trade.momentum5d}p</span>
                               <span className="text-[8px] text-red-400/60 bg-red-500/5 px-1.5 py-0.5 rounded border border-red-500/10">{failedFilter}</span>
                               <span className="text-[9px] font-mono text-amber-400 font-bold">3/4</span>
