@@ -14,10 +14,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Use VERCEL_URL for internal calls (avoids www redirect issues)
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000')
+    // Use SITE_URL with redirect: 'follow' to handle www redirects
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
     const res = await fetch(`${baseUrl}/api/trackrecord-v2`, {
       method: 'POST',
@@ -25,6 +23,7 @@ export async function GET(request: Request) {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
+      redirect: 'follow',
     })
 
     // Guard against HTML responses (redirect)
