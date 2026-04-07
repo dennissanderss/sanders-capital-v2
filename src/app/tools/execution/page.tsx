@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { TRADE_MODELS, DEFAULT_MODEL } from '@/lib/execution-types'
 
 // ─── Types ───────────────────────────────────────────────────
@@ -169,8 +170,21 @@ export default function ExecutionPage() {
         <p className="text-[10px] uppercase tracking-[0.2em] text-accent-light/60 mb-1">Sanders Capital</p>
         <h1 className="text-2xl font-display font-bold text-heading">Execution Engine</h1>
         <p className="text-sm text-text-dim mt-1">
-          Neemt de concrete trades uit je <strong className="text-text-muted">Daily Macro Briefing</strong> en bepaalt het optimale instapmoment met een bewezen technisch timing model.
+          Neemt de concrete trades uit je <Link href="/tools/fx-selector" className="text-accent-light hover:underline font-semibold">Daily Macro Briefing</Link> en bepaalt het optimale instapmoment met een bewezen technisch timing model.
         </p>
+        <div className="mt-3 flex items-center gap-2 text-[10px]">
+          <Link href="/tools/fx-selector" className="px-2.5 py-1 rounded-lg border border-accent/20 bg-accent/5 text-accent-light hover:bg-accent/10 transition-colors">
+            Briefing
+          </Link>
+          <span className="text-text-dim/30">&rarr;</span>
+          <span className="px-2.5 py-1 rounded-lg border border-accent/40 bg-accent/10 text-accent-light font-bold">
+            Execution Engine
+          </span>
+          <span className="text-text-dim/30">&rarr;</span>
+          <span className="px-2.5 py-1 rounded-lg border border-white/[0.06] bg-white/[0.02] text-text-dim">
+            Trackrecord (automatisch)
+          </span>
+        </div>
       </div>
 
       {/* ═══ STAP 1: FLOW ═══ */}
@@ -258,6 +272,7 @@ export default function ExecutionPage() {
               </div>
             </div>
             <p className="text-text-dim/60">Hoe strenger je filtert, hoe minder trades maar hoe hoger je winrate. Kies het model dat bij jou past.</p>
+            <p className="text-text-dim/40 mt-1">Alle stats zijn gemiddelden uit 12 maanden backtesting. In de praktijk varieert het aantal trades per week sterk — sommige weken 0, andere weken meer dan gemiddeld.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
@@ -272,7 +287,7 @@ export default function ExecutionPage() {
                 </div>
                 <div className="grid grid-cols-3 gap-1 text-center mb-3">
                   <div><p className="text-xl font-mono font-bold text-heading">{m.expectedWR}%</p><p className="text-[8px] text-text-dim">Winrate</p></div>
-                  <div><p className="text-xl font-mono font-bold text-heading">{m.tradesPerWeek}</p><p className="text-[8px] text-text-dim">Per week</p></div>
+                  <div><p className="text-xl font-mono font-bold text-heading">~{m.tradesPerWeek}</p><p className="text-[8px] text-text-dim">Gem. /week</p></div>
                   <div><p className="text-xl font-mono font-bold text-heading">{m.expectedPF}</p><p className="text-[8px] text-text-dim">Profit Factor</p></div>
                 </div>
                 <div className="space-y-1 text-[9px] text-text-dim pt-2 border-t border-white/[0.06]">

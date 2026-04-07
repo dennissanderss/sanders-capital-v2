@@ -2087,8 +2087,12 @@ export default function BriefingV2Dashboard() {
                         <span className={`text-[11px] font-mono font-bold ${hasContrarian ? 'text-green-400' : 'text-red-400'}`}>{hasContrarian ? 'beschikbaar' : 'geen paren'}</span>
                       </div>
                       <p className="text-[10px] text-text-dim mt-2 px-1">
-                        Dit is normaal — het systeem wacht op mean-reversion setups waar de prijs tegen de fundamentele richting in beweegt. Gemiddeld levert dit 2-4 trades per week op, niet elke dag. Check de watchlist hierboven voor paren die bijna door de filters komen.
+                        Dit is normaal — het systeem wacht op mean-reversion setups waar de prijs tegen de fundamentele richting in beweegt. Niet elke dag zijn er setups die door alle 4 filters komen. Check de watchlist hierboven voor paren die bijna door de filters komen.
                       </p>
+                      <Link href="/tools/execution" className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg border border-accent/20 bg-accent/5 text-[11px] text-accent-light hover:bg-accent/10 transition-colors">
+                        <span>Bekijk Execution Engine voor timing &amp; momentum zones</span>
+                        <span>&rarr;</span>
+                      </Link>
                     </div>
                   )
                 })()}
@@ -2502,6 +2506,10 @@ export default function BriefingV2Dashboard() {
 
           {/* ── Tool Navigation Links ── */}
           <div className="flex flex-wrap gap-3 mb-6">
+            <Link href="/tools/execution" className="px-4 py-2.5 rounded-lg border border-accent/30 bg-accent/5 text-sm text-accent-light hover:text-heading hover:border-accent/50 transition-colors">
+              Execution Engine &rarr;
+              <span className="block text-[10px] text-text-dim">Timing &amp; entry met momentum zones</span>
+            </Link>
             <Link href="/tools/fx-analyse" className="px-4 py-2.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading hover:border-border-light transition-colors">
               Macro Fundamentals &rarr;
               <span className="block text-[10px] text-text-dim">Leer hoe valutaparen werken</span>
@@ -2535,6 +2543,22 @@ export default function BriefingV2Dashboard() {
                   <li><strong className="text-text-muted">Trade Focus</strong> paren met score &ge;2.0, contrarian prijsactie (5d lookback) en intermarket bevestiging.</li>
                   <li><strong className="text-text-muted">Concrete Trades</strong> trade cards met call, conviction score en timing. Hold: 1 handelsdag.</li>
                 </ol>
+              </div>
+
+              <div>
+                <p className="font-semibold text-text-muted mb-1">Hoe de tools op elkaar aansluiten</p>
+                <div className="flex items-center gap-2 text-[10px] mt-1 mb-2 flex-wrap">
+                  <span className="px-2 py-1 rounded bg-accent/10 border border-accent/20 text-accent-light font-semibold">Daily Macro Briefing</span>
+                  <span className="text-text-dim/30">&rarr;</span>
+                  <span className="px-2 py-1 rounded bg-white/[0.04] border border-white/[0.06] text-text-muted">Execution Engine</span>
+                  <span className="text-text-dim/30">&rarr;</span>
+                  <span className="px-2 py-1 rounded bg-white/[0.04] border border-white/[0.06] text-text-muted">Trackrecord</span>
+                </div>
+                <p className="text-[10px]">
+                  De <strong className="text-text-muted">Briefing</strong> bepaalt welke paren fundamenteel sterk zijn (de &ldquo;wat&rdquo;).
+                  De <strong className="text-text-muted">Execution Engine</strong> voegt momentum timing toe (de &ldquo;wanneer&rdquo;).
+                  Het <strong className="text-text-muted">Trackrecord</strong> meet automatisch of de calls correct waren (de &ldquo;bewijs&rdquo;).
+                </p>
               </div>
 
               <div>
