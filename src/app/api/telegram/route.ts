@@ -1,13 +1,17 @@
-// ─── Telegram Setup & Test Endpoint ──────────────────────────
+// ─── Telegram Setup, Test & Webhook Registration ────────────
 // GET: Check status + haal chat ID op
-// POST: Stuur test notificatie
+// POST: Test notificatie of webhook registratie
+// POST ?action=register-webhook  — Registreer webhook + bot menu
+// POST ?action=test              — Stuur test notificatie
 // ─────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server'
 import { isTelegramConfigured, sendTelegramMessage } from '@/lib/telegram'
 
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
+
 export async function GET() {
-  const token = process.env.TELEGRAM_BOT_TOKEN
+  const token = BOT_TOKEN
   const chatId = process.env.TELEGRAM_CHAT_ID
 
   if (!token) {
@@ -25,7 +29,6 @@ export async function GET() {
     })
   }
 
-  // Haal updates op om chat ID te vinden
   if (!chatId) {
     try {
       const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates`)
@@ -56,26 +59,108 @@ export async function GET() {
     }
   }
 
+  // Check webhook status
+  let webhookInfo = null
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`)
+    const data = await res.json()
+    webhookInfo = data.result
+  } catch { /* ignore */ }
+
   return NextResponse.json({
     configured: true,
     chatId,
-    message: 'Telegram notificaties zijn geconfigureerd! POST naar dit endpoint om te testen.',
+    webhook: webhookInfo?.url || 'niet geregistreerd',
+    message: 'Telegram is geconfigureerd. Gebruik POST ?action=register-webhook om de bot commando\'s te activeren.',
   })
 }
 
-export async function POST() {
-  if (!isTelegramConfigured()) {
-    return NextResponse.json({ error: 'Telegram niet geconfigureerd. Bezoek GET /api/telegram voor setup.' }, { status: 400 })
+export async function POST(request: Request) {
+  const url = new URL(request.url)
+  const action = url.searchParams.get('action')
+
+  if (!BOT_TOKEN) {
+    return NextResponse.json({ error: 'TELEGRAM_BOT_TOKEN niet geconfigureerd' }, { status: 400 })
   }
 
-  const success = await sendTelegramMessage(
-    `✅ <b>Sanders Capital — Test Notificatie</b>\n\n` +
-    `Je Telegram notificaties werken!\n` +
-    `Je ontvangt automatisch meldingen bij:\n\n` +
-    `🔔 Nieuwe concrete trades (23:05 NL)\n` +
-    `📋 Trackrecord updates (23:00 NL)\n\n` +
-    `🔗 sanderscapital.nl/tools/execution`
-  )
+  // ─── Register webhook + bot menu ──────────────────────
+  if (action === 'register-webhook') {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.sanderscapital.nl'
+    const webhookUrl = `${baseUrl}/api/telegram/webhook`
 
-  return NextResponse.json({ success, message: success ? 'Test notificatie verstuurd!' : 'Versturen mislukt — check je bot token en chat ID' })
+    // 1. Set webhook
+    const webhookRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: webhookUrl }),
+    })
+    const webhookData = await webhookRes.json()
+
+    // 2. Set bot commands (menu)
+    const commandsRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setMyCommands`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        commands: [
+          { command: 'status', description: '📊 Huidige markt + actieve trades' },
+          { command: 'trades', description: '📋 Vandaag\'s trades overzicht' },
+          { command: 'track', description: '📈 Trackrecord statistieken' },
+          { command: 'schema', description: '⏰ Data update tijden' },
+          { command: 'help', description: '❓ Help & commando\'s' },
+        ],
+      }),
+    })
+    const commandsData = await commandsRes.json()
+
+    // 3. Set bot description
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setMyDescription`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        description: 'Sanders Capital — FX Trade Alerts & Markt Analyse. Ontvang automatisch concrete trades, trackrecord updates en marktoverzichten. 4x per dag vers.',
+      }),
+    })
+
+    // 4. Set bot short description
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setMyShortDescription`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        short_description: 'FX Trade Alerts & Markt Analyse',
+      }),
+    })
+
+    return NextResponse.json({
+      webhook: { success: webhookData.ok, url: webhookUrl },
+      commands: { success: commandsData.ok },
+      message: webhookData.ok ? 'Webhook geregistreerd + bot menu ingesteld! Probeer /status in Telegram.' : 'Fout bij registratie',
+    })
+  }
+
+  // ─── Test notificatie ─────────────────────────────────
+  if (!isTelegramConfigured()) {
+    return NextResponse.json({ error: 'TELEGRAM_CHAT_ID niet geconfigureerd.' }, { status: 400 })
+  }
+
+  const success = await sendTelegramMessage([
+    `━━━━━━━━━━━━━━━━━━━━━━`,
+    `✅  <b>SANDERS CAPITAL</b>`,
+    `Test Notificatie`,
+    `━━━━━━━━━━━━━━━━━━━━━━`,
+    ``,
+    `Je Telegram notificaties werken!`,
+    ``,
+    `<b>Automatische meldingen:</b>`,
+    `  🇬🇧  08:30 — London Pre-Market`,
+    `  🌍  12:00 — Middag Update`,
+    `  🇺🇸  14:30 — New York Pre-Market`,
+    `  🌙  21:00 — Einde Handelsdag`,
+    ``,
+    `<b>Commando's:</b>`,
+    `  /status · /trades · /track · /schema`,
+    ``,
+    `🔗 sanderscapital.nl/tools/execution`,
+  ].join('\n'))
+
+  return NextResponse.json({ success, message: success ? 'Test notificatie verstuurd!' : 'Versturen mislukt' })
 }
