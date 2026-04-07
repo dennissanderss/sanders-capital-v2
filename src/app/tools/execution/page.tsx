@@ -286,21 +286,21 @@ export default function ExecutionPage() {
                   <span className="text-[8px] px-2 py-0.5 rounded-full bg-white/[0.06] text-text-dim">{m.label}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1 text-center mb-3">
-                  <div><p className="text-xl font-mono font-bold text-heading">{m.expectedWR}%</p><p className="text-[8px] text-text-dim">Winrate</p></div>
-                  <div><p className="text-xl font-mono font-bold text-heading">~{m.tradesPerWeek}</p><p className="text-[8px] text-text-dim">Gem. /week</p></div>
-                  <div><p className="text-xl font-mono font-bold text-heading">{m.expectedPF}</p><p className="text-[8px] text-text-dim">Profit Factor</p></div>
+                  <div><p className="text-xl font-mono font-bold text-heading">{m.expectedWR}%</p><p className="text-[8px] text-text-dim"><Tip label="Winrate">Percentage trades dat correct was in 12 maanden backtesting ({m.sampleSize} trades). Hoe hoger, hoe vaker je wint — maar je hebt minder kansen.</Tip></p></div>
+                  <div><p className="text-xl font-mono font-bold text-heading">~{m.tradesPerWeek}</p><p className="text-[8px] text-text-dim"><Tip label="Gem. /week">Gemiddeld aantal trades per week over 12 maanden. In de praktijk varieert dit sterk — sommige weken 0, andere weken meer.</Tip></p></div>
+                  <div><p className="text-xl font-mono font-bold text-heading">{m.expectedPF}</p><p className="text-[8px] text-text-dim"><Tip label="Profit Factor">Totale winst gedeeld door totaal verlies. PF &gt; 1.0 = winstgevend. PF 1.5 = voor elke €1 verlies verdien je €1.50.</Tip></p></div>
                 </div>
                 <div className="space-y-1 text-[9px] text-text-dim pt-2 border-t border-white/[0.06]">
                   <div className="flex justify-between">
-                    <span>Momentum filter</span>
+                    <Tip label="Momentum filter">Hoeveel pips de prijs tegen de fundamentele bias moet bewogen zijn in 5 dagen. Hoe strenger het filter, hoe minder trades maar hoe hoger de winrate.</Tip>
                     <span className="text-text-muted font-mono">{m.momMin === 0 ? 'Alle (geen filter)' : m.momMin + '–' + m.momMax + ' pips'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Verwacht per trade</span>
+                    <Tip label="Verwacht per trade">Gemiddelde winst per trade in pips, berekend als: (winrate × TP) - ((1-winrate) × SL). Dit is de &quot;edge&quot; per trade.</Tip>
                     <span className="text-green-400 font-mono font-bold">+{m.expectedExp} pips</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Bewezen op</span>
+                    <Tip label="Bewezen op">Aantal trades waarop deze statistieken gebaseerd zijn. Meer trades = betrouwbaarder resultaat.</Tip>
                     <span className="text-text-muted">{m.sampleSize} trades (12 mnd)</span>
                   </div>
                 </div>
@@ -340,20 +340,20 @@ export default function ExecutionPage() {
               <input type="number" value={accountBalance} onChange={(e) => setAccountBalance(parseInt(e.target.value) || 0)}
                 className="w-full px-2 py-1.5 rounded-lg text-xs text-heading border border-white/[0.08] bg-white/[0.03] focus:border-accent/50 focus:outline-none" />
             </div>
-            <div className="p-2 rounded-lg bg-white/[0.03] text-center">
-              <p className="text-[7px] text-text-dim">Risico (1%)</p>
+            <div className="p-2 rounded-lg bg-white/[0.03] text-center group/r relative">
+              <p className="text-[7px] text-text-dim"><Tip label="Risico (1%)">Je riskeert 1% van je account per trade. Dit is de standaard risk management regel — bij verlies verlies je maximaal dit bedrag.</Tip></p>
               <p className="text-sm font-mono font-bold text-heading">${riskPerTrade.toFixed(0)}</p>
             </div>
             <div className="p-2 rounded-lg bg-green-500/5 text-center">
-              <p className="text-[7px] text-text-dim">Bij TP ({model.tp}p)</p>
+              <p className="text-[7px] text-text-dim"><Tip label={`Bij TP (${model.tp}p)`}>Als de prijs je Take Profit raakt ({model.tp} pips in je richting), verdien je dit bedrag. Berekend als: risico per pip × {model.tp} pips.</Tip></p>
               <p className="text-sm font-mono font-bold text-green-400">+${(model.tp * riskPerPip).toFixed(0)}</p>
             </div>
             <div className="p-2 rounded-lg bg-red-500/5 text-center">
-              <p className="text-[7px] text-text-dim">Bij SL ({model.sl}p)</p>
+              <p className="text-[7px] text-text-dim"><Tip label={`Bij SL (${model.sl}p)`}>Als de prijs je Stop Loss raakt ({model.sl} pips tegen je), verlies je dit bedrag. Dit is altijd maximaal 1% van je account.</Tip></p>
               <p className="text-sm font-mono font-bold text-red-400">-${(model.sl * riskPerPip).toFixed(0)}</p>
             </div>
             <div className="p-2 rounded-lg bg-green-500/[0.08] border border-green-500/15 text-center">
-              <p className="text-[7px] text-text-dim">Per maand</p>
+              <p className="text-[7px] text-text-dim"><Tip label="Per maand">Verwachte maandelijkse winst op basis van het gemiddeld aantal trades en de verwachte winst per trade. Dit is een gemiddelde — individuele maanden variëren.</Tip></p>
               <p className="text-sm font-mono font-bold text-green-400">+${monthlyProfit.toFixed(0)}</p>
               <p className="text-[7px] text-green-400/60">{(monthlyProfit / accountBalance * 100).toFixed(1)}%</p>
             </div>
@@ -498,11 +498,11 @@ export default function ExecutionPage() {
                   regime.regime === 'Risk-Off' ? 'text-red-400 bg-red-500/10 border-red-500/20' :
                   regime.regime === 'Risk-On' ? 'text-green-400 bg-green-500/10 border-green-500/20' :
                   'text-text-dim bg-white/[0.04] border-white/[0.06]'
-                }`}>{regime.regime || 'Laden...'}</span>
+                }`} title={`Huidig marktregime: ${regime.regime}\n\n${regime.regime === 'Risk-On' ? 'Risk-On = beleggers nemen risico. Typisch bullish voor AUD, NZD, CAD. Bearish voor JPY, CHF.' : regime.regime === 'Risk-Off' ? 'Risk-Off = beleggers vluchten naar veiligheid. Typisch bullish voor JPY, CHF, USD. Bearish voor AUD, NZD.' : 'Gemengd = geen duidelijk regime. Intermarket signalen spreken elkaar tegen.'}\n\nBevestiging: ${regime.im}% (${regime.im > 50 ? 'voldoende' : 'onvoldoende'})`}>{regime.regime || 'Laden...'}</span>
                 <span className={`text-[10px] font-mono ${regime.im > 50 ? 'text-green-400' : 'text-red-400'}`}>
-                  IM: {regime.im}% {regime.im > 50 ? '\u2713' : '\u2717 (<50%)'}
+                  <Tip label={`IM: ${regime.im}% ${regime.im > 50 ? '\u2713' : '\u2717 (<50%)'}`}>Intermarket Alignment — meten VIX, S&amp;P500, Gold, Yields en Oil hetzelfde marktregime? Boven 50% = bevestigd. Onder 50% = geen concrete trades mogelijk.</Tip>
                 </span>
-                <span className="text-[10px] text-text-dim">{concreteTrades.length} concrete · {nearMisses.length} near miss</span>
+                <span className="text-[10px] text-text-dim"><Tip label={`${concreteTrades.length} concrete · ${nearMisses.length} near miss`}>Concrete trades passeren alle 4 filters (score ≥2, IM &gt;50%, contrarian, richting). Near misses passeren 3 van 4 — lagere winrate (~53%).</Tip></span>
                 {entryReady.length > 0 && <span className="text-[10px] text-green-400 font-bold animate-pulse">{entryReady.length} entry ready!</span>}
                 <span className="ml-auto flex items-center gap-2">
                   <span className="text-[8px] text-text-dim/30">{generatedAt ? new Date(generatedAt).toLocaleString('nl-NL') : ''}</span>
@@ -529,7 +529,7 @@ export default function ExecutionPage() {
                             <span className={`w-2.5 h-2.5 rounded-full ${trade.entryReady ? 'bg-green-400 animate-pulse' : 'bg-amber-400'}`} />
                             <span className="font-mono font-bold text-sm text-heading">{trade.pair}</span>
                             <span className={`text-xs font-bold ${isBull ? 'text-green-400' : 'text-red-400'}`}>{isBull ? '\u25B2 LONG' : '\u25BC SHORT'}</span>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/15 font-mono">4/4</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/15 font-mono" title={`Alle 4 fundamentele filters gepasseerd:\n\n✓ Score ≥ 2.0 (${trade.score > 0 ? '+' : ''}${trade.score})\n✓ IM > 50% (${regime.im}%)\n✓ Contrarian (prijs ging tegen bias)\n✓ Richting (${trade.direction})\n\nDit is een concrete trade.`}>4/4</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className={`text-[9px] px-2 py-0.5 rounded-full font-mono ${trade.inMomentumZone ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}
@@ -540,16 +540,16 @@ export default function ExecutionPage() {
                               trade.qualityScore >= 7 ? 'bg-green-500/15 text-green-400' :
                               trade.qualityScore >= 5 ? 'bg-amber-500/15 text-amber-400' :
                               'bg-white/[0.06] text-text-dim'
-                            }`} title="Quality Score (1-10)">{trade.qualityScore.toFixed(1)}</span>
-                            <span className="text-sm font-mono font-bold text-heading">{trade.score > 0 ? '+' : ''}{trade.score}</span>
+                            }`} title={`Quality Score ${trade.qualityScore.toFixed(1)}/10\n\nOpbouw:\n• Fundamenteel (max 4pt): sterkte van de score\n• Contrarian (max 2.5pt): momentum tegen de bias\n• IM alignment (max 2pt): ${regime.im}% bevestiging\n• Regime (max 1.5pt): past bij Risk-On/Off\n\n≥7 = sterk setup · ≥5 = redelijk · <5 = zwak`}>{trade.qualityScore.toFixed(1)}</span>
+                            <span className="text-sm font-mono font-bold text-heading" title={`Fundamentele score: ${trade.score > 0 ? '+' : ''}${trade.score}\n\nBerekend als:\n• CB beleid verschil × 2\n• Renteverschil × 1.5\n• Nieuws bonus (max ±1.5)\n\nMinimum ≥2.0 voor een concrete trade.\nHoe hoger, hoe sterker de fundamentele divergentie.`}>{trade.score > 0 ? '+' : ''}{trade.score}</span>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-text-dim transition-transform ${isExp ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9" /></svg>
                           </div>
                         </button>
                         {isExp && (
                           <div className="px-4 pb-4 border-t border-white/[0.04] space-y-3">
                             <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
-                              <div className="p-2 rounded-lg bg-white/[0.03]"><p className="text-text-dim">Richting</p><p className={`font-bold ${isBull ? 'text-green-400' : 'text-red-400'}`}>{trade.direction} ({trade.conviction})</p></div>
-                              <div className="p-2 rounded-lg bg-white/[0.03]"><p className="text-text-dim">Fund. Score</p><p className="font-mono font-bold text-heading">{trade.score > 0 ? '+' : ''}{trade.score}</p></div>
+                              <div className="p-2 rounded-lg bg-white/[0.03]"><p className="text-text-dim">Richting</p><p className={`font-bold ${isBull ? 'text-green-400' : 'text-red-400'}`} title={`${trade.base} is ${trade.baseBias} · ${trade.quote} is ${trade.quoteBias}\n\nOvertuiging: ${trade.conviction}\n${trade.conviction === 'sterk' ? 'Score ≥ 4.0 — zeer sterk fundamenteel verschil' : trade.conviction === 'matig' ? 'Score 2.0-3.9 — redelijk fundamenteel verschil' : 'Score < 2.0 — zwak'}`}>{trade.direction} ({trade.conviction})</p></div>
+                              <div className="p-2 rounded-lg bg-white/[0.03]"><p className="text-text-dim">Fund. Score</p><p className="font-mono font-bold text-heading" title={`Score: ${trade.score > 0 ? '+' : ''}${trade.score}\n\nFormule: CB bias ×2 + renteverschil ×1.5 + nieuws bonus\n\n${trade.base} bias: ${trade.baseBias}\n${trade.quote} bias: ${trade.quoteBias}\nRenteverschil: ${trade.rateDiff !== null ? trade.rateDiff + '%' : 'n/a'}`}>{trade.score > 0 ? '+' : ''}{trade.score}</p></div>
                               <div className="p-2 rounded-lg bg-white/[0.03]">
                                 <p className="text-text-dim">5d Momentum</p>
                                 <p className={`font-mono font-bold ${trade.inMomentumZone ? 'text-green-400' : 'text-amber-400'}`}>{trade.momentum5d > 0 ? '+' : ''}{trade.momentum5d}p</p>
@@ -625,10 +625,10 @@ export default function ExecutionPage() {
                                 trade.qualityScore >= 7 ? 'bg-green-500/15 text-green-400' :
                                 trade.qualityScore >= 5 ? 'bg-amber-500/15 text-amber-400' :
                                 'bg-white/[0.06] text-text-dim'
-                              }`} title="Quality Score (1-10)">{trade.qualityScore.toFixed(1)}</span>
-                              <span className="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400/70 font-mono border border-amber-500/15">{trade.momentum5d > 0 ? '+' : ''}{trade.momentum5d}p</span>
-                              <span className="text-[8px] text-red-400/60 bg-red-500/5 px-1.5 py-0.5 rounded border border-red-500/10">{failedFilter}</span>
-                              <span className="text-[9px] font-mono text-amber-400 font-bold">3/4</span>
+                              }`} title={`Quality Score ${trade.qualityScore.toFixed(1)}/10\n\n≥7 = sterk · ≥5 = redelijk · <5 = zwak\nNear miss — ontbreekt 1 filter.`}>{trade.qualityScore.toFixed(1)}</span>
+                              <span className="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400/70 font-mono border border-amber-500/15" title={`5-daags momentum: ${trade.momentum5d > 0 ? '+' : ''}${trade.momentum5d} pips\nDe prijs is ${Math.abs(trade.momentum5d)} pips ${trade.momentum5d > 0 ? 'gestegen' : 'gedaald'} in 5 handelsdagen.`}>{trade.momentum5d > 0 ? '+' : ''}{trade.momentum5d}p</span>
+                              <span className="text-[8px] text-red-400/60 bg-red-500/5 px-1.5 py-0.5 rounded border border-red-500/10" title={`Dit pair mist 1 filter: ${failedFilter}.\n\nZonder deze filter is de verwachte winrate ~53% in plaats van ~56-62%.`}>{failedFilter}</span>
+                              <span className="text-[9px] font-mono text-amber-400 font-bold" title={`3 van 4 filters gepasseerd.\n\n${trade.scorePass ? '✓' : '✗'} Score ≥ 2.0 (${trade.score > 0 ? '+' : ''}${trade.score})\n${trade.imPass ? '✓' : '✗'} IM > 50% (${regime.im}%)\n${trade.contrarianPass ? '✓' : '✗'} Contrarian\n${trade.directionPass ? '✓' : '✗'} Richting`}>3/4</span>
                             </div>
                           </div>
                         )
@@ -651,7 +651,7 @@ export default function ExecutionPage() {
             {trackRecord && trackRecord.overall.resolved > 0 && (
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                 trackRecord.overall.winRate >= 55 ? 'bg-green-500/15 text-green-400' : 'bg-amber-500/15 text-amber-400'
-              }`}>{trackRecord.overall.winRate}% winrate ({trackRecord.overall.resolved} trades)</span>
+              }`} title={`Live trackrecord: ${trackRecord.overall.correct} correct van ${trackRecord.overall.resolved} resolved trades.\n\nDit zijn echte trades die het systeem heeft gegenereerd en automatisch na 1 handelsdag resolved.`}>{trackRecord.overall.winRate}% winrate ({trackRecord.overall.resolved} trades)</span>
             )}
             {trackRecord && trackRecord.overall.pending > 0 && (
               <span className="text-[10px] text-text-dim">{trackRecord.overall.pending} pending</span>

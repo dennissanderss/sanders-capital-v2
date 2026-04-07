@@ -501,6 +501,8 @@ export default function BriefingV2Dashboard() {
   const [expandedPairs, setExpandedPairs] = useState<Set<string>>(new Set())
   const [backfilling, setBackfilling] = useState(false)
   const [backfillMsg, setBackfillMsg] = useState<string | null>(null)
+  const [historyDate, setHistoryDate] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
 
   // Daily change indicators for track record stats
   const todayChanges = useMemo(() => {
@@ -2120,6 +2122,129 @@ export default function BriefingV2Dashboard() {
                         <span>Bekijk Execution Engine voor timing &amp; momentum zones</span>
                         <span>&rarr;</span>
                       </Link>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
+            {/* ── Terugkijken: eerdere calls ── */}
+            {trackRecords.length > 0 && (
+              <div className="mt-4 rounded-2xl border border-border bg-bg-card overflow-hidden">
+                <button onClick={() => setShowHistory(!showHistory)} className="w-full px-5 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                  <div className="flex items-center gap-2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Eerdere Calls Terugkijken</span>
+                    <span className="text-[9px] text-text-dim/50">
+                      {(() => { const dates = new Set(trackRecords.map(r => r.date)); return `${dates.size} dagen` })()}
+                    </span>
+                  </div>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-text-dim transition-transform ${showHistory ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9" /></svg>
+                </button>
+
+                {showHistory && (() => {
+                  // Groepeer trackrecord per datum
+                  const byDate: Record<string, TrackRecord[]> = {}
+                  for (const r of trackRecords) {
+                    if (!byDate[r.date]) byDate[r.date] = []
+                    byDate[r.date].push(r)
+                  }
+                  const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a))
+                  const today = new Date().toISOString().split('T')[0]
+                  const visibleDates = historyDate ? [historyDate] : sortedDates.filter(d => d !== today).slice(0, 7)
+
+                  return (
+                    <div className="px-5 pb-4 border-t border-white/[0.04]">
+                      {/* Datum knoppen */}
+                      <div className="flex flex-wrap gap-1.5 mt-3 mb-3">
+                        <button onClick={() => setHistoryDate(null)} className={`text-[9px] px-2 py-1 rounded-lg border transition-colors ${!historyDate ? 'border-accent/40 bg-accent/10 text-accent-light' : 'border-white/[0.06] text-text-dim hover:text-text-muted'}`}>
+                          Laatste 7 dagen
+                        </button>
+                        {sortedDates.filter(d => d !== today).slice(0, 14).map(date => {
+                          const d = new Date(date + 'T12:00:00')
+                          const label = d.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' })
+                          const dayRecords = byDate[date]
+                          const resolved = dayRecords.filter(r => r.result !== 'pending')
+                          const correct = resolved.filter(r => r.result === 'correct').length
+                          const wr = resolved.length > 0 ? Math.round((correct / resolved.length) * 100) : null
+                          return (
+                            <button key={date} onClick={() => setHistoryDate(historyDate === date ? null : date)}
+                              className={`text-[9px] px-2 py-1 rounded-lg border transition-colors ${historyDate === date ? 'border-accent/40 bg-accent/10 text-accent-light' : 'border-white/[0.06] text-text-dim hover:text-text-muted'}`}>
+                              {label}
+                              <span className="ml-1 font-mono">{dayRecords.length}t</span>
+                              {wr !== null && <span className={`ml-1 font-mono font-bold ${wr >= 55 ? 'text-green-400' : wr >= 45 ? 'text-amber-400' : 'text-red-400'}`}>{wr}%</span>}
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                      {/* Trades voor geselecteerde datums */}
+                      {visibleDates.map(date => {
+                        const dayRecords = byDate[date]
+                        if (!dayRecords) return null
+                        const d = new Date(date + 'T12:00:00')
+                        const label = d.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                        const resolved = dayRecords.filter(r => r.result !== 'pending')
+                        const correct = resolved.filter(r => r.result === 'correct').length
+                        const wr = resolved.length > 0 ? Math.round((correct / resolved.length) * 100) : null
+
+                        return (
+                          <div key={date} className="mb-3">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-[10px] font-semibold text-heading">{label}</span>
+                              <div className="flex items-center gap-2 text-[9px]">
+                                <span className="text-text-dim">{dayRecords.length} calls</span>
+                                {wr !== null && (
+                                  <span className={`font-mono font-bold px-1.5 py-0.5 rounded ${wr >= 55 ? 'bg-green-500/10 text-green-400' : wr >= 45 ? 'bg-amber-500/10 text-amber-400' : 'bg-red-500/10 text-red-400'}`}>
+                                    {correct}/{resolved.length} correct ({wr}%)
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              {dayRecords.map(r => {
+                                const isBull = (r.direction || '').includes('bullish')
+                                return (
+                                  <div key={r.id || `${r.pair}-${r.date}`} className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
+                                    r.result === 'correct' ? 'border-green-500/15 bg-green-500/[0.03]' :
+                                    r.result === 'incorrect' ? 'border-red-500/15 bg-red-500/[0.03]' :
+                                    'border-white/[0.06] bg-white/[0.02]'
+                                  }`}>
+                                    <div className="flex items-center gap-2">
+                                      <span className={`w-2 h-2 rounded-full ${r.result === 'correct' ? 'bg-green-400' : r.result === 'incorrect' ? 'bg-red-400' : 'bg-amber-400'}`} />
+                                      <span className="font-mono font-bold text-[11px] text-heading">{r.pair}</span>
+                                      <span className={`text-[10px] font-bold ${isBull ? 'text-green-400' : 'text-red-400'}`}>
+                                        {isBull ? '\u25B2 LONG' : '\u25BC SHORT'}
+                                      </span>
+                                      <span className="text-[9px] font-mono text-text-dim">{r.score > 0 ? '+' : ''}{r.score}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      {r.metadata?.momentum5d !== undefined && (
+                                        <span className="text-[9px] font-mono text-text-dim" title="5d momentum bij de call">
+                                          {Math.abs(r.metadata.momentum5d)}p mom
+                                        </span>
+                                      )}
+                                      {r.pips_moved !== null && r.pips_moved !== undefined && (
+                                        <span className={`text-[9px] font-mono font-bold ${r.pips_moved > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                          {r.pips_moved > 0 ? '+' : ''}{r.pips_moved}p
+                                        </span>
+                                      )}
+                                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                                        r.result === 'correct' ? 'bg-green-500/15 text-green-400' :
+                                        r.result === 'incorrect' ? 'bg-red-500/15 text-red-400' :
+                                        'bg-amber-500/10 text-amber-400'
+                                      }`}>
+                                        {r.result === 'correct' ? 'CORRECT' : r.result === 'incorrect' ? 'INCORRECT' : 'PENDING'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )
+                      })}
+                      <p className="text-[9px] text-text-dim/40 mt-2">Gebruik deze data om te checken of je trades klopten met de call van die dag. Elke call wordt automatisch na 1 handelsdag geresolved.</p>
                     </div>
                   )
                 })()}
