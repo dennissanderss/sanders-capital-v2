@@ -664,23 +664,31 @@ export default function NieuwsContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState('all')
-  const [activeDays, setActiveDays] = useState(7)
+  const [activeDays, setActiveDays] = useState(1)
   const [fetchedAt, setFetchedAt] = useState<string | null>(null)
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null)
   const [showDutch, setShowDutch] = useState(true)
 
   const [isFirstLoad, setIsFirstLoad] = useState(true)
 
-  const fetchNews = useCallback(async (retry = false) => {
+  const fetchNews = useCallback(async (retry = false, overrideDays?: number) => {
     if (!retry) setLoading(true)
     setError(null)
+    const days = overrideDays ?? activeDays
     try {
-      const res = await fetch(`/api/news?category=${activeCategory}&days=${activeDays}`)
+      const res = await fetch(`/api/news?category=${activeCategory}&days=${days}`)
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       const arts = data.articles || []
       setArticles(arts)
       setFetchedAt(data.fetchedAt)
+
+      // If "Vandaag" has no articles on first load, auto-expand to "Deze week"
+      if (arts.length === 0 && isFirstLoad && days === 1) {
+        setIsFirstLoad(false)
+        setActiveDays(7)
+        return
+      }
 
       // First load returns empty because feeds are being fetched in background
       // Auto-retry after 8 seconds to pick up the newly stored articles
