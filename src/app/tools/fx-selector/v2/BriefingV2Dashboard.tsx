@@ -266,7 +266,6 @@ function getTradeFocus(
   ranking: CurrencyRank[],
   v3Signals?: { pair: string; signal: string; conviction: number; score: number; tradeability: { status: string; reasons: string[] }; intermarket: { pair: string; alignment: number; signals: { instrument: string; direction: string; strength: number; relevance: string }[] }; reasons: string[]; priceMomentum: { direction: string; pips1d: number; pips5d: number; atr20d: number; extensionRatio: number } }[],
   globalImAlignment?: number,
-  todayTrackRecords?: TrackRecord[],
 ) {
   // ─── Unified criteria (exact same as trackrecord) ───
   // 1. Score >= 2.0
@@ -274,29 +273,16 @@ function getTradeFocus(
   // 3. Contrarian: 5d price momentum opposes fundamental direction (mean reversion)
   // 4. Direction not neutral
   //
-  // IMPORTANT: The trackrecord cron and this live calculation both fetch Yahoo Finance
-  // data independently. Small timing differences can cause one to see a pair as
-  // contrarian while the other doesn't. To stay in sync, we merge today's trackrecord
-  // records as the source of truth (they are what actually gets tracked).
+  // This calculates trades based on LIVE data only. The trackrecord cron uses the
+  // same logic but runs at 23:00 NL with that moment's data. Small differences
+  // between live and cron data are normal — the trackrecord is the definitive record.
 
   const imOk = (globalImAlignment ?? 0) > 50
-
-  // Pairs from today's trackrecord — these are the authoritative "concrete trades"
-  const today = new Date().toISOString().split('T')[0]
-  const todayTRPairs = new Set(
-    (todayTrackRecords || [])
-      .filter(r => r.date === today)
-      .map(r => r.pair)
-  )
 
   const primary = pairs
     .filter(p => {
       // Filter 1: Score >= 2.0 + has direction
       if (Math.abs(p.score) < 2.0 || p.direction === 'neutraal') return false
-
-      // If this pair is in today's trackrecord, it passed all filters at record time
-      // → always include it so briefing and trackrecord stay in sync
-      if (todayTRPairs.has(p.pair)) return true
 
       // Filter 2: Global IM alignment > 50%
       if (!imOk) return false
@@ -618,7 +604,7 @@ export default function BriefingV2Dashboard() {
   }
 
   const intermarketConclusion = data?.intermarketSignals ? getIntermarketConclusion(data.intermarketSignals, data.regime) : null
-  const tradeFocusResult = data ? getTradeFocus(data.pairBiases, data.todayEvents, data.currencyRanking, data.v3?.pairSignals, data.intermarketAlignment, trackRecords) : { primary: [], watchlist: [] }
+  const tradeFocusResult = data ? getTradeFocus(data.pairBiases, data.todayEvents, data.currencyRanking, data.v3?.pairSignals, data.intermarketAlignment) : { primary: [], watchlist: [] }
   const tradeFocus = tradeFocusResult.primary
   const watchlist = tradeFocusResult.watchlist
 
@@ -2102,9 +2088,34 @@ export default function BriefingV2Dashboard() {
                         <span className="text-[11px] text-text-muted flex-1">Contrarian timing (5d prijs tegen bias)</span>
                         <span className={`text-[11px] font-mono font-bold ${hasContrarian ? 'text-green-400' : 'text-red-400'}`}>{hasContrarian ? 'beschikbaar' : 'geen paren'}</span>
                       </div>
-                      <p className="text-[10px] text-text-dim mt-2 px-1">
-                        Dit is normaal — het systeem wacht op mean-reversion setups waar de prijs tegen de fundamentele richting in beweegt. Niet elke dag zijn er setups die door alle 4 filters komen. Check de watchlist hierboven voor paren die bijna door de filters komen.
-                      </p>
+                      {(() => {
+                        const today2 = new Date().toISOString().split('T')[0]
+                        const todayTR = trackRecords.filter(r => r.date === today2)
+                        if (todayTR.length > 0) {
+                          return (
+                            <div className="mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/15">
+                              <p className="text-[11px] text-amber-300 font-semibold mb-1">
+                                Het trackrecord heeft vandaag {todayTR.length} {todayTR.length === 1 ? 'trade' : 'trades'} geregistreerd
+                              </p>
+                              <p className="text-[10px] text-text-dim">
+                                Deze trades zijn eerder vandaag gegenereerd toen de marktcondities anders waren (IM was toen mogelijk &gt;50%). Ze worden morgen automatisch resolved. De live briefing toont alleen trades die <strong className="text-text-muted">nu</strong> door alle filters komen.
+                              </p>
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {todayTR.map(t => (
+                                  <span key={t.pair} className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 font-mono">
+                                    {t.pair} {(t.direction || '').includes('bullish') ? 'LONG' : 'SHORT'}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        }
+                        return (
+                          <p className="text-[10px] text-text-dim mt-2 px-1">
+                            Dit is normaal — het systeem wacht op mean-reversion setups waar de prijs tegen de fundamentele richting in beweegt. Niet elke dag zijn er setups die door alle 4 filters komen.
+                          </p>
+                        )
+                      })()}
                       <Link href="/tools/execution" className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg border border-accent/20 bg-accent/5 text-[11px] text-accent-light hover:bg-accent/10 transition-colors">
                         <span>Bekijk Execution Engine voor timing &amp; momentum zones</span>
                         <span>&rarr;</span>

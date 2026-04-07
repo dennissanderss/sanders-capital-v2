@@ -602,7 +602,11 @@ export async function GET() {
       const pairAligned = isAlignedWithRegime(pair, regime)
       ;(pair as any).regimeAligned = pairAligned
 
-      if (regimeContradicted && pair.conviction === 'sterk') {
+      // Score ≥ 4.0 is zo sterk fundamenteel dat modifiers het niet mogen overschrijven
+      const absScore = Math.abs(pair.score)
+      const isVeryStrong = absScore >= 4.0
+
+      if (regimeContradicted && pair.conviction === 'sterk' && !isVeryStrong) {
         // Intermarket contradicts regime → downgrade strong to moderate
         pair.conviction = 'matig'
       } else if (regimeConfirmed && pair.conviction === 'matig' && pairAligned) {
@@ -611,13 +615,14 @@ export async function GET() {
       }
 
       // High-impact events add uncertainty → never allow "sterk" on those days
-      // unless confidence is very high (>75%)
-      if (highImpactToday && pair.conviction === 'sterk' && overallConfidence < 75) {
+      // unless confidence is very high (>75%) or score is very strong
+      if (highImpactToday && pair.conviction === 'sterk' && overallConfidence < 75 && !isVeryStrong) {
         pair.conviction = 'matig'
       }
 
       // V2.1: Non-aligned pairs should NEVER be "sterk" — they go against the macro
-      if (!pairAligned && regime !== 'Gemengd' && pair.conviction === 'sterk') {
+      // Exception: score ≥ 4.0 is too strong to ignore
+      if (!pairAligned && regime !== 'Gemengd' && pair.conviction === 'sterk' && !isVeryStrong) {
         pair.conviction = 'matig'
       }
     }
@@ -626,6 +631,9 @@ export async function GET() {
     // If pair A says USD strong and pair B says USD weak, downgrade both
     const sterkPairs = pairBiases.filter(p => p.conviction === 'sterk')
     for (const pair of sterkPairs) {
+      const absScore2 = Math.abs(pair.score)
+      if (absScore2 >= 4.0) continue // Extreme scores niet downgraden
+
       const currencies = pair.pair.split('/')
       const pairImpliesStrong = pair.direction.includes('bullish') ? currencies[0] : currencies[1]
 

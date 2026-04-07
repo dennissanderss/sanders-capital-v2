@@ -583,6 +583,16 @@ export default function ExecutionPage() {
                   <p className="text-[10px] text-text-dim mt-1">
                     {regime.im <= 50 ? `Intermarket alignment is ${regime.im}% (onder 50%). Geen trades tot het regime bevestigd is.` : 'Geen paren passeren vandaag alle 4 fundamentele filters.'}
                   </p>
+                  {trackRecord && trackRecord.overall.pending > 0 && (
+                    <div className="mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/15 text-left">
+                      <p className="text-[11px] text-amber-300 font-semibold mb-1">
+                        Het trackrecord heeft {trackRecord.overall.pending} openstaande {trackRecord.overall.pending === 1 ? 'trade' : 'trades'}
+                      </p>
+                      <p className="text-[10px] text-text-dim">
+                        Deze zijn eerder gegenereerd toen de marktcondities anders waren. De live berekening werkt met actuele data — marktcondities veranderen gedurende de dag.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
