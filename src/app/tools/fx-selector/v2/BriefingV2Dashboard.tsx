@@ -1704,12 +1704,18 @@ export default function BriefingV2Dashboard() {
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
                             <polyline points="9 18 15 12 9 6" />
                           </svg>
-                          Watchlist ({watchlist.length}) — paren met score &ge; 2.0 die niet door alle 4 filters kwamen (bijv. geen contrarian setup of IM te laag)
+                          Watchlist ({watchlist.length}) — score &ge; 2.0 maar niet door alle filters
                         </summary>
                         <div className="mt-1 divide-y divide-white/[0.03]">
                           {watchlist.map(wp => {
                             const wIsBullish = wp.direction.includes('bullish')
                             const wIsBearish = wp.direction.includes('bearish')
+                            // Determine blocked reason
+                            const imBlocked = (data.intermarketAlignment ?? 0) <= 50
+                            const v3Sig = data.v3?.pairSignals?.find(s => s.pair === wp.pair)
+                            const pips5d = v3Sig?.priceMomentum?.pips5d ?? 0
+                            const contrarianOk = wIsBullish ? pips5d < 0 : wIsBearish ? pips5d > 0 : false
+                            const blockedBy = imBlocked ? 'IM te laag' : !contrarianOk ? 'geen contrarian' : 'regime'
                             return (
                               <div key={wp.pair} className="px-2 py-1.5 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -1717,6 +1723,7 @@ export default function BriefingV2Dashboard() {
                                   <span className={`text-[10px] ${wIsBullish ? 'text-green-400' : wIsBearish ? 'text-red-400' : 'text-text-dim'}`}>
                                     {wIsBullish ? '\u25B2' : wIsBearish ? '\u25BC' : '\u2014'} {wp.direction}
                                   </span>
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400/80 border border-amber-500/15">{blockedBy}</span>
                                 </div>
                                 <span className={`text-[10px] font-mono font-bold ${wp.score > 0 ? 'text-green-400/70' : wp.score < 0 ? 'text-red-400/70' : 'text-text-dim'}`}>
                                   {wp.score > 0 ? '+' : ''}{wp.score}
@@ -2044,9 +2051,47 @@ export default function BriefingV2Dashboard() {
                 })}
               </div>
             ) : (
-              <div className="p-6 rounded-2xl bg-bg-card border border-border text-center">
-                <p className="text-sm text-text-muted">Geen paren door alle filters vandaag.</p>
-                <p className="text-[10px] text-text-dim mt-1">Wacht op duidelijkere fundamentele divergenties of check de watchlist in Stap 4.</p>
+              <div className="p-6 rounded-2xl bg-bg-card border border-border">
+                <div className="text-center mb-4">
+                  <p className="text-sm text-text-muted font-semibold">Vandaag geen concrete trades</p>
+                  <p className="text-[10px] text-text-dim mt-1">Alle paren moeten door 4 filters. Hieronder zie je precies waar het stokt.</p>
+                </div>
+
+                {/* Diagnose: which filter is blocking? */}
+                {(() => {
+                  const scorePass = data.pairBiases.filter(p => Math.abs(p.score) >= 2.0 && p.direction !== 'neutraal')
+                  const imOk = (data.intermarketAlignment ?? 0) > 50
+                  const hasContrarian = data.v3?.pairSignals?.some(sig => {
+                    const pb = scorePass.find(p => p.pair === sig.pair)
+                    if (!pb) return false
+                    const isBullish = pb.direction.includes('bullish')
+                    const pips5d = sig.priceMomentum?.pips5d ?? 0
+                    return (isBullish && pips5d < 0) || (!isBullish && pips5d > 0)
+                  }) ?? false
+
+                  return (
+                    <div className="space-y-2 text-left">
+                      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${scorePass.length > 0 ? 'bg-green-500/5 border border-green-500/10' : 'bg-red-500/5 border border-red-500/10'}`}>
+                        <span className="text-xs">{scorePass.length > 0 ? '✓' : '✗'}</span>
+                        <span className="text-[11px] text-text-muted flex-1">Score ≥ 2.0 (fundamentele divergentie)</span>
+                        <span className={`text-[11px] font-mono font-bold ${scorePass.length > 0 ? 'text-green-400' : 'text-red-400'}`}>{scorePass.length} paren</span>
+                      </div>
+                      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${imOk ? 'bg-green-500/5 border border-green-500/10' : 'bg-red-500/5 border border-red-500/10'}`}>
+                        <span className="text-xs">{imOk ? '✓' : '✗'}</span>
+                        <span className="text-[11px] text-text-muted flex-1">Intermarket bevestiging (&gt;50%)</span>
+                        <span className={`text-[11px] font-mono font-bold ${imOk ? 'text-green-400' : 'text-red-400'}`}>{data.intermarketAlignment ?? 0}%</span>
+                      </div>
+                      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${hasContrarian ? 'bg-green-500/5 border border-green-500/10' : 'bg-red-500/5 border border-red-500/10'}`}>
+                        <span className="text-xs">{hasContrarian ? '✓' : '✗'}</span>
+                        <span className="text-[11px] text-text-muted flex-1">Contrarian timing (5d prijs tegen bias)</span>
+                        <span className={`text-[11px] font-mono font-bold ${hasContrarian ? 'text-green-400' : 'text-red-400'}`}>{hasContrarian ? 'beschikbaar' : 'geen paren'}</span>
+                      </div>
+                      <p className="text-[10px] text-text-dim mt-2 px-1">
+                        Dit is normaal — het systeem wacht op mean-reversion setups waar de prijs tegen de fundamentele richting in beweegt. Gemiddeld levert dit 2-4 trades per week op, niet elke dag. Check de watchlist hierboven voor paren die bijna door de filters komen.
+                      </p>
+                    </div>
+                  )
+                })()}
               </div>
             )}
 
