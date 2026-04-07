@@ -822,10 +822,11 @@ export default function ExecutionPage() {
                         <span className="w-12">Richting</span>
                       </div>
                       <div className="flex items-center gap-2 text-right">
+                        <span className="w-12"><Tip label="Kwaliteit">Eindscore 1-10 op basis van fundamentele score, pullback grootte, IM alignment en regime. Hoe hoger, hoe sterker de setup.</Tip></span>
                         <span className="w-10"><Tip label="Score">Fundamentele score: CB beleid ×2 + renteverschil ×1.5 + nieuwsbonus. Score ≥2.0 = concrete trade.</Tip></span>
-                        <span className="w-12"><Tip label="Mom">Momentum in pips (5 dagen). Hoeveel de prijs tegen de fundamentele bias bewoog. Hoe meer, hoe beter de mean reversion kans.</Tip></span>
+                        <span className="w-12"><Tip label="Dip">Pullback in pips (5 dagen). Hoeveel de prijs tegen de fundamentele bias bewoog. Hoe meer, hoe beter de mean reversion kans.</Tip></span>
                         <span className="w-16"><Tip label="Models">In welke modellen deze trade valt. SEL = Selective (30-120p), BAL = Balanced (20-150p), AGG = Aggressive (alle).</Tip></span>
-                        <span className="w-12"><Tip label="Pips">Resultaat in pips na 1 handelsdag. Positief = richting was correct, negatief = incorrect.</Tip></span>
+                        <span className="w-12"><Tip label="P/L">Resultaat in pips na 1 handelsdag. Positief = richting was correct, negatief = incorrect.</Tip></span>
                         <span className="w-16"><Tip label="Status">WIN = richting correct, LOSS = incorrect, PENDING = nog niet resolved (wordt bij de 21:00 scan bepaald).</Tip></span>
                       </div>
                     </div>
@@ -837,6 +838,11 @@ export default function ExecutionPage() {
                         if (t.selective) models.push('SEL')
                         if (t.balanced) models.push('BAL')
                         models.push('AGG')
+                        // Quality score
+                        const fundPts = Math.min(4, Math.abs(t.score) * 1.2)
+                        const contrPts = absMom >= 30 && absMom <= 120 ? 2.5 : 1.5
+                        const imPts = (regime.im / 100) * 2
+                        const qScore = Math.min(10, Math.round((fundPts + contrPts + imPts + 1) * 10) / 10)
                         return (
                           <div key={i} className={`flex items-center justify-between px-3 py-1.5 text-[9px] border-b border-white/[0.02] hover:bg-white/[0.02] ${
                             t.result === 'correct' ? 'bg-green-500/[0.02]' : t.result === 'incorrect' ? 'bg-red-500/[0.02]' : ''
@@ -848,11 +854,12 @@ export default function ExecutionPage() {
                               <span className={`w-12 font-bold ${isBull ? 'text-green-400' : 'text-red-400'}`}>{isBull ? '\u25B2 LONG' : '\u25BC SHORT'}</span>
                             </div>
                             <div className="flex items-center gap-2 text-right">
+                              <span className={`font-mono font-bold w-12 ${qScore >= 7 ? 'text-green-400' : qScore >= 5 ? 'text-amber-400' : 'text-text-dim'}`}>{qScore.toFixed(1)}</span>
                               <span className="text-text-dim font-mono w-10">{t.score > 0 ? '+' : ''}{t.score}</span>
                               <span className="text-text-dim font-mono w-12">{absMom}p</span>
                               <span className="text-text-dim font-mono w-16 text-[8px]">{models.join('/')}</span>
-                              <span className={`font-mono font-bold w-12 ${
-                                t.result === 'correct' ? 'text-green-400' : t.result === 'incorrect' ? 'text-red-400' : 'text-text-dim'
+                              <span className={`font-mono w-12 ${
+                                t.pips > 0 ? 'text-green-400' : t.pips < 0 ? 'text-red-400' : 'text-text-dim'
                               }`}>
                                 {t.result === 'pending' ? '—' : `${t.pips > 0 ? '+' : ''}${t.pips}p`}
                               </span>
