@@ -880,6 +880,21 @@ export default function ExecutionPage() {
                     Backtest detail ({model.name}): {modelBT.length} trades, {btWR}% WR, {btPips > 0 ? '+' : ''}{btPips} pips
                   </summary>
                   <div className="mt-2 max-h-72 overflow-y-auto">
+                    {/* Kolomkoppen */}
+                    <div className="flex items-center justify-between px-3 py-1.5 text-[8px] text-text-dim/40 uppercase tracking-wider border-b border-white/[0.05] sticky top-0 bg-card-bg/95 backdrop-blur-sm z-10">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5" />
+                        <span className="w-[70px]">Datum</span>
+                        <span className="w-[65px]">Paar</span>
+                        <span className="w-4">Dir</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-right">
+                        <span className="w-10">Score</span>
+                        <span className="w-10">Dip</span>
+                        <span className="w-10">P/L</span>
+                        <span className="w-14">Result</span>
+                      </div>
+                    </div>
                     {modelBT.slice().sort((a, b) => b.date.localeCompare(a.date)).map((t, i) => (
                       <div key={i} className="flex items-center justify-between px-3 py-1 text-[9px] border-b border-white/[0.02] hover:bg-white/[0.02]">
                         <div className="flex items-center gap-2">
@@ -891,7 +906,7 @@ export default function ExecutionPage() {
                         <div className="flex items-center gap-2 text-right">
                           <span className="text-text-dim font-mono w-10">{t.score > 0 ? '+' : ''}{t.score}</span>
                           <span className="text-text-dim font-mono w-10">{t.momentum}p</span>
-                          <span className="text-text-dim font-mono w-10">{t.pips > 0 ? '+' : ''}{t.pips}p</span>
+                          <span className={`font-mono w-10 ${t.pips > 0 ? 'text-green-400' : 'text-red-400'}`}>{t.pips > 0 ? '+' : ''}{t.pips}p</span>
                           <span className={`font-mono font-bold w-14 ${t.result === 'correct' ? 'text-green-400' : 'text-red-400'}`}>
                             {t.result === 'correct' ? 'WIN' : 'LOSS'}
                           </span>
@@ -908,7 +923,7 @@ export default function ExecutionPage() {
           {/* Methodiek uitleg */}
           <div className="mt-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] text-[9px] text-text-dim">
             <p className="text-text-muted font-semibold mb-1">Hoe werkt het?</p>
-            <p>Elke werkdag worden concrete trades (4/4 filters) opgeslagen met entry prijs, momentum, en in welk model ze vallen. Na 1 handelsdag wordt de exit prijs opgehaald en het resultaat bepaald. Updates: 4x per dag (08:30, 12:00, 14:30, 21:00 NL).</p>
+            <p>Elke werkdag worden concrete trades (4/4 filters) opgeslagen met entry prijs, momentum, en in welk model ze vallen. Na 1 handelsdag wordt de exit prijs opgehaald en het resultaat bepaald. Updates: 4x per dag (08:30, 12:00, 14:00, 21:00 NL).</p>
           </div>
         </div>
       </section>
