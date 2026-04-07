@@ -123,7 +123,7 @@ async function handleStatus(chatId: number) {
     const regime = data.regime || 'Gemengd'
     const pairs = data.pairBiases || []
     const concrete = pairs.filter((p: { score: number; direction: string }) =>
-      Math.abs(p.score) >= 2.0 && p.direction !== 'neutraal' && im > 50
+      Math.abs(p.score) >= 2.0 && p.direction !== 'neutraal' && im >= 50
     )
 
     const lines = [
@@ -134,12 +134,12 @@ async function handleStatus(chatId: number) {
       ``,
       `┌─ <b>REGIME</b>`,
       `│  ${regime === 'Risk-On' ? '🟢' : regime === 'Risk-Off' ? '🔴' : '⚪️'}  ${regime}`,
-      `│  IM Alignment: <b>${im}%</b>${im > 50 ? ' ✓' : ' ✗ (< 50%)'}`,
+      `│  IM Alignment: <b>${im}%</b>${im >= 50 ? ' ✓' : ' ✗ (< 50%)'}`,
       `└─────────────────────`,
       ``,
     ]
 
-    if (concrete.length > 0 && im > 50) {
+    if (concrete.length > 0 && im >= 50) {
       lines.push(`🔔  <b>${concrete.length} CONCRETE TRADE${concrete.length > 1 ? 'S' : ''}</b>`, ``)
       for (const p of concrete.slice(0, 8)) {
         const dir = p.direction.includes('bullish') ? '▲ LONG' : '▼ SHORT'

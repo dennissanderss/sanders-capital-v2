@@ -103,7 +103,7 @@ export default function ExecutionPage() {
           const isBearish = p.direction.includes('bearish')
 
           const scorePass = absScore >= 2.0
-          const imPass = imAlignment > 50
+          const imPass = imAlignment >= 50
           const contrarianPass = (isBullish && pips5d < 0) || (isBearish && pips5d > 0)
           const directionPass = isBullish || isBearish
           const filterCount = [scorePass, imPass, contrarianPass, directionPass].filter(Boolean).length
@@ -498,9 +498,9 @@ export default function ExecutionPage() {
                   regime.regime === 'Risk-Off' ? 'text-red-400 bg-red-500/10 border-red-500/20' :
                   regime.regime === 'Risk-On' ? 'text-green-400 bg-green-500/10 border-green-500/20' :
                   'text-text-dim bg-white/[0.04] border-white/[0.06]'
-                }`} title={`Huidig marktregime: ${regime.regime}\n\n${regime.regime === 'Risk-On' ? 'Risk-On = beleggers nemen risico. Typisch bullish voor AUD, NZD, CAD. Bearish voor JPY, CHF.' : regime.regime === 'Risk-Off' ? 'Risk-Off = beleggers vluchten naar veiligheid. Typisch bullish voor JPY, CHF, USD. Bearish voor AUD, NZD.' : 'Gemengd = geen duidelijk regime. Intermarket signalen spreken elkaar tegen.'}\n\nBevestiging: ${regime.im}% (${regime.im > 50 ? 'voldoende' : 'onvoldoende'})`}>{regime.regime || 'Laden...'}</span>
-                <span className={`text-[10px] font-mono ${regime.im > 50 ? 'text-green-400' : 'text-red-400'}`}>
-                  <Tip label={`IM: ${regime.im}% ${regime.im > 50 ? '\u2713' : '\u2717 (<50%)'}`}>Intermarket Alignment — meten VIX, S&amp;P500, Gold, Yields en Oil hetzelfde marktregime? Boven 50% = bevestigd. Onder 50% = geen concrete trades mogelijk.</Tip>
+                }`} title={`Huidig marktregime: ${regime.regime}\n\n${regime.regime === 'Risk-On' ? 'Risk-On = beleggers nemen risico. Typisch bullish voor AUD, NZD, CAD. Bearish voor JPY, CHF.' : regime.regime === 'Risk-Off' ? 'Risk-Off = beleggers vluchten naar veiligheid. Typisch bullish voor JPY, CHF, USD. Bearish voor AUD, NZD.' : 'Gemengd = geen duidelijk regime. Intermarket signalen spreken elkaar tegen.'}\n\nBevestiging: ${regime.im}% (${regime.im >= 50 ? 'voldoende' : 'onvoldoende'})`}>{regime.regime || 'Laden...'}</span>
+                <span className={`text-[10px] font-mono ${regime.im >= 50 ? 'text-green-400' : 'text-red-400'}`}>
+                  <Tip label={`IM: ${regime.im}% ${regime.im >= 50 ? '\u2713' : '\u2717 (<50%)'}`}>Intermarket Alignment — meten VIX, S&amp;P500, Gold, Yields en Oil hetzelfde marktregime? Boven 50% = bevestigd. Onder 50% = geen concrete trades mogelijk.</Tip>
                 </span>
                 <span className="text-[10px] text-text-dim"><Tip label={`${concreteTrades.length} concrete · ${nearMisses.length} near miss`}>Concrete trades passeren alle 4 filters (score ≥2, IM &gt;50%, contrarian, richting). Near misses passeren 3 van 4 — lagere winrate (~53%).</Tip></span>
                 {entryReady.length > 0 && <span className="text-[10px] text-green-400 font-bold animate-pulse">{entryReady.length} entry ready!</span>}

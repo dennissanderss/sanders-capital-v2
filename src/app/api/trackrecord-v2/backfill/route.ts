@@ -366,7 +366,7 @@ export async function POST(request: Request) {
       const imAlignment = getIntermarketAlignment(intermarketHistory, date, regime)
 
       // Contrarian + IM filter: skip if IM doesn't confirm
-      if (imAlignment <= 50) continue
+      if (imAlignment < 50) continue
 
       for (const pair of PAIRS) {
         const [base, quote] = pair.split('/')

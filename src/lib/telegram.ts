@@ -125,7 +125,7 @@ export async function notifyMorning(
     `━━━━━━━━━━━━━━━━━━━━━━`,
     ``,
     `${regimeIcon}  Regime: <b>${regime}</b>`,
-    `📊  IM Alignment: <b>${im}%</b>${im > 50 ? ' ✓' : ' ✗ (te laag)'}`,
+    `📊  IM Alignment: <b>${im}%</b>${im >= 50 ? ' ✓' : ' ✗ (te laag)'}`,
   ]
 
   if (trades.length > 0) {
@@ -147,7 +147,7 @@ export async function notifyMorning(
       `📋  ${existingTrades} trade${existingTrades > 1 ? 's' : ''} lopen al.`,
       `Geen nieuwe paren passeren de filters.`,
     )
-  } else if (im <= 50) {
+  } else if (im < 50) {
     lines.push(
       ``,
       `📭  Geen trades — IM te laag (${im}%).`,
@@ -227,7 +227,7 @@ export async function notifySessionUpdate(
       `📊  Geen nieuwe trades.`,
       `${existingTrades} trade${existingTrades > 1 ? 's' : ''} lopen al vandaag.`,
     )
-  } else if (im <= 50) {
+  } else if (im < 50) {
     lines.push(
       `📭  Geen trades — IM te laag (${im}%).`,
     )

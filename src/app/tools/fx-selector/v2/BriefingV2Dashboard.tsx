@@ -277,7 +277,7 @@ function getTradeFocus(
   // same logic but runs at 23:00 NL with that moment's data. Small differences
   // between live and cron data are normal — the trackrecord is the definitive record.
 
-  const imOk = (globalImAlignment ?? 0) > 50
+  const imOk = (globalImAlignment ?? 0) >= 50
 
   const primary = pairs
     .filter(p => {
@@ -1602,7 +1602,7 @@ export default function BriefingV2Dashboard() {
               const totalPairs = data.pairBiases.length
               const scorePass = data.pairBiases.filter(p => Math.abs(p.score) >= 2.0 && p.direction !== 'neutraal')
               const imAlignment = data.intermarketAlignment ?? 0
-              const imPass = imAlignment > 50 ? scorePass : [] // IM <= 50% = geen trades
+              const imPass = imAlignment >= 50 ? scorePass : [] // IM <= 50% = geen trades
               const finalCount = tradeFocus.length
 
               return (
@@ -2344,7 +2344,7 @@ export default function BriefingV2Dashboard() {
 
                           // Individual filter checks
                           const scorePass = absScore >= 2.0
-                          const imPass = imGlobal > 50
+                          const imPass = imGlobal >= 50
                           const contrarianPass = (isBullish && pips5d < 0) || (isBearish && pips5d > 0)
                           const directionPass = !isNeutral
                           const passCount = [scorePass, imPass, contrarianPass, directionPass].filter(Boolean).length
@@ -2638,7 +2638,7 @@ export default function BriefingV2Dashboard() {
                               <div className="flex items-center gap-1 ml-auto text-[9px]">
                                 <span className={`px-1 py-0.5 rounded ${Math.abs(record.score) >= 2 ? 'bg-green-500/10 text-green-400/60' : 'bg-red-500/10 text-red-400/40'}`}>{Math.abs(record.score) >= 2 ? '\u2713' : '\u2717'}F</span>
                                 <span className="px-1 py-0.5 rounded bg-green-500/10 text-green-400/60">{'\u2713'}R</span>
-                                <span className={`px-1 py-0.5 rounded ${meta?.imAlignment && meta.imAlignment > 50 ? 'bg-green-500/10 text-green-400/60' : 'bg-red-500/10 text-red-400/40'}`}>{meta?.imAlignment && meta.imAlignment > 50 ? '\u2713' : '\u2717'}I</span>
+                                <span className={`px-1 py-0.5 rounded ${meta?.imAlignment && meta.imAlignment >= 50 ? 'bg-green-500/10 text-green-400/60' : 'bg-red-500/10 text-red-400/40'}`}>{meta?.imAlignment && meta.imAlignment >= 50 ? '\u2713' : '\u2717'}I</span>
                                 <span className={`px-1 py-0.5 rounded ${meta?.meanReversion ? 'bg-green-500/10 text-green-400/60' : 'bg-red-500/10 text-red-400/40'}`}>{meta?.meanReversion ? '\u2713' : '\u2717'}C</span>
                               </div>
                             </div>

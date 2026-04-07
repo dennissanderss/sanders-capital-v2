@@ -159,7 +159,7 @@ export async function POST(request: Request) {
       if (isNeutral || pb.conviction === 'geen' || absScore < 2.0) continue
 
       const scorePass = absScore >= 2.0
-      const imPass = imAlignment > 50
+      const imPass = imAlignment >= 50
       const v3 = v3Signals.find((s: { pair: string }) => s.pair === pb.pair)
       const pips5d = v3?.priceMomentum?.pips5d ?? 0
       const contrarianPass = (isBullish && pips5d < 0) || (isBearish && pips5d > 0)

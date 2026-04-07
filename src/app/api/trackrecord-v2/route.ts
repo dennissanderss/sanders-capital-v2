@@ -411,10 +411,10 @@ export async function POST() {
     const imAlignment = getIntermarketAlignment(imHistory, today, regime)
 
     // 7. If IM doesn't confirm, no trades today
-    if (imAlignment <= 50) {
+    if (imAlignment < 50) {
       return NextResponse.json({
         version: 'v3.1-optimizer',
-        message: `No trades today: IM alignment ${Math.round(imAlignment)}% (need >50%)`,
+        message: `No trades today: IM alignment ${Math.round(imAlignment)}% (need >=50%)`,
         regime,
         imAlignment: Math.round(imAlignment),
         resolved: resolvedCount,
