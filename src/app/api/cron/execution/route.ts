@@ -204,8 +204,21 @@ export async function POST(request: Request) {
       await new Promise(r => setTimeout(r, 500))
     }
 
-    // ─── STAP 4: Telegram notificatie ────────────────────
-    if (isTelegramConfigured()) {
+    // ─── STAP 4: Telegram notificatie (met dedup) ─────────
+    // Voorkom dubbele meldingen als cron 2x getriggerd wordt
+    const sessionKey = `telegram_sent_${today}_${session.name.replace(/\s/g, '_')}`
+    const { data: alreadySent } = await getSupabase()
+      .from('tool_settings')
+      .select('value')
+      .eq('key', sessionKey)
+      .single()
+
+    if (isTelegramConfigured() && !alreadySent) {
+      // Markeer als verstuurd VOOR het versturen (voorkomt race condition)
+      await getSupabase()
+        .from('tool_settings')
+        .upsert({ key: sessionKey, value: JSON.stringify({ sentAt: new Date().toISOString() }) }, { onConflict: 'key' })
+
       const regime = briefing.regime || 'Gemengd'
       const existingCount = existingToday?.length || 0
 
@@ -240,6 +253,8 @@ export async function POST(request: Request) {
           results.notified = true
         }
       }
+    } else if (alreadySent) {
+      results.notified = false
     }
 
     return NextResponse.json({
@@ -247,6 +262,7 @@ export async function POST(request: Request) {
       date: today,
       regime: briefing.regime,
       imAlignment,
+      telegramSkipped: !!alreadySent,
     })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })

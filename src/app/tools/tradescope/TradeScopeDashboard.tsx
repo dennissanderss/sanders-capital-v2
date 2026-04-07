@@ -10,8 +10,18 @@ import { useAccounts } from './hooks/useAccounts'
 import { useStrategies } from './hooks/useStrategies'
 import { useSetups } from './hooks/useSetups'
 import { useCustomFilters } from './hooks/useCustomFilters'
-import { dbTradeToAnalytics, type TradeFilters, type TradescopeTab } from './types'
+import { dbTradeToAnalytics, type TradeFilters, type TradescopeTab, type TsTrade } from './types'
+import { createClient } from '@/lib/supabase'
 import dynamic from 'next/dynamic'
+
+// Admin user type
+interface AdminUser {
+  id: string
+  email: string
+  displayName: string
+  role: string
+  tradeCount: number
+}
 
 const DashboardTab = dynamic(() => import('./tabs/DashboardTab'), { ssr: false })
 const AnalyticsTab = dynamic(() => import('./tabs/AnalyticsTab'), { ssr: false })
@@ -97,6 +107,43 @@ export default function TradeScopeDashboard() {
   const [dataSource, setDataSource] = useState<DataSource>('db')
   const [filters, setFilters] = useState<TradeFilters>({})
 
+  // ─── Admin: view other users' trades ──────────────────
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null)
+  const [adminTrades, setAdminTrades] = useState<TsTrade[]>([])
+  const [adminLoading, setAdminLoading] = useState(false)
+
+  // Check if current user is admin
+  useEffect(() => {
+    async function checkAdmin() {
+      const sb = createClient()
+      const { data: { user } } = await sb.auth.getUser()
+      if (!user) return
+      const { data: profile } = await sb.from('profiles').select('role').eq('id', user.id).single()
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+        // Fetch all users
+        const res = await fetch('/api/admin/users')
+        if (res.ok) {
+          const d = await res.json()
+          setAdminUsers(d.users || [])
+        }
+      }
+    }
+    checkAdmin()
+  }, [])
+
+  // When admin selects a user, fetch their trades
+  useEffect(() => {
+    if (!viewingUserId) { setAdminTrades([]); return }
+    setAdminLoading(true)
+    fetch(`/api/admin/users?userId=${viewingUserId}`)
+      .then(r => r.json())
+      .then(d => { setAdminTrades(d.trades || []); setAdminLoading(false) })
+      .catch(() => setAdminLoading(false))
+  }, [viewingUserId])
+
   // DB data
   const { accounts, loading: accountsLoading } = useAccounts()
   const { strategies } = useStrategies()
@@ -114,13 +161,19 @@ export default function TradeScopeDashboard() {
   const rawTradesRef = useRef<ParsedTrade[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Active trades: admin viewing another user or own trades
+  const activeTrades = useMemo(() => {
+    if (viewingUserId) return adminTrades
+    return dbTrades
+  }, [viewingUserId, adminTrades, dbTrades])
+
   // Convert DB trades to analytics format
   const analyticsTrades = useMemo(() => {
     if (dataSource === 'csv') return csvTrades
-    return dbTrades
+    return activeTrades
       .filter(t => t.status === 'closed' && t.profit_loss !== null)
       .map((t, i) => dbTradeToAnalytics(t, i))
-  }, [dataSource, dbTrades, csvTrades])
+  }, [dataSource, activeTrades, csvTrades])
 
   // Calculate balance from selected account or default
   const activeBalance = useMemo(() => {
@@ -198,7 +251,7 @@ export default function TradeScopeDashboard() {
     })
   }, [startingBalance])
 
-  const isLoading = dataSource === 'db' ? (tradesLoading || accountsLoading) : csvLoading
+  const isLoading = dataSource === 'db' ? (tradesLoading || accountsLoading || adminLoading) : csvLoading
   const hasData = analyticsTrades.length > 0
 
   return (
@@ -206,10 +259,25 @@ export default function TradeScopeDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-display font-semibold text-heading">TradeMind</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-display font-semibold text-heading">TradeMind</h1>
+            {viewingUserId && (
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/20 font-mono">
+                ADMIN VIEW
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-3 mt-1 flex-wrap">
             <span className="text-xs text-text-dim">{analyticsTrades.length} trades</span>
-            {filters.accountId && (
+            {viewingUserId && (
+              <>
+                <span className="text-xs text-text-dim">·</span>
+                <span className="text-xs text-purple-300">
+                  {adminUsers.find(u => u.id === viewingUserId)?.displayName || 'Gebruiker'}
+                </span>
+              </>
+            )}
+            {!viewingUserId && filters.accountId && (
               <>
                 <span className="text-xs text-text-dim">·</span>
                 <span className="text-xs text-accent-light">
@@ -221,6 +289,26 @@ export default function TradeScopeDashboard() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Admin: user switcher */}
+          {isAdmin && adminUsers.length > 0 && (
+            <select
+              value={viewingUserId || ''}
+              onChange={(e) => setViewingUserId(e.target.value || null)}
+              className={`px-3 py-1.5 rounded-lg text-xs border focus:outline-none cursor-pointer ${
+                viewingUserId
+                  ? 'border-purple-500/50 bg-purple-500/10 text-purple-300'
+                  : 'border-border text-text-muted'
+              }`}
+            >
+              <option value="">Mijn trades</option>
+              {adminUsers.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.displayName} ({u.tradeCount} trades)
+                </option>
+              ))}
+            </select>
+          )}
+
           {/* Data source toggle */}
           <div className="flex items-center rounded-lg border border-border overflow-hidden">
             <button
