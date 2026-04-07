@@ -365,7 +365,7 @@ export default function ExecutionPage() {
       <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
         <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-2">
           <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">Bewijs</span>
-          <span className="text-sm font-semibold text-heading">Backtest: wat voegt de techniek toe?</span>
+          <Tip label="Backtest: wat voegt de techniek toe?">De backtest analyseert 400+ historische fundamentele trades (apr 2025 - mar 2026). Voor elke trade is gekeken hoe ver de prijs tegen de bias bewoog (MAE) en mee (MFE). Op basis daarvan zijn de 3 momentum modellen gebouwd. De winrate stijgt van 56% (alleen fundamenteel) naar 58-62% (met techniek).</Tip>
         </div>
         <div className="p-5">
           <p className="text-[10px] text-text-dim mb-4">
@@ -378,11 +378,11 @@ export default function ExecutionPage() {
               <thead>
                 <tr className="border-b border-white/[0.06] text-text-dim">
                   <th className="text-left py-2 px-2">Methode</th>
-                  <th className="text-right py-2 px-2">Trades</th>
-                  <th className="text-right py-2 px-2">/week</th>
-                  <th className="text-right py-2 px-2">Winrate</th>
-                  <th className="text-right py-2 px-2">PF</th>
-                  <th className="text-right py-2 px-2">Exp/trade</th>
+                  <th className="text-right py-2 px-2"><Tip label="Trades">Totaal aantal trades in de backtest periode (apr 2025 - mrt 2026). Hoe selectiever het model, hoe minder trades maar hoe hoger de winrate.</Tip></th>
+                  <th className="text-right py-2 px-2"><Tip label="/week">Gemiddeld aantal trades per week. Selective = minder maar beter, Aggressive = meer maar bredere range.</Tip></th>
+                  <th className="text-right py-2 px-2"><Tip label="Winrate">Percentage correcte trades. Fundamenteel = 56%. Met momentum filter stijgt dit naar 58-62% afhankelijk van model.</Tip></th>
+                  <th className="text-right py-2 px-2"><Tip label="PF">Profit Factor = totale winst / totaal verlies. PF &gt; 1.0 = winstgevend. PF &gt; 1.5 = uitstekend. Inclusief vaste SL (40p) en TP (120p).</Tip></th>
+                  <th className="text-right py-2 px-2"><Tip label="Exp/trade">Verwachte pips per trade. Berekend als: (WR × TP) - ((1-WR) × SL). Positief = gemiddeld winstgevend per trade.</Tip></th>
                 </tr>
               </thead>
               <tbody>
@@ -748,7 +748,7 @@ export default function ExecutionPage() {
               )}
 
               {/* Per model stats */}
-              <p className="text-[10px] text-text-muted font-semibold mb-2">Per model — live + backtest</p>
+              <p className="text-[10px] text-text-muted font-semibold mb-2"><Tip label="Per model — live + backtest">Elke trade valt in 1 of meer modellen op basis van momentum. Selective = strengste filter (30-120p, hoogste WR), Balanced = middenmoot (20-150p), Aggressive = geen momentum filter. Live = echte trades, backtest = historisch bewijs.</Tip></p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                 {Object.entries(TRADE_MODELS).map(([id, m]) => {
                   const liveStats = trackRecord?.models?.[id]
@@ -822,11 +822,11 @@ export default function ExecutionPage() {
                         <span className="w-12">Richting</span>
                       </div>
                       <div className="flex items-center gap-2 text-right">
-                        <span className="w-10">Score</span>
-                        <span className="w-12">Mom</span>
-                        <span className="w-16">Models</span>
-                        <span className="w-12">Pips</span>
-                        <span className="w-16">Status</span>
+                        <span className="w-10"><Tip label="Score">Fundamentele score: CB beleid ×2 + renteverschil ×1.5 + nieuwsbonus. Score ≥2.0 = concrete trade.</Tip></span>
+                        <span className="w-12"><Tip label="Mom">Momentum in pips (5 dagen). Hoeveel de prijs tegen de fundamentele bias bewoog. Hoe meer, hoe beter de mean reversion kans.</Tip></span>
+                        <span className="w-16"><Tip label="Models">In welke modellen deze trade valt. SEL = Selective (30-120p), BAL = Balanced (20-150p), AGG = Aggressive (alle).</Tip></span>
+                        <span className="w-12"><Tip label="Pips">Resultaat in pips na 1 handelsdag. Positief = richting was correct, negatief = incorrect.</Tip></span>
+                        <span className="w-16"><Tip label="Status">WIN = richting correct, LOSS = incorrect, PENDING = nog niet resolved (wordt bij de 21:00 scan bepaald).</Tip></span>
                       </div>
                     </div>
                     <div className="max-h-[300px] overflow-y-auto">
@@ -964,7 +964,13 @@ export default function ExecutionPage() {
                   <li><strong className="text-accent-light">Resultaten:</strong> Win/loss per trade, pips, winrate van resolved trades</li>
                   <li><strong className="text-text-dim">Elke sessie:</strong> Update zelfs als er geen nieuwe trades zijn</li>
                 </ul>
-                <p className="mt-2 text-[8px] text-text-dim/40">Setup: @BotFather in Telegram → /newbot → token in Vercel env vars</p>
+                <div className="mt-3 pt-2 border-t border-white/[0.04]">
+                  <a href="https://t.me/SandersCapitalBot" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0088cc]/15 border border-[#0088cc]/25 text-[#0088cc] hover:bg-[#0088cc]/25 transition-colors text-[9px] font-semibold">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+                    Bot joinen →
+                  </a>
+                  <p className="mt-1.5 text-[8px] text-text-dim/40">Privé bot — na het klikken op de link stuurt de admin je een goedkeuring.</p>
+                </div>
               </div>
             </div>
           </div>

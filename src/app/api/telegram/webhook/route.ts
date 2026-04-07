@@ -7,7 +7,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID
+const CHAT_ID = process.env.TELEGRAM_CHAT_ID // Admin chat ID
+const APPROVED_CHATS_KEY = 'telegram_approved_chats' // Supabase key
 
 function getSupabase() {
   return createClient(
@@ -36,6 +37,47 @@ async function sendReply(chatId: number, text: string) {
     }),
   })
 }
+
+// ─── Approved users management ─────────────────────────────
+// Stores approved chat IDs in Supabase tool_settings table
+
+async function getApprovedChats(): Promise<string[]> {
+  try {
+    const { data } = await getSupabase()
+      .from('tool_settings')
+      .select('value')
+      .eq('key', APPROVED_CHATS_KEY)
+      .single()
+    if (data?.value) return JSON.parse(data.value)
+  } catch { /* ignore */ }
+  return []
+}
+
+async function addApprovedChat(chatId: string, name: string): Promise<void> {
+  const approved = await getApprovedChats()
+  if (approved.includes(chatId)) return
+  approved.push(chatId)
+  await getSupabase()
+    .from('tool_settings')
+    .upsert({ key: APPROVED_CHATS_KEY, value: JSON.stringify(approved) }, { onConflict: 'key' })
+}
+
+async function removeApprovedChat(chatId: string): Promise<void> {
+  const approved = await getApprovedChats()
+  const filtered = approved.filter(id => id !== chatId)
+  await getSupabase()
+    .from('tool_settings')
+    .upsert({ key: APPROVED_CHATS_KEY, value: JSON.stringify(filtered) }, { onConflict: 'key' })
+}
+
+async function isApproved(chatId: string): Promise<boolean> {
+  if (CHAT_ID && chatId === CHAT_ID) return true // Admin altijd goedgekeurd
+  const approved = await getApprovedChats()
+  return approved.includes(chatId)
+}
+
+// ─── Pending access requests (in-memory, resets on cold start) ──
+const pendingRequests = new Map<string, { name: string; requestedAt: string }>()
 
 // ─── Command handlers ───────────────────────────────────────
 
@@ -305,9 +347,105 @@ export async function POST(request: Request) {
     const chatId = message.chat.id
     const text = message.text.trim().toLowerCase()
 
-    // Security: alleen reageren op geautoriseerde chat ID
-    if (CHAT_ID && String(chatId) !== CHAT_ID) {
-      await sendReply(chatId, '⛔ Geen toegang. Deze bot is privé.')
+    const isAdmin = CHAT_ID && String(chatId) === CHAT_ID
+    const chatIdStr = String(chatId)
+    const userName = message.chat?.first_name || message.chat?.username || 'Onbekend'
+
+    // ─── /start van nieuwe gebruiker: access request ──
+    if (text === '/start' && !isAdmin && !(await isApproved(chatIdStr))) {
+      pendingRequests.set(chatIdStr, { name: userName, requestedAt: new Date().toISOString() })
+      await sendReply(chatId, [
+        `━━━━━━━━━━━━━━━━━━━━━━`,
+        `🔒  <b>SANDERS CAPITAL BOT</b>`,
+        `━━━━━━━━━━━━━━━━━━━━━━`,
+        ``,
+        `Welkom ${userName}!`,
+        ``,
+        `Deze bot is privé. Je toegangsverzoek`,
+        `is verstuurd naar de admin.`,
+        ``,
+        `Je ontvangt een melding zodra je`,
+        `bent goedgekeurd.`,
+      ].join('\n'))
+      // Notify admin
+      if (CHAT_ID) {
+        await sendReply(Number(CHAT_ID), [
+          `━━━━━━━━━━━━━━━━━━━━━━`,
+          `🔔  <b>NIEUW TOEGANGSVERZOEK</b>`,
+          `━━━━━━━━━━━━━━━━━━━━━━`,
+          ``,
+          `<b>Naam:</b> ${userName}`,
+          `<b>Chat ID:</b> <code>${chatIdStr}</code>`,
+          ``,
+          `Goedkeuren:  /approve_${chatIdStr}`,
+          `Weigeren:    /deny_${chatIdStr}`,
+          `Alle users:  /users`,
+        ].join('\n'))
+      }
+      return NextResponse.json({ ok: true })
+    }
+
+    // ─── Security: niet-goedgekeurde users krijgen geen toegang ──
+    if (!isAdmin && !(await isApproved(chatIdStr))) {
+      await sendReply(chatId, '⛔ Geen toegang. Stuur /start om toegang aan te vragen.')
+      return NextResponse.json({ ok: true })
+    }
+
+    // ─── Admin-only commando's ────────────────────────
+    if (isAdmin && text.startsWith('/approve_')) {
+      const targetId = text.replace('/approve_', '')
+      await addApprovedChat(targetId, '')
+      pendingRequests.delete(targetId)
+      await sendReply(chatId, `✅ Gebruiker ${targetId} is goedgekeurd.`)
+      await sendReply(Number(targetId), [
+        `━━━━━━━━━━━━━━━━━━━━━━`,
+        `✅  <b>TOEGANG VERLEEND</b>`,
+        `━━━━━━━━━━━━━━━━━━━━━━`,
+        ``,
+        `Je hebt nu toegang tot de`,
+        `Sanders Capital bot!`,
+        ``,
+        `Stuur /help voor alle commando's.`,
+      ].join('\n'))
+      return NextResponse.json({ ok: true })
+    }
+
+    if (isAdmin && text.startsWith('/deny_')) {
+      const targetId = text.replace('/deny_', '')
+      pendingRequests.delete(targetId)
+      await removeApprovedChat(targetId)
+      await sendReply(chatId, `❌ Gebruiker ${targetId} is geweigerd.`)
+      await sendReply(Number(targetId), '⛔ Je toegangsverzoek is geweigerd.')
+      return NextResponse.json({ ok: true })
+    }
+
+    if (isAdmin && text === '/users') {
+      const approved = await getApprovedChats()
+      const pending = Array.from(pendingRequests.entries())
+      const lines = [
+        `━━━━━━━━━━━━━━━━━━━━━━`,
+        `👥  <b>GEBRUIKERSBEHEER</b>`,
+        `━━━━━━━━━━━━━━━━━━━━━━`,
+        ``,
+        `<b>Goedgekeurd (${approved.length}):</b>`,
+      ]
+      if (approved.length === 0) lines.push(`  Geen`)
+      for (const id of approved) {
+        lines.push(`  <code>${id}</code>  /deny_${id}`)
+      }
+      lines.push(``, `<b>Wachtend (${pending.length}):</b>`)
+      if (pending.length === 0) lines.push(`  Geen`)
+      for (const [id, info] of pending) {
+        lines.push(`  ${info.name} (<code>${id}</code>)  /approve_${id}`)
+      }
+      await sendReply(chatId, lines.join('\n'))
+      return NextResponse.json({ ok: true })
+    }
+
+    if (isAdmin && text.startsWith('/kick_')) {
+      const targetId = text.replace('/kick_', '')
+      await removeApprovedChat(targetId)
+      await sendReply(chatId, `🚫 Gebruiker ${targetId} is verwijderd.`)
       return NextResponse.json({ ok: true })
     }
 
