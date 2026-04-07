@@ -8,15 +8,15 @@
   "crons": [
     {
       "path": "/api/cron/news",
-      "schedule": "15 6,9,12,18 * * 1-5"
+      "schedule": "15 6 * * 1-5"
     },
     {
       "path": "/api/cron/trackrecord",
-      "schedule": "0 6,10,12,19 * * 1-5"
+      "schedule": "0 6 * * 1-5"
     },
     {
       "path": "/api/cron/execution",
-      "schedule": "30 6,10,12,19 * * 1-5"
+      "schedule": "30 6 * * 1-5"
     },
     {
       "path": "/api/cron/cb-snapshot",
