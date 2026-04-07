@@ -583,16 +583,59 @@ export default function ExecutionPage() {
                   <p className="text-[10px] text-text-dim mt-1">
                     {regime.im <= 50 ? `Intermarket alignment is ${regime.im}% (onder 50%). Geen trades tot het regime bevestigd is.` : 'Geen paren passeren vandaag alle 4 fundamentele filters.'}
                   </p>
-                  {trackRecord && trackRecord.overall.pending > 0 && (
-                    <div className="mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/15 text-left">
-                      <p className="text-[11px] text-amber-300 font-semibold mb-1">
-                        Het trackrecord heeft {trackRecord.overall.pending} openstaande {trackRecord.overall.pending === 1 ? 'trade' : 'trades'}
-                      </p>
-                      <p className="text-[10px] text-text-dim">
-                        Deze zijn eerder gegenereerd toen de marktcondities anders waren. De live berekening werkt met actuele data — marktcondities veranderen gedurende de dag.
-                      </p>
-                    </div>
-                  )}
+                  {trackRecord && (() => {
+                    const today = new Date().toISOString().split('T')[0]
+                    const pendingToday = trackRecord.recentTrades.filter(t => t.result === 'pending' && t.date === today)
+                    const pendingOther = trackRecord.recentTrades.filter(t => t.result === 'pending' && t.date !== today)
+                    const allPending = [...pendingToday, ...pendingOther]
+                    if (allPending.length === 0) return null
+                    return (
+                      <div className="mt-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/15 text-left">
+                        <p className="text-[11px] text-amber-300 font-semibold mb-1">
+                          {pendingToday.length > 0
+                            ? `${pendingToday.length} trades eerder vandaag gegenereerd`
+                            : `${allPending.length} openstaande ${allPending.length === 1 ? 'trade' : 'trades'}`}
+                        </p>
+                        <p className="text-[10px] text-text-dim mb-3">
+                          Deze zijn gegenereerd toen de marktcondities anders waren (IM was toen &gt;50%). Ze worden morgen automatisch resolved. De live engine toont alleen trades die <strong className="text-text-muted">nu</strong> door alle filters komen.
+                        </p>
+                        <div className="space-y-1.5">
+                          {allPending.map((t, i) => {
+                            const isBull = t.direction?.includes('bullish')
+                            const absMom = Math.abs(t.momentum)
+                            const inSelective = absMom >= 30 && absMom <= 120
+                            const inBalanced = absMom >= 20 && absMom <= 150
+                            return (
+                              <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg border border-amber-500/10 bg-amber-500/[0.03]">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                                  <span className="font-mono font-bold text-[11px] text-heading">{t.pair}</span>
+                                  <span className={`text-[10px] font-bold ${isBull ? 'text-green-400' : 'text-red-400'}`}>
+                                    {isBull ? '\u25B2 LONG' : '\u25BC SHORT'}
+                                  </span>
+                                  <span className="text-[9px] font-mono text-text-dim" title={`Fundamentele score: ${t.score > 0 ? '+' : ''}${t.score}`}>
+                                    {t.score > 0 ? '+' : ''}{t.score}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] font-mono text-text-dim" title={`5d momentum: ${t.momentum}p tegen de bias.\nDit bepaalt in welk model de trade valt.`}>
+                                    {Math.abs(t.momentum)}p mom
+                                  </span>
+                                  <div className="flex gap-1">
+                                    {inSelective && <span className="text-[8px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/15" title="Valt in Selective zone (30-120p)">Sel</span>}
+                                    {inBalanced && <span className="text-[8px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/15" title="Valt in Balanced zone (20-150p)">Bal</span>}
+                                    <span className="text-[8px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/15" title="Altijd in Aggressive (geen filter)">Agg</span>
+                                  </div>
+                                  <span className="text-[8px] text-amber-400 font-bold px-1.5 py-0.5 rounded bg-amber-500/10">PENDING</span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                        <p className="text-[9px] text-text-dim/40 mt-2">Uitslag wordt morgen om 23:00 NL automatisch bepaald op basis van prijsbeweging.</p>
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
 
