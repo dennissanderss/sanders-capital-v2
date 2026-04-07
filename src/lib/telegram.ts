@@ -142,7 +142,7 @@ export async function notifyNewTrades(
       `<i>Momentum ${m.momMin}-${m.momMax}p tegen de bias</i>`,
     )
     for (const t of selective) {
-      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  ${t.quality.toFixed(1)}/10  ·  Mom ${Math.abs(t.momentum5d)}p`)
+      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  ${t.quality.toFixed(1)}/10  ·  ${Math.abs(t.momentum5d)}p dip`)
     }
     lines.push(``)
   }
@@ -155,7 +155,7 @@ export async function notifyNewTrades(
       `<i>Momentum ${m.momMin}-${m.momMax}p tegen de bias</i>`,
     )
     for (const t of balancedOnly) {
-      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  ${t.quality.toFixed(1)}/10  ·  Mom ${Math.abs(t.momentum5d)}p`)
+      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  ${t.quality.toFixed(1)}/10  ·  ${Math.abs(t.momentum5d)}p dip`)
     }
     lines.push(``)
   }
@@ -168,7 +168,7 @@ export async function notifyNewTrades(
       `<i>Geen momentum filter</i>`,
     )
     for (const t of aggressiveOnly) {
-      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  ${t.quality.toFixed(1)}/10  ·  Mom ${Math.abs(t.momentum5d)}p`)
+      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  ${t.quality.toFixed(1)}/10  ·  ${Math.abs(t.momentum5d)}p dip`)
     }
     lines.push(``)
   }
