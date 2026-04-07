@@ -1,13 +1,11 @@
 // ─── Cron: Daily Track Record Update ───────────────────────
-// Called by Vercel Cron every weekday at 21:00 UTC (23:00 NL)
-// 1. Resolves pending trades from previous days
-// 2. Creates new trade focus records for today
+// Resolves pending trades & generates new signals
+// Called by Vercel Cron + external cron via trigger-all
 // ────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
-  // Verify this is a Vercel cron call (or local dev)
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
 
@@ -16,14 +14,29 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Call the trackrecord-v2 POST endpoint internally
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
-      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+    // Use VERCEL_URL for internal calls (avoids www redirect issues)
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000')
 
     const res = await fetch(`${baseUrl}/api/trackrecord-v2`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
     })
+
+    // Guard against HTML responses (redirect)
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('json')) {
+      return NextResponse.json({
+        success: false,
+        error: `Got ${contentType} instead of JSON (status ${res.status}). Possible redirect.`,
+        url: `${baseUrl}/api/trackrecord-v2`,
+        timestamp: new Date().toISOString(),
+      }, { status: 500 })
+    }
 
     const data = await res.json()
 

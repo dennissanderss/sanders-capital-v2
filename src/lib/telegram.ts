@@ -1,11 +1,10 @@
 // ─── Telegram Notification System ────────────────────────────
-// Professionele push notificaties naar Telegram
-// 4x per werkdag, afgestemd op trading sessies
+// 4x per werkdag meldingen, afgestemd op trading sessies
 //
-// Structuur:
-//   1. Markt context (regime, IM)
-//   2. Trades per model (SEL/BAL/AGG) met SL/TP/WR
-//   3. Resolved trades met resultaat
+// Melding types:
+//   🔔 Nieuwe trades — per model met WR/SL/TP
+//   📊 Geen trades — waarom niet + markt status
+//   📋 Resultaten — win/loss per trade (alleen EOD)
 // ─────────────────────────────────────────────────────────────
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
@@ -17,31 +16,18 @@ export function isTelegramConfigured(): boolean {
 
 export async function sendTelegramMessage(text: string): Promise<boolean> {
   if (!BOT_TOKEN || !CHAT_ID) return false
-
   try {
     const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text,
-        parse_mode: 'HTML',
-        disable_web_page_preview: true,
-      }),
+      body: JSON.stringify({ chat_id: CHAT_ID, text, parse_mode: 'HTML', disable_web_page_preview: true }),
     })
     return res.ok
-  } catch {
-    return false
-  }
+  } catch { return false }
 }
 
-// Also send to approved users
 export async function broadcastMessage(text: string): Promise<void> {
-  // Always send to admin
   await sendTelegramMessage(text)
-
-  // Also send to approved users if configured
-  // (approved users list is in Supabase, fetched by webhook route)
 }
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -49,34 +35,47 @@ export async function broadcastMessage(text: string): Promise<void> {
 function nlTime(): string {
   return new Date().toLocaleTimeString('nl-NL', { timeZone: 'Europe/Amsterdam', hour: '2-digit', minute: '2-digit' })
 }
-
 function nlDate(): string {
   return new Date().toLocaleDateString('nl-NL', { timeZone: 'Europe/Amsterdam', weekday: 'short', day: 'numeric', month: 'short' })
 }
+function dir(d: string): string { return d.includes('bullish') ? '▲ LONG' : '▼ SHORT' }
 
-function dirLabel(dir: string): string {
-  return dir.includes('bullish') ? 'LONG' : 'SHORT'
-}
-
-function dirArrow(dir: string): string {
-  return dir.includes('bullish') ? '▲' : '▼'
-}
-
-interface Session {
-  name: string
-  emoji: string
-  isEndOfDay: boolean
-}
-
-// ─── Model definitions (mirror of execution-types) ──────────
+export interface Session { name: string; emoji: string; isEndOfDay: boolean }
 
 const MODELS = {
-  selective: { name: 'Selective', momMin: 30, momMax: 120, sl: 40, tp: 120, wr: 62.4, pf: 4.98 },
-  balanced:  { name: 'Balanced',  momMin: 20, momMax: 150, sl: 40, tp: 120, wr: 61.7, pf: 4.83 },
-  aggressive:{ name: 'Aggressive',momMin: 0,  momMax: 9999,sl: 40, tp: 120, wr: 58.0, pf: 4.15 },
+  selective:  { name: 'Selective',  emoji: '🎯', momRange: '30–120p', sl: 40, tp: 120, wr: 62.4 },
+  balanced:   { name: 'Balanced',   emoji: '⚖️', momRange: '20–150p', sl: 40, tp: 120, wr: 61.7 },
+  aggressive: { name: 'Aggressive', emoji: '⚡', momRange: 'alle',    sl: 40, tp: 120, wr: 58.0 },
 }
 
-// ─── Nieuwe trades notificatie ──────────────────────────────
+// Quality score (zelfde formule als Engine page)
+function quality(score: number, mom: number, im: number): number {
+  const f = Math.min(4, Math.abs(score) * 1.2)
+  const c = Math.abs(mom) >= 30 && Math.abs(mom) <= 120 ? 2.5 : 1.5
+  const i = (im / 100) * 2
+  return Math.min(10, Math.round((f + c + i + 1) * 10) / 10)
+}
+
+// ─── Header (elk bericht begint hiermee) ────────────────────
+
+function header(session: Session): string[] {
+  return [
+    `━━━━━━━━━━━━━━━━━━━━━━`,
+    `${session.emoji}  <b>SANDERS CAPITAL</b>`,
+    `${session.name} · ${nlDate()} · ${nlTime()}`,
+    `━━━━━━━━━━━━━━━━━━━━━━`,
+  ]
+}
+
+function marketBlock(regime: string, im: number): string[] {
+  const icon = regime === 'Risk-On' ? '🟢' : regime === 'Risk-Off' ? '🔴' : '⚪️'
+  return [
+    ``,
+    `${icon} <b>${regime}</b>  ·  IM ${im}%${im > 50 ? ' ✓' : ' ✗'}`,
+  ]
+}
+
+// ─── 🔔 Nieuwe trades ──────────────────────────────────────
 
 export interface TradeSignal {
   pair: string
@@ -86,18 +85,7 @@ export interface TradeSignal {
   conviction: string
   selectiveZone: boolean
   balancedZone: boolean
-  qualityScore?: number  // 1-10, berekend uit fund + momentum + IM + regime
-}
-
-// Calculate quality score (same formula as execution page)
-function calcQuality(t: TradeSignal, im: number, regimeAligned: boolean): number {
-  const absScore = Math.abs(t.score)
-  const absMom = Math.abs(t.momentum5d)
-  const fundPts = Math.min(4, absScore * 1.2)
-  const contrarianPts = absMom >= 30 && absMom <= 120 ? 2.5 : 1.5
-  const imPts = (im / 100) * 2
-  const regimePts = regimeAligned ? 1.5 : 0.5
-  return Math.min(10, Math.round((fundPts + contrarianPts + imPts + regimePts) * 10) / 10)
+  qualityScore?: number
 }
 
 export async function notifyNewTrades(
@@ -108,80 +96,48 @@ export async function notifyNewTrades(
 ): Promise<boolean> {
   if (trades.length === 0) return true
 
-  // Add quality scores
-  const withQuality = trades.map(t => ({
-    ...t,
-    quality: t.qualityScore ?? calcQuality(t, im, true),
-  }))
-
-  // Group trades by highest model they qualify for
-  const selective = withQuality.filter(t => t.selectiveZone)
-  const balancedOnly = withQuality.filter(t => t.balancedZone && !t.selectiveZone)
-  const aggressiveOnly = withQuality.filter(t => !t.balancedZone && !t.selectiveZone)
-
   const lines = [
-    `━━━━━━━━━━━━━━━━━━━━━━`,
-    `${session.emoji}  <b>SANDERS CAPITAL</b>`,
-    `${session.name} · ${nlDate()} · ${nlTime()}`,
-    `━━━━━━━━━━━━━━━━━━━━━━`,
+    ...header(session),
+    ...marketBlock(regime, im),
     ``,
-    `┌─ <b>MARKT</b>`,
-    `│  ${regime === 'Risk-On' ? '🟢' : regime === 'Risk-Off' ? '🔴' : '⚪️'}  Regime: <b>${regime}</b>`,
-    `│  IM Alignment: <b>${im}%</b>${im > 50 ? ' ✓' : ' ✗'}`,
-    `└─────────────────────`,
-    ``,
-    `🔔  <b>${trades.length} TRADE${trades.length > 1 ? 'S' : ''} GEVONDEN</b>`,
-    ``,
+    `🔔  <b>${trades.length} TRADE${trades.length > 1 ? 'S' : ''}</b>`,
   ]
 
-  // ─── Selective trades ───
-  if (selective.length > 0) {
-    const m = MODELS.selective
-    lines.push(
-      `🎯  <b>SELECTIVE</b>  ·  ${m.wr}% WR  ·  SL ${m.sl}p / TP ${m.tp}p`,
-      `<i>Momentum ${m.momMin}-${m.momMax}p tegen de bias</i>`,
-    )
-    for (const t of selective) {
-      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  ${t.quality.toFixed(1)}/10  ·  ${Math.abs(t.momentum5d)}p dip`)
-    }
-    lines.push(``)
-  }
+  // Group by model
+  const groups: [string, typeof MODELS.selective, TradeSignal[]][] = [
+    ['selective',  MODELS.selective,  trades.filter(t => t.selectiveZone)],
+    ['balanced',   MODELS.balanced,   trades.filter(t => t.balancedZone && !t.selectiveZone)],
+    ['aggressive', MODELS.aggressive, trades.filter(t => !t.balancedZone && !t.selectiveZone)],
+  ]
 
-  // ─── Balanced-only trades ───
-  if (balancedOnly.length > 0) {
-    const m = MODELS.balanced
+  for (const [, m, group] of groups) {
+    if (group.length === 0) continue
     lines.push(
-      `⚖️  <b>BALANCED</b>  ·  ${m.wr}% WR  ·  SL ${m.sl}p / TP ${m.tp}p`,
-      `<i>Momentum ${m.momMin}-${m.momMax}p tegen de bias</i>`,
+      ``,
+      `${m.emoji} <b>${m.name}</b>`,
+      `   ${m.wr}% winrate · SL ${m.sl}p · TP ${m.tp}p`,
     )
-    for (const t of balancedOnly) {
-      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  ${t.quality.toFixed(1)}/10  ·  ${Math.abs(t.momentum5d)}p dip`)
+    for (const t of group) {
+      const q = t.qualityScore ?? quality(t.score, t.momentum5d, im)
+      lines.push(`   ${dir(t.direction)}  <b>${t.pair}</b>  ·  ${q.toFixed(1)}/10  ·  ${Math.abs(t.momentum5d)}p dip`)
     }
-    lines.push(``)
-  }
-
-  // ─── Aggressive-only trades ───
-  if (aggressiveOnly.length > 0) {
-    const m = MODELS.aggressive
-    lines.push(
-      `⚡  <b>AGGRESSIVE</b>  ·  ${m.wr}% WR  ·  SL ${m.sl}p / TP ${m.tp}p`,
-      `<i>Geen momentum filter</i>`,
-    )
-    for (const t of aggressiveOnly) {
-      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  ${t.quality.toFixed(1)}/10  ·  ${Math.abs(t.momentum5d)}p dip`)
-    }
-    lines.push(``)
   }
 
   lines.push(
-    `<i>Open 1H chart → wacht op reversal candle</i>`,
+    ``,
+    `━━━━━━━━━━━━━━━━━━━━━━`,
+    `<i>Wat nu?</i>`,
+    `<i>1. Open 1H chart van het pair</i>`,
+    `<i>2. Wacht op reversal candle</i>`,
+    `<i>3. Entry met SL ${MODELS.selective.sl}p / TP ${MODELS.selective.tp}p</i>`,
+    ``,
     `🔗 sanderscapital.nl/tools/execution`,
   )
 
   return sendTelegramMessage(lines.join('\n'))
 }
 
-// ─── Resolved trades notificatie ────────────────────────────
+// ─── 📋 Resultaten (resolved trades) ───────────────────────
 
 interface ResolvedTrade {
   pair: string
@@ -193,37 +149,41 @@ interface ResolvedTrade {
 export async function notifyResolvedTrades(trades: ResolvedTrade[]): Promise<boolean> {
   if (trades.length === 0) return true
 
-  const correct = trades.filter(t => t.result === 'correct').length
-  const incorrect = trades.length - correct
-  const wr = Math.round((correct / trades.length) * 100)
+  const wins = trades.filter(t => t.result === 'correct')
+  const losses = trades.filter(t => t.result === 'incorrect')
+  const wr = Math.round((wins.length / trades.length) * 100)
   const totalPips = trades.reduce((sum, t) => sum + t.pips, 0)
 
   const lines = [
-    `━━━━━━━━━━━━━━━━━━━━━━`,
-    `📋  <b>RESULTATEN</b>`,
-    `${nlDate()} · ${nlTime()}`,
-    `━━━━━━━━━━━━━━━━━━━━━━`,
+    ...header({ name: 'Einde Handelsdag', emoji: '🌙', isEndOfDay: true }),
     ``,
-    `<b>${correct}W - ${incorrect}L</b>  ·  ${wr}% WR  ·  ${totalPips > 0 ? '+' : ''}${totalPips} pips`,
+    `📋  <b>RESULTATEN GISTEREN</b>`,
     ``,
   ]
 
+  // Winst/verlies samenvatting
+  lines.push(
+    `   ${wins.length} gewonnen  ·  ${losses.length} verloren`,
+    `   <b>${wr}% winrate</b>  ·  <b>${totalPips > 0 ? '+' : ''}${totalPips} pips</b>`,
+    ``,
+  )
+
+  // Per trade
   for (const t of trades) {
     const icon = t.result === 'correct' ? '✅' : '❌'
-    const dir = dirLabel(t.direction)
-    const pipsStr = t.pips > 0 ? `+${t.pips}p` : `${t.pips}p`
-    lines.push(`${icon}  <b>${t.pair}</b>  ${dir}  →  ${pipsStr}`)
+    const pips = t.pips > 0 ? `+${t.pips}p` : `${t.pips}p`
+    lines.push(`   ${icon} <b>${t.pair}</b>  ${dir(t.direction)}  →  ${pips}`)
   }
 
   lines.push(
     ``,
-    `🔗 sanderscapital.nl/tools/execution#engine-trackrecord`,
+    `🔗 sanderscapital.nl/tools/execution`,
   )
 
   return sendTelegramMessage(lines.join('\n'))
 }
 
-// ─── Session update (geen nieuwe trades) ────────────────────
+// ─── 📊 Geen trades (session update) ───────────────────────
 
 export async function notifySessionUpdate(
   session: Session,
@@ -233,41 +193,34 @@ export async function notifySessionUpdate(
   totalPairs: number
 ): Promise<boolean> {
   const lines = [
-    `━━━━━━━━━━━━━━━━━━━━━━`,
-    `${session.emoji}  <b>SANDERS CAPITAL</b>`,
-    `${session.name} · ${nlDate()} · ${nlTime()}`,
-    `━━━━━━━━━━━━━━━━━━━━━━`,
-    ``,
-    `┌─ <b>MARKT</b>`,
-    `│  ${regime === 'Risk-On' ? '🟢' : regime === 'Risk-Off' ? '🔴' : '⚪️'}  Regime: <b>${regime}</b>`,
-    `│  IM Alignment: <b>${im}%</b>${im > 50 ? ' ✓' : ' ✗'}`,
-    `└─────────────────────`,
+    ...header(session),
+    ...marketBlock(regime, im),
     ``,
   ]
 
   if (existingTrades > 0) {
     lines.push(
-      `📊  <b>GEEN NIEUWE TRADES</b>`,
-      `Bestaande trades vandaag: <b>${existingTrades}</b>`,
-      `Geen nieuwe paren passeren alle filters.`,
+      `📊  <b>Geen nieuwe trades</b>`,
+      `   ${existingTrades} trade${existingTrades > 1 ? 's' : ''} lopen al vandaag.`,
+      `   Geen nieuwe paren passeren alle filters.`,
+    )
+  } else if (im <= 50) {
+    lines.push(
+      `📊  <b>Geen trades vandaag</b>`,
+      `   IM alignment te laag (${im}%).`,
+      `   Minimaal 50% nodig voor concrete trades.`,
     )
   } else {
-    if (im <= 50) {
-      lines.push(
-        `📊  <b>GEEN TRADES</b>`,
-        `IM alignment te laag (${im}%). Minimaal 50% nodig.`,
-      )
-    } else {
-      lines.push(
-        `📊  <b>GEEN TRADES</b>`,
-        `Geen van ${totalPairs} paren passeert alle 4 filters.`,
-      )
-    }
+    lines.push(
+      `📊  <b>Geen trades vandaag</b>`,
+      `   ${totalPairs} paren geanalyseerd.`,
+      `   Geen enkel pair passeert alle 4 filters.`,
+    )
   }
 
   lines.push(
     ``,
-    `<i>Volgende scan: ${session.isEndOfDay ? 'morgen 08:30' : 'zie /schema'}</i>`,
+    `<i>Volgende scan: ${session.isEndOfDay ? 'morgen 08:30' : 'volgende sessie'}</i>`,
   )
 
   return sendTelegramMessage(lines.join('\n'))
@@ -276,8 +229,5 @@ export async function notifySessionUpdate(
 // ─── Legacy wrapper ─────────────────────────────────────────
 
 export async function notifyNoTrades(regime: string, im: number, reason: string): Promise<boolean> {
-  return notifySessionUpdate(
-    { name: 'Update', emoji: '📊', isEndOfDay: false },
-    regime, im, 0, 0
-  )
+  return notifySessionUpdate({ name: 'Update', emoji: '📊', isEndOfDay: false }, regime, im, 0, 0)
 }
