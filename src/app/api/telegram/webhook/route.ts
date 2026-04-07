@@ -87,24 +87,37 @@ async function handleStart(chatId: number) {
     `📊  <b>SANDERS CAPITAL BOT</b>`,
     `━━━━━━━━━━━━━━━━━━━━━━`,
     ``,
-    `Welkom! Deze bot stuurt je automatisch`,
-    `trade alerts en markt updates.`,
+    `Deze bot is een geautomatiseerde`,
+    `koppeling met <b>sanderscapital.nl</b>.`,
+    ``,
+    `Elke werkdag analyseert het systeem`,
+    `21 valutaparen op fundamentele data,`,
+    `intermarket confirmatie en technische`,
+    `timing. Bij concrete trade setups`,
+    `ontvang je direct een melding met:`,
+    ``,
+    `  · Kwaliteitsscore (1-10)`,
+    `  · Richting (long/short)`,
+    `  · Pullback in pips`,
+    `  · In welk model de trade valt`,
+    `  · SL/TP levels`,
+    ``,
+    `━━━━━━━━━━━━━━━━━━━━━━`,
+    `<b>Dagelijkse routine:</b>`,
+    `  ☀️  08:30 — Goedemorgen + eerste trades`,
+    `  🌍  12:00 — Middag update`,
+    `  🇺🇸  14:00 — New York sessie`,
+    `  🌙  21:00 — Resultaten + afsluiting`,
+    `━━━━━━━━━━━━━━━━━━━━━━`,
     ``,
     `<b>Commando's:</b>`,
-    ``,
-    `/status    — Huidige markt + actieve trades`,
+    `/status    — Markt + actieve trades`,
     `/trades    — Vandaag's trades overzicht`,
     `/track     — Trackrecord statistieken`,
     `/schema    — Data update tijden`,
     `/help      — Dit menu`,
     ``,
-    `━━━━━━━━━━━━━━━━━━━━━━`,
-    `<b>Automatische meldingen:</b>`,
-    `  🇬🇧  08:30 — London Pre-Market`,
-    `  🌍  12:00 — Middag Update`,
-    `  🇺🇸  14:30 — New York Pre-Market`,
-    `  🌙  21:00 — Einde Handelsdag`,
-    `━━━━━━━━━━━━━━━━━━━━━━`,
+    `🔗 sanderscapital.nl`,
   ].join('\n'))
 }
 
@@ -122,9 +135,24 @@ async function handleStatus(chatId: number) {
     const im = data.intermarketAlignment ?? 0
     const regime = data.regime || 'Gemengd'
     const pairs = data.pairBiases || []
-    const concrete = pairs.filter((p: { score: number; direction: string }) =>
-      Math.abs(p.score) >= 2.0 && p.direction !== 'neutraal' && im >= 50
-    )
+    const v3Signals = data.v3?.pairSignals || []
+    const regimeIcon = regime === 'Risk-On' ? '🟢' : regime === 'Risk-Off' ? '🔴' : '⚪️'
+
+    // Build concrete trades with momentum data
+    const concrete: { pair: string; direction: string; score: number; pips5d: number; selectiveZone: boolean; balancedZone: boolean }[] = []
+    for (const p of pairs) {
+      const absScore = Math.abs(p.score)
+      const isBull = p.direction?.includes('bullish')
+      const isBear = p.direction?.includes('bearish')
+      if (!isBull && !isBear) continue
+      if (absScore < 2.0 || im < 50) continue
+      const v3 = v3Signals.find((s: { pair: string }) => s.pair === p.pair)
+      const pips5d = v3?.priceMomentum?.pips5d ?? 0
+      const contrarianPass = (isBull && pips5d < 0) || (isBear && pips5d > 0)
+      if (!contrarianPass) continue
+      const absMom = Math.abs(pips5d)
+      concrete.push({ pair: p.pair, direction: p.direction, score: p.score, pips5d, selectiveZone: absMom >= 30 && absMom <= 120, balancedZone: absMom >= 20 && absMom <= 150 })
+    }
 
     const lines = [
       `━━━━━━━━━━━━━━━━━━━━━━`,
@@ -132,24 +160,33 @@ async function handleStatus(chatId: number) {
       `${nlDate()} · ${nlTime()}`,
       `━━━━━━━━━━━━━━━━━━━━━━`,
       ``,
-      `┌─ <b>REGIME</b>`,
-      `│  ${regime === 'Risk-On' ? '🟢' : regime === 'Risk-Off' ? '🔴' : '⚪️'}  ${regime}`,
-      `│  IM Alignment: <b>${im}%</b>${im >= 50 ? ' ✓' : ' ✗ (< 50%)'}`,
-      `└─────────────────────`,
+      `${regimeIcon}  Regime: <b>${regime}</b>`,
+      `📊  IM Alignment: <b>${im}%</b>${im >= 50 ? ' ✓' : ' ✗ (te laag)'}`,
       ``,
     ]
 
-    if (concrete.length > 0 && im >= 50) {
+    if (concrete.length > 0) {
       lines.push(`🔔  <b>${concrete.length} CONCRETE TRADE${concrete.length > 1 ? 'S' : ''}</b>`, ``)
-      for (const p of concrete.slice(0, 8)) {
-        const dir = p.direction.includes('bullish') ? '▲ LONG' : '▼ SHORT'
-        lines.push(`  <b>${p.pair}</b>  ${dir}  ·  Score: ${p.score > 0 ? '+' : ''}${p.score}`)
+
+      // Quality score helper
+      function quality(score: number, mom: number): number {
+        const f = Math.min(4, Math.abs(score) * 1.2)
+        const c = Math.abs(mom) >= 30 && Math.abs(mom) <= 120 ? 2.5 : 1.5
+        const i = (im / 100) * 2
+        return Math.min(10, Math.round((f + c + i + 1) * 10) / 10)
+      }
+
+      for (const t of concrete.slice(0, 8)) {
+        const dir = t.direction.includes('bullish') ? '▲ LONG' : '▼ SHORT'
+        const q = quality(t.score, t.pips5d)
+        const model = t.selectiveZone ? '🎯 SEL' : t.balancedZone ? '⚖️ BAL' : '⚡ AGG'
+        lines.push(`   ${dir}  <b>${t.pair}</b>  ·  ${q.toFixed(1)}/10  ·  ${Math.abs(t.pips5d)}p dip  ·  ${model}`)
       }
     } else {
       lines.push(
         `📭  <b>Geen concrete trades</b>`,
         ``,
-        im <= 50
+        im < 50
           ? `IM alignment te laag (${im}%)`
           : `Geen paren passeren alle 4 filters`,
       )
@@ -158,7 +195,7 @@ async function handleStatus(chatId: number) {
     lines.push(
       ``,
       `<i>Laatste update: ${nlTime()}</i>`,
-      `🔗 sanderscapital.nl/tools/fx-selector/v2`,
+      `🔗 sanderscapital.nl/tools/execution`,
     )
 
     await sendReply(chatId, lines.join('\n'))
@@ -202,21 +239,16 @@ async function handleTrades(chatId: number) {
     for (const s of signals) {
       const dir = s.fund_direction?.includes('bullish') ? '▲ LONG' : '▼ SHORT'
       const absMom = Math.abs(s.momentum_5d || 0)
-      const models: string[] = []
-      if (s.selective_in_zone) models.push('SEL')
-      if (s.balanced_in_zone) models.push('BAL')
-      models.push('AGG')
+      const model = s.selective_in_zone ? '🎯 Selective' : s.balanced_in_zone ? '⚖️ Balanced' : '⚡ Aggressive'
 
-      const status = s.result === 'pending' ? '⏳ PENDING'
+      const status = s.result === 'pending' ? '⏳ Pending'
         : s.result === 'correct' ? `✅ +${s.pips_moved}p`
         : `❌ ${s.pips_moved}p`
 
       lines.push(
-        `┌─ <b>${s.pair}</b>  ${dir}`,
-        `│  Score: <b>${s.fund_score > 0 ? '+' : ''}${s.fund_score}</b>  ·  Mom: <b>${absMom}p</b>`,
-        `│  Models: ${models.join(' · ')}`,
-        `│  Status: ${status}`,
-        `└─────────────────────`,
+        `${dir}  <b>${s.pair}</b>`,
+        `   Pullback: <b>${absMom}p</b>  ·  ${model}`,
+        `   Status: ${status}`,
         ``,
       )
     }
@@ -314,7 +346,7 @@ async function handleSchema(chatId: number) {
     `     Herberekening na de ochtend`,
     `     → nieuwe trades als condities wijzigen`,
     ``,
-    `🇺🇸  <b>14:30 NL</b> — New York Pre-Market`,
+    `🇺🇸  <b>14:00 NL</b> — New York Sessie`,
     `     Verse data voor NY sessie`,
     `     → IM en momentum veranderen vaak 's middags`,
     ``,
