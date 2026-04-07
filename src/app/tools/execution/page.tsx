@@ -181,9 +181,9 @@ export default function ExecutionPage() {
             Execution Engine
           </span>
           <span className="text-text-dim/30">&rarr;</span>
-          <span className="px-2.5 py-1 rounded-lg border border-white/[0.06] bg-white/[0.02] text-text-dim">
-            Trackrecord (automatisch)
-          </span>
+          <a href="#engine-trackrecord" className="px-2.5 py-1 rounded-lg border border-white/[0.06] bg-white/[0.02] text-text-dim hover:text-accent-light hover:border-accent/20 transition-colors">
+            Engine Trackrecord ↓
+          </a>
         </div>
       </div>
 
@@ -685,216 +685,232 @@ export default function ExecutionPage() {
         </div>
       </section>
 
-      {/* ═══ TRACKRECORD ═══ */}
-      <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-        <button onClick={() => setShowTrackRecord(!showTrackRecord)} className="w-full px-5 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
-          <div className="flex items-center gap-3">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-light"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-            <span className="text-sm font-semibold text-heading">Trackrecord</span>
+      {/* ═══ ENGINE TRACKRECORD ═══ */}
+      <section id="engine-trackrecord" className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+        <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-accent-light bg-accent/10 px-2 py-0.5 rounded">Live</span>
+            <span className="text-sm font-semibold text-heading">Engine Trackrecord</span>
             {trackRecord && trackRecord.overall.resolved > 0 && (
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                 trackRecord.overall.winRate >= 55 ? 'bg-green-500/15 text-green-400' : 'bg-amber-500/15 text-amber-400'
-              }`} title={`Live trackrecord: ${trackRecord.overall.correct} correct van ${trackRecord.overall.resolved} resolved trades.\n\nDit zijn echte trades die het systeem heeft gegenereerd en automatisch na 1 handelsdag resolved.`}>{trackRecord.overall.winRate}% winrate ({trackRecord.overall.resolved} trades)</span>
-            )}
-            {trackRecord && trackRecord.overall.pending > 0 && (
-              <span className="text-[10px] text-text-dim">{trackRecord.overall.pending} pending</span>
+              }`}>{trackRecord.overall.winRate}% winrate</span>
             )}
           </div>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-text-dim transition-transform ${showTrackRecord ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9" /></svg>
-        </button>
-
-        {showTrackRecord && (
-          <div className="px-5 pb-5 border-t border-white/[0.04]">
-            {(() => {
-              // Filter backtest trades per geselecteerd model
-              const modelBT = backtestTrades.filter(t => {
-                const s = Math.abs(t.score), m = t.momentum
-                return s >= model.scoreMin && s < model.scoreMax && m >= model.momMin && m <= model.momMax
-              })
-              const btWins = modelBT.filter(t => t.result === 'correct').length
-              const btLosses = modelBT.length - btWins
-              const btWR = modelBT.length > 0 ? (btWins / modelBT.length * 100).toFixed(1) : '0'
-              const btPips = btWins * model.tp - btLosses * model.sl
-
-              return modelBT.length === 0 && (!trackRecord || trackRecord.overall.resolved === 0) ? (
-              <div className="mt-3 p-4 rounded-xl bg-white/[0.02] text-center">
-                <p className="text-sm text-text-muted">{backtestTrades.length === 0 ? 'Trackrecord wordt geladen...' : 'Geen trades voor dit model in de backtest data'}</p>
-                <p className="text-[10px] text-text-dim mt-1">Het live trackrecord bouwt zich op zodra er concrete trades zijn (IM &gt; 50%).</p>
+          <Link href="/tools/fx-selector" className="text-[9px] text-text-dim hover:text-accent-light transition-colors">
+            Fundamenteel trackrecord →
+          </Link>
+        </div>
+        <div className="p-5">
+          {/* Uitleg verschil */}
+          <div className="mb-4 p-3 rounded-xl bg-accent/5 border border-accent/15 text-[9px] text-text-dim">
+            <p className="text-[10px] text-accent-light font-semibold mb-1">Wat is het verschil?</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <p className="text-text-muted font-semibold">Fundamenteel trackrecord</p>
+                <p>Alle paren met score &ge;2 + contrarian filter. Meet alleen of de <strong className="text-heading">richting</strong> correct was na 1 dag. Geen SL/TP, geen momentum filter.</p>
               </div>
-            ) : (
-              <>
-                {/* Per model stats */}
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                  {Object.entries(TRADE_MODELS).map(([id, m]) => {
-                    const stats = trackRecord.models[id]
-                    return (
-                      <div key={id} className={`p-3 rounded-xl border ${selectedModel === id ? 'border-accent/30 bg-accent/5' : 'border-white/[0.06] bg-white/[0.02]'}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-semibold text-heading">{m.name}</span>
-                          {stats && stats.total > 0 && (
-                            <span className={`text-[10px] font-mono font-bold ${stats.winRate >= 55 ? 'text-green-400' : stats.winRate >= 45 ? 'text-amber-400' : 'text-red-400'}`}>
-                              {stats.winRate}%
-                            </span>
-                          )}
-                        </div>
-                        {stats && stats.total > 0 ? (
-                          <div className="grid grid-cols-3 gap-1 text-center text-[9px]">
-                            <div><p className="font-mono font-bold text-heading">{stats.correct}</p><p className="text-text-dim">Wins</p></div>
-                            <div><p className="font-mono font-bold text-heading">{stats.incorrect}</p><p className="text-text-dim">Losses</p></div>
-                            <div><p className="font-mono font-bold text-green-400">{stats.totalPips > 0 ? '+' : ''}{stats.totalPips}</p><p className="text-text-dim">Pips</p></div>
-                          </div>
-                        ) : (
-                          <p className="text-[9px] text-text-dim">Nog geen data</p>
-                        )}
-                        <div className="mt-1 text-[8px] text-text-dim/40">Verwacht: {m.expectedWR}% WR</div>
+              <div>
+                <p className="text-text-muted font-semibold">Engine trackrecord (deze)</p>
+                <p>Concrete trades (4/4 filters) + <strong className="text-heading">momentum zone per model</strong>. Toont in welk model de trade valt (SEL/BAL/AGG), de exacte momentum pips, en het resultaat.</p>
+              </div>
+            </div>
+          </div>
+
+          {(() => {
+            const modelBT = backtestTrades.filter(t => {
+              const s = Math.abs(t.score), m = t.momentum
+              return s >= model.scoreMin && s < model.scoreMax && m >= model.momMin && m <= model.momMax
+            })
+            const btWins = modelBT.filter(t => t.result === 'correct').length
+            const btLosses = modelBT.length - btWins
+            const btWR = modelBT.length > 0 ? (btWins / modelBT.length * 100).toFixed(1) : '0'
+            const btPips = btWins * model.tp - btLosses * model.sl
+
+            return (
+            <>
+              {/* Overzicht stats */}
+              {trackRecord && (
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+                  {[
+                    { label: 'Totaal', value: trackRecord.overall.total, color: 'text-heading' },
+                    { label: 'Correct', value: trackRecord.overall.correct, color: 'text-green-400' },
+                    { label: 'Incorrect', value: trackRecord.overall.resolved - trackRecord.overall.correct, color: 'text-red-400' },
+                    { label: 'Pending', value: trackRecord.overall.pending, color: 'text-amber-400' },
+                    { label: 'Winrate', value: `${trackRecord.overall.winRate}%`, color: trackRecord.overall.winRate >= 55 ? 'text-green-400' : 'text-amber-400' },
+                  ].map(stat => (
+                    <div key={stat.label} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+                      <p className={`text-lg font-mono font-bold ${stat.color}`}>{stat.value}</p>
+                      <p className="text-[9px] text-text-dim">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Per model stats */}
+              <p className="text-[10px] text-text-muted font-semibold mb-2">Per model — live + backtest</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                {Object.entries(TRADE_MODELS).map(([id, m]) => {
+                  const liveStats = trackRecord?.models?.[id]
+                  const isActive = selectedModel === id
+                  return (
+                    <div key={id} className={`p-3 rounded-xl border ${isActive ? 'border-accent/30 bg-accent/5' : 'border-white/[0.06] bg-white/[0.02]'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`text-xs font-semibold ${isActive ? 'text-accent-light' : 'text-heading'}`}>{m.name}</span>
+                        <span className="text-[8px] px-1.5 py-0.5 rounded bg-white/[0.06] text-text-dim">{m.momMin === 0 ? 'Alle' : m.momMin + '-' + m.momMax + 'p'}</span>
                       </div>
-                    )
-                  })}
-                </div>
+                      <div className="grid grid-cols-4 gap-1 text-center text-[9px] mb-2">
+                        <div><p className="font-mono font-bold text-heading">{liveStats?.total || 0}</p><p className="text-text-dim">Trades</p></div>
+                        <div><p className="font-mono font-bold text-green-400">{liveStats?.correct || 0}</p><p className="text-text-dim">Win</p></div>
+                        <div><p className="font-mono font-bold text-red-400">{liveStats?.incorrect || 0}</p><p className="text-text-dim">Loss</p></div>
+                        <div><p className={`font-mono font-bold ${(liveStats?.winRate || 0) >= 55 ? 'text-green-400' : 'text-amber-400'}`}>{liveStats?.winRate || 0}%</p><p className="text-text-dim">WR</p></div>
+                      </div>
+                      <div className="flex justify-between text-[8px] pt-1.5 border-t border-white/[0.06]">
+                        <span className="text-text-dim">Pips: <span className={`font-mono font-bold ${(liveStats?.totalPips || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>{(liveStats?.totalPips || 0) > 0 ? '+' : ''}{liveStats?.totalPips || 0}</span></span>
+                        <span className="text-text-dim/40">Verwacht: {m.expectedWR}% WR · PF {m.expectedPF}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
 
-                {/* Backtest overzicht */}
+              {/* Backtest vergelijking */}
+              <div className="mb-4">
+                <p className="text-[10px] text-text-dim/50 mb-2">Backtest referentie (apr 2025 - mar 2026)</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[9px]">
+                    <thead>
+                      <tr className="border-b border-white/[0.06] text-text-dim">
+                        <th className="text-left py-1.5 px-2">Model</th>
+                        <th className="text-right py-1.5 px-2">Trades</th>
+                        <th className="text-right py-1.5 px-2">Winrate</th>
+                        <th className="text-right py-1.5 px-2">PF</th>
+                        <th className="text-right py-1.5 px-2">/week</th>
+                        <th className="text-right py-1.5 px-2">Exp/trade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.values(TRADE_MODELS).map(m => {
+                        const isSelected = m.id === selectedModel
+                        return (
+                          <tr key={m.id} className={`border-b border-white/[0.02] ${isSelected ? 'bg-accent/5' : ''}`}>
+                            <td className="py-1.5 px-2"><span className={isSelected ? 'text-accent-light font-bold' : 'text-heading'}>{m.name}</span></td>
+                            <td className="py-1.5 px-2 text-right font-mono text-heading">{m.sampleSize}</td>
+                            <td className="py-1.5 px-2 text-right font-mono text-green-400 font-bold">{m.expectedWR}%</td>
+                            <td className="py-1.5 px-2 text-right font-mono text-heading">{m.expectedPF}</td>
+                            <td className="py-1.5 px-2 text-right font-mono text-text-muted">{m.tradesPerWeek}</td>
+                            <td className="py-1.5 px-2 text-right font-mono text-green-400">+{m.expectedExp}p</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-[8px] text-text-dim/30 mt-1">SL={model.sl}p · TP={model.tp}p · 1:{model.rr} RR. Fundamenteel baseline = 56% WR. Met techniek = 58-62%.</p>
+              </div>
+
+              {/* Live recente trades — ALTIJD ZICHTBAAR */}
+              {trackRecord && trackRecord.recentTrades.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-[10px] text-text-dim/50 mb-2">Backtest (apr 2025 - mar 2026, fundamenteel trackrecord + momentum filter)</p>
+                  <p className="text-[10px] text-text-muted font-semibold mb-2">Laatste trades</p>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-[9px]">
-                      <thead>
-                        <tr className="border-b border-white/[0.06] text-text-dim">
-                          <th className="text-left py-1.5 px-2">Model</th>
-                          <th className="text-right py-1.5 px-2">Trades</th>
-                          <th className="text-right py-1.5 px-2">Winrate</th>
-                          <th className="text-right py-1.5 px-2">PF</th>
-                          <th className="text-right py-1.5 px-2">Pips</th>
-                          <th className="text-right py-1.5 px-2">/week</th>
-                          <th className="text-right py-1.5 px-2">Exp/trade</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.values(TRADE_MODELS).map(m => {
-                          const isSelected = m.id === selectedModel
-                          return (
-                            <tr key={m.id} className={`border-b border-white/[0.02] ${isSelected ? 'bg-accent/5' : ''}`}>
-                              <td className="py-1.5 px-2"><span className={isSelected ? 'text-accent-light font-bold' : 'text-heading'}>{m.name}</span></td>
-                              <td className="py-1.5 px-2 text-right font-mono text-heading">{m.sampleSize}</td>
-                              <td className="py-1.5 px-2 text-right font-mono text-green-400 font-bold">{m.expectedWR}%</td>
-                              <td className="py-1.5 px-2 text-right font-mono text-heading">{m.expectedPF}</td>
-                              <td className="py-1.5 px-2 text-right font-mono text-green-400">+{m.monthlyPips * Math.round(325/30)}</td>
-                              <td className="py-1.5 px-2 text-right font-mono text-text-muted">{m.tradesPerWeek}</td>
-                              <td className="py-1.5 px-2 text-right font-mono text-green-400">+{m.expectedExp}p</td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="text-[8px] text-text-dim/30 mt-1">Winrates = gecombineerd (fundamentele bias + technisch timing model samen). Puur fundamenteel = 56%. Met momentum filter + SL/TP = 58-62%. SL={model.sl}p, TP={model.tp}p, 1:{model.rr} RR.</p>
-                </div>
-
-                {/* Backtest trades (uit fundamenteel trackrecord) */}
-                {modelBT.length > 0 && (
-                  <div className="mb-4">
-                    <details className="group">
-                      <summary className="text-[10px] text-text-dim/50 cursor-pointer hover:text-text-dim flex items-center gap-1">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-transform group-open:rotate-90"><polyline points="9 18 15 12 9 6" /></svg>
-                        Backtest trades ({model.name}): {modelBT.length} trades, {btWR}% WR, {btPips > 0 ? '+' : ''}{btPips} pips
-                      </summary>
-                      <div className="mt-2 max-h-72 overflow-y-auto">
-                        {/* Header */}
-                        <div className="flex items-center justify-between px-3 py-1.5 text-[8px] text-text-dim/40 border-b border-white/[0.04] sticky top-0 bg-bg-card">
-                          <div className="flex items-center gap-2">
-                            <span className="w-1.5" />
-                            <span className="w-[70px]">Datum</span>
-                            <span className="w-[65px]">Pair</span>
-                            <span className="w-4">Dir</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-right">
-                            <span className="w-10">Score</span>
-                            <span className="w-10">Mom</span>
-                            <span className="w-10">Pips</span>
-                            <span className="w-14">Resultaat</span>
-                          </div>
-                        </div>
-                        {modelBT.slice().sort((a, b) => b.date.localeCompare(a.date)).map((t, i) => {
-                          // Quality score per backtest trade
-                          const tFund = Math.min(Math.abs(t.score) / 5, 1) * 4
-                          const tContr = t.momentum >= 30 && t.momentum <= 120 ? 2.5 : 1.5
-                          const tQS = Math.min(10, Math.round((tFund + tContr + 1.5) * 10) / 10) // IM en regime niet beschikbaar in backtest, schat op 1.5
-                          return (
-                          <div key={i} className="flex items-center justify-between px-3 py-1 text-[9px] border-b border-white/[0.02] hover:bg-white/[0.02]">
+                    <div className="flex items-center justify-between px-3 py-1.5 text-[8px] text-text-dim/40 border-b border-white/[0.04]">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2" />
+                        <span className="w-[70px]">Datum</span>
+                        <span className="w-[65px]">Pair</span>
+                        <span className="w-12">Richting</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-right">
+                        <span className="w-10">Score</span>
+                        <span className="w-12">Mom</span>
+                        <span className="w-16">Models</span>
+                        <span className="w-12">Pips</span>
+                        <span className="w-16">Status</span>
+                      </div>
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto">
+                      {trackRecord.recentTrades.map((t, i) => {
+                        const isBull = t.direction?.includes('bullish')
+                        const absMom = Math.abs(t.momentum || 0)
+                        const models: string[] = []
+                        if (t.selective) models.push('SEL')
+                        if (t.balanced) models.push('BAL')
+                        models.push('AGG')
+                        return (
+                          <div key={i} className={`flex items-center justify-between px-3 py-1.5 text-[9px] border-b border-white/[0.02] hover:bg-white/[0.02] ${
+                            t.result === 'correct' ? 'bg-green-500/[0.02]' : t.result === 'incorrect' ? 'bg-red-500/[0.02]' : ''
+                          }`}>
                             <div className="flex items-center gap-2">
-                              <span className={`w-1.5 h-1.5 rounded-full ${t.result === 'correct' ? 'bg-green-400' : 'bg-red-400'}`} />
+                              <span className={`w-2 h-2 rounded-full ${t.result === 'correct' ? 'bg-green-400' : t.result === 'incorrect' ? 'bg-red-400' : 'bg-amber-400 animate-pulse'}`} />
                               <span className="text-text-dim/50 font-mono w-[70px]">{t.date}</span>
                               <span className="font-mono font-bold text-heading w-[65px]">{t.pair}</span>
-                              <span className={`w-4 ${t.direction.includes('bullish') ? 'text-green-400' : 'text-red-400'}`}>{t.direction.includes('bullish') ? '\u25B2' : '\u25BC'}</span>
+                              <span className={`w-12 font-bold ${isBull ? 'text-green-400' : 'text-red-400'}`}>{isBull ? '\u25B2 LONG' : '\u25BC SHORT'}</span>
                             </div>
                             <div className="flex items-center gap-2 text-right">
-                              <span className={`font-mono font-bold w-8 text-[8px] px-1 rounded ${tQS >= 7 ? 'bg-green-500/15 text-green-400' : tQS >= 5 ? 'bg-amber-500/15 text-amber-400' : 'bg-white/[0.06] text-text-dim'}`}>{tQS.toFixed(1)}</span>
                               <span className="text-text-dim font-mono w-10">{t.score > 0 ? '+' : ''}{t.score}</span>
-                              <span className="text-text-dim font-mono w-10">{t.momentum}p</span>
-                              <span className="text-text-dim font-mono w-10">{t.pips > 0 ? '+' : ''}{t.pips}p</span>
-                              <span className={`font-mono font-bold w-14 ${t.result === 'correct' ? 'text-green-400' : 'text-red-400'}`}>
-                                {t.result === 'correct' ? 'WIN' : 'LOSS'}
+                              <span className="text-text-dim font-mono w-12">{absMom}p</span>
+                              <span className="text-text-dim font-mono w-16 text-[8px]">{models.join('/')}</span>
+                              <span className={`font-mono font-bold w-12 ${
+                                t.result === 'correct' ? 'text-green-400' : t.result === 'incorrect' ? 'text-red-400' : 'text-text-dim'
+                              }`}>
+                                {t.result === 'pending' ? '—' : `${t.pips > 0 ? '+' : ''}${t.pips}p`}
+                              </span>
+                              <span className={`font-mono font-bold w-16 text-[8px] px-1.5 py-0.5 rounded ${
+                                t.result === 'correct' ? 'bg-green-500/15 text-green-400' :
+                                t.result === 'incorrect' ? 'bg-red-500/15 text-red-400' :
+                                'bg-amber-500/10 text-amber-400'
+                              }`}>
+                                {t.result === 'correct' ? 'WIN' : t.result === 'incorrect' ? 'LOSS' : 'PENDING'}
                               </span>
                             </div>
                           </div>
-                          )
-                        })}
-                      </div>
-                      <div className="mt-2 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] text-[9px] text-text-dim space-y-2">
-                        <p className="text-text-muted font-semibold">Hoe lees je dit trackrecord?</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div>
-                            <p className="text-text-muted font-semibold mb-0.5">Kolommen</p>
-                            <p><strong className="text-heading">Score:</strong> Fundamentele divergentie tussen de twee valuta&apos;s (CB beleid &times;2 + rente &times;1.5 + nieuws)</p>
-                            <p><strong className="text-heading">Mom:</strong> Momentum = hoeveel pips de prijs tegen de fundamentele bias bewoog in 5 dagen. Dit bepaalt of de trade in jouw model valt.</p>
-                            <p><strong className="text-heading">Pips:</strong> Werkelijke prijsbeweging na 1 handelsdag (niet SL/TP)</p>
-                          </div>
-                          <div>
-                            <p className="text-text-muted font-semibold mb-0.5">Methodiek</p>
-                            <p>Entry op dagkoers (NY close). Exit +1 handelsdag. Als de prijs in de juiste richting bewoog = <strong className="text-green-400">WIN</strong>, anders = <strong className="text-red-400">LOSS</strong>.</p>
-                            <p className="mt-1"><strong className="text-heading">Waarom geen SL/TP per trade?</strong> De backtest gebruikt dagkoersen uit het fundamentele trackrecord. De SL ({model.sl}p) en TP ({model.tp}p) zijn gebaseerd op MAE/MFE analyse — jij bepaalt de exacte entry en SL/TP op de 1H chart met de reversal candle methode.</p>
-                          </div>
-                        </div>
-                        <div className="p-2 rounded bg-accent/5 border border-accent/10">
-                          <p className="text-accent-light font-semibold mb-0.5">Wanneer enter je bij jouw model ({model.name})?</p>
-                          <p>De Daily Macro Briefing geeft een concrete trade. Jij checkt de momentum: is de prijs <strong className="text-heading">{model.momMin > 0 ? model.momMin + '-' + model.momMax + ' pips' : 'ongeacht hoeveel pips'}</strong> tegen de bias bewogen in 5 dagen? Zo ja → open de 1H chart → wacht op reversal candle → entry op close → SL {model.sl}p, TP {model.tp}p.</p>
-                        </div>
-                      </div>
-                    </details>
-                  </div>
-                )}
-
-                {/* Live recente trades */}
-                {trackRecord && trackRecord.recentTrades.length > 0 && (
-                  <details className="group">
-                    <summary className="text-[10px] text-text-dim/50 cursor-pointer hover:text-text-dim flex items-center gap-1">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-transform group-open:rotate-90"><polyline points="9 18 15 12 9 6" /></svg>
-                      Laatste {Math.min(20, trackRecord.recentTrades.length)} trades
-                    </summary>
-                    <div className="mt-2 space-y-1">
-                      {trackRecord.recentTrades.map((t, i) => (
-                        <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-white/[0.02] text-[10px]">
-                          <div className="flex items-center gap-2">
-                            <span className={`w-1.5 h-1.5 rounded-full ${t.result === 'correct' ? 'bg-green-400' : t.result === 'incorrect' ? 'bg-red-400' : 'bg-amber-400'}`} />
-                            <span className="text-text-dim/50">{t.date}</span>
-                            <span className="font-mono font-bold text-heading">{t.pair}</span>
-                            <span className={t.direction?.includes('bullish') ? 'text-green-400' : 'text-red-400'}>{t.direction?.includes('bullish') ? '\u25B2' : '\u25BC'}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-text-dim font-mono">{t.momentum > 0 ? '+' : ''}{t.momentum}p</span>
-                            <span className={`font-mono font-bold ${t.result === 'correct' ? 'text-green-400' : t.result === 'incorrect' ? 'text-red-400' : 'text-amber-400'}`}>
-                              {t.result === 'pending' ? 'pending' : t.pips > 0 ? '+' + t.pips + 'p' : t.pips + 'p'}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
-                  </details>
-                )}
-              </>
+                  </div>
+                </div>
+              )}
+
+              {/* Backtest trades detail (collapsible) */}
+              {modelBT.length > 0 && (
+                <details className="group">
+                  <summary className="text-[10px] text-text-dim/50 cursor-pointer hover:text-text-dim flex items-center gap-1">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-transform group-open:rotate-90"><polyline points="9 18 15 12 9 6" /></svg>
+                    Backtest detail ({model.name}): {modelBT.length} trades, {btWR}% WR, {btPips > 0 ? '+' : ''}{btPips} pips
+                  </summary>
+                  <div className="mt-2 max-h-72 overflow-y-auto">
+                    {modelBT.slice().sort((a, b) => b.date.localeCompare(a.date)).map((t, i) => (
+                      <div key={i} className="flex items-center justify-between px-3 py-1 text-[9px] border-b border-white/[0.02] hover:bg-white/[0.02]">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-1.5 h-1.5 rounded-full ${t.result === 'correct' ? 'bg-green-400' : 'bg-red-400'}`} />
+                          <span className="text-text-dim/50 font-mono w-[70px]">{t.date}</span>
+                          <span className="font-mono font-bold text-heading w-[65px]">{t.pair}</span>
+                          <span className={`w-4 ${t.direction.includes('bullish') ? 'text-green-400' : 'text-red-400'}`}>{t.direction.includes('bullish') ? '\u25B2' : '\u25BC'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-right">
+                          <span className="text-text-dim font-mono w-10">{t.score > 0 ? '+' : ''}{t.score}</span>
+                          <span className="text-text-dim font-mono w-10">{t.momentum}p</span>
+                          <span className="text-text-dim font-mono w-10">{t.pips > 0 ? '+' : ''}{t.pips}p</span>
+                          <span className={`font-mono font-bold w-14 ${t.result === 'correct' ? 'text-green-400' : 'text-red-400'}`}>
+                            {t.result === 'correct' ? 'WIN' : 'LOSS'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </>
             )
-            })()}
+          })()}
+
+          {/* Methodiek uitleg */}
+          <div className="mt-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] text-[9px] text-text-dim">
+            <p className="text-text-muted font-semibold mb-1">Hoe werkt het?</p>
+            <p>Elke werkdag worden concrete trades (4/4 filters) opgeslagen met entry prijs, momentum, en in welk model ze vallen. Na 1 handelsdag wordt de exit prijs opgehaald en het resultaat bepaald. Updates: 4x per dag (08:30, 12:00, 14:30, 21:00 NL).</p>
           </div>
-        )}
+        </div>
       </section>
 
       {/* ═══ DATA SCHEMA ═══ */}
