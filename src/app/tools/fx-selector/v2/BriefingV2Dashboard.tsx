@@ -266,19 +266,37 @@ function getTradeFocus(
   ranking: CurrencyRank[],
   v3Signals?: { pair: string; signal: string; conviction: number; score: number; tradeability: { status: string; reasons: string[] }; intermarket: { pair: string; alignment: number; signals: { instrument: string; direction: string; strength: number; relevance: string }[] }; reasons: string[]; priceMomentum: { direction: string; pips1d: number; pips5d: number; atr20d: number; extensionRatio: number } }[],
   globalImAlignment?: number,
+  todayTrackRecords?: TrackRecord[],
 ) {
   // ─── Unified criteria (exact same as trackrecord) ───
   // 1. Score >= 2.0
   // 2. IM alignment > 50% (global regime check)
   // 3. Contrarian: 5d price momentum opposes fundamental direction (mean reversion)
   // 4. Direction not neutral
+  //
+  // IMPORTANT: The trackrecord cron and this live calculation both fetch Yahoo Finance
+  // data independently. Small timing differences can cause one to see a pair as
+  // contrarian while the other doesn't. To stay in sync, we merge today's trackrecord
+  // records as the source of truth (they are what actually gets tracked).
 
   const imOk = (globalImAlignment ?? 0) > 50
+
+  // Pairs from today's trackrecord — these are the authoritative "concrete trades"
+  const today = new Date().toISOString().split('T')[0]
+  const todayTRPairs = new Set(
+    (todayTrackRecords || [])
+      .filter(r => r.date === today)
+      .map(r => r.pair)
+  )
 
   const primary = pairs
     .filter(p => {
       // Filter 1: Score >= 2.0 + has direction
       if (Math.abs(p.score) < 2.0 || p.direction === 'neutraal') return false
+
+      // If this pair is in today's trackrecord, it passed all filters at record time
+      // → always include it so briefing and trackrecord stay in sync
+      if (todayTRPairs.has(p.pair)) return true
 
       // Filter 2: Global IM alignment > 50%
       if (!imOk) return false
@@ -289,8 +307,6 @@ function getTradeFocus(
         if (sig) {
           const isBullish = p.direction.includes('bullish')
           const pips5d = sig.priceMomentum?.pips5d ?? 0
-          // Bullish signal requires price went DOWN (negative pips5d)
-          // Bearish signal requires price went UP (positive pips5d)
           const isContrarian = (isBullish && pips5d < 0) || (!isBullish && pips5d > 0)
           if (!isContrarian) return false
         }
@@ -602,7 +618,7 @@ export default function BriefingV2Dashboard() {
   }
 
   const intermarketConclusion = data?.intermarketSignals ? getIntermarketConclusion(data.intermarketSignals, data.regime) : null
-  const tradeFocusResult = data ? getTradeFocus(data.pairBiases, data.todayEvents, data.currencyRanking, data.v3?.pairSignals, data.intermarketAlignment) : { primary: [], watchlist: [] }
+  const tradeFocusResult = data ? getTradeFocus(data.pairBiases, data.todayEvents, data.currencyRanking, data.v3?.pairSignals, data.intermarketAlignment, trackRecords) : { primary: [], watchlist: [] }
   const tradeFocus = tradeFocusResult.primary
   const watchlist = tradeFocusResult.watchlist
 
