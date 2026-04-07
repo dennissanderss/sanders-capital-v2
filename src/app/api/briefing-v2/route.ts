@@ -72,24 +72,27 @@ const COUNTRY_MAP: Record<string, string> = {
 }
 
 // ─── Scoring Functions ──────────────────────────────────────
-function biasScore(bias: string): number {
-  const b = (bias || '').toLowerCase()
-  if (b.includes('verkrappend') || b.includes('hawkish')) return 2
-  if (b.includes('voorzichtig verkrappend')) return 1.5
-  if (b.includes('afwachtend')) return 0
-  if (b.includes('voorzichtig verruimend')) return -1
-  if (b.includes('verruimend') || b.includes('dovish')) return -2
-  return 0
+// Identical to trackrecord-v2 calcCBScore — must stay in sync
+const BIAS_SCORES: Record<string, number> = {
+  'hawkish': 2, 'verkrappend': 2,
+  'voorzichtig verkrappend': 1.5,
+  'afwachtend': 0, 'neutraal': 0, 'neutral': 0,
+  'voorzichtig verruimend': -1,
+  'dovish': -2, 'verruimend': -2,
 }
 
+function biasScore(bias: string): number {
+  return BIAS_SCORES[(bias || '').toLowerCase()] ?? 0
+}
+
+// Identical to trackrecord-v2 calcRateScore — must stay in sync
 function rateTargetScore(rate: number | null, target: number | null): number {
-  if (rate === null || target === null) return 0
+  if (rate == null || target == null) return 0
   const diff = rate - target
   if (diff > 0.5) return 1
   if (diff > 0) return 0.5
-  if (diff < -0.5) return -1
-  if (diff < 0) return -0.5
-  return 0
+  if (diff > -0.5) return -0.5
+  return -1
 }
 
 // ─── News Sentiment Analysis ────────────────────────────────
@@ -343,7 +346,7 @@ export async function GET() {
         else if (rate.bias) reasons.push(`${rate.bank}: ${rate.bias}`)
 
         rts = rateTargetScore(rate.rate, rate.target)
-        baseScore += rts
+        baseScore += rts * 1.5
         if (rts > 0) reasons.push(`Rente (${rate.rate}%) boven target (${rate.target}%) → restrictief`)
         else if (rts < 0) reasons.push(`Rente (${rate.rate}%) onder target (${rate.target}%) → accommoderend`)
       }
@@ -353,9 +356,9 @@ export async function GET() {
         reasons.push(`${ccyEvents.length} high-impact event(s) vandaag`)
       }
 
-      // News sentiment bonus (capped at +-1.5 to not overpower fundamentals)
+      // News sentiment bonus (capped at +-1.5 — identical to trackrecord)
       const newsData = newsSentiment[ccy]
-      const newsBonus = Math.max(-2.0, Math.min(2.0, newsData?.score || 0))
+      const newsBonus = Math.max(-1.5, Math.min(1.5, newsData?.score || 0))
       if (newsBonus > 0.3) {
         reasons.push(`Nieuws sentiment positief (${newsData.sentiment})`)
       } else if (newsBonus < -0.3) {
@@ -372,7 +375,7 @@ export async function GET() {
           biasLabel: rate?.bias || 'onbekend',
           biasRaw: bs,
           biasMultiplied: bs * 2,
-          rateScore: rts,
+          rateScore: rts * 1.5,
           rate: rate?.rate ?? null,
           target: rate?.target ?? null,
           newsRaw: newsData?.score || 0,
