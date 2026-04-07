@@ -6,6 +6,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { notifyNewTrades, notifyResolvedTrades, notifyNoTrades, isTelegramConfigured } from '@/lib/telegram'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,7 +57,8 @@ export async function POST(request: Request) {
 
   try {
     const today = new Date().toISOString().split('T')[0]
-    const results = { resolved: 0, generated: 0, errors: [] as string[] }
+    const results = { resolved: 0, generated: 0, errors: [] as string[], notified: false }
+    const resolvedTrades: { pair: string; direction: string; result: 'correct' | 'incorrect'; pips: number }[] = []
 
     // ─── STAP 1: Resolve gisteren's pending trades ───────
     const { data: pending } = await supabase
@@ -89,9 +91,15 @@ export async function POST(request: Request) {
           resolved_at: new Date().toISOString(),
         }).eq('id', signal.id)
 
+        resolvedTrades.push({ pair: signal.pair, direction: signal.fund_direction, result, pips: pipsMoved * (result === 'correct' ? 1 : -1) })
         results.resolved++
         await new Promise(r => setTimeout(r, 500))
       }
+    }
+
+    // Notify resolved trades
+    if (resolvedTrades.length > 0 && isTelegramConfigured()) {
+      await notifyResolvedTrades(resolvedTrades)
     }
 
     // ─── STAP 2: Haal briefing data op ───────────────────
@@ -115,6 +123,7 @@ export async function POST(request: Request) {
 
     // ─── STAP 3: Genereer execution signals ──────────────
     const pairBiases = briefing.pairBiases || []
+    const newTrades: { pair: string; direction: string; score: number; momentum5d: number; conviction: string; selectiveZone: boolean; balancedZone: boolean }[] = []
 
     for (const pb of pairBiases) {
       const absScore = Math.abs(pb.score)
@@ -171,8 +180,22 @@ export async function POST(request: Request) {
         result: 'pending',
       })
 
+      newTrades.push({ pair: pb.pair, direction: pb.direction, score: pb.score, momentum5d: pips5d, conviction: pb.conviction, selectiveZone, balancedZone })
       results.generated++
       await new Promise(r => setTimeout(r, 500))
+    }
+
+    // ─── STAP 4: Telegram notificatie ────────────────────
+    if (isTelegramConfigured()) {
+      if (newTrades.length > 0) {
+        results.notified = await notifyNewTrades(newTrades, briefing.regime || 'Gemengd', imAlignment)
+      } else {
+        const reason = imAlignment <= 50
+          ? `IM alignment te laag (${imAlignment}%)`
+          : 'Geen paren passeren alle 4 filters'
+        await notifyNoTrades(briefing.regime || 'Gemengd', imAlignment, reason)
+        results.notified = true
+      }
     }
 
     return NextResponse.json({
