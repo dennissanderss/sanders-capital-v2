@@ -2,7 +2,7 @@
 // 4x per werkdag via Vercel Cron, afgestemd op trading sessies:
 //   06:30 UTC (08:30 NL) — voor London open
 //   10:00 UTC (12:00 NL) — middag update
-//   12:30 UTC (14:30 NL) — voor New York open
+//   12:00 UTC (14:00 NL) — New York sessie
 //   19:00 UTC (21:00 NL) — einde handelsdag + resolve
 //
 // Elke run:
@@ -14,7 +14,8 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { notifyNewTrades, notifyResolvedTrades, notifyNoTrades, notifySessionUpdate, isTelegramConfigured } from '@/lib/telegram'
+import { notifyMorning, notifyNewTrades, notifySessionUpdate, notifyEvening, isTelegramConfigured } from '@/lib/telegram'
+import type { TradeSignal } from '@/lib/telegram'
 
 function getSupabase() {
   return createClient(
@@ -40,12 +41,14 @@ const MODELS = {
 }
 
 // Bepaal huidige trading sessie
-function getCurrentSession(): { name: string; emoji: string; isEndOfDay: boolean } {
+// 06:30 UTC = 08:30 NL (ochtend), 10:00 UTC = 12:00 NL (middag),
+// 12:00 UTC = 14:00 NL (NY), 19:00 UTC = 21:00 NL (einde dag)
+function getCurrentSession(): { name: string; emoji: string; isEndOfDay: boolean; isMorning: boolean } {
   const hour = new Date().getUTCHours()
-  if (hour <= 7) return { name: 'London Pre-Market', emoji: '🇬🇧', isEndOfDay: false }
-  if (hour <= 11) return { name: 'London / Middag', emoji: '🌍', isEndOfDay: false }
-  if (hour <= 14) return { name: 'New York Pre-Market', emoji: '🇺🇸', isEndOfDay: false }
-  return { name: 'Einde Handelsdag', emoji: '🌙', isEndOfDay: true }
+  if (hour <= 7) return { name: 'London Pre-Market', emoji: '🇬🇧', isEndOfDay: false, isMorning: true }
+  if (hour <= 11) return { name: 'London / Middag', emoji: '🌍', isEndOfDay: false, isMorning: false }
+  if (hour <= 13) return { name: 'New York Sessie', emoji: '🇺🇸', isEndOfDay: false, isMorning: false }
+  return { name: 'Einde Handelsdag', emoji: '🌙', isEndOfDay: true, isMorning: false }
 }
 
 async function fetchPrice(symbol: string): Promise<number | null> {
@@ -203,19 +206,39 @@ export async function POST(request: Request) {
 
     // ─── STAP 4: Telegram notificatie ────────────────────
     if (isTelegramConfigured()) {
-      // Stuur resolved resultaten (alleen einde-dag)
-      if (resolvedTrades.length > 0) {
-        await notifyResolvedTrades(resolvedTrades)
-      }
+      const regime = briefing.regime || 'Gemengd'
+      const existingCount = existingToday?.length || 0
 
-      // Stuur nieuwe trades of session update
-      if (newTrades.length > 0) {
-        results.notified = await notifyNewTrades(newTrades, briefing.regime || 'Gemengd', imAlignment, session)
+      if (session.isMorning) {
+        // 08:30 — Goedemorgen met welkom + eerste trades
+        results.notified = await notifyMorning(newTrades, regime, imAlignment, existingCount, pairBiases.length)
+      } else if (session.isEndOfDay) {
+        // 21:00 — Goedenavond met resultaten + samenvatting
+        // Haal alle trades van vandaag op voor de samenvatting
+        const { data: allToday } = await getSupabase()
+          .from('execution_signals')
+          .select('pair, fund_direction, fund_score, momentum_5d, fund_conviction, selective_in_zone, balanced_in_zone')
+          .eq('date', today)
+
+        const todayTrades: TradeSignal[] = (allToday || []).map(t => ({
+          pair: t.pair,
+          direction: t.fund_direction,
+          score: t.fund_score,
+          momentum5d: t.momentum_5d,
+          conviction: t.fund_conviction,
+          selectiveZone: t.selective_in_zone,
+          balancedZone: t.balanced_in_zone,
+        }))
+
+        results.notified = await notifyEvening(resolvedTrades, todayTrades, regime, imAlignment)
       } else {
-        // Stuur session update met status (bestaande trades of geen trades)
-        const existingCount = existingToday?.length || 0
-        await notifySessionUpdate(session, briefing.regime || 'Gemengd', imAlignment, existingCount, pairBiases.length)
-        results.notified = true
+        // 12:00 / 14:00 — Sessie alerts
+        if (newTrades.length > 0) {
+          results.notified = await notifyNewTrades(newTrades, regime, imAlignment, session)
+        } else {
+          await notifySessionUpdate(session, regime, imAlignment, existingCount, pairBiases.length)
+          results.notified = true
+        }
       }
     }
 
