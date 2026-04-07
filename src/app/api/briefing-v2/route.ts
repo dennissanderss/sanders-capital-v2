@@ -1024,53 +1024,92 @@ const YAHOO_SYMBOLS: Record<string, string> = {
   dxy: 'DX-Y.NYB',
 }
 
+async function fetchSingleQuote(symbol: string): Promise<Response | null> {
+  // Try query1 first, then query2 as fallback
+  for (const host of ['query1.finance.yahoo.com', 'query2.finance.yahoo.com']) {
+    try {
+      const res = await fetch(`https://${host}/v8/finance/chart/${symbol}?interval=1d&range=5d`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+        next: { revalidate: 300 },
+      })
+      if (res.ok) return res
+    } catch { /* try next host */ }
+  }
+  return null
+}
+
+function parseQuote(key: string, json: Record<string, unknown>): MarketQuote | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const chart = json as any
+    const meta = chart?.chart?.result?.[0]?.meta
+    const closes = chart?.chart?.result?.[0]?.indicators?.quote?.[0]?.close
+
+    if (!meta || !closes || closes.length < 1) return null
+
+    const validCloses = (closes as (number | null)[]).filter((c): c is number => c != null)
+    const current = meta.regularMarketPrice ?? validCloses[validCloses.length - 1]
+    const previous = validCloses.length >= 2 ? validCloses[validCloses.length - 2] : validCloses[0]
+
+    if (current == null || previous == null || previous === 0) return null
+
+    const change = +(current - previous).toFixed(2)
+    const changePct = +((change / previous) * 100).toFixed(2)
+    const displayCurrent = key === 'us10y' ? +(current).toFixed(3) : +(current).toFixed(2)
+
+    return {
+      current: displayCurrent,
+      previousClose: key === 'us10y' ? +(previous).toFixed(3) : +(previous).toFixed(2),
+      change,
+      changePct,
+      direction: change > 0.01 ? 'up' : change < -0.01 ? 'down' : 'flat',
+    }
+  } catch { return null }
+}
+
 async function fetchMarketData(): Promise<Record<string, MarketQuote>> {
   const result: Record<string, MarketQuote> = {}
 
   try {
     const entries = Object.entries(YAHOO_SYMBOLS)
+
+    // First pass: fetch all in parallel
     const responses = await Promise.allSettled(
-      entries.map(([, symbol]) =>
-        fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=5d`, {
-          headers: { 'User-Agent': 'Mozilla/5.0' },
-          next: { revalidate: 300 },
-        })
-      )
+      entries.map(([, symbol]) => fetchSingleQuote(symbol))
     )
 
+    const failedKeys: [string, string][] = []
+
     for (let i = 0; i < entries.length; i++) {
-      const [key] = entries[i]
+      const [key, symbol] = entries[i]
       const response = responses[i]
-      if (response.status !== 'fulfilled' || !response.value.ok) continue
+      if (response.status !== 'fulfilled' || !response.value) {
+        failedKeys.push([key, symbol])
+        continue
+      }
 
       try {
         const json = await response.value.json()
-        const meta = json?.chart?.result?.[0]?.meta
-        const closes = json?.chart?.result?.[0]?.indicators?.quote?.[0]?.close
-
-        if (meta && closes && closes.length >= 1) {
-          // Filter null values (weekends/holidays)
-          const validCloses = closes.filter((c: number | null) => c != null) as number[]
-          const current = meta.regularMarketPrice ?? validCloses[validCloses.length - 1]
-          const previous = validCloses.length >= 2 ? validCloses[validCloses.length - 2] : validCloses[0]
-
-          if (current != null && previous != null && previous !== 0) {
-            const change = +(current - previous).toFixed(2)
-            const changePct = +((change / previous) * 100).toFixed(2)
-            const displayCurrent = key === 'us10y' ? +(current).toFixed(3) : +(current).toFixed(2)
-
-            result[key] = {
-              current: displayCurrent,
-              previousClose: key === 'us10y' ? +(previous).toFixed(3) : +(previous).toFixed(2),
-              change,
-              changePct,
-              direction: change > 0.01 ? 'up' : change < -0.01 ? 'down' : 'flat',
-            }
-          }
+        const quote = parseQuote(key, json)
+        if (quote) {
+          result[key] = quote
+        } else {
+          failedKeys.push([key, symbol])
         }
-      } catch { /* skip */ }
+      } catch { failedKeys.push([key, symbol]) }
     }
-  } catch { /* return empty */ }
+
+    // Retry failed symbols one at a time (prevents bulk rate-limiting)
+    for (const [key, symbol] of failedKeys) {
+      try {
+        const res = await fetchSingleQuote(symbol)
+        if (!res) continue
+        const json = await res.json()
+        const quote = parseQuote(key, json)
+        if (quote) result[key] = quote
+      } catch { /* skip after retry */ }
+    }
+  } catch { /* return whatever we have */ }
 
   return result
 }
