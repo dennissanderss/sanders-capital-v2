@@ -1,12 +1,20 @@
 // ─── Execution Engine Cron ────────────────────────────────────
-// Dagelijks om 21:00 UTC (23:00 NL) via Vercel Cron:
-// 1. Resolve gisteren's pending trades (check prijsbeweging)
-// 2. Genereer vandaag's execution signals (concrete trades + momentum)
+// 4x per werkdag via Vercel Cron, afgestemd op trading sessies:
+//   06:30 UTC (08:30 NL) — voor London open
+//   10:00 UTC (12:00 NL) — middag update
+//   12:30 UTC (14:30 NL) — voor New York open
+//   19:00 UTC (21:00 NL) — einde handelsdag + resolve
+//
+// Elke run:
+// 1. Haalt verse briefing data op (scores, IM, contrarian)
+// 2. Genereert nieuwe execution signals als condities kloppen
+// 3. Stuurt Telegram notificatie
+// 4. Alleen de 19:00 UTC run resolved gisteren's pending trades
 // ──────────────────────────────────────────────────────────────
 
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { notifyNewTrades, notifyResolvedTrades, notifyNoTrades, isTelegramConfigured } from '@/lib/telegram'
+import { notifyNewTrades, notifyResolvedTrades, notifyNoTrades, notifySessionUpdate, isTelegramConfigured } from '@/lib/telegram'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,11 +31,19 @@ const YAHOO_SYMBOLS: Record<string, string> = {
   'EUR/CAD':'EURCAD=X','GBP/NZD':'GBPNZD=X','AUD/CAD':'AUDCAD=X',
 }
 
-// Momentum zone ranges per model
 const MODELS = {
   selective: { momMin: 30, momMax: 120 },
   balanced: { momMin: 20, momMax: 150 },
   aggressive: { momMin: 0, momMax: 9999 },
+}
+
+// Bepaal huidige trading sessie
+function getCurrentSession(): { name: string; emoji: string; isEndOfDay: boolean } {
+  const hour = new Date().getUTCHours()
+  if (hour <= 7) return { name: 'London Pre-Market', emoji: '🇬🇧', isEndOfDay: false }
+  if (hour <= 11) return { name: 'London / Middag', emoji: '🌍', isEndOfDay: false }
+  if (hour <= 14) return { name: 'New York Pre-Market', emoji: '🇺🇸', isEndOfDay: false }
+  return { name: 'Einde Handelsdag', emoji: '🌙', isEndOfDay: true }
 }
 
 async function fetchPrice(symbol: string): Promise<number | null> {
@@ -40,7 +56,6 @@ async function fetchPrice(symbol: string): Promise<number | null> {
     const json = await res.json()
     const closes = json.chart?.result?.[0]?.indicators?.quote?.[0]?.close
     if (!closes || closes.length === 0) return null
-    // Laatste beschikbare close
     for (let i = closes.length - 1; i >= 0; i--) {
       if (closes[i] != null) return closes[i]
     }
@@ -49,7 +64,6 @@ async function fetchPrice(symbol: string): Promise<number | null> {
 }
 
 export async function POST(request: Request) {
-  // Auth check
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && process.env.NODE_ENV !== 'development') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -57,52 +71,52 @@ export async function POST(request: Request) {
 
   try {
     const today = new Date().toISOString().split('T')[0]
-    const results = { resolved: 0, generated: 0, errors: [] as string[], notified: false }
+    const session = getCurrentSession()
+    const results = { resolved: 0, generated: 0, errors: [] as string[], notified: false, session: session.name }
     const resolvedTrades: { pair: string; direction: string; result: 'correct' | 'incorrect'; pips: number }[] = []
 
-    // ─── STAP 1: Resolve gisteren's pending trades ───────
-    const { data: pending } = await supabase
-      .from('execution_signals')
-      .select('*')
-      .eq('result', 'pending')
+    // ─── STAP 1: Resolve ALLEEN oudere pending trades (niet vandaag) ───
+    // Alleen bij einde-dag run, en alleen trades van EERDERE dagen
+    if (session.isEndOfDay) {
+      const { data: pending } = await supabase
+        .from('execution_signals')
+        .select('*')
+        .eq('result', 'pending')
+        .lt('date', today) // alleen oudere trades
 
-    if (pending && pending.length > 0) {
-      for (const signal of pending) {
-        const sym = YAHOO_SYMBOLS[signal.pair]
-        if (!sym) continue
+      if (pending && pending.length > 0) {
+        for (const signal of pending) {
+          const sym = YAHOO_SYMBOLS[signal.pair]
+          if (!sym) continue
 
-        const exitPrice = await fetchPrice(sym)
-        if (!exitPrice || !signal.entry_price) continue
+          const exitPrice = await fetchPrice(sym)
+          if (!exitPrice || !signal.entry_price) continue
 
-        const isBull = signal.fund_direction === 'bullish' || signal.fund_direction?.includes('bullish')
-        const isJpy = signal.pair.includes('JPY')
-        const pipSize = isJpy ? 0.01 : 0.0001
-        const priceDiff = exitPrice - signal.entry_price
-        const pipsMoved = Math.round(Math.abs(priceDiff) / pipSize)
+          const isBull = signal.fund_direction === 'bullish' || signal.fund_direction?.includes('bullish')
+          const isJpy = signal.pair.includes('JPY')
+          const pipSize = isJpy ? 0.01 : 0.0001
+          const priceDiff = exitPrice - signal.entry_price
+          const pipsMoved = Math.round(Math.abs(priceDiff) / pipSize)
 
-        let result: 'correct' | 'incorrect' = 'incorrect'
-        if (isBull && priceDiff > 0) result = 'correct'
-        if (!isBull && priceDiff < 0) result = 'correct'
+          let result: 'correct' | 'incorrect' = 'incorrect'
+          if (isBull && priceDiff > 0) result = 'correct'
+          if (!isBull && priceDiff < 0) result = 'correct'
 
-        await supabase.from('execution_signals').update({
-          exit_price: exitPrice,
-          result,
-          pips_moved: pipsMoved * (result === 'correct' ? 1 : -1),
-          resolved_at: new Date().toISOString(),
-        }).eq('id', signal.id)
+          await supabase.from('execution_signals').update({
+            exit_price: exitPrice,
+            result,
+            pips_moved: pipsMoved * (result === 'correct' ? 1 : -1),
+            resolved_at: new Date().toISOString(),
+          }).eq('id', signal.id)
 
-        resolvedTrades.push({ pair: signal.pair, direction: signal.fund_direction, result, pips: pipsMoved * (result === 'correct' ? 1 : -1) })
-        results.resolved++
-        await new Promise(r => setTimeout(r, 500))
+          resolvedTrades.push({ pair: signal.pair, direction: signal.fund_direction, result, pips: pipsMoved * (result === 'correct' ? 1 : -1) })
+          results.resolved++
+          await new Promise(r => setTimeout(r, 500))
+        }
       }
     }
 
-    // Notify resolved trades
-    if (resolvedTrades.length > 0 && isTelegramConfigured()) {
-      await notifyResolvedTrades(resolvedTrades)
-    }
-
-    // ─── STAP 2: Haal briefing data op ───────────────────
+    // ─── STAP 2: Haal verse briefing data op ─────────────
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.sanderscapital.nl'
     let briefing
     try {
@@ -125,23 +139,26 @@ export async function POST(request: Request) {
     const pairBiases = briefing.pairBiases || []
     const newTrades: { pair: string; direction: string; score: number; momentum5d: number; conviction: string; selectiveZone: boolean; balancedZone: boolean }[] = []
 
+    // Haal ook bestaande trades van vandaag op (voor de session update melding)
+    const { data: existingToday } = await supabase
+      .from('execution_signals')
+      .select('pair, fund_direction, fund_score, momentum_5d, fund_conviction, selective_in_zone, balanced_in_zone')
+      .eq('date', today)
+
     for (const pb of pairBiases) {
       const absScore = Math.abs(pb.score)
       const isBullish = pb.direction?.includes('bullish')
       const isBearish = pb.direction?.includes('bearish')
       const isNeutral = !isBullish && !isBearish
 
-      // Skip als geen richting of te lage score
       if (isNeutral || pb.conviction === 'geen' || absScore < 2.0) continue
 
-      // 4 filters check (exact zoals briefing UI)
       const scorePass = absScore >= 2.0
       const imPass = imAlignment > 50
       const v3 = v3Signals.find((s: { pair: string }) => s.pair === pb.pair)
       const pips5d = v3?.priceMomentum?.pips5d ?? 0
       const contrarianPass = (isBullish && pips5d < 0) || (isBearish && pips5d > 0)
 
-      // Alleen concrete trades (4/4 filters) opslaan
       if (!scorePass || !imPass || !contrarianPass) continue
 
       // Check of al bestaat voor vandaag
@@ -154,15 +171,12 @@ export async function POST(request: Request) {
 
       if (existing && existing.length > 0) continue
 
-      // Haal entry prijs op
       const sym = YAHOO_SYMBOLS[pb.pair]
       const entryPrice = sym ? await fetchPrice(sym) : null
 
-      // Momentum zone per model
       const absMom = Math.abs(pips5d)
       const selectiveZone = absMom >= MODELS.selective.momMin && absMom <= MODELS.selective.momMax
       const balancedZone = absMom >= MODELS.balanced.momMin && absMom <= MODELS.balanced.momMax
-      const aggressiveZone = true // alle momentum
 
       await supabase.from('execution_signals').insert({
         date: today,
@@ -175,7 +189,7 @@ export async function POST(request: Request) {
         is_contrarian: contrarianPass,
         selective_in_zone: selectiveZone,
         balanced_in_zone: balancedZone,
-        aggressive_in_zone: aggressiveZone,
+        aggressive_in_zone: true,
         entry_price: entryPrice,
         result: 'pending',
       })
@@ -187,13 +201,18 @@ export async function POST(request: Request) {
 
     // ─── STAP 4: Telegram notificatie ────────────────────
     if (isTelegramConfigured()) {
+      // Stuur resolved resultaten (alleen einde-dag)
+      if (resolvedTrades.length > 0) {
+        await notifyResolvedTrades(resolvedTrades)
+      }
+
+      // Stuur nieuwe trades of session update
       if (newTrades.length > 0) {
-        results.notified = await notifyNewTrades(newTrades, briefing.regime || 'Gemengd', imAlignment)
+        results.notified = await notifyNewTrades(newTrades, briefing.regime || 'Gemengd', imAlignment, session)
       } else {
-        const reason = imAlignment <= 50
-          ? `IM alignment te laag (${imAlignment}%)`
-          : 'Geen paren passeren alle 4 filters'
-        await notifyNoTrades(briefing.regime || 'Gemengd', imAlignment, reason)
+        // Stuur session update met status (bestaande trades of geen trades)
+        const existingCount = existingToday?.length || 0
+        await notifySessionUpdate(session, briefing.regime || 'Gemengd', imAlignment, existingCount, pairBiases.length)
         results.notified = true
       }
     }
@@ -210,18 +229,15 @@ export async function POST(request: Request) {
 }
 
 // GET: Vercel cron trigger + trackrecord stats
-// Vercel cron roept altijd GET aan, dus we genereren hier ook signals
 export async function GET(request: Request) {
-  // Als het een cron call is (heeft CRON_SECRET of is scheduled), genereer signals
   const authHeader = request.headers.get('authorization')
   const isCron = authHeader === `Bearer ${process.env.CRON_SECRET}` || request.headers.get('x-vercel-cron')
 
   if (isCron) {
-    // Delegate naar de POST logica
     return POST(new Request(request.url, { method: 'POST', headers: request.headers }))
   }
 
-  // Anders: retourneer stats
+  // Stats endpoint
   try {
     const { data: signals } = await supabase
       .from('execution_signals')
@@ -233,7 +249,6 @@ export async function GET(request: Request) {
     const resolved = signals.filter(s => s.result === 'correct' || s.result === 'incorrect')
     const pending = signals.filter(s => s.result === 'pending')
 
-    // Stats per model
     function modelStats(filterFn: (s: typeof signals[0]) => boolean) {
       const filtered = resolved.filter(filterFn)
       const correct = filtered.filter(s => s.result === 'correct').length

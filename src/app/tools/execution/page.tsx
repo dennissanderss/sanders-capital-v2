@@ -897,6 +897,64 @@ export default function ExecutionPage() {
         )}
       </section>
 
+      {/* ═══ DATA SCHEMA ═══ */}
+      <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+        <details className="group">
+          <summary className="px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.02]">
+            <div className="flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-light"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              <span className="text-xs font-semibold text-heading uppercase tracking-wider">Data Updates &amp; Schema</span>
+            </div>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim transition-transform group-open:rotate-180"><polyline points="6 9 12 15 18 9" /></svg>
+          </summary>
+          <div className="px-5 pb-5 border-t border-white/[0.04]">
+            <div className="mt-3 mb-4">
+              <p className="text-[10px] text-text-muted font-semibold mb-3">Automatische data updates — 4x per werkdag</p>
+              <p className="text-[9px] text-text-dim mb-3">Alle data wordt automatisch ververst voor elke belangrijke trading sessie. Je ontvangt een Telegram notificatie bij elke scan.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                {[
+                  { time: '08:30', label: 'London Pre-Market', emoji: '\uD83C\uDDEC\uD83C\uDDE7', desc: 'Verse analyse voor de Londense sessie. Nieuws, scores en IM worden opnieuw berekend.', color: 'border-blue-500/20 bg-blue-500/5' },
+                  { time: '12:00', label: 'Middag Update', emoji: '\uD83C\uDF0D', desc: 'Herberekening na de ochtend. Nieuwe trades als condities veranderd zijn.', color: 'border-amber-500/20 bg-amber-500/5' },
+                  { time: '14:30', label: 'New York Pre-Market', emoji: '\uD83C\uDDFA\uD83C\uDDF8', desc: 'Verse data voor de NY sessie. Vaak veranderen IM en momentum in de middag.', color: 'border-green-500/20 bg-green-500/5' },
+                  { time: '21:00', label: 'Einde Handelsdag', emoji: '\uD83C\uDF19', desc: 'Laatste scan + resolve van gisteren\'s trades. Resultaten worden bepaald.', color: 'border-purple-500/20 bg-purple-500/5' },
+                ].map((s, i) => (
+                  <div key={i} className={`p-3 rounded-xl border ${s.color}`}>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className="text-sm">{s.emoji}</span>
+                      <span className="text-[10px] font-bold text-heading">{s.time} NL</span>
+                    </div>
+                    <p className="text-[10px] font-semibold text-text-muted mb-1">{s.label}</p>
+                    <p className="text-[9px] text-text-dim leading-relaxed">{s.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[9px] text-text-dim">
+              <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                <p className="text-text-muted font-semibold mb-1">Wat wordt er ververst?</p>
+                <ul className="space-y-1">
+                  <li><strong className="text-heading">Nieuws:</strong> RSS feeds van Reuters, FXStreet, ForexLive, DailyFX — impact op de nieuwsbonus in de score</li>
+                  <li><strong className="text-heading">Briefing:</strong> CB beleid, renteverschillen, intermarket data (VIX, S&amp;P, Gold, Yields, Oil)</li>
+                  <li><strong className="text-heading">Prijzen:</strong> Yahoo Finance — 5d momentum, entry prices</li>
+                  <li><strong className="text-heading">Signals:</strong> Nieuwe concrete trades als condities veranderen</li>
+                </ul>
+              </div>
+              <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                <p className="text-text-muted font-semibold mb-1">Telegram notificaties</p>
+                <ul className="space-y-1">
+                  <li><strong className="text-green-400">Nieuwe trades:</strong> Pair, richting, score, momentum, welke models</li>
+                  <li><strong className="text-amber-400">Geen trades:</strong> Reden (IM te laag, geen filters) + marktoverzicht</li>
+                  <li><strong className="text-accent-light">Resultaten:</strong> Win/loss per trade, pips, winrate van resolved trades</li>
+                  <li><strong className="text-text-dim">Elke sessie:</strong> Update zelfs als er geen nieuwe trades zijn</li>
+                </ul>
+                <p className="mt-2 text-[8px] text-text-dim/40">Setup: @BotFather in Telegram → /newbot → token in Vercel env vars</p>
+              </div>
+            </div>
+          </div>
+        </details>
+      </section>
+
       {/* ═══ ONDERBOUWING ═══ */}
       <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
         <details className="group">
