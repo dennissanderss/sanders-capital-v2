@@ -86,6 +86,18 @@ export interface TradeSignal {
   conviction: string
   selectiveZone: boolean
   balancedZone: boolean
+  qualityScore?: number  // 1-10, berekend uit fund + momentum + IM + regime
+}
+
+// Calculate quality score (same formula as execution page)
+function calcQuality(t: TradeSignal, im: number, regimeAligned: boolean): number {
+  const absScore = Math.abs(t.score)
+  const absMom = Math.abs(t.momentum5d)
+  const fundPts = Math.min(4, absScore * 1.2)
+  const contrarianPts = absMom >= 30 && absMom <= 120 ? 2.5 : 1.5
+  const imPts = (im / 100) * 2
+  const regimePts = regimeAligned ? 1.5 : 0.5
+  return Math.min(10, Math.round((fundPts + contrarianPts + imPts + regimePts) * 10) / 10)
 }
 
 export async function notifyNewTrades(
@@ -96,10 +108,16 @@ export async function notifyNewTrades(
 ): Promise<boolean> {
   if (trades.length === 0) return true
 
+  // Add quality scores
+  const withQuality = trades.map(t => ({
+    ...t,
+    quality: t.qualityScore ?? calcQuality(t, im, true),
+  }))
+
   // Group trades by highest model they qualify for
-  const selective = trades.filter(t => t.selectiveZone)
-  const balancedOnly = trades.filter(t => t.balancedZone && !t.selectiveZone)
-  const aggressiveOnly = trades.filter(t => !t.balancedZone && !t.selectiveZone)
+  const selective = withQuality.filter(t => t.selectiveZone)
+  const balancedOnly = withQuality.filter(t => t.balancedZone && !t.selectiveZone)
+  const aggressiveOnly = withQuality.filter(t => !t.balancedZone && !t.selectiveZone)
 
   const lines = [
     `━━━━━━━━━━━━━━━━━━━━━━`,
@@ -124,7 +142,7 @@ export async function notifyNewTrades(
       `<i>Momentum ${m.momMin}-${m.momMax}p tegen de bias</i>`,
     )
     for (const t of selective) {
-      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  Score ${t.score > 0 ? '+' : ''}${t.score}  ·  Mom ${Math.abs(t.momentum5d)}p`)
+      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  ${t.quality.toFixed(1)}/10  ·  Mom ${Math.abs(t.momentum5d)}p`)
     }
     lines.push(``)
   }
@@ -137,7 +155,7 @@ export async function notifyNewTrades(
       `<i>Momentum ${m.momMin}-${m.momMax}p tegen de bias</i>`,
     )
     for (const t of balancedOnly) {
-      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  Score ${t.score > 0 ? '+' : ''}${t.score}  ·  Mom ${Math.abs(t.momentum5d)}p`)
+      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  ${t.quality.toFixed(1)}/10  ·  Mom ${Math.abs(t.momentum5d)}p`)
     }
     lines.push(``)
   }
@@ -150,7 +168,7 @@ export async function notifyNewTrades(
       `<i>Geen momentum filter</i>`,
     )
     for (const t of aggressiveOnly) {
-      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  Score ${t.score > 0 ? '+' : ''}${t.score}  ·  Mom ${Math.abs(t.momentum5d)}p`)
+      lines.push(`  ${dirArrow(t.direction)} <b>${t.pair}</b>  ${dirLabel(t.direction)}  ·  ${t.quality.toFixed(1)}/10  ·  Mom ${Math.abs(t.momentum5d)}p`)
     }
     lines.push(``)
   }
