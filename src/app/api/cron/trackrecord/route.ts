@@ -1,9 +1,12 @@
 // ─── Cron: Daily Track Record Update ───────────────────────
 // Resolves pending trades & generates new signals
-// Called by Vercel Cron + external cron via trigger-all
+// Re-exports the trackrecord-v2 POST logic directly
 // ────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server'
+
+// Import the POST handler directly to avoid self-fetch issues on Vercel
+import { POST as trackrecordPost } from '@/app/api/trackrecord-v2/route'
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
@@ -14,30 +17,14 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Use SITE_URL with redirect: 'follow' to handle www redirects
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-
-    const res = await fetch(`${baseUrl}/api/trackrecord-v2`, {
+    // Call the trackrecord-v2 POST handler directly (no HTTP needed)
+    const fakeRequest = new Request('http://localhost/api/trackrecord-v2', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      redirect: 'follow',
+      headers: { 'Content-Type': 'application/json' },
     })
 
-    // Guard against HTML responses (redirect)
-    const contentType = res.headers.get('content-type') || ''
-    if (!contentType.includes('json')) {
-      return NextResponse.json({
-        success: false,
-        error: `Got ${contentType} instead of JSON (status ${res.status}). Possible redirect.`,
-        url: `${baseUrl}/api/trackrecord-v2`,
-        timestamp: new Date().toISOString(),
-      }, { status: 500 })
-    }
-
-    const data = await res.json()
+    const response = await trackrecordPost(fakeRequest)
+    const data = await response.json()
 
     return NextResponse.json({
       success: true,
