@@ -11,10 +11,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 // All 21 pairs — unified with briefing system
 const PAIR_SYMBOLS: Record<string, string> = {
@@ -232,7 +234,7 @@ async function fetchHistoricalPrices(symbol: string, days: number): Promise<{ da
 // ─── DELETE: Clear all v2 backfill records ─────────────────
 export async function DELETE() {
   try {
-    const { data: records, error: fetchError } = await supabase
+    const { data: records, error: fetchError } = await getSupabase()
       .from('trade_focus_records')
       .select('id, metadata')
       .eq('metadata->>source', 'v2')
@@ -255,7 +257,7 @@ export async function DELETE() {
     let deleted = 0
     for (let i = 0; i < backfillIds.length; i += 50) {
       const batch = backfillIds.slice(i, i + 50)
-      const { error } = await supabase.from('trade_focus_records').delete().in('id', batch)
+      const { error } = await getSupabase().from('trade_focus_records').delete().in('id', batch)
       if (!error) deleted += batch.length
     }
 
@@ -272,13 +274,13 @@ export async function POST(request: Request) {
     const days = Math.min(body.days || 365, 365)
 
     // Check metadata column
-    const { error: metaErr } = await supabase.from('trade_focus_records').select('metadata').limit(1)
+    const { error: metaErr } = await getSupabase().from('trade_focus_records').select('metadata').limit(1)
     if (metaErr) {
       return NextResponse.json({ error: 'metadata column not found' }, { status: 400 })
     }
 
     // 1. Fetch CB rate snapshots
-    const { data: snapshots } = await supabase
+    const { data: snapshots } = await getSupabase()
       .from('cb_rate_snapshots')
       .select('snapshot_date, currency, rate, target, bias, bank')
       .order('snapshot_date', { ascending: true })
@@ -291,7 +293,7 @@ export async function POST(request: Request) {
     const snapshotDates = Object.keys(snapshotsByDate).sort()
 
     // Current rates fallback
-    const { data: cbRatesData } = await supabase
+    const { data: cbRatesData } = await getSupabase()
       .from('central_bank_rates')
       .select('currency, bank, rate, target, bias')
 
@@ -317,7 +319,7 @@ export async function POST(request: Request) {
     // 2. Fetch news articles
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
-    const { data: newsArticles } = await supabase
+    const { data: newsArticles } = await getSupabase()
       .from('news_articles')
       .select('title, summary, affected_currencies, published_at, relevance_score')
       .gte('published_at', startDate.toISOString())
@@ -329,7 +331,7 @@ export async function POST(request: Request) {
     const startDateStr = startDate.toISOString().split('T')[0]
 
     // 4. Existing records
-    const { data: existingRecords } = await supabase
+    const { data: existingRecords } = await getSupabase()
       .from('trade_focus_records')
       .select('date, pair')
       .eq('metadata->>source', 'v2')
@@ -446,7 +448,7 @@ export async function POST(request: Request) {
     })
 
     if (deduped.length > 0) {
-      const { error } = await supabase.from('trade_focus_records').insert(deduped)
+      const { error } = await getSupabase().from('trade_focus_records').insert(deduped)
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }

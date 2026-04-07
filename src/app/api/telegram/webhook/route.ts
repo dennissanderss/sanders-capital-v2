@@ -9,10 +9,12 @@ import { createClient } from '@supabase/supabase-js'
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 function nlTime(): string {
   return new Date().toLocaleTimeString('nl-NL', { timeZone: 'Europe/Amsterdam', hour: '2-digit', minute: '2-digit' })
@@ -127,7 +129,7 @@ async function handleTrades(chatId: number) {
   try {
     const today = new Date().toISOString().split('T')[0]
 
-    const { data: signals } = await supabase
+    const { data: signals } = await getSupabase()
       .from('execution_signals')
       .select('*')
       .eq('date', today)
@@ -186,7 +188,7 @@ async function handleTrades(chatId: number) {
 
 async function handleTrackrecord(chatId: number) {
   try {
-    const { data: signals } = await supabase
+    const { data: signals } = await getSupabase()
       .from('execution_signals')
       .select('*')
       .order('date', { ascending: false })

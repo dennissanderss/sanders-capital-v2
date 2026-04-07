@@ -16,10 +16,12 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { notifyNewTrades, notifyResolvedTrades, notifyNoTrades, notifySessionUpdate, isTelegramConfigured } from '@/lib/telegram'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 const YAHOO_SYMBOLS: Record<string, string> = {
   'EUR/USD':'EURUSD=X','GBP/USD':'GBPUSD=X','USD/JPY':'USDJPY=X',
@@ -78,7 +80,7 @@ export async function POST(request: Request) {
     // ─── STAP 1: Resolve ALLEEN oudere pending trades (niet vandaag) ───
     // Alleen bij einde-dag run, en alleen trades van EERDERE dagen
     if (session.isEndOfDay) {
-      const { data: pending } = await supabase
+      const { data: pending } = await getSupabase()
         .from('execution_signals')
         .select('*')
         .eq('result', 'pending')
@@ -102,7 +104,7 @@ export async function POST(request: Request) {
           if (isBull && priceDiff > 0) result = 'correct'
           if (!isBull && priceDiff < 0) result = 'correct'
 
-          await supabase.from('execution_signals').update({
+          await getSupabase().from('execution_signals').update({
             exit_price: exitPrice,
             result,
             pips_moved: pipsMoved * (result === 'correct' ? 1 : -1),
@@ -140,7 +142,7 @@ export async function POST(request: Request) {
     const newTrades: { pair: string; direction: string; score: number; momentum5d: number; conviction: string; selectiveZone: boolean; balancedZone: boolean }[] = []
 
     // Haal ook bestaande trades van vandaag op (voor de session update melding)
-    const { data: existingToday } = await supabase
+    const { data: existingToday } = await getSupabase()
       .from('execution_signals')
       .select('pair, fund_direction, fund_score, momentum_5d, fund_conviction, selective_in_zone, balanced_in_zone')
       .eq('date', today)
@@ -162,7 +164,7 @@ export async function POST(request: Request) {
       if (!scorePass || !imPass || !contrarianPass) continue
 
       // Check of al bestaat voor vandaag
-      const { data: existing } = await supabase
+      const { data: existing } = await getSupabase()
         .from('execution_signals')
         .select('id')
         .eq('date', today)
@@ -178,7 +180,7 @@ export async function POST(request: Request) {
       const selectiveZone = absMom >= MODELS.selective.momMin && absMom <= MODELS.selective.momMax
       const balancedZone = absMom >= MODELS.balanced.momMin && absMom <= MODELS.balanced.momMax
 
-      await supabase.from('execution_signals').insert({
+      await getSupabase().from('execution_signals').insert({
         date: today,
         pair: pb.pair,
         fund_direction: pb.direction,
@@ -239,7 +241,7 @@ export async function GET(request: Request) {
 
   // Stats endpoint
   try {
-    const { data: signals } = await supabase
+    const { data: signals } = await getSupabase()
       .from('execution_signals')
       .select('*')
       .order('date', { ascending: false })

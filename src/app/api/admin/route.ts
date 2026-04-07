@@ -3,11 +3,13 @@ import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
-// Service role client — bypasses RLS, only used server-side
-const adminSupabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Service role client — bypasses RLS, only used server-side (lazy init for build)
+function getAdminSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 async function getSessionUser() {
   const cookieStore = await cookies()
@@ -46,26 +48,26 @@ export async function POST(req: Request) {
 
   try {
     if (action === 'insert') {
-      const { data: result, error } = await adminSupabase.from(table).insert(data).select().single()
+      const { data: result, error } = await getAdminSupabase().from(table).insert(data).select().single()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ data: result })
     }
 
     if (action === 'update') {
-      const { data: result, error } = await adminSupabase.from(table).update(data).eq('id', id).select().single()
+      const { data: result, error } = await getAdminSupabase().from(table).update(data).eq('id', id).select().single()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ data: result })
     }
 
     if (action === 'delete') {
-      const { error } = await adminSupabase.from(table).delete().eq('id', id)
+      const { error } = await getAdminSupabase().from(table).delete().eq('id', id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true })
     }
 
     // Ban user: set banned_at timestamp on profile
     if (action === 'ban_user') {
-      const { error: profileError } = await adminSupabase
+      const { error: profileError } = await getAdminSupabase()
         .from('profiles')
         .update({ banned_at: new Date().toISOString() })
         .eq('id', id)
@@ -75,7 +77,7 @@ export async function POST(req: Request) {
 
     // Unban user: clear banned_at
     if (action === 'unban_user') {
-      const { error: profileError } = await adminSupabase
+      const { error: profileError } = await getAdminSupabase()
         .from('profiles')
         .update({ banned_at: null })
         .eq('id', id)
@@ -86,9 +88,9 @@ export async function POST(req: Request) {
     // Delete user: remove profile + auth user
     if (action === 'delete_user') {
       // Delete profile first
-      await adminSupabase.from('profiles').delete().eq('id', id)
+      await getAdminSupabase().from('profiles').delete().eq('id', id)
       // Delete auth user
-      const { error: authError } = await adminSupabase.auth.admin.deleteUser(id)
+      const { error: authError } = await getAdminSupabase().auth.admin.deleteUser(id)
       if (authError) return NextResponse.json({ error: authError.message }, { status: 500 })
       return NextResponse.json({ success: true })
     }

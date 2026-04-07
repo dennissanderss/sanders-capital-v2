@@ -13,10 +13,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 const PAIR_SYMBOLS: Record<string, string> = {
   'EUR/USD': 'EURUSD=X',
@@ -269,7 +271,7 @@ function getIntermarketAlignment(
 // ─── GET: Retrieve v2 track record ─────────────────────────
 export async function GET() {
   try {
-    const { data: records, error } = await supabase
+    const { data: records, error } = await getSupabase()
       .from('trade_focus_records')
       .select('*')
       .eq('metadata->>source', 'v2')
@@ -323,7 +325,7 @@ export async function POST() {
 
     // 1. Resolve pending records (1d hold = resolve next trading day)
     let resolvedCount = 0
-    const { data: pendingRecords } = await supabase
+    const { data: pendingRecords } = await getSupabase()
       .from('trade_focus_records')
       .select('id, date, pair, direction, entry_price, metadata')
       .eq('result', 'pending')
@@ -348,7 +350,7 @@ export async function POST() {
         const isJpy = record.pair.includes('JPY')
         const pips = Math.round(Math.abs(priceDiff) * (isJpy ? 100 : 10000))
 
-        await supabase
+        await getSupabase()
           .from('trade_focus_records')
           .update({
             result,
@@ -364,7 +366,7 @@ export async function POST() {
     }
 
     // 2. Check if today already has records
-    const { data: existing } = await supabase
+    const { data: existing } = await getSupabase()
       .from('trade_focus_records')
       .select('id')
       .eq('date', today)
@@ -379,7 +381,7 @@ export async function POST() {
     }
 
     // 3. Fetch CB rates
-    const { data: cbRatesData } = await supabase
+    const { data: cbRatesData } = await getSupabase()
       .from('central_bank_rates')
       .select('currency, bank, rate, target, bias')
 
@@ -390,7 +392,7 @@ export async function POST() {
     // 4. Fetch recent news (72h window)
     const newsStart = new Date()
     newsStart.setDate(newsStart.getDate() - 3)
-    const { data: newsArticles } = await supabase
+    const { data: newsArticles } = await getSupabase()
       .from('news_articles')
       .select('title, summary, affected_currencies, published_at, relevance_score')
       .gte('published_at', newsStart.toISOString())
@@ -483,7 +485,7 @@ export async function POST() {
     }
 
     if (newRecords.length > 0) {
-      const { error } = await supabase.from('trade_focus_records').insert(newRecords)
+      const { error } = await getSupabase().from('trade_focus_records').insert(newRecords)
       if (error) {
         return NextResponse.json({ error: error.message, version: 'v3.1-optimizer' }, { status: 500 })
       }

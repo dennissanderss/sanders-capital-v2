@@ -11,10 +11,12 @@ const parser = new Parser({
   },
 })
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 /* ─── RSS Sources ──────────────────────────────────────────── */
 interface FeedSource {
@@ -276,12 +278,12 @@ async function fetchAndStoreFeeds(): Promise<void> {
 
   // Upsert into Supabase (ignore conflicts)
   if (newArticles.length > 0) {
-    await supabase.from('news_articles').upsert(newArticles, { onConflict: 'id', ignoreDuplicates: true })
+    await getSupabase().from('news_articles').upsert(newArticles, { onConflict: 'id', ignoreDuplicates: true })
   }
 
   // Translate new articles that don't have translations yet
   // Also retry articles where title_nl = title (translation might have failed silently)
-  const { data: untranslatedNull } = await supabase
+  const { data: untranslatedNull } = await getSupabase()
     .from('news_articles')
     .select('id, title, summary, full_content')
     .is('title_nl', null)
@@ -289,7 +291,7 @@ async function fetchAndStoreFeeds(): Promise<void> {
     .limit(20)
 
   // Also find articles where title_nl equals title (English = not actually translated)
-  const { data: untranslatedSame } = await supabase
+  const { data: untranslatedSame } = await getSupabase()
     .from('news_articles')
     .select('id, title, summary, full_content')
     .not('title_nl', 'is', null)
@@ -314,14 +316,14 @@ async function fetchAndStoreFeeds(): Promise<void> {
       ])
 
       for (let i = 0; i < untranslated.length; i++) {
-        await supabase.from('news_articles').update({
+        await getSupabase().from('news_articles').update({
           title_nl: translatedTitles[i],
           summary_nl: translatedSummaries[i],
         }).eq('id', untranslated[i].id)
         // Store translated content in summary_nl (we use it in the reader)
         // We concatenate: first summary_nl, then rest of translated content
         if (translatedContents[i] && translatedContents[i] !== translatedSummaries[i]) {
-          await supabase.from('news_articles').update({
+          await getSupabase().from('news_articles').update({
             summary_nl: translatedSummaries[i],
             // We'll add a full_content_nl field conceptually via the summary_nl + response
           }).eq('id', untranslated[i].id)
@@ -352,7 +354,7 @@ export async function GET(request: Request) {
 
     // Read from DB with date range
     const since = new Date(Date.now() - days * 86400000).toISOString()
-    let query = supabase
+    let query = getSupabase()
       .from('news_articles')
       .select('*')
       .gte('published_at', since)

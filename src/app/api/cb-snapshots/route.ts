@@ -21,17 +21,19 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 // GET: Retrieve snapshots
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const currency = searchParams.get('currency')
 
-  let query = supabase
+  let query = getSupabase()
     .from('cb_rate_snapshots')
     .select('*')
     .order('snapshot_date', { ascending: false })
@@ -72,7 +74,7 @@ export async function POST(request: Request) {
         bank: h.bank,
       }))
 
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('cb_rate_snapshots')
         .upsert(records, { onConflict: 'snapshot_date,currency' })
 
@@ -87,7 +89,7 @@ export async function POST(request: Request) {
     }
 
     // Option 2: Snapshot current rates from central_bank_rates table
-    const { data: currentRates, error: fetchError } = await supabase
+    const { data: currentRates, error: fetchError } = await getSupabase()
       .from('central_bank_rates')
       .select('currency, bank, rate, target, bias')
 
@@ -110,7 +112,7 @@ export async function POST(request: Request) {
       bank: r.bank,
     }))
 
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('cb_rate_snapshots')
       .upsert(records, { onConflict: 'snapshot_date,currency' })
 

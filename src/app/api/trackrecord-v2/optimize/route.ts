@@ -16,10 +16,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 const PAIR_SYMBOLS: Record<string, string> = {
   'EUR/USD': 'EURUSD=X', 'GBP/USD': 'GBPUSD=X', 'USD/JPY': 'USDJPY=X',
@@ -400,7 +402,7 @@ export async function GET() {
     const days = 250
 
     // 1. Fetch CB rate snapshots
-    const { data: snapshots } = await supabase
+    const { data: snapshots } = await getSupabase()
       .from('cb_rate_snapshots')
       .select('snapshot_date, currency, rate, target, bias, bank')
       .order('snapshot_date', { ascending: true })
@@ -412,7 +414,7 @@ export async function GET() {
     }
     const snapshotDates = Object.keys(snapshotsByDate).sort()
 
-    const { data: cbRates } = await supabase.from('central_bank_rates').select('currency, rate, target, bias')
+    const { data: cbRates } = await getSupabase().from('central_bank_rates').select('currency, rate, target, bias')
     const currentRatesMap: Record<string, { rate: number; target: number | null; bias: string }> = {}
     for (const r of cbRates || []) currentRatesMap[r.currency] = { rate: r.rate, target: r.target, bias: r.bias }
 

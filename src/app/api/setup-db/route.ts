@@ -7,10 +7,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 // Historical CB rate snapshots — verified central bank decisions
 const HISTORICAL: {
@@ -244,12 +246,12 @@ export async function POST() {
     // Step 1: Create the table using raw SQL via supabase-js
     // Since we can't run DDL via PostgREST, we'll use a workaround:
     // Create a temporary function that creates the table
-    const { error: fnError } = await supabase.rpc('create_cb_snapshots_table', {})
+    const { error: fnError } = await getSupabase().rpc('create_cb_snapshots_table', {})
       .single()
 
     // If the function doesn't exist, we need to create the table manually
     // Try to just insert into the table — if it exists, great; if not, we'll get an error
-    const { error: testError } = await supabase
+    const { error: testError } = await getSupabase()
       .from('cb_rate_snapshots')
       .select('id')
       .limit(1)
@@ -275,7 +277,7 @@ CREATE INDEX IF NOT EXISTS idx_cb_snapshots_currency ON cb_rate_snapshots(curren
     }
 
     // Step 2: Upsert historical data
-    const { error: insertError } = await supabase
+    const { error: insertError } = await getSupabase()
       .from('cb_rate_snapshots')
       .upsert(HISTORICAL, { onConflict: 'snapshot_date,currency' })
 
@@ -284,7 +286,7 @@ CREATE INDEX IF NOT EXISTS idx_cb_snapshots_currency ON cb_rate_snapshots(curren
     }
 
     // Step 3: Also snapshot current rates
-    const { data: currentRates } = await supabase
+    const { data: currentRates } = await getSupabase()
       .from('central_bank_rates')
       .select('currency, bank, rate, target, bias')
 
@@ -292,7 +294,7 @@ CREATE INDEX IF NOT EXISTS idx_cb_snapshots_currency ON cb_rate_snapshots(curren
       const now = new Date()
       const snapshotDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
 
-      await supabase
+      await getSupabase()
         .from('cb_rate_snapshots')
         .upsert(
           currentRates.map(r => ({
@@ -308,7 +310,7 @@ CREATE INDEX IF NOT EXISTS idx_cb_snapshots_currency ON cb_rate_snapshots(curren
     }
 
     // Step 4: Count results
-    const { data: all } = await supabase
+    const { data: all } = await getSupabase()
       .from('cb_rate_snapshots')
       .select('snapshot_date, currency, rate, bias')
       .order('snapshot_date', { ascending: true })

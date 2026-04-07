@@ -1,10 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 const PAIR_SYMBOLS: Record<string, string> = {
   'EUR/USD': 'EURUSD=X',
@@ -76,7 +78,7 @@ export async function POST(request: Request) {
     const days = Math.min(body.days || 7, 14) // max 14 days
 
     // 1. Fetch CB rates from database (relatively stable over a week)
-    const { data: cbRates } = await supabase
+    const { data: cbRates } = await getSupabase()
       .from('central_bank_rates')
       .select('currency, bank, rate, target, bias')
 
@@ -135,7 +137,7 @@ export async function POST(request: Request) {
     // 5. Check which dates already have records
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
-    const { data: existingRecords } = await supabase
+    const { data: existingRecords } = await getSupabase()
       .from('trade_focus_records')
       .select('date')
       .gte('date', startDate.toISOString().split('T')[0])
@@ -195,7 +197,7 @@ export async function POST(request: Request) {
     })
 
     if (deduped.length > 0) {
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('trade_focus_records')
         .insert(deduped)
 

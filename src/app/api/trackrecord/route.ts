@@ -1,11 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-// Service role — bypasses RLS
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Service role — bypasses RLS (lazy init for Vercel build)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 // ─── Pair → Yahoo Finance symbol mapping ────────────────────
 const PAIR_SYMBOLS: Record<string, string> = {
@@ -41,7 +43,7 @@ async function fetchPrice(symbol: string): Promise<number | null> {
 export async function GET() {
   try {
     // Get ALL records (no date limit — build up trackrecord over months/years)
-    const { data: records, error } = await supabase
+    const { data: records, error } = await getSupabase()
       .from('trade_focus_records')
       .select('*')
       .order('date', { ascending: false })
@@ -85,7 +87,7 @@ export async function POST() {
     const today = new Date().toISOString().split('T')[0]
 
     // 1. First, try to resolve pending records by checking price movement
-    const { data: pendingRecords } = await supabase
+    const { data: pendingRecords } = await getSupabase()
       .from('trade_focus_records')
       .select('*')
       .eq('result', 'pending')
@@ -110,7 +112,7 @@ export async function POST() {
         const isJpy = record.pair.includes('JPY')
         const pips = Math.round(Math.abs(priceDiff) * (isJpy ? 100 : 10000))
 
-        await supabase
+        await getSupabase()
           .from('trade_focus_records')
           .update({
             result,
@@ -124,7 +126,7 @@ export async function POST() {
 
     // 2. Now save today's trade focus (fetch from briefing API)
     // Check if today already has records
-    const { data: existing } = await supabase
+    const { data: existing } = await getSupabase()
       .from('trade_focus_records')
       .select('id')
       .eq('date', today)
@@ -171,7 +173,7 @@ export async function POST() {
     }
 
     if (records.length > 0) {
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('trade_focus_records')
         .insert(records)
 
