@@ -8,7 +8,7 @@
   "crons": [
     {
       "path": "/api/cron/news",
-      "schedule": "15 6 * * 1-5"
+      "schedule": "15 6 * * *"
     },
     {
       "path": "/api/cron/trackrecord",

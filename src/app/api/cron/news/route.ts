@@ -15,7 +15,9 @@ export async function GET(request: Request) {
   try {
     // Trigger de nieuws fetch door de /api/news endpoint aan te roepen
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.sanderscapital.nl'
-    const res = await fetch(`${baseUrl}/api/news?days=1&refresh=true`)
+    const res = await fetch(`${baseUrl}/api/news?days=3&refresh=true`, {
+      signal: AbortSignal.timeout(55000), // Vercel cron timeout = 60s
+    })
     const data = await res.json()
 
     return NextResponse.json({

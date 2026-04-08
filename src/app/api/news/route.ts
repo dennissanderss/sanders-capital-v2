@@ -4,10 +4,13 @@ import Parser from 'rss-parser'
 import translate from 'google-translate-api-x'
 
 const parser = new Parser({
-  timeout: 10000,
+  timeout: 15000,
   headers: {
-    'User-Agent': 'SandersCapital/1.0',
-    'Accept': 'application/rss+xml, application/xml, text/xml',
+    'User-Agent': 'Mozilla/5.0 (compatible; SandersCapital/1.0; +https://www.sanderscapital.nl)',
+    'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml',
+  },
+  requestOptions: {
+    redirect: 'follow',
   },
 })
 
@@ -27,13 +30,19 @@ interface FeedSource {
 }
 
 const FEEDS: FeedSource[] = [
+  // Centrale banken (priority 1)
   { url: 'https://www.federalreserve.gov/feeds/press_all.xml', name: 'Federal Reserve', category: 'central-banks', priority: 1 },
   { url: 'https://www.ecb.europa.eu/rss/press.html', name: 'ECB', category: 'central-banks', priority: 1 },
+  // Forex & macro (priority 2)
   { url: 'https://www.forexlive.com/feed/', name: 'ForexLive', category: 'forex', priority: 2 },
   { url: 'https://www.cnbc.com/id/20910258/device/rss/rss.html', name: 'CNBC Economy', category: 'macro', priority: 2 },
   { url: 'https://feeds.bloomberg.com/markets/news.rss', name: 'Bloomberg Markets', category: 'macro', priority: 2 },
+  { url: 'https://news.google.com/rss/search?q=forex+central+bank+economy+interest+rate&hl=en-US&gl=US&ceid=US:en', name: 'Google News FX', category: 'macro', priority: 2 },
+  { url: 'https://www.investing.com/rss/news.rss', name: 'Investing.com', category: 'forex', priority: 2 },
+  // Geopolitiek & business (priority 3)
   { url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml', name: 'NY Times World', category: 'geopolitics', priority: 3 },
   { url: 'https://feeds.bbci.co.uk/news/business/rss.xml', name: 'BBC Business', category: 'macro', priority: 3 },
+  { url: 'https://news.google.com/rss/search?q=reuters+forex+economy&hl=en-US&gl=US&ceid=US:en', name: 'Reuters via Google', category: 'macro', priority: 3 },
 ]
 
 /* ─── Relevance system ─────────────────────────────────────── */
@@ -238,9 +247,31 @@ async function fetchAndStoreFeeds(): Promise<void> {
     affected_currencies: string[]; relevance_context: string;
   }[] = []
 
+  const feedResults: { source: string; count: number; error?: string }[] = []
+
   const feedPromises = FEEDS.map(async (source) => {
+    let articleCount = 0
     try {
-      const feed = await parser.parseURL(source.url)
+      // Fallback: als rss-parser faalt, probeer native fetch + xml parse
+      let feed: { items?: Array<{ title?: string; contentSnippet?: string; content?: string; summary?: string; 'content:encoded'?: string; guid?: string; link?: string; isoDate?: string; pubDate?: string }> }
+      try {
+        feed = await parser.parseURL(source.url)
+      } catch (parseErr) {
+        // Fallback: fetch raw XML en parse opnieuw
+        console.warn(`[NEWS] rss-parser failed for ${source.name}, trying fetch fallback:`, parseErr instanceof Error ? parseErr.message : '')
+        const res = await fetch(source.url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; SandersCapital/1.0; +https://www.sanderscapital.nl)',
+            'Accept': 'application/rss+xml, application/xml, text/xml',
+          },
+          redirect: 'follow',
+          signal: AbortSignal.timeout(15000),
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
+        const xml = await res.text()
+        feed = await parser.parseString(xml)
+      }
+
       for (const item of (feed.items || []).slice(0, 25)) {
         const title = item.title?.trim() || ''
         const rawSummary = (item.contentSnippet || item.content || item.summary || '').trim()
@@ -267,14 +298,19 @@ async function fetchAndStoreFeeds(): Promise<void> {
             affected_currencies: analysis.currencies,
             relevance_context: analysis.context,
           })
+          articleCount++
         }
       }
+      feedResults.push({ source: source.name, count: articleCount })
     } catch (err) {
-      console.warn(`Feed error: ${source.name}`, err instanceof Error ? err.message : '')
+      const errMsg = err instanceof Error ? err.message : String(err)
+      console.error(`[NEWS] Feed FAILED: ${source.name} — ${errMsg}`)
+      feedResults.push({ source: source.name, count: 0, error: errMsg })
     }
   })
 
   await Promise.allSettled(feedPromises)
+  console.log(`[NEWS] Feed results:`, JSON.stringify(feedResults))
 
   // Upsert into Supabase (ignore conflicts)
   if (newArticles.length > 0) {
