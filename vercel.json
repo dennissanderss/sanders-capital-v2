@@ -3,6 +3,15 @@
     "api/*.py": {
       "runtime": "@vercel/python@4.3.1",
       "maxDuration": 30
+    },
+    "src/app/api/news/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/cron/*/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/briefing-v2/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [

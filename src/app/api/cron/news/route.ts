@@ -1,8 +1,10 @@
-// ─── Nieuws Cron — Elke 2 uur RSS feeds ophalen ─────────────
+// ─── Nieuws Cron — Dagelijks RSS feeds ophalen ───────────────
 // Voorkomt dat de nieuws database veroudert als niemand de pagina bezoekt.
 // Roept dezelfde /api/news endpoint aan om feeds op te halen.
 
 import { NextResponse } from 'next/server'
+
+export const maxDuration = 60
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')

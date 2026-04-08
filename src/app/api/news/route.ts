@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 import Parser from 'rss-parser'
 import translate from 'google-translate-api-x'
 
+export const maxDuration = 60 // Vercel Hobby max: 60s — nodig voor 10 RSS feeds + translate
+
 const parser = new Parser({
   timeout: 15000,
   headers: {
