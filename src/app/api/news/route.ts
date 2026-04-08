@@ -235,6 +235,7 @@ async function translateBatch(texts: string[]): Promise<string[]> {
 
 /* ─── Fetch & Store ────────────────────────────────────────── */
 let lastFetchTimestamp = 0
+let lastFeedResults: { source: string; count: number; error?: string }[] = []
 const FETCH_INTERVAL = 10 * 60 * 1000
 
 async function fetchAndStoreFeeds(): Promise<void> {
@@ -250,6 +251,8 @@ async function fetchAndStoreFeeds(): Promise<void> {
   }[] = []
 
   const feedResults: { source: string; count: number; error?: string }[] = []
+  const debugLog: string[] = []
+  debugLog.push(`[${new Date().toISOString()}] Starting fetchAndStoreFeeds with ${FEEDS.length} feeds`)
 
   const feedPromises = FEEDS.map(async (source) => {
     let articleCount = 0
@@ -312,7 +315,9 @@ async function fetchAndStoreFeeds(): Promise<void> {
   })
 
   await Promise.allSettled(feedPromises)
+  lastFeedResults = feedResults
   console.log(`[NEWS] Feed results:`, JSON.stringify(feedResults))
+  debugLog.push(`[${new Date().toISOString()}] Feeds done: ${newArticles.length} new articles from ${feedResults.filter(f => f.count > 0).length}/${feedResults.length} feeds`)
 
   // Upsert into Supabase (ignore conflicts)
   if (newArticles.length > 0) {
@@ -430,7 +435,13 @@ export async function GET(request: Request) {
       hasTranslation: !!(a.title_nl && a.title_nl !== a.title),  // True only if actually translated
     }))
 
-    return NextResponse.json({ articles: mapped, fetchedAt: new Date().toISOString() })
+    const response: Record<string, unknown> = { articles: mapped, fetchedAt: new Date().toISOString() }
+    if (searchParams.get('debug') === 'true') {
+      response.feedResults = lastFeedResults
+      response.totalFeeds = FEEDS.length
+      response.dbCount = mapped.length
+    }
+    return NextResponse.json(response)
   } catch {
     return NextResponse.json({ articles: [], error: 'Failed to fetch news' }, { status: 500 })
   }
