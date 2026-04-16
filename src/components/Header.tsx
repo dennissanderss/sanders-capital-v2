@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import NavIcon from './NavIcon'
@@ -52,6 +52,7 @@ export default function Header() {
   const [kbCategories, setKbCategories] = useState<KbCategory[]>([])
   const [toolPremiumMap, setToolPremiumMap] = useState<Record<string, boolean>>({})
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const desktopNavRef = useRef<HTMLElement>(null)
 
   // Fetch categories & tool settings from DB
   const fetchData = () => {
@@ -109,11 +110,15 @@ export default function Header() {
     return () => { document.body.style.overflow = '' }
   }, [mobileOpen])
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside the desktop nav
   useEffect(() => {
-    const handleClickOutside = () => setOpenDropdown(null)
-    document.addEventListener('click', handleClickOutside)
-    return () => document.removeEventListener('click', handleClickOutside)
+    const handleClickOutside = (e: MouseEvent) => {
+      if (desktopNavRef.current && !desktopNavRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   return (
@@ -143,7 +148,7 @@ export default function Header() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-7">
+        <nav ref={desktopNavRef} className="hidden lg:flex items-center gap-7">
           {/* Home */}
           <Link
             href="/"
@@ -161,7 +166,7 @@ export default function Header() {
               className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading flex items-center gap-1 cursor-pointer ${
                 pathname.startsWith('/nieuws') || pathname === '/tools/kalender' ? 'text-heading' : 'text-text-muted'
               }`}
-              onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'nieuws' ? null : 'nieuws') }}
+              onClick={() => setOpenDropdown(openDropdown === 'nieuws' ? null : 'nieuws')}
             >
               Nieuws
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className={`mt-0.5 transition-transform duration-200 ${openDropdown === 'nieuws' ? 'rotate-180' : ''} group-hover/nieuws:rotate-180`}>
@@ -203,7 +208,7 @@ export default function Header() {
               className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading flex items-center gap-1 cursor-pointer ${
                 pathname.startsWith('/blog') ? 'text-heading' : 'text-text-muted'
               }`}
-              onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'blog' ? null : 'blog') }}
+              onClick={() => setOpenDropdown(openDropdown === 'blog' ? null : 'blog')}
             >
               Blog
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className={`mt-0.5 transition-transform duration-200 ${openDropdown === 'blog' ? 'rotate-180' : ''} group-hover/blog:rotate-180`}>
@@ -245,7 +250,7 @@ export default function Header() {
               className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading flex items-center gap-1 cursor-pointer ${
                 pathname.startsWith('/kennisbank') ? 'text-heading' : 'text-text-muted'
               }`}
-              onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'kb' ? null : 'kb') }}
+              onClick={() => setOpenDropdown(openDropdown === 'kb' ? null : 'kb')}
             >
               Kennisbank
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className={`mt-0.5 transition-transform duration-200 ${openDropdown === 'kb' ? 'rotate-180' : ''} group-hover/kb:rotate-180`}>
@@ -291,7 +296,7 @@ export default function Header() {
               className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading flex items-center gap-1 cursor-pointer ${
                 pathname.startsWith('/tools') ? 'text-heading' : 'text-text-muted'
               }`}
-              onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'tools' ? null : 'tools') }}
+              onClick={() => setOpenDropdown(openDropdown === 'tools' ? null : 'tools')}
             >
               Tools
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className={`mt-0.5 transition-transform duration-200 ${openDropdown === 'tools' ? 'rotate-180' : ''} group-hover/tools:rotate-180`}>
