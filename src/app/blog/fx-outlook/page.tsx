@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: 'Wekelijkse marktanalyses, macro outlook en FX verwachtingen.',
 }
 
+export const revalidate = 60
+
 const OUTLOOK_TAGS = ['FX Outlook', 'Marktanalyse', 'Data', 'Strategie']
 
 export default async function FxOutlookPage() {

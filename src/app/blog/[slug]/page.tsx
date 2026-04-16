@@ -16,6 +16,8 @@ function getPublicSupabase() {
   )
 }
 
+export const revalidate = 60
+
 type Props = {
   params: Promise<{ slug: string }>
 }

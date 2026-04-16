@@ -80,6 +80,17 @@ interface CentralBankRate {
 
 const tagOptions = ['Module 1', 'Module 2', 'Module 3', 'FX Outlook', 'Marktanalyse', 'Psychologie', 'Risicomanagement', 'Strategie', 'Data']
 
+// Sync deze lijst met src/app/blog/fx-outlook/page.tsx OUTLOOK_TAGS
+const FX_OUTLOOK_TAGS = ['FX Outlook', 'Marktanalyse', 'Data', 'Strategie']
+const KENNISBANK_TAGS = ['Module 1', 'Module 2', 'Module 3']
+
+function tagDestinationHint(tag: string): { text: string; tone: 'info' | 'warn' } {
+  if (!tag) return { text: '→ Geen tag: verschijnt alleen op /blog', tone: 'info' }
+  if (KENNISBANK_TAGS.includes(tag)) return { text: '⚠ Module-tags horen bij Kennisbank, niet bij artikelen — verschijnt alleen op /blog', tone: 'warn' }
+  if (FX_OUTLOOK_TAGS.includes(tag)) return { text: '→ Verschijnt op /blog én /blog/fx-outlook', tone: 'info' }
+  return { text: '→ Verschijnt alleen op /blog', tone: 'info' }
+}
+
 const iconOptions = [
   { value: 'shield', label: 'Schild' },
   { value: 'smile', label: 'Psychologie' },
@@ -222,6 +233,7 @@ export default function AdminPage() {
 
   const saveArticle = async () => {
     if (!editing) return
+    if (!editing.published && !confirm('Let op: "Gepubliceerd" staat uit. Het artikel wordt opgeslagen als concept en is NIET zichtbaar op /blog of /blog/fx-outlook.\n\nToch opslaan als concept?')) return
     const { id, created_at, ...data } = editing
     let slug = data.slug || generateSlug(data.title)
     try {
@@ -958,6 +970,23 @@ export default function AdminPage() {
             <button onClick={() => setEditing(null)} className="text-sm text-text-muted hover:text-heading transition-colors">Annuleren</button>
           </div>
 
+          {!editing.published && (
+            <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-400/40 bg-amber-400/10">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400 mt-0.5 shrink-0"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-400">Concept — niet zichtbaar voor bezoekers</p>
+                <p className="text-xs text-text-muted mt-0.5">Vink onderaan <strong className="text-heading">Gepubliceerd</strong> aan om dit artikel zichtbaar te maken op /blog en (indien tag matcht) /blog/fx-outlook.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditing({ ...editing, published: true })}
+                className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-bg text-xs font-medium transition-colors shrink-0"
+              >
+                Publiceer nu
+              </button>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm text-text-muted mb-1">Titel</label>
             <input type="text" value={editing.title}
@@ -980,6 +1009,10 @@ export default function AdminPage() {
                 <option value="">Geen tag</option>
                 {tagOptions.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
+              {(() => {
+                const hint = tagDestinationHint(editing.tag)
+                return <p className={`text-xs mt-1 ${hint.tone === 'warn' ? 'text-amber-400' : 'text-text-dim'}`}>{hint.text}</p>
+              })()}
             </div>
             <div>
               <label className="block text-sm text-text-muted mb-1">Leestijd (min)</label>
