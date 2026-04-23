@@ -231,10 +231,52 @@ export default function AdminPage() {
     is_premium: false, published: false, reading_time: 5, created_at: new Date().toISOString(),
   })
 
+  const rehostExternalImages = async (html: string): Promise<{ html: string; broken: string[] }> => {
+    // Discord CDN URLs verlopen na ~24u. Bij opslaan halen we ze binnen en rehosten naar Supabase.
+    const rx = /https?:\/\/(?:media\.discordapp\.net|cdn\.discordapp\.com)\/[^\s"'<>]+/g
+    const urls = Array.from(new Set(html.match(rx) || []))
+    if (urls.length === 0) return { html, broken: [] }
+    let out = html
+    const broken: string[] = []
+    for (const url of urls) {
+      try {
+        const r = await fetch('/api/admin/rehost-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        })
+        const j = await r.json()
+        if (r.ok && j.publicUrl) {
+          // Escape voor gebruik in regex: vervang alle voorkomens van deze exacte URL
+          const escaped = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          out = out.replace(new RegExp(escaped, 'g'), j.publicUrl)
+        } else {
+          broken.push(url)
+        }
+      } catch {
+        broken.push(url)
+      }
+    }
+    return { html: out, broken }
+  }
+
   const saveArticle = async () => {
     if (!editing) return
     if (!editing.published && !confirm('Let op: "Gepubliceerd" staat uit. Het artikel wordt opgeslagen als concept en is NIET zichtbaar op /blog of /blog/fx-outlook.\n\nToch opslaan als concept?')) return
-    const { id, created_at, ...data } = editing
+
+    // Rehost externe Discord-afbeeldingen naar Supabase voordat we opslaan
+    let contentToSave = editing.content
+    if (contentToSave && /discordapp\.(net|com)/.test(contentToSave)) {
+      const { html, broken } = await rehostExternalImages(contentToSave)
+      contentToSave = html
+      if (broken.length > 0) {
+        const msg = `Waarschuwing: ${broken.length} afbeelding(en) konden niet opgehaald worden (waarschijnlijk verlopen Discord-links). Deze blijven als broken image staan:\n\n${broken.join('\n')}\n\nToch opslaan? (Kies Annuleren om eerst handmatig nieuwe afbeeldingen te uploaden.)`
+        if (!confirm(msg)) return
+      }
+    }
+
+    const { id, created_at, ...rest } = editing
+    const data = { ...rest, content: contentToSave }
     let slug = data.slug || generateSlug(data.title)
     try {
       if (id) {

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useRef } from 'react'
 
 const articleStyles = `
   .article-content h2 { font-family: var(--font-display); font-size: 2rem; font-weight: 700; color: var(--color-heading); margin-top: 3rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border); line-height: 1.2; }
@@ -13,6 +14,7 @@ const articleStyles = `
   .article-content li { margin-bottom: 0.4rem; line-height: 1.75; color: var(--color-text); }
   .article-content blockquote { border-left: 3px solid var(--color-accent-dim); padding-left: 1rem; margin: 1.5rem 0; color: var(--color-text-muted); font-style: italic; }
   .article-content img { max-width: 100%; border-radius: 6px; display: block; }
+  .article-content img[data-broken="1"] { display: none !important; }
   .article-content img[style*="float:left"],
   .article-content img[style*="float: left"],
   .article-content img[data-float="left"],
@@ -37,11 +39,28 @@ export default function ArticleContent({
   isPremium: boolean
   hasAccess: boolean
 }) {
+  const articleRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const root = articleRef.current
+    if (!root) return
+    const imgs = Array.from(root.querySelectorAll('img'))
+    const markBroken = (img: HTMLImageElement) => img.setAttribute('data-broken', '1')
+    for (const img of imgs) {
+      // Al geladen én broken (complete=true, naturalWidth=0)
+      if (img.complete && img.naturalWidth === 0) {
+        markBroken(img)
+      } else {
+        img.addEventListener('error', () => markBroken(img), { once: true })
+      }
+    }
+  }, [content])
+
   if (!isPremium || hasAccess) {
     return (
       <>
         <style>{articleStyles}</style>
-        <article className="article-content" dangerouslySetInnerHTML={{ __html: content }} />
+        <article ref={articleRef} className="article-content" dangerouslySetInnerHTML={{ __html: content }} />
       </>
     )
   }
@@ -52,7 +71,7 @@ export default function ArticleContent({
   return (
     <div className="relative">
       <style>{articleStyles}</style>
-      <article className="article-content premium-blur" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+      <article ref={articleRef} className="article-content premium-blur" dangerouslySetInnerHTML={{ __html: previewHtml }} />
       <div className="h-32" />
 
       <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center pb-8 pt-24 bg-gradient-to-t from-bg via-bg/95 to-transparent">
