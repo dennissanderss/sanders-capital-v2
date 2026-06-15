@@ -440,14 +440,16 @@ export interface PerfBucket {
   avgPips: number
 }
 
+// Ranges tuned to the actual distribution of the 4-component qualityScore
+// in the existing trackrecord: scores cluster between 5 and 9, with the
+// vast majority in 6 - 8. The 9 - 10 and sub-5 buckets are empty on
+// historical data, so omitting them keeps the table honest.
 export function buildPerfBuckets(records: ApiTrackRecord[]): PerfBucket[] {
   const buckets: PerfBucket[] = [
-    { range: '9 - 10', min: 9, max: 10.01, trades: 0, winrate: 0, pf: 0, avgPips: 0 },
-    { range: '8 - 9',  min: 8, max: 9,     trades: 0, winrate: 0, pf: 0, avgPips: 0 },
-    { range: '7 - 8',  min: 7, max: 8,     trades: 0, winrate: 0, pf: 0, avgPips: 0 },
-    { range: '6 - 7',  min: 6, max: 7,     trades: 0, winrate: 0, pf: 0, avgPips: 0 },
-    { range: '5 - 6',  min: 5, max: 6,     trades: 0, winrate: 0, pf: 0, avgPips: 0 },
-    { range: '< 5',    min: 0, max: 5,     trades: 0, winrate: 0, pf: 0, avgPips: 0 },
+    { range: '8+',    min: 8, max: 10.01, trades: 0, winrate: 0, pf: 0, avgPips: 0 },
+    { range: '7 - 8', min: 7, max: 8,     trades: 0, winrate: 0, pf: 0, avgPips: 0 },
+    { range: '6 - 7', min: 6, max: 7,     trades: 0, winrate: 0, pf: 0, avgPips: 0 },
+    { range: '5 - 6', min: 5, max: 6,     trades: 0, winrate: 0, pf: 0, avgPips: 0 },
   ]
 
   for (const b of buckets) {
