@@ -235,7 +235,18 @@ function EntryReadyCard({
 }) {
   const [open, setOpen] = useState(false)
   const reasoning = open ? adaptReasoning(data, call) : null
-  const maxBar = reasoning ? Math.max(...reasoning.score.map(([, v]) => v), 0.1) : 1
+
+  // Real 4-component conviction breakdown (lib/conviction.ts).
+  // Bars are scaled to each component's maximum so the eye reads
+  // them against their own ceiling rather than the largest other bar.
+  const breakdown = call.breakdown
+    ? [
+        { k: 'Fundamentele onbalans', v: call.breakdown.fundPts, max: 4 },
+        { k: 'Contrarian (5d momentum)', v: call.breakdown.contrarianPts, max: 2.5 },
+        { k: 'Intermarket alignment', v: call.breakdown.imPts, max: 2 },
+        { k: 'Regime-alignment', v: call.breakdown.regimePts, max: 1.5 },
+      ]
+    : null
 
   return (
     <div className={`call-card${open ? ' open' : ''}`}>
@@ -282,13 +293,13 @@ function EntryReadyCard({
             <p>{reasoning.intermarket}</p>
           </div>
           <div className="cr-item">
-            <span className="cr-k">Score-opbouw</span>
+            <span className="cr-k">Score-opbouw (qualityScore)</span>
             <div className="cr-bars">
-              {reasoning.score.map(([k, v]) => (
+              {(breakdown || []).map(({ k, v, max }) => (
                 <div className="cr-bar" key={k}>
                   <span className="cb-k">{k}</span>
                   <span className="cb-track">
-                    <span style={{ width: `${Math.min(100, (v / maxBar) * 100)}%` }} />
+                    <span style={{ width: `${Math.min(100, (v / max) * 100)}%` }} />
                   </span>
                   <span className="cb-v num">{v.toFixed(1)}</span>
                 </div>

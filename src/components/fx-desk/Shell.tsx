@@ -77,6 +77,11 @@ function Methodology({ blocks }: { blocks: ShellMethodBlock[] }) {
 }
 
 // ─── Top brand bar + tool switcher ────────────────────────────
+// TODO(nav-consolidation): de bestaande tools-sub-nav in
+// src/app/tools/layout.tsx en deze Shell-switcher leven nu naast
+// elkaar (twee niveaus navigatie). Bij de definitieve cleanup-ronde
+// samenvoegen: óf de Shell-switcher vervalt en de tools-sub-nav neemt
+// het over, óf andersom. Niet in deze frontend-rebuild-ronde.
 function BrandBar({ activeTool }: { activeTool: 'briefing' | 'execution' }) {
   return (
     <div className="brandbar">

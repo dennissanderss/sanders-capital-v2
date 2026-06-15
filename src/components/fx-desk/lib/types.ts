@@ -183,16 +183,25 @@ export interface DeskFxScore {
   bank: string
 }
 
+export interface ConvictionBreakdownLite {
+  fundPts: number
+  contrarianPts: number
+  imPts: number
+  regimePts: number
+  total: number
+}
+
 export interface DeskCall {
   pair: string
   base: string
   quote: string
   dir: Direction
-  score: number       // 0..10 conviction (Math.abs(fund score) * 2)
+  score: number       // 0..10 conviction
   fundScore: number   // raw -5..+5
   status: 'ready' | 'watch'
   note: string
   wait?: string
+  breakdown?: ConvictionBreakdownLite   // 4-component breakdown, present for live calls
 }
 
 export interface DeskReasoning {

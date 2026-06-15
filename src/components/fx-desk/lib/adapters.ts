@@ -19,6 +19,7 @@ import type {
   Direction,
   SentimentStand,
 } from './types'
+import { convictionForLivePair, type ConvictionBreakdown } from './conviction'
 
 // ─── Helpers ──────────────────────────────────────────────────
 const MAJORS = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD']
@@ -29,8 +30,14 @@ function dirOfPair(direction: string): Direction | null {
   return null
 }
 
-// 0-10 conviction = abs(fundScore) * 2 (capped at 10)
-function convictionScore(fundScore: number): number {
+// TODO(conviction-historical): provisional placeholder for historical
+// records (trade_focus_records). The real 4-component qualityScore is in
+// lib/conviction.ts and is used for LIVE pairs in adaptCalls below. For
+// historical records we need to derive regimeAligned from regime + dir +
+// pair (the other three components are already persisted in metadata).
+// Pending Dennis' OK; until then we keep the simple absScore*2 mapping so
+// the Calls list / Prestatie buckets stay stable.
+function historicalConvictionPlaceholder(fundScore: number): number {
   return Math.min(10, Math.abs(fundScore) * 2)
 }
 
@@ -141,15 +148,19 @@ export function adaptCalls(api: ApiBriefingData): { ready: DeskCall[]; watch: De
     const status: 'ready' | 'watch' = imPass && contrarianPass ? 'ready' : 'watch'
     const note = noteForCall(p, contrarianPass, imPass, status)
 
+    // LIVE conviction: 4-component qualityScore (lib/conviction.ts)
+    const breakdown = convictionForLivePair(p, v3, im)
+
     const item: DeskCall = {
       pair: p.pair,
       base: p.base,
       quote: p.quote,
       dir,
-      score: convictionScore(p.score),
+      score: breakdown.total,
       fundScore: p.score,
       status,
       note,
+      breakdown,
     }
     if (status === 'watch') item.wait = waitReason(contrarianPass, imPass, v3)
     if (status === 'ready') ready.push(item)
@@ -374,7 +385,10 @@ export function adaptTrackRecord(records: ApiTrackRecord[]): DeskCallHistoryReco
         pair: r.pair,
         dir,
         src,
-        score: convictionScore(r.score),
+        // TODO(conviction-historical): switch to the real 4-component
+        // qualityScore once Dennis OKs deriving regimeAligned from
+        // regime + direction + pair. See lib/conviction.ts.
+        score: historicalConvictionPlaceholder(r.score),
         fundScore: r.score,
         date: formatDateShort(r.date),
         calledAt: formatDateTime(calledAt) || formatDateShort(r.date),
@@ -443,7 +457,9 @@ export function buildPerfBuckets(records: ApiTrackRecord[]): PerfBucket[] {
 
   for (const b of buckets) {
     const inBucket = records.filter((r) => {
-      const c = convictionScore(r.score)
+      // TODO(conviction-historical): replace with real 4-component
+      // qualityScore once Dennis OKs the historical reconstruction.
+      const c = historicalConvictionPlaceholder(r.score)
       return c >= b.min && c < b.max && r.result !== 'pending'
     })
     const wins = inBucket.filter((r) => r.result === 'correct')
