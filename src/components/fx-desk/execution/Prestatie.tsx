@@ -17,8 +17,12 @@ const pfColor = (p: number) => (p >= 2 ? 'var(--win)' : p < 1 ? 'var(--loss)' : 
 export function Prestatie({ records, onSetTab }: PrestatieProps) {
   const buckets = useMemo(() => buildPerfBuckets(records || []), [records])
 
-  // Determine apply threshold: lowest bucket with WR >= 55 and PF >= 1.5 and trades >= 20
-  const apply = buckets.find((b) => b.winrate >= 55 && b.pf >= 1.5 && b.trades >= 20)
+  // Highlight the bucket with the strongest historical performance.
+  // We sort populated buckets (>= 10 trades) by win-rate × profit-factor
+  // and take the top one as the "sweet spot" to suggest.
+  const sweet = [...buckets]
+    .filter((b) => b.trades >= 10)
+    .sort((a, b) => b.winrate * b.pf - a.winrate * a.pf)[0]
 
   return (
     <div className="fade">
@@ -29,7 +33,7 @@ export function Prestatie({ records, onSetTab }: PrestatieProps) {
         lineHeight: 1.5,
         maxWidth: '60ch',
       }}>
-        Backtest samenvatting. Historische uitkomsten van het trackrecord gegroepeerd per conviction-score. Hogere buckets presteerden doorgaans sterker; gebruik dit om de minimale-score filter in Setups te kalibreren.
+        Backtest samenvatting. Historische uitkomsten van alle {buckets.reduce((s, b) => s + b.trades, 0)} afgesloten trades, gegroepeerd per conviction-score. Let goed op het aantal trades per bucket: kleine samples kunnen variantie zijn, geen signaal.
       </p>
       <ZoneLabel
         info={
@@ -87,10 +91,10 @@ export function Prestatie({ records, onSetTab }: PrestatieProps) {
       </div>
 
       <div className="perf-apply">
-        {apply ? (
+        {sweet ? (
           <>
             <span>
-              <strong>Vanaf score {apply.min}</strong> wordt de winrate de moeite waard: {apply.winrate}% met een profit factor van {apply.pf.toFixed(1)}. Zet de filter in Setups daarop af.
+              <strong>Beste bucket: {sweet.range}</strong> met {sweet.winrate}% winrate en profit factor {sweet.pf.toFixed(1)} over {sweet.trades} trades. Houd er rekening mee dat hogere score in deze backtest niet automatisch hogere winrate betekent — de score is één signaal, geen garantie.
             </span>
             <button className="flowlink" onClick={() => onSetTab?.('setups')}>
               <Icons.ArrowLeft size={13} /> Naar Setups
@@ -98,7 +102,7 @@ export function Prestatie({ records, onSetTab }: PrestatieProps) {
           </>
         ) : (
           <>
-            <span>Nog onvoldoende statistische diepte om een duidelijke drempel te trekken. Pak de buckets met de meeste trades als referentie.</span>
+            <span>Nog onvoldoende statistische diepte. Pak de buckets met de meeste trades als referentie.</span>
             <button className="flowlink" onClick={() => onSetTab?.('setups')}>
               <Icons.ArrowLeft size={13} /> Naar Setups
             </button>
@@ -107,7 +111,7 @@ export function Prestatie({ records, onSetTab }: PrestatieProps) {
       </div>
 
       <div style={{ fontSize: 11.5, color: 'var(--ink-4)', marginTop: 10 }}>
-        Buckets met weinig trades zijn statistisch minder betrouwbaar. Sterke buckets in gedempt groen, zwakke in gedempt rood.
+        Buckets met &lt; 20 trades krijgen een &quot;klein sample&quot;-tag. Sterke buckets gedempt groen, zwakke gedempt rood.
       </div>
     </div>
   )
