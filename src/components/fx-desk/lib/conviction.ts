@@ -20,7 +20,7 @@
 // the Prestatie buckets all show the SAME conviction number.
 // ─────────────────────────────────────────────────────────────
 
-import type { ApiPairBias, ApiV3PairSignal } from './types'
+import type { ApiPairBias, ApiV3PairSignal, ApiTrackRecord } from './types'
 
 export interface ConvictionInputs {
   absScore: number          // |fundamental score|, 0..5
@@ -89,5 +89,82 @@ export function convictionForLivePair(
     absMom: Math.abs(pips5d),
     imAlignment: intermarketAlignment,
     regimeAligned: pair.regimeAligned ?? false,
+  })
+}
+
+// ─── Regime-Pair Alignment Check ─────────────────────────────
+//
+// Verbatim copy of isAlignedWithRegime() from
+// src/app/api/briefing-v2/route.ts (lines 807-840). Reproduced
+// here so historical records — which store regime + direction +
+// pair but not the regimeAligned boolean — can have their
+// alignment reconstructed deterministically on the client.
+// Not a scoring change: same function, same rules, just used in
+// a new place. Keep in sync with the API if either ever moves.
+
+function isAlignedWithRegime(
+  pair: { pair: string; direction: string; base: string; quote: string },
+  regime: string,
+): boolean {
+  const safeHavens = ['JPY', 'CHF']
+  const highYield = ['AUD', 'NZD', 'CAD']
+  const isBullish = pair.direction.includes('bullish')
+
+  if (regime === 'Risk-Off') {
+    if (isBullish && safeHavens.includes(pair.base)) return true
+    if (!isBullish && safeHavens.includes(pair.quote)) return true
+    if (!isBullish && highYield.includes(pair.base)) return true
+    if (isBullish && highYield.includes(pair.quote)) return true
+  }
+  if (regime === 'Risk-On') {
+    if (isBullish && highYield.includes(pair.base)) return true
+    if (!isBullish && highYield.includes(pair.quote)) return true
+    if (!isBullish && safeHavens.includes(pair.base)) return true
+    if (isBullish && safeHavens.includes(pair.quote)) return true
+  }
+  if (regime === 'USD Dominant') {
+    if (isBullish && pair.base === 'USD') return true
+    if (!isBullish && pair.quote === 'USD') return true
+  }
+  if (regime === 'USD Zwak') {
+    if (!isBullish && pair.base === 'USD') return true
+    if (isBullish && pair.quote === 'USD') return true
+  }
+  if (regime === 'Gemengd') return true
+  return false
+}
+
+// ─── Historical record: derive inputs from stored metadata ───
+//
+// trade_focus_records persists 3 of the 4 components directly:
+//   fundPts        from abs(record.score)
+//   contrarianPts  from metadata.momentum5d + record.direction
+//   imPts          from metadata.imAlignment
+//   regimePts      regimeAligned is NOT stored — reconstructed
+//                  here from regime + direction + pair via the
+//                  isAlignedWithRegime() helper above (identical
+//                  to the live API logic).
+
+export function convictionForHistoricalRecord(r: ApiTrackRecord): ConvictionBreakdown {
+  const absScore = Math.abs(r.score)
+  const pips5d = r.metadata?.momentum5d ?? 0
+  const isBullish = r.direction.includes('bullish')
+  const isBearish = r.direction.includes('bearish')
+  const contrarianPass =
+    (isBullish && pips5d < 0) || (isBearish && pips5d > 0)
+  const imAlignment = r.metadata?.imAlignment ?? 0
+
+  const [base, quote] = r.pair.split('/')
+  const regimeAligned = isAlignedWithRegime(
+    { pair: r.pair, direction: r.direction, base: base || '', quote: quote || '' },
+    r.regime || 'Gemengd',
+  )
+
+  return convictionBreakdown({
+    absScore,
+    contrarianPass,
+    absMom: Math.abs(pips5d),
+    imAlignment,
+    regimeAligned,
   })
 }
