@@ -6,35 +6,35 @@
    ============================================================ */
 
 .fx-desk {
-  /* canvas */
-  --bg:            #14110f;
-  --bg-2:         #1a1714;
-  --bg-3:         #211c18;
-  --bg-inset:     #100d0b;
+  /* canvas — aligned with site's cool dark palette */
+  --bg:            #080a0e;
+  --bg-2:         #0d1016;
+  --bg-3:         #1a1e28;
+  --bg-inset:     #050709;
 
-  /* lines */
-  --line:          #2c2620;
-  --line-soft:     #241f1a;
-  --line-strong:   #3a322a;
+  /* lines — neutral, slightly cool */
+  --line:          rgba(255, 255, 255, 0.10);
+  --line-soft:     rgba(255, 255, 255, 0.05);
+  --line-strong:   rgba(255, 255, 255, 0.18);
 
-  /* text */
-  --ink:           #ece6db;
-  --ink-2:         #a59d90;
-  --ink-3:         #756f64;
-  --ink-4:         #514b43;
+  /* text — cool off-white, matches site --color-* tokens */
+  --ink:           #f0f1f5;
+  --ink-2:         #b0b5c9;
+  --ink-3:         #949ab0;
+  --ink-4:         #5a6275;
 
-  /* accent */
-  --gold:          #c8a96a;
-  --gold-soft:     rgba(200,169,106,0.14);
-  --gold-line:     rgba(200,169,106,0.30);
+  /* accent — gold (essentially identical to site's --color-gold) */
+  --gold:          #c9a466;
+  --gold-soft:     rgba(201, 164, 102, 0.14);
+  --gold-line:     rgba(201, 164, 102, 0.30);
 
-  /* outcome (muted, editorial) */
+  /* outcome — sage/terracotta still read clearly on cool background */
   --win:           #7e9b6f;
-  --win-bg:        rgba(126,155,111,0.12);
+  --win-bg:        rgba(126, 155, 111, 0.12);
   --loss:          #b9725f;
-  --loss-bg:       rgba(185,114,95,0.12);
-  --pending:       #97917f;
-  --pending-bg:    rgba(151,145,127,0.10);
+  --loss-bg:       rgba(185, 114, 95, 0.12);
+  --pending:       #8c93a6;
+  --pending-bg:    rgba(140, 147, 166, 0.10);
 
   --shadow:        0 1px 0 rgba(255,255,255,0.02), 0 18px 40px -28px rgba(0,0,0,0.9);
 
@@ -44,7 +44,8 @@
   --maxw: 1180px;
 
   background:
-    radial-gradient(1200px 600px at 70% -10%, rgba(200,169,106,0.05), transparent 60%),
+    radial-gradient(1200px 600px at 70% -10%, rgba(61, 110, 165, 0.06), transparent 60%),
+    radial-gradient(900px 500px at 20% 110%, rgba(201, 164, 102, 0.04), transparent 60%),
     var(--bg);
   color: var(--ink);
   font-family: var(--font-body);

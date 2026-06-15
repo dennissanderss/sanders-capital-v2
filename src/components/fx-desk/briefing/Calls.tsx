@@ -50,6 +50,15 @@ export function Calls({ records, loading }: CallsProps) {
 
   return (
     <div className="fade">
+      <p style={{
+        fontSize: 13,
+        color: 'var(--ink-2)',
+        margin: '0 0 22px',
+        lineHeight: 1.5,
+        maxWidth: '60ch',
+      }}>
+        De backtest. Elke call uit het trackrecord met instap, take profit, stop, uitkomst en de koersgrafiek per trade. Filter op bron, uitkomst of paar.
+      </p>
       <div className="calls-layout">
         {/* LEFT — filters + list */}
         <div>

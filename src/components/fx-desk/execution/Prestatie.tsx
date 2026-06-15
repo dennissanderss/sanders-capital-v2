@@ -22,6 +22,15 @@ export function Prestatie({ records, onSetTab }: PrestatieProps) {
 
   return (
     <div className="fade">
+      <p style={{
+        fontSize: 13,
+        color: 'var(--ink-2)',
+        margin: '0 0 22px',
+        lineHeight: 1.5,
+        maxWidth: '60ch',
+      }}>
+        Backtest samenvatting. Historische uitkomsten van het trackrecord gegroepeerd per conviction-score. Hogere buckets presteerden doorgaans sterker; gebruik dit om de minimale-score filter in Setups te kalibreren.
+      </p>
       <ZoneLabel
         info={
           <InfoTip title="Prestatie per score" align="left">
