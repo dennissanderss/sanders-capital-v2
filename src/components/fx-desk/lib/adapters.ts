@@ -19,7 +19,11 @@ import type {
   Direction,
   SentimentStand,
 } from './types'
-import { convictionForLivePair, type ConvictionBreakdown } from './conviction'
+import {
+  convictionForLivePair,
+  convictionForHistoricalRecord,
+  type ConvictionBreakdown,
+} from './conviction'
 
 // ─── Helpers ──────────────────────────────────────────────────
 const MAJORS = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD']
@@ -30,16 +34,6 @@ function dirOfPair(direction: string): Direction | null {
   return null
 }
 
-// TODO(conviction-historical): provisional placeholder for historical
-// records (trade_focus_records). The real 4-component qualityScore is in
-// lib/conviction.ts and is used for LIVE pairs in adaptCalls below. For
-// historical records we need to derive regimeAligned from regime + dir +
-// pair (the other three components are already persisted in metadata).
-// Pending Dennis' OK; until then we keep the simple absScore*2 mapping so
-// the Calls list / Prestatie buckets stay stable.
-function historicalConvictionPlaceholder(fundScore: number): number {
-  return Math.min(10, Math.abs(fundScore) * 2)
-}
 
 function formatDateDutch(iso?: string): string {
   if (!iso) return ''
@@ -380,15 +374,16 @@ export function adaptTrackRecord(records: ApiTrackRecord[]): DeskCallHistoryReco
 
       const durationText = buildDuration(calledAt, closedAt, r.metadata?.holdingPeriod)
 
+      // Real 4-component conviction from the stored metadata
+      // (regimeAligned derived from regime + direction + pair).
+      const conv = convictionForHistoricalRecord(r)
+
       return {
         id: r.id,
         pair: r.pair,
         dir,
         src,
-        // TODO(conviction-historical): switch to the real 4-component
-        // qualityScore once Dennis OKs deriving regimeAligned from
-        // regime + direction + pair. See lib/conviction.ts.
-        score: historicalConvictionPlaceholder(r.score),
+        score: conv.total,
         fundScore: r.score,
         date: formatDateShort(r.date),
         calledAt: formatDateTime(calledAt) || formatDateShort(r.date),
@@ -457,9 +452,7 @@ export function buildPerfBuckets(records: ApiTrackRecord[]): PerfBucket[] {
 
   for (const b of buckets) {
     const inBucket = records.filter((r) => {
-      // TODO(conviction-historical): replace with real 4-component
-      // qualityScore once Dennis OKs the historical reconstruction.
-      const c = historicalConvictionPlaceholder(r.score)
+      const c = convictionForHistoricalRecord(r).total
       return c >= b.min && c < b.max && r.result !== 'pending'
     })
     const wins = inBucket.filter((r) => r.result === 'correct')
