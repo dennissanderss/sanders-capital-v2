@@ -53,3 +53,6 @@ optimize-database.sql
 supabase_migration_*.sql
 supabase-schema.sql
 
+
+# Design reference bundle from claude.ai/design
+.design-reference/
