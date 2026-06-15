@@ -11,13 +11,14 @@ interface CallsProps {
   loading?: boolean
 }
 
-type SourceFilter = 'alle' | 'fundamenteel' | 'engine'
 type OutcomeFilter = 'alle' | 'correct' | 'incorrect' | 'pending'
 
 export function Calls({ records, loading }: CallsProps) {
   const desk = useMemo(() => adaptTrackRecord(records || []), [records])
 
-  const [src, setSrc] = useState<SourceFilter>('alle')
+  // Bron-filter (alle / fundamenteel / engine) is verwijderd: er zijn geen
+  // engine-records in trade_focus_records (alle 688 hebben metadata.source = 'v2').
+  // Filter kwam alleen als bron van verwarring. Houd alleen uitkomst + paar.
   const [out, setOut] = useState<OutcomeFilter>('alle')
   const [pairFilter, setPairFilter] = useState<string>('alle')
   const [selId, setSelId] = useState<string | null>(null)
@@ -26,12 +27,11 @@ export function Calls({ records, loading }: CallsProps) {
 
   const filtered = useMemo(() => {
     return desk.filter((d) => {
-      if (src !== 'alle' && d.src !== src) return false
       if (out !== 'alle' && d.outcome !== out) return false
       if (pairFilter !== 'alle' && d.pair !== pairFilter) return false
       return true
     })
-  }, [desk, src, out, pairFilter])
+  }, [desk, out, pairFilter])
 
   useEffect(() => {
     if (filtered.length === 0) {
@@ -57,18 +57,11 @@ export function Calls({ records, loading }: CallsProps) {
         lineHeight: 1.5,
         maxWidth: '60ch',
       }}>
-        De backtest. Elke call uit het trackrecord met instap, take profit, stop, uitkomst en de koersgrafiek per trade. Filter op bron, uitkomst of paar.
+        De backtest. Elke call uit het trackrecord met instap, take profit, stop, uitkomst en de koersgrafiek per trade. Filter op uitkomst of paar.
       </p>
       <div className="calls-layout">
         {/* LEFT — filters + list */}
         <div>
-          <div className="filterbar">
-            <FilterGroup label="Bron" options={[
-              { id: 'alle', label: 'Alle' },
-              { id: 'fundamenteel', label: 'Fundamenteel' },
-              { id: 'engine', label: 'Engine' },
-            ]} value={src} onChange={(v) => setSrc(v as SourceFilter)} />
-          </div>
           <div className="filterbar">
             <FilterGroup label="Uitkomst" options={[
               { id: 'alle', label: 'Alle' },
