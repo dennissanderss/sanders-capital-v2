@@ -216,12 +216,12 @@ async function fetchPriceData(pair: string, calledAt: string, closedAt: string |
   const period1 = Math.floor((startMs - pad) / 1000)
   const period2 = Math.floor((endMs + pad) / 1000)
 
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?period1=${period1}&period2=${period2}&interval=1d`
+  // Through our own /api/yahoo-chart proxy — direct Yahoo calls regularly
+  // hit CORS / rate-limit issues from the browser, the proxy is more reliable.
+  const url = `/api/yahoo-chart?symbol=${encodeURIComponent(symbol)}&period1=${period1}&period2=${period2}&interval=1d`
 
-  const r = await fetch(url, {
-    headers: { Accept: 'application/json' },
-  })
-  if (!r.ok) throw new Error(`Yahoo ${r.status}`)
+  const r = await fetch(url, { headers: { Accept: 'application/json' } })
+  if (!r.ok) throw new Error(`Chart proxy ${r.status}`)
   const json = await r.json()
   const result = json?.chart?.result?.[0]
   if (!result) return null

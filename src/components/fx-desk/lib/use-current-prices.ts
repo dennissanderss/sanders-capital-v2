@@ -31,8 +31,9 @@ export function useCurrentPrices(pairs: string[]): { prices: Record<string, numb
         const symbol = YAHOO_SYMBOLS[pair]
         if (!symbol) return null
         try {
+          // Through proxy to avoid Yahoo CORS issues
           const r = await fetch(
-            `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=5d`,
+            `/api/yahoo-chart?symbol=${encodeURIComponent(symbol)}&range=5d&interval=1d`,
             { headers: { Accept: 'application/json' } },
           )
           if (!r.ok) return null
