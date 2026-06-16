@@ -212,13 +212,24 @@ async function fetchPriceData(pair: string, calledAt: string, closedAt: string |
   const startMs = parseDate(calledAt)
   if (!startMs) return null
   const endMs = parseDate(closedAt) || Date.now()
-  const pad = 3 * 86400000 // 3 day pad on each side
+
+  // Pick interval + padding based on how long the trade ran (or has run, for open positions).
+  // < 3 days  → hourly bars + 12h pad, so a same-day trade shows intraday detail
+  // 3-14 days → hourly bars + 1 day pad
+  // > 14 days → daily bars + 3 day pad
+  const windowMs = endMs - startMs
+  const useHourly = windowMs < 14 * 86400000
+  const interval = useHourly ? '60m' : '1d'
+  const pad = windowMs < 3 * 86400000 ? 12 * 3600 * 1000
+            : useHourly                 ? 1 * 86400000
+            :                              3 * 86400000
+
   const period1 = Math.floor((startMs - pad) / 1000)
   const period2 = Math.floor((endMs + pad) / 1000)
 
   // Through our own /api/yahoo-chart proxy — direct Yahoo calls regularly
   // hit CORS / rate-limit issues from the browser, the proxy is more reliable.
-  const url = `/api/yahoo-chart?symbol=${encodeURIComponent(symbol)}&period1=${period1}&period2=${period2}&interval=1d`
+  const url = `/api/yahoo-chart?symbol=${encodeURIComponent(symbol)}&period1=${period1}&period2=${period2}&interval=${interval}`
 
   const r = await fetch(url, { headers: { Accept: 'application/json' } })
   if (!r.ok) throw new Error(`Chart proxy ${r.status}`)
