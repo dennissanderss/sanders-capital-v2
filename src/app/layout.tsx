@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Cormorant_Garamond, DM_Sans } from 'next/font/google'
+import { Cormorant_Garamond, DM_Sans, Archivo, Hanken_Grotesk } from 'next/font/google'
 import Script from 'next/script'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -17,6 +17,20 @@ const dmSans = DM_Sans({
   variable: '--font-body',
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
+  display: 'swap',
+})
+
+// Used by Home 2026 redesign
+const archivo = Archivo({
+  variable: '--font-archivo',
+  subsets: ['latin'],
+  weight: ['500', '600', '700', '800', '900'],
+  display: 'swap',
+})
+const hanken = Hanken_Grotesk({
+  variable: '--font-hanken',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
 })
 
@@ -85,7 +99,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="nl" className={`${cormorant.variable} ${dmSans.variable}`}>
+    <html lang="nl" className={`${cormorant.variable} ${dmSans.variable} ${archivo.variable} ${hanken.variable}`}>
       <head>
         {/* Alle consent + analytics scripts in één block zodat Next.js de volgorde niet verandert */}
         <script dangerouslySetInnerHTML={{ __html: `
