@@ -286,3 +286,33 @@ select option {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* ============================================================
+   Light header bar — only on the redesigned (light) home page.
+   Recolors the desktop nav labels to dark-on-light. Targets
+   `nav.items-center` so the dark mobile slide-out drawer (which
+   has no items-center on its <nav>) keeps its dark styling.
+   Dropdown popovers stay dark by design.
+   ============================================================ */
+.header-light nav.items-center > a,
+.header-light nav.items-center > div > button {
+  color: #475063;
+  transition: color 0.2s ease;
+}
+.header-light nav.items-center > a:hover,
+.header-light nav.items-center > div > button:hover {
+  color: #0c1626;
+}
+.header-light nav.items-center > a.text-heading,
+.header-light nav.items-center > div > button.text-heading {
+  color: #0c1626;
+}
+.header-light nav.items-center > a[href="/login"],
+.header-light nav.items-center > a[href="/dashboard"] {
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.30);
+}
+.header-light nav.items-center > a[href="/login"]:hover,
+.header-light nav.items-center > a[href="/dashboard"]:hover {
+  background: rgba(59, 130, 246, 0.08);
+}

@@ -121,16 +121,30 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // The 2026 home uses a light theme, so it gets a light header bar.
+  // Interior pages are still dark and keep the existing dark header.
+  const isLight = pathname === '/'
+
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50"
-      style={{
-        background: scrolled ? 'rgba(13, 16, 22, 0.85)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(24px)' : 'none',
-        WebkitBackdropFilter: scrolled ? 'blur(24px)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
-        transition: 'background 0.4s ease, border-bottom 0.4s ease, backdrop-filter 0.4s ease',
-      }}
+      className={`fixed top-0 left-0 right-0 z-50${isLight ? ' header-light' : ''}`}
+      style={
+        isLight
+          ? {
+              background: 'rgba(245, 247, 251, 0.92)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              borderBottom: '1px solid rgba(12, 22, 38, 0.10)',
+              transition: 'background 0.4s ease, border-bottom 0.4s ease, backdrop-filter 0.4s ease',
+            }
+          : {
+              background: scrolled ? 'rgba(13, 16, 22, 0.85)' : 'transparent',
+              backdropFilter: scrolled ? 'blur(24px)' : 'none',
+              WebkitBackdropFilter: scrolled ? 'blur(24px)' : 'none',
+              borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
+              transition: 'background 0.4s ease, border-bottom 0.4s ease, backdrop-filter 0.4s ease',
+            }
+      }
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 group">
@@ -142,7 +156,7 @@ export default function Header() {
             className="rounded"
             priority
           />
-          <span className="text-lg font-semibold tracking-wider text-heading font-display">
+          <span className={`text-lg font-semibold tracking-wider font-display ${isLight ? 'text-[#0c1626]' : 'text-heading'}`}>
             SANDERS CAPITAL
           </span>
         </Link>
@@ -382,9 +396,9 @@ export default function Header() {
           className="lg:hidden flex flex-col gap-1.5 p-3"
           aria-label="Menu"
         >
-          <span className={`w-5 h-px bg-heading transition-transform duration-200 ${mobileOpen ? 'rotate-45 translate-y-[4px]' : ''}`} />
-          <span className={`w-5 h-px bg-heading transition-opacity duration-200 ${mobileOpen ? 'opacity-0' : ''}`} />
-          <span className={`w-5 h-px bg-heading transition-transform duration-200 ${mobileOpen ? '-rotate-45 -translate-y-[4px]' : ''}`} />
+          <span className={`w-5 h-px transition-transform duration-200 ${isLight ? 'bg-[#0c1626]' : 'bg-heading'} ${mobileOpen ? 'rotate-45 translate-y-[4px]' : ''}`} />
+          <span className={`w-5 h-px transition-opacity duration-200 ${isLight ? 'bg-[#0c1626]' : 'bg-heading'} ${mobileOpen ? 'opacity-0' : ''}`} />
+          <span className={`w-5 h-px transition-transform duration-200 ${isLight ? 'bg-[#0c1626]' : 'bg-heading'} ${mobileOpen ? '-rotate-45 -translate-y-[4px]' : ''}`} />
         </button>
       </div>
 
