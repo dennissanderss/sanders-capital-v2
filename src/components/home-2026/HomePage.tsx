@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import RevealInit from './RevealInit'
+import Globe from './Globe'
 import './styles.css'
 
 // ─── icons (inline SVG, no library) ───────────────────────────
@@ -89,11 +90,7 @@ export default async function HomePage() {
             </figure>
           </div>
 
-          <div className="globe-stage" aria-hidden="true">
-            <div className="globe-orb-wrap">
-              <div className="globe-orb" />
-            </div>
-          </div>
+          <Globe />
         </div>
       </section>
       <span id="verder" />
@@ -257,56 +254,6 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* FX OUTLOOK */}
-      <section className="sec">
-        <div className="wrap outlook-grid">
-          <div className="reveal">
-            <span className="eyebrow">Marktanalyse</span>
-            <h2 className="h2" style={{ marginTop: 16 }}>FX Outlook</h2>
-            <p className="lead" style={{ marginTop: 20 }}>
-              Wekelijkse en maandelijkse macro-analyses van de valutamarkt. Van centralebankbeleid tot geopolitieke verschuivingen.
-              Begrijp de krachten die valutaparen bewegen en vertaal data naar een onderbouwde visie.
-            </p>
-            <div className="chips">
-              <span className="chip">Marktanalyse</span>
-              <span className="chip">Data</span>
-              <span className="chip">Strategie</span>
-            </div>
-            <div style={{ marginTop: 30 }}>
-              <Link className="btn btn-primary" href="/blog/fx-outlook">Bekijk FX Outlook</Link>
-            </div>
-          </div>
-          <div className="bias-card reveal">
-            <div className="bh">
-              <span className="t">Huidige bias</span>
-              <span className="disc-note"><span className="dot" />Voorbeeld</span>
-            </div>
-            <div className="bias-row">
-              <span className="pair">EUR/USD</span>
-              <svg className="spark" viewBox="0 0 120 30" preserveAspectRatio="none">
-                <polyline points="2,8 24,12 46,10 68,18 90,22 118,26" fill="none" stroke="#b1543f" strokeWidth="1.6" />
-              </svg>
-              <span className="snap-bias bear">Bearish</span>
-            </div>
-            <div className="bias-row">
-              <span className="pair">GBP/JPY</span>
-              <svg className="spark" viewBox="0 0 120 30" preserveAspectRatio="none">
-                <polyline points="2,24 24,20 46,22 68,12 90,9 118,4" fill="none" stroke="#3f7d54" strokeWidth="1.6" />
-              </svg>
-              <span className="snap-bias bull">Bullish</span>
-            </div>
-            <div className="bias-row">
-              <span className="pair">AUD/USD</span>
-              <svg className="spark" viewBox="0 0 120 30" preserveAspectRatio="none">
-                <polyline points="2,16 24,14 46,17 68,15 90,16 118,15" fill="none" stroke="#8a8378" strokeWidth="1.6" />
-              </svg>
-              <span className="snap-bias neu">Neutraal</span>
-            </div>
-            <div className="snap-foot">Voorbeeld, geen actueel advies</div>
-          </div>
-        </div>
-      </section>
-
       {/* TOOLS (dark band) */}
       <section className="sec band-dark on-dark">
         <div className="wrap">
@@ -319,20 +266,20 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="tools-grid">
-            <Link className="tool-card reveal" href="/tools/fx-selector/v2">
+            <Link className="tool-card wide reveal" href="/tools/fx-selector/v2">
               <div className="th">
                 <span className="tname">
                   <span className="ti">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 3h11l4 4v14H5z" /><path d="M16 3v4h4" /><path d="M9 12h7M9 16h7" />
+                      <path d="M3 12h4l2.5-6 4 12 2.5-6H21" />
                     </svg>
                   </span>
-                  Daily Macro Briefing
+                  Daily Macro Briefing &amp; Execution Engine
                 </span>
                 <span className="pro-pill">Pro</span>
               </div>
-              <p className="prob"><b>Probleem:</b> elke dag macro data verzamelen kost uren en je mist altijd iets.</p>
-              <p className="sol"><b>Oplossing:</b> automatische fundamentele analyse in 5 stappen: marktregime, nieuws-sentiment, intermarket-signalen, trade-focus filter en concrete trades. Dagelijks vernieuwd.</p>
+              <p className="tool-formula">Macro-bias <span className="ar">→</span> concrete calls <span className="ar">→</span> instap, stop en target.</p>
+              <p className="tool-note">De fundamentele richting en de technische uitvoering in één werkstroom.</p>
               <div className="arrow"><span className="btn-link">Naar de tool <ArrowRight /></span></div>
             </Link>
             <Link className="tool-card reveal" href="/tools/fx-analyse">
@@ -347,25 +294,7 @@ export default async function HomePage() {
                 </span>
                 <span className="pro-pill">Pro</span>
               </div>
-              <p className="prob"><b>Probleem:</b> rentetarieven en CB-beleid zijn verspreid over tientallen bronnen.</p>
-              <p className="sol"><b>Oplossing:</b> alle rentedata, inflatiecijfers en centrale-bank bias per valuta op één plek.</p>
-              <div className="arrow"><span className="btn-link">Naar de tool <ArrowRight /></span></div>
-            </Link>
-            <Link className="tool-card reveal" href="/tools/execution">
-              <div className="th">
-                <span className="tname">
-                  <span className="ti">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="3" />
-                      <path d="M12 4v2M12 18v2M4 12h2M18 12h2M6.5 6.5l1.5 1.5M16 16l1.5 1.5M17.5 6.5L16 8M8 16l-1.5 1.5" />
-                    </svg>
-                  </span>
-                  Execution Engine
-                </span>
-                <span className="pro-pill">Pro</span>
-              </div>
-              <p className="prob"><b>Probleem:</b> je fundamentele bias is correct maar je weet niet wanneer je moet instappen.</p>
-              <p className="sol"><b>Oplossing:</b> bewezen technisch timing-model met vaste SL/TP en R:R, automatisch gekoppeld aan de Daily Briefing.</p>
+              <p className="tool-formula">Rente, inflatie en CB-bias <span className="ar">→</span> één valutascore.</p>
               <div className="arrow"><span className="btn-link">Naar de tool <ArrowRight /></span></div>
             </Link>
             <Link className="tool-card reveal" href="/tools/tradescope">
@@ -380,8 +309,7 @@ export default async function HomePage() {
                 </span>
                 <span className="pro-pill">Pro</span>
               </div>
-              <p className="prob"><b>Probleem:</b> je hebt trades maar geen manier om patronen te zien.</p>
-              <p className="sol"><b>Oplossing:</b> trading journal met screenshots, profit-kalender, emotie-tracking en performance-analyse.</p>
+              <p className="tool-formula">Journal <span className="ar">→</span> patronen <span className="ar">→</span> betere uitvoering.</p>
               <div className="arrow"><span className="btn-link">Naar de tool <ArrowRight /></span></div>
             </Link>
           </div>

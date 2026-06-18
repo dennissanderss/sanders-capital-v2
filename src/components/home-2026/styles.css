@@ -1,64 +1,60 @@
 /* ============================================================
    Sanders Capital — Home 2026 redesign
-   Dark institutional. Archivo (display) · Hanken Grotesk (body).
-   Blue logo accent + glow. Scoped under .home-2026 so the rest
+   LIGHT premium (white / cool grey / royal blue) with dark
+   hero, methode-band and tools-band. Archivo (display) ·
+   Hanken Grotesk (body). Scoped under .home-2026 so the rest
    of the site keeps its existing styles.
    ============================================================ */
 
 .home-2026 {
-  /* canvas */
-  --paper:      #08090c;
-  --paper-2:    #0c0e12;
-  --surface:    #101319;
-  --surface-2:  #161a22;
-  --inset:      #0a0c10;
+  /* canvas — light */
+  --paper:      #f5f7fb;
+  --paper-2:    #eef2f8;
+  --surface:    #ffffff;
+  --surface-2:  #f3f6fb;
+  --inset:      #eaeef6;
 
-  /* ink */
-  --ink:        #eef1f4;
-  --ink-2:      #aab2bd;
-  --ink-3:      #727a86;
-  --ink-4:      #4a515c;
+  /* ink (deep navy text) */
+  --ink:        #0c1626;
+  --ink-2:      #3f4a5c;
+  --ink-3:      #6b7585;
+  --ink-4:      #9aa3b2;
 
-  /* hairlines */
-  --line:       rgba(238, 241, 244, 0.09);
-  --line-2:     rgba(238, 241, 244, 0.17);
+  /* hairlines (dark on light) */
+  --line:       rgba(12, 22, 38, 0.10);
+  --line-2:     rgba(12, 22, 38, 0.17);
 
-  /* accent (logo blue + glow) */
-  --accent:      #4d8df5;
-  --accent-2:    #6aa6ff;
-  --accent-ink:  #04101f;
-  --accent-soft: rgba(77, 141, 245, 0.15);
-  --accent-line: rgba(77, 141, 245, 0.38);
-  --glow:        rgba(60, 120, 240, 0.55);
+  /* accent (royal blue) */
+  --accent:      #3b82f6;
+  --accent-2:    #60a5fa;
+  --accent-ink:  #ffffff;
+  --accent-soft: rgba(59, 130, 246, 0.10);
+  --accent-line: rgba(59, 130, 246, 0.30);
+  --glow:        rgba(59, 130, 246, 0.45);
 
   /* market semantics */
-  --bull:    #5ec488;
-  --bull-bg: rgba(94, 196, 136, 0.13);
-  --bear:    #e06a52;
-  --bear-bg: rgba(224, 106, 82, 0.13);
-  --neutral: #8b93a0;
+  --bull:    #2f9e6f;
+  --bull-bg: rgba(47, 158, 111, 0.12);
+  --bear:    #d4593f;
+  --bear-bg: rgba(212, 89, 63, 0.12);
+  --neutral: #7b8593;
 
-  /* dark band (deeper panel) */
-  --d-bg:    #060709;
-  --d-bg-2:  #0d1014;
-  --d-ink:   #eef1f4;
-  --d-ink-2: #aab2bd;
-  --d-ink-3: #6b7280;
-  --d-line:  rgba(238, 241, 244, 0.08);
+  /* dark zones (hero / methode / tools band) */
+  --d-bg:    #0a1322;
+  --d-bg-2:  #0f1b2e;
+  --d-ink:   #eaf0fb;
+  --d-ink-2: #9fb0c8;
+  --d-ink-3: #647590;
+  --d-line:  rgba(234, 240, 251, 0.10);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow:    0 2px 8px rgba(0, 0, 0, 0.4), 0 20px 50px -32px rgba(0, 0, 0, 0.8);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5), 0 40px 90px -45px rgba(0, 0, 0, 0.9);
+  --shadow-sm: 0 1px 2px rgba(12, 22, 38, 0.05);
+  --shadow:    0 2px 8px rgba(12, 22, 38, 0.06), 0 20px 50px -32px rgba(12, 22, 38, 0.22);
+  --shadow-lg: 0 8px 24px rgba(12, 22, 38, 0.08), 0 40px 90px -45px rgba(12, 22, 38, 0.28);
 
   --h26-maxw: 1240px;
   --h26-gut: 30px;
 
   background: var(--paper);
-  background-image:
-    linear-gradient(rgba(238, 241, 244, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(238, 241, 244, 0.018) 1px, transparent 1px),
-    radial-gradient(1100px 640px at 50% -12%, rgba(60, 120, 240, 0.10), transparent 60%);
-  background-size: 64px 64px, 64px 64px, 100% 100%;
   color: var(--ink);
   font-family: 'Hanken Grotesk', var(--font-body), system-ui, sans-serif;
   font-size: 16px;
@@ -142,11 +138,14 @@
 }
 
 /* ============================================================
-   HERO SHOWPIECE — 2-column, starfield, rising globe
+   HERO SHOWPIECE — 2-column, dark canvas, starfield, terminal globe
    ============================================================ */
 .home-2026 .hero-show {
   position: relative; overflow: hidden; isolation: isolate;
-  padding: 72px 0 84px;
+  padding: 64px 0 76px;
+  background:
+    radial-gradient(1200px 720px at 50% -12%, #16294552, transparent 62%),
+    linear-gradient(180deg, #0b1526, var(--d-bg));
   border-bottom: 1px solid var(--line);
 }
 .home-2026 .hero-bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
@@ -185,71 +184,45 @@
 /* 2-column layout */
 .home-2026 .hero-2col { display: grid; grid-template-columns: 1.02fr 0.98fr; gap: 36px; align-items: center; }
 .home-2026 .hero-left { max-width: 600px; position: relative; }
-.home-2026 .hero-left .eyebrow {
-  font-size: 10.5px; letter-spacing: 0.14em; gap: 8px; color: var(--ink-3);
-}
-.home-2026 .hero-left .eyebrow::before { width: 18px; background: var(--ink-3); opacity: 0.5; }
+.home-2026 .hero-left .eyebrow { font-size: 10.5px; letter-spacing: 0.14em; gap: 8px; color: var(--d-ink-3); }
+.home-2026 .hero-left .eyebrow::before { width: 18px; background: var(--d-ink-3); opacity: 0.5; }
 .home-2026 .hero-left .h-display { font-size: clamp(40px, 5vw, 72px); margin: 18px 0 0; color: #fff; }
 .home-2026 .hero-left .h-display .dim { color: #58698a; }
-.home-2026 .hero-left .lead { margin: 22px 0 0; max-width: 46ch; color: var(--ink-2); }
+.home-2026 .hero-left .lead { margin: 22px 0 0; max-width: 46ch; color: var(--d-ink-2); }
 .home-2026 .hero-left .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.home-2026 .hero-show .btn-ghost { color: var(--d-ink); border-color: var(--d-line); }
+.home-2026 .hero-show .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
 
 /* hero quote (Schwager) */
 .home-2026 .hero-quote { display: flex; align-items: stretch; gap: 14px; max-width: 400px; margin: 52px 0 0; }
-.home-2026 .hero-quote .bar { width: 2px; flex: none; border-radius: 2px; background: linear-gradient(180deg, var(--accent), rgba(77, 141, 245, 0)); }
-.home-2026 .hero-quote blockquote { margin: 0; font-family: 'Archivo', sans-serif; font-weight: 600; font-size: clamp(14px, 1.5vw, 17px); line-height: 1.36; letter-spacing: -0.01em; color: var(--ink-2); text-wrap: pretty; }
+.home-2026 .hero-quote .bar { width: 2px; flex: none; border-radius: 2px; background: linear-gradient(180deg, var(--accent), rgba(59, 130, 246, 0)); }
+.home-2026 .hero-quote blockquote { margin: 0; font-family: 'Archivo', sans-serif; font-weight: 600; font-size: clamp(14px, 1.5vw, 17px); line-height: 1.36; letter-spacing: -0.01em; color: var(--d-ink-2); text-wrap: pretty; }
 .home-2026 .hero-quote figcaption { margin-top: 9px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
 
-/* globe stage — procedural glowing orb (brand motif) */
-.home-2026 .globe-stage { position: relative; width: 100%; height: clamp(340px, 40vw, 540px); }
+/* globe stage — animated terminal globe (canvas) */
+.home-2026 .globe-stage { position: relative; width: 100%; height: clamp(380px, 42vw, 560px); }
 .home-2026 .globe-stage::before {
   content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: min(620px, 96%); aspect-ratio: 1; border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(77, 141, 245, 0.32), rgba(77, 141, 245, 0.08) 60%, transparent 72%);
-  filter: blur(20px); opacity: 0.9; pointer-events: none;
+  width: min(660px, 96%); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(59, 130, 246, 0.30), rgba(59, 130, 246, 0.08) 60%, transparent 72%);
+  filter: blur(18px); opacity: 0.85; pointer-events: none;
 }
-.home-2026 .globe-orb-wrap {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: min(480px, 88%); aspect-ratio: 1; animation: h26float 9s ease-in-out infinite;
+.home-2026 canvas.globe { position: absolute; inset: 0; display: block; }
+.home-2026 .glabel {
+  position: absolute; left: 0; top: 0; will-change: transform, opacity;
+  display: inline-flex; align-items: center; white-space: nowrap;
+  font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-weight: 500; font-style: italic;
+  letter-spacing: 0.02em;
+  color: rgba(214, 228, 248, 0.92); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7), 0 0 14px rgba(80, 140, 240, 0.4);
+  transition: opacity .25s;
 }
-@keyframes h26float { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(-50%, calc(-50% - 10px)); } }
-.home-2026 .globe-orb {
-  position: absolute; inset: 0; border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(120, 170, 255, 0.10) 0 1px, transparent 1px) 0 0 / 48px 48px,
-    radial-gradient(circle at 38% 34%, rgba(150, 200, 255, 0.28), transparent 42%),
-    radial-gradient(circle at 64% 70%, rgba(20, 60, 120, 0.55), transparent 55%),
-    radial-gradient(circle at 50% 44%, #2b6ad0 0%, #163f86 34%, #0a2350 62%, #06142e 80%);
-  background-color: #07182f;
-  box-shadow:
-    inset -30px -22px 110px rgba(0, 0, 0, 0.72),
-    inset 46px 32px 130px rgba(90, 150, 255, 0.18),
-    0 0 90px rgba(60, 120, 240, 0.40);
-}
-/* lat/long wireframe */
-.home-2026 .globe-orb::before {
-  content: ''; position: absolute; inset: 0; border-radius: 50%;
-  background:
-    repeating-linear-gradient(0deg,  rgba(140, 190, 255, 0.12) 0 1px, transparent 1px 30px),
-    repeating-linear-gradient(90deg, rgba(140, 190, 255, 0.09) 0 1px, transparent 1px 30px);
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 60%, transparent 74%);
-          mask-image: radial-gradient(circle at 50% 50%, #000 60%, transparent 74%);
-  opacity: 0.7;
-}
-/* atmosphere rim */
-.home-2026 .globe-orb::after {
-  content: ''; position: absolute; inset: -2px; border-radius: 50%;
-  box-shadow: 0 0 60px 6px rgba(90, 150, 255, 0.35), inset 0 6px 30px rgba(150, 200, 255, 0.4);
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 64%, #000 66%, #000 70%, transparent 78%);
-          mask-image: radial-gradient(circle at 50% 50%, transparent 64%, #000 66%, #000 70%, transparent 78%);
-}
+.home-2026 .glabel .gp { color: rgba(224, 235, 252, 0.95); font-weight: 500; letter-spacing: 0.02em; }
 
 @media (max-width: 1000px) {
   .home-2026 .hero-2col { grid-template-columns: 1fr; gap: 8px; }
   .home-2026 .hero-left { max-width: 600px; }
-  .home-2026 .globe-stage { order: -1; height: clamp(260px, 56vw, 380px); }
+  .home-2026 .globe-stage { order: -1; height: clamp(280px, 60vw, 420px); }
 }
-@media (prefers-reduced-motion: reduce) { .home-2026 .globe-orb-wrap { animation: none; } }
 
 /* ============================================================
    TRUST STRIP
@@ -275,7 +248,7 @@
 .home-2026 .cred .cdot { width: 4px; height: 4px; border-radius: 50%; background: var(--line-2); }
 
 /* ============================================================
-   COMBINE (fundamenteel × technisch)
+   COMBINE (fundamenteel × technisch) — dark band
    ============================================================ */
 .home-2026 .combine { display: grid; grid-template-columns: 1fr auto 1fr; gap: 22px; align-items: stretch; }
 .home-2026 .combine-card { background: var(--d-bg-2); border: 1px solid var(--d-line); border-radius: 10px; padding: 30px 28px; }
@@ -319,13 +292,12 @@
 .home-2026 .sec-bar { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 44px; gap: 24px; }
 .home-2026 .sec-bar .h2 { margin: 14px 0 0; }
 .home-2026 .articles { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; }
-.home-2026 .article-card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; overflow: hidden; transition: border-color .18s, transform .18s; }
-.home-2026 .article-card:hover { border-color: var(--line-2); transform: translateY(-3px); }
-.home-2026 .article-card .thumb { aspect-ratio: 16/8; background: var(--surface-2); position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
-.home-2026 .article-card .thumb::after { content: ''; position: absolute; inset: 0; background: radial-gradient(420px 200px at 80% 0%, var(--accent-soft), transparent 62%); }
-.home-2026 .article-card .thumb.gold { background: var(--inset); }
-.home-2026 .article-card .thumb .tag { position: absolute; top: 16px; left: 16px; z-index: 2; font-family: 'Hanken Grotesk', sans-serif; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; color: var(--accent); background: rgba(8, 9, 12, 0.7); border: 1px solid var(--accent-line); padding: 5px 10px; border-radius: 2px; }
-.home-2026 .article-card .thumb .glyph { position: absolute; right: -6px; bottom: -28px; font-family: 'Archivo', sans-serif; font-size: 160px; line-height: 1; color: rgba(238, 241, 244, 0.05); font-weight: 700; }
+.home-2026 .article-card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; overflow: hidden; transition: border-color .18s, transform .18s; box-shadow: var(--shadow-sm); }
+.home-2026 .article-card:hover { border-color: var(--line-2); transform: translateY(-3px); box-shadow: var(--shadow); }
+.home-2026 .article-card .thumb { aspect-ratio: 16/8; position: relative; overflow: hidden; border-bottom: 1px solid var(--line); background: linear-gradient(135deg, #0f1b2e, #16335e); }
+.home-2026 .article-card .thumb::after { content: ''; position: absolute; inset: 0; background: radial-gradient(420px 200px at 80% 0%, rgba(96, 165, 250, 0.35), transparent 62%); }
+.home-2026 .article-card .thumb .tag { position: absolute; top: 16px; left: 16px; z-index: 2; font-family: 'Hanken Grotesk', sans-serif; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; color: #fff; background: rgba(8, 14, 26, 0.55); border: 1px solid var(--accent-line); padding: 5px 10px; border-radius: 2px; }
+.home-2026 .article-card .thumb .glyph { position: absolute; right: -6px; bottom: -28px; font-family: 'Archivo', sans-serif; font-size: 160px; line-height: 1; color: rgba(255, 255, 255, 0.07); font-weight: 700; }
 .home-2026 .article-card .body { padding: 26px 24px 24px; display: flex; flex-direction: column; flex: 1; }
 .home-2026 .article-card h3 { font-size: 25px; line-height: 1.1; }
 .home-2026 .article-card .ex { margin: 13px 0 0; font-size: 14px; color: var(--ink-3); line-height: 1.6; flex: 1; }
@@ -341,49 +313,32 @@
 .home-2026 .ali h3 { font-size: 21px; line-height: 1.14; }
 .home-2026 .ali .meta { margin-top: 9px; font-size: 13px; color: var(--ink-3); line-height: 1.5; }
 
-/* ============================================================
-   FX OUTLOOK
-   ============================================================ */
-.home-2026 .outlook-grid { display: grid; grid-template-columns: 1fr 0.85fr; gap: 52px; align-items: center; }
+/* chips (used in combine cards) */
 .home-2026 .chips { display: inline-flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
 .home-2026 .chip { font-family: 'Hanken Grotesk', sans-serif; font-size: 11px; letter-spacing: 0.04em; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line-2); border-radius: 2px; padding: 6px 13px; }
-.home-2026 .bias-card { background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 30px; }
-.home-2026 .bh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
-.home-2026 .bh .t { font-size: 12px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-3); }
-.home-2026 .bias-row { display: flex; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
-.home-2026 .bias-row:last-of-type { border-bottom: none; }
-.home-2026 .bias-row .pair { font-family: 'Archivo', sans-serif; font-size: 16px; font-weight: 600; min-width: 88px; color: var(--ink); }
-.home-2026 .bias-row .spark { flex: 1; height: 28px; }
-.home-2026 .snap-bias { font-size: 11.5px; font-weight: 700; letter-spacing: 0.03em; padding: 5px 10px; border-radius: 4px; text-transform: lowercase; }
-.home-2026 .snap-bias::first-letter { text-transform: uppercase; }
-.home-2026 .snap-bias.bull { color: var(--bull); background: var(--bull-bg); }
-.home-2026 .snap-bias.bear { color: var(--bear); background: var(--bear-bg); }
-.home-2026 .snap-bias.neu { color: var(--neutral); background: rgba(139, 147, 160, 0.14); }
-.home-2026 .snap-foot { margin-top: 18px; font-size: 12px; color: var(--ink-4); }
-.home-2026 .disc-note { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: var(--ink-4); font-weight: 500; letter-spacing: 0.04em; }
-.home-2026 .disc-note .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 
 /* ============================================================
    DARK BAND (methode + tools)
    ============================================================ */
 .home-2026 .band-dark { background: var(--d-bg); color: var(--d-ink); position: relative; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.home-2026 .band-dark::before { content: ''; position: absolute; inset: 0; background: radial-gradient(900px 440px at 84% 0%, var(--accent-soft), transparent 60%); pointer-events: none; }
+.home-2026 .band-dark::before { content: ''; position: absolute; inset: 0; background: radial-gradient(900px 440px at 84% 0%, rgba(59, 130, 246, 0.14), transparent 60%); pointer-events: none; }
 .home-2026 .band-dark > .wrap { position: relative; }
 .home-2026 .on-dark h1, .home-2026 .on-dark h2, .home-2026 .on-dark h3 { color: var(--d-ink); }
 .home-2026 .on-dark .sec-head p, .home-2026 .on-dark .lead { color: var(--d-ink-2); }
 .home-2026 .tools-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--d-line); border: 1px solid var(--d-line); border-radius: 5px; overflow: hidden; position: relative; }
 .home-2026 .tool-card { background: var(--d-bg-2); padding: 30px 28px; transition: background .2s; display: flex; flex-direction: column; }
-.home-2026 .tool-card:hover { background: #11151a; }
+.home-2026 .tool-card:hover { background: #11233c; }
+.home-2026 .tool-card.wide { grid-column: 1 / -1; }
 .home-2026 .tool-card .th { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .home-2026 .tool-card .tname { font-family: 'Archivo', sans-serif; font-size: 27px; font-weight: 600; color: var(--d-ink); display: flex; align-items: center; gap: 13px; letter-spacing: -0.015em; }
-.home-2026 .tool-card .tname .ti { width: 40px; height: 40px; border-radius: 3px; border: 1px solid var(--d-line); display: grid; place-items: center; color: var(--accent); background: var(--accent-soft); }
+.home-2026 .tool-card .tname .ti { width: 40px; height: 40px; border-radius: 3px; border: 1px solid var(--d-line); display: grid; place-items: center; color: var(--accent); background: var(--accent-soft); flex: none; }
 .home-2026 .tool-card .tname .ti svg { width: 20px; height: 20px; }
-.home-2026 .tool-card .prob { font-size: 13.5px; color: var(--d-ink-3); line-height: 1.55; margin: 0 0 12px; }
-.home-2026 .tool-card .prob b { color: var(--d-ink-2); font-weight: 600; }
-.home-2026 .tool-card .sol { font-size: 14px; color: var(--d-ink-2); line-height: 1.6; margin: 0; }
-.home-2026 .tool-card .sol b { color: var(--accent); font-weight: 600; }
+.home-2026 .tool-card .tool-formula { font-family: 'Archivo', sans-serif; font-size: 21px; font-weight: 600; letter-spacing: -0.01em; color: var(--d-ink); line-height: 1.35; margin: 0; }
+.home-2026 .tool-card.wide .tool-formula { font-size: 25px; }
+.home-2026 .tool-card .tool-formula .ar { color: var(--accent); font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; margin: 0 4px; }
+.home-2026 .tool-card .tool-note { font-size: 13.5px; color: var(--d-ink-3); line-height: 1.55; margin: 10px 0 0; }
 .home-2026 .tool-card .arrow { margin-top: 20px; }
-.home-2026 .pro-pill { font-family: 'Hanken Grotesk', sans-serif; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500; color: var(--accent); border: 1px solid var(--accent-line); border-radius: 2px; padding: 3px 7px; }
+.home-2026 .pro-pill { font-family: 'Hanken Grotesk', sans-serif; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500; color: var(--accent); border: 1px solid var(--accent-line); border-radius: 2px; padding: 3px 7px; flex: none; }
 
 /* ============================================================
    CTA BAND
@@ -406,7 +361,6 @@
   .home-2026 .combine-op span { transform: rotate(90deg); }
   .home-2026 .compare { grid-template-columns: 1fr; }
   .home-2026 .articles { grid-template-columns: 1fr; }
-  .home-2026 .outlook-grid { grid-template-columns: 1fr; }
   .home-2026 .tools-grid { grid-template-columns: 1fr; }
   .home-2026 .cta-inner { flex-direction: column; align-items: flex-start; }
 }
