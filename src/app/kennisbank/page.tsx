@@ -39,32 +39,45 @@ export default async function KennisbankPage() {
   }))
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-24">
-      <FadeIn>
-        <div className="mb-16">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-semibold text-heading mb-4">
-            Kennisbank
-          </h1>
-          <p className="text-text-muted max-w-2xl">
-            Gestructureerde educatieve content, georganiseerd per onderwerp. Van basis tot verdieping.
-          </p>
+    <div>
+      {/* Page head */}
+      <div className="border-b border-border bg-surface/40">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 pb-14 sm:pt-20 sm:pb-16">
+          <FadeIn>
+            <nav className="flex items-center gap-2 text-xs font-mono tracking-wide text-text-dim">
+              <Link href="/" className="hover:text-accent-light transition-colors">Home</Link>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+              <span className="text-text-muted">Kennisbank</span>
+            </nav>
+            <span className="mt-4 inline-flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-accent before:h-px before:w-6 before:bg-accent/70 before:content-['']">
+              Kennisbank
+            </span>
+            <h1 className="mt-4 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight text-heading">
+              Bouw je fundament
+            </h1>
+            <p className="mt-4 max-w-[60ch] text-base sm:text-lg text-text-muted leading-relaxed">
+              Gestructureerde kennis, geordend per onderwerp. Begin bij de basis en verdiep je in de gebieden die jouw besluitvorming het meest versterken.
+            </p>
+          </FadeIn>
         </div>
-      </FadeIn>
+      </div>
 
-      <div className="grid md:grid-cols-2 gap-4 sm:gap-5 md:gap-6 auto-rows-fr">
+      {/* Topics grid */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-24">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 auto-rows-fr">
         {groupedItems.map((cat, i) => (
           <FadeIn key={cat.id} delay={i * 100} className="h-full">
             <div
               id={cat.slug}
-              className={`p-6 rounded-xl transition-all duration-300 glass glass-hover h-full flex flex-col scroll-mt-24 ${
+              className={`p-7 rounded-xl border border-border bg-bg-card transition-all duration-300 glass-hover hover:border-border-light hover:-translate-y-0.5 h-full flex flex-col scroll-mt-24 ${
                 cat.is_premium ? 'glass-gold' : ''
               }`}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-accent-glow flex items-center justify-center text-accent-light">
+              <div className="flex items-start gap-4 mb-5">
+                <div className="w-12 h-12 rounded-lg bg-accent-glow border border-border flex items-center justify-center text-accent-light shrink-0">
                   <NavIcon icon={cat.icon} size={24} />
                 </div>
-                <h2 className="text-lg font-display font-semibold text-heading">
+                <h2 className="text-xl font-display font-bold tracking-tight text-heading pt-1">
                   {cat.name}
                 </h2>
               </div>
@@ -136,6 +149,33 @@ export default async function KennisbankPage() {
           </FadeIn>
         ))}
       </div>
+      </div>
+
+      {/* CTA band */}
+      <section className="border-t border-border bg-surface/40">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-16">
+          <FadeIn>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
+              <div>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold tracking-tight text-heading max-w-[17ch]">
+                  Liever lezen per artikel?
+                </h2>
+                <p className="mt-4 max-w-[46ch] text-text-muted">
+                  Alle modules en losse artikelen staan gebundeld in de blog.
+                </p>
+              </div>
+              <div className="shrink-0">
+                <Link
+                  href="/blog"
+                  className="inline-flex items-center gap-2 rounded-lg bg-accent px-7 py-4 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent/30"
+                >
+                  Naar artikelen
+                </Link>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
     </div>
   )
 }
