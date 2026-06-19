@@ -10,7 +10,6 @@ interface SitemapEntry {
 const staticPages: SitemapEntry[] = [
   { loc: '/',                    lastmod: new Date().toISOString(), changefreq: 'weekly',  priority: 1.0 },
   { loc: '/blog',               lastmod: new Date().toISOString(), changefreq: 'daily',   priority: 0.9 },
-  { loc: '/blog/fx-outlook',    lastmod: new Date().toISOString(), changefreq: 'weekly',  priority: 0.8 },
   { loc: '/nieuws',             lastmod: new Date().toISOString(), changefreq: 'daily',   priority: 0.8 },
   { loc: '/kennisbank',         lastmod: new Date().toISOString(), changefreq: 'weekly',  priority: 0.9 },
   { loc: '/kennisbank/begrippen', lastmod: new Date().toISOString(), changefreq: 'monthly', priority: 0.7 },

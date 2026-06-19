@@ -78,17 +78,14 @@ interface CentralBankRate {
   updated_at: string
 }
 
-const tagOptions = ['Module 1', 'Module 2', 'Module 3', 'FX Outlook', 'Marktanalyse', 'Psychologie', 'Risicomanagement', 'Strategie', 'Data']
+const tagOptions = ['Module 1', 'Module 2', 'Module 3', 'Marktanalyse', 'Psychologie', 'Risicomanagement', 'Strategie', 'Data']
 
-// Sync deze lijst met src/app/blog/fx-outlook/page.tsx OUTLOOK_TAGS
-const FX_OUTLOOK_TAGS = ['FX Outlook', 'Marktanalyse', 'Data', 'Strategie']
 const KENNISBANK_TAGS = ['Module 1', 'Module 2', 'Module 3']
 
 function tagDestinationHint(tag: string): { text: string; tone: 'info' | 'warn' } {
-  if (!tag) return { text: '→ Geen tag: verschijnt alleen op /blog', tone: 'info' }
+  if (!tag) return { text: '→ Geen tag: verschijnt op Sanders Capital Artikelen (/blog)', tone: 'info' }
   if (KENNISBANK_TAGS.includes(tag)) return { text: '⚠ Module-tags horen bij Kennisbank, niet bij artikelen — verschijnt alleen op /blog', tone: 'warn' }
-  if (FX_OUTLOOK_TAGS.includes(tag)) return { text: '→ Verschijnt op /blog én /blog/fx-outlook', tone: 'info' }
-  return { text: '→ Verschijnt alleen op /blog', tone: 'info' }
+  return { text: '→ Verschijnt op Sanders Capital Artikelen (/blog)', tone: 'info' }
 }
 
 const iconOptions = [
@@ -262,7 +259,7 @@ export default function AdminPage() {
 
   const saveArticle = async () => {
     if (!editing) return
-    if (!editing.published && !confirm('Let op: "Gepubliceerd" staat uit. Het artikel wordt opgeslagen als concept en is NIET zichtbaar op /blog of /blog/fx-outlook.\n\nToch opslaan als concept?')) return
+    if (!editing.published && !confirm('Let op: "Gepubliceerd" staat uit. Het artikel wordt opgeslagen als concept en is NIET zichtbaar op Sanders Capital Artikelen (/blog).\n\nToch opslaan als concept?')) return
 
     // Rehost externe Discord-afbeeldingen naar Supabase voordat we opslaan
     let contentToSave = editing.content
@@ -396,6 +393,7 @@ export default function AdminPage() {
       })
       await adminWrite('delete', 'articles', undefined, art.id)
       setMoveModal(null)
+      setEditing(null)
       loadData()
     } catch (e) {
       alert('Fout bij verplaatsen: ' + (e as Error).message)
@@ -551,7 +549,7 @@ export default function AdminPage() {
                 <h3 className="text-lg font-display font-semibold text-heading mb-2">Verplaats naar Kennisbank</h3>
                 <p className="text-sm text-text-muted mb-4">
                   Kies een categorie voor <strong className="text-heading">"{(moveModal.item as Article).title}"</strong>.
-                  Het artikel wordt verwijderd uit Artikelen.
+                  Het artikel wordt verwijderd uit Sanders Capital Artikelen.
                 </p>
                 <label className="block text-sm text-text-muted mb-1">Categorie</label>
                 <select
@@ -571,10 +569,10 @@ export default function AdminPage() {
             )}
             {moveModal.type === 'kbToArticle' && (
               <>
-                <h3 className="text-lg font-display font-semibold text-heading mb-2">Verplaats naar Artikelen</h3>
+                <h3 className="text-lg font-display font-semibold text-heading mb-2">Verplaats naar Sanders Capital Artikelen</h3>
                 <p className="text-sm text-text-muted mb-4">
                   <strong className="text-heading">"{(moveModal.item as KennisbankItem).title}"</strong> wordt
-                  verplaatst naar Artikelen als concept. Je kunt daarna tag, leestijd en excerpt instellen.
+                  verplaatst naar Sanders Capital Artikelen als concept. Je kunt daarna tag, leestijd en excerpt instellen.
                 </p>
                 <div className="flex gap-2 justify-end">
                   <button onClick={() => setMoveModal(null)} className="px-4 py-2 rounded-lg border border-border text-sm text-text-muted hover:text-heading transition-colors">Annuleren</button>
@@ -598,7 +596,7 @@ export default function AdminPage() {
                 tab === t ? 'bg-accent text-white' : 'bg-bg-card border border-border text-text-muted hover:text-heading'
               }`}
             >
-              {t === 'status' ? 'Dashboard' : t === 'articles' ? 'Artikelen' : t === 'kennisbank' ? 'Kennisbank' : t === 'categories' ? 'Categorieën' : t === 'users' ? 'Gebruikers' : t === 'tools' ? 'Tools' : 'Rentes'}
+              {t === 'status' ? 'Dashboard' : t === 'articles' ? 'Sanders Capital Artikelen' : t === 'kennisbank' ? 'Kennisbank' : t === 'categories' ? 'Categorieën' : t === 'users' ? 'Gebruikers' : t === 'tools' ? 'Tools' : 'Rentes'}
             </button>
           ))}
         </div>
@@ -652,7 +650,7 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { name: 'Rentetarieven & CB Bias', desc: 'Rente, target, bias en laatste actie per centrale bank. Update via Claude na elk CB besluit. Dit is de primaire input voor het model. CB factor weegt het zwaarst.', tab: 'rentes' },
-                { name: 'Artikelen & Blog', desc: 'Blog posts schrijven, publiceren en premium content beheren.', tab: 'articles' },
+                { name: 'Sanders Capital Artikelen', desc: 'Artikelen schrijven, publiceren en premium content beheren.', tab: 'articles' },
                 { name: 'Kennisbank content', desc: 'Educatieve artikelen en documenten per categorie.', tab: 'kennisbank' },
                 { name: 'Tool instellingen', desc: 'Premium/gratis status en zichtbaarheid van tools.', tab: 'tools' },
                 { name: 'Gebruikers & Rollen', desc: 'Free/premium/admin rollen toekennen.', tab: 'users' },
@@ -1007,9 +1005,20 @@ export default function AdminPage() {
       ═══════════════════════════════════════════════════════ */}
       {tab === 'articles' && editing && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
             <h2 className="text-xl font-display font-semibold text-heading">{editing.id ? 'Artikel bewerken' : 'Nieuw artikel'}</h2>
-            <button onClick={() => setEditing(null)} className="text-sm text-text-muted hover:text-heading transition-colors">Annuleren</button>
+            <div className="flex items-center gap-3">
+              {editing.id && (
+                <button
+                  onClick={() => setMoveModal({ type: 'articleToKb', item: editing, selectedCategory: categories[0]?.slug })}
+                  className="px-3 py-1.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading transition-colors"
+                  title="Verplaats dit artikel naar Kennisbank"
+                >
+                  → Verplaats naar Kennisbank
+                </button>
+              )}
+              <button onClick={() => setEditing(null)} className="text-sm text-text-muted hover:text-heading transition-colors">Annuleren</button>
+            </div>
           </div>
 
           {!editing.published && (
@@ -1017,7 +1026,7 @@ export default function AdminPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400 mt-0.5 shrink-0"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
               <div className="flex-1">
                 <p className="text-sm font-medium text-amber-400">Concept — niet zichtbaar voor bezoekers</p>
-                <p className="text-xs text-text-muted mt-0.5">Vink onderaan <strong className="text-heading">Gepubliceerd</strong> aan om dit artikel zichtbaar te maken op /blog en (indien tag matcht) /blog/fx-outlook.</p>
+                <p className="text-xs text-text-muted mt-0.5">Vink onderaan <strong className="text-heading">Gepubliceerd</strong> aan om dit artikel zichtbaar te maken op Sanders Capital Artikelen (/blog).</p>
               </div>
               <button
                 type="button"
@@ -1168,9 +1177,9 @@ export default function AdminPage() {
                           <button
                             onClick={() => setMoveModal({ type: 'kbToArticle', item })}
                             className="px-3 py-1 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors"
-                            title="Verplaats naar Artikelen"
+                            title="Verplaats naar Sanders Capital Artikelen"
                           >
-                            → Artikel
+                            → Artikelen
                           </button>
                           <button onClick={() => setEditingKb({ ...item, documents: item.documents || [] })} className="px-3 py-1 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors">
                             Bewerken

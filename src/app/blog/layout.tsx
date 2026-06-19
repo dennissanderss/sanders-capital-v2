@@ -5,8 +5,7 @@ import { usePathname } from 'next/navigation'
 import AuthGate from '@/components/AuthGate'
 
 const blogTabs = [
-  { href: '/blog', label: 'Artikelen' },
-  { href: '/blog/fx-outlook', label: 'FX Outlook' },
+  { href: '/blog', label: 'Sanders Capital Artikelen' },
 ]
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {
