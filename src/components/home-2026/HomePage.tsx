@@ -100,7 +100,7 @@ export default async function HomePage() {
         <div className="wrap trust-grid">
           <div className="trust-cell"><div className="v">Kennisbank</div><div className="k">Gestructureerde educatie, gratis toegankelijk</div></div>
           <div className="trust-cell"><div className="v">Daily Macro</div><div className="k">Dagelijkse fundamentele analyse</div></div>
-          <div className="trust-cell"><div className="v">FX Outlook</div><div className="k">Wekelijkse en maandelijkse macro</div></div>
+          <div className="trust-cell"><div className="v">Artikelen</div><div className="k">Educatieve artikelen &amp; analyses</div></div>
           <div className="trust-cell"><div className="v">Community</div><div className="k">Leren en sparren op Discord</div></div>
         </div>
       </div>
