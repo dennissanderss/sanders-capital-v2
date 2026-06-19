@@ -56,3 +56,4 @@ supabase-schema.sql
 
 # Design reference bundle from claude.ai/design
 .design-reference/
+design-reference/

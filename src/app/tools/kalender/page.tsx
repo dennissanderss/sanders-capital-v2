@@ -345,13 +345,21 @@ export default function KalenderPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-semibold text-heading mb-4">
-          Economische Kalender
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+      <div className="mb-10 sm:mb-12">
+        <div className="flex items-center gap-2 text-xs text-text-dim mb-4">
+          <a href="/" className="hover:text-accent-light transition-colors">Home</a>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+          <span className="text-text-muted">Economische Kalender</span>
+        </div>
+        <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent before:content-[''] before:w-[26px] before:h-px before:bg-accent/70">
+          Tools
+        </span>
+        <h1 className="mt-4 text-3xl sm:text-4xl md:text-5xl font-display font-extrabold tracking-tight text-heading">
+          Economische kalender
         </h1>
-        <p className="text-sm sm:text-base text-text-muted max-w-lg mx-auto">
-          Aankomende economische events en data releases die de markten beïnvloeden. Klik op een event voor uitleg.
+        <p className="mt-4 max-w-2xl text-base sm:text-lg text-text-muted leading-relaxed">
+          Aankomende events en datapublicaties die de markt kunnen bewegen, geordend per dag en met een indicatie van de impact. Klik op een event voor uitleg.
         </p>
       </div>
 
@@ -460,23 +468,23 @@ export default function KalenderPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider w-8">
+                  <th className="text-left px-4 sm:px-5 py-3 text-[10.5px] font-semibold text-text-dim uppercase tracking-[0.12em] w-8">
                     <span className="sr-only">Impact</span>
                   </th>
-                  <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Tijd</th>
-                  <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Valuta</th>
-                  <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Event</th>
-                  <th className="text-left px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider hidden sm:table-cell">Impact</th>
-                  <th className="text-right px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Verwacht</th>
-                  <th className="text-right px-3 sm:px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Vorig</th>
+                  <th className="text-left px-4 sm:px-5 py-3 text-[10.5px] font-semibold text-text-dim uppercase tracking-[0.12em]">Tijd</th>
+                  <th className="text-left px-4 sm:px-5 py-3 text-[10.5px] font-semibold text-text-dim uppercase tracking-[0.12em]">Land</th>
+                  <th className="text-left px-4 sm:px-5 py-3 text-[10.5px] font-semibold text-text-dim uppercase tracking-[0.12em]">Event</th>
+                  <th className="text-left px-4 sm:px-5 py-3 text-[10.5px] font-semibold text-text-dim uppercase tracking-[0.12em] hidden sm:table-cell">Impact</th>
+                  <th className="text-right px-4 sm:px-5 py-3 text-[10.5px] font-semibold text-text-dim uppercase tracking-[0.12em]">Verw.</th>
+                  <th className="text-right px-4 sm:px-5 py-3 text-[10.5px] font-semibold text-text-dim uppercase tracking-[0.12em]">Vorig</th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(groupedEvents).map(([dateKey, events]) => (
                   <Fragment key={dateKey}>
-                    <tr className="bg-bg/50">
-                      <td colSpan={7} className="px-3 sm:px-4 py-2">
-                        <span className="text-xs font-semibold text-accent-light uppercase tracking-wider">{dateKey}</span>
+                    <tr className="bg-bg-elevated border-y border-border">
+                      <td colSpan={7} className="px-4 sm:px-5 py-3.5">
+                        <span className="font-display text-lg font-semibold text-heading capitalize">{dateKey}</span>
                       </td>
                     </tr>
                     {events.map((event, i) => {
@@ -492,20 +500,20 @@ export default function KalenderPage() {
                             style={isNext ? { boxShadow: 'inset 3px 0 0 0 var(--color-accent, #3b82f6)' } : undefined}
                             onClick={() => setExpandedEvent(isExpanded ? null : eventId)}
                           >
-                            <td className="px-3 sm:px-4 py-2.5">
+                            <td className="px-4 sm:px-5 py-3.5">
                               <ImpactDot impact={event.impact} />
                             </td>
-                            <td className="px-3 sm:px-4 py-2.5">
-                              <span className="text-xs font-mono text-text-dim whitespace-nowrap">
+                            <td className="px-4 sm:px-5 py-3.5">
+                              <span className="text-sm font-mono font-semibold text-text-muted whitespace-nowrap">
                                 {(() => { try { const d = new Date(event.date); return !isNaN(d.getTime()) ? d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '—' } catch { return '—' } })()}
                               </span>
                             </td>
-                            <td className="px-3 sm:px-4 py-2.5">
-                              <span className="text-xs font-mono text-heading">{event.currency}</span>
+                            <td className="px-4 sm:px-5 py-3.5">
+                              <span className="text-xs font-mono font-bold tracking-[0.04em] text-text-dim">{event.currency}</span>
                             </td>
-                            <td className="px-3 sm:px-4 py-2.5">
+                            <td className="px-4 sm:px-5 py-3.5">
                               <div className="flex items-center gap-1.5">
-                                <span className="text-sm text-heading">{event.title}</span>
+                                <span className="text-sm font-medium text-heading">{event.title}</span>
                                 {isNext && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-accent/15 text-accent-light uppercase tracking-wider shrink-0">Volgende</span>}
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                                   className={`text-text-dim/40 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -514,14 +522,14 @@ export default function KalenderPage() {
                                 </svg>
                               </div>
                             </td>
-                            <td className="px-3 sm:px-4 py-2.5 hidden sm:table-cell">
+                            <td className="px-4 sm:px-5 py-3.5 hidden sm:table-cell">
                               <ImpactBadge impact={event.impact} />
                             </td>
-                            <td className="px-3 sm:px-4 py-2.5 text-right">
-                              <span className="text-sm text-text-muted font-mono">{event.forecast || '—'}</span>
+                            <td className="px-4 sm:px-5 py-3.5 text-right">
+                              <span className="text-sm text-text-dim font-mono tabular-nums">{event.forecast || '—'}</span>
                             </td>
-                            <td className="px-3 sm:px-4 py-2.5 text-right">
-                              <span className="text-sm text-text-dim font-mono">{event.previous || '—'}</span>
+                            <td className="px-4 sm:px-5 py-3.5 text-right">
+                              <span className="text-sm text-text-dim font-mono tabular-nums">{event.previous || '—'}</span>
                             </td>
                           </tr>
                           {/* Expanded explanation */}
@@ -601,25 +609,23 @@ export default function KalenderPage() {
       )}
 
       {/* Legend */}
-      <div className="mt-6 flex flex-wrap gap-4 justify-center">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-          <span className="text-xs text-text-muted">Hoge impact</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-          <span className="text-xs text-text-muted">Medium impact</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-          <span className="text-xs text-text-muted">Lage impact</span>
-        </div>
+      <div className="mt-6 flex flex-wrap gap-2">
+        <span className="inline-flex items-center gap-2 rounded-md border border-border bg-bg-card px-3 py-1.5 text-[11px] font-mono tracking-[0.04em] text-text-muted">
+          <span className="w-2 h-2 rounded-full bg-red-500" />Hoge impact
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-md border border-border bg-bg-card px-3 py-1.5 text-[11px] font-mono tracking-[0.04em] text-text-muted">
+          <span className="w-2 h-2 rounded-full bg-amber-500" />Middel
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-md border border-border bg-bg-card px-3 py-1.5 text-[11px] font-mono tracking-[0.04em] text-text-muted">
+          <span className="w-2 h-2 rounded-full bg-yellow-400" />Laag
+        </span>
       </div>
 
       <div className="mt-6 p-4 rounded-xl bg-bg-card border border-border">
-        <p className="text-xs text-text-dim text-center">
+        <p className="flex items-center justify-center gap-2 text-xs text-text-dim text-center">
+          <span className="w-1.5 h-1.5 rounded-full bg-text-dim/50 shrink-0" />
           Data bron: <a href="https://www.forexfactory.com/calendar" target="_blank" rel="noopener noreferrer" className="text-accent-light/60 hover:text-accent-light">ForexFactory / FairEconomy</a>.
-          Klik op een event voor uitleg over de impact en wat er gebeurt bij een verrassing. Dit is geen financieel advies.
+          Klik op een event voor uitleg. Educatief, geen financieel advies.
         </p>
       </div>
     </div>
