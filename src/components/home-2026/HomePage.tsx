@@ -256,65 +256,58 @@ export default async function HomePage() {
 
       {/* TOOLS (dark band) */}
       <section className="sec band-dark on-dark">
-        <div className="wrap">
-          <div className="sec-head reveal">
+        <div className="wrap tools-2col">
+          <div className="tools-intro reveal">
             <span className="eyebrow">Premium Tools</span>
             <h2 className="h2">Ontdek de tools</h2>
             <p>
               De meeste traders missen geen strategie, ze missen structuur. Geen overzicht van macro data, geen objectieve currency bias,
               geen inzicht in hun eigen performance. Deze tools lossen dat op.
             </p>
-          </div>
-          <div className="tools-grid">
-            <Link className="tool-card wide reveal" href="/tools/fx-selector/v2">
-              <div className="th">
-                <span className="tname">
-                  <span className="ti">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 12h4l2.5-6 4 12 2.5-6H21" />
-                    </svg>
-                  </span>
-                  Daily Macro Briefing &amp; Execution Engine
-                </span>
-                <span className="pro-pill">Pro</span>
-              </div>
-              <p className="tool-formula">Macro-bias <span className="ar">→</span> concrete calls <span className="ar">→</span> instap, stop en target.</p>
-              <p className="tool-note">De fundamentele richting en de technische uitvoering in één werkstroom.</p>
-              <div className="arrow"><span className="btn-link">Naar de tool <ArrowRight /></span></div>
-            </Link>
-            <Link className="tool-card reveal" href="/tools/fx-analyse">
-              <div className="th">
-                <span className="tname">
-                  <span className="ti">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
-                    </svg>
-                  </span>
-                  Fundamentals
-                </span>
-                <span className="pro-pill">Pro</span>
-              </div>
-              <p className="tool-formula">Rente, inflatie en CB-bias <span className="ar">→</span> één valutascore.</p>
-              <div className="arrow"><span className="btn-link">Naar de tool <ArrowRight /></span></div>
-            </Link>
-            <Link className="tool-card reveal" href="/tools/tradescope">
-              <div className="th">
-                <span className="tname">
-                  <span className="ti">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 5h16v14H4z" /><path d="M4 10h16M9 5v14" />
-                    </svg>
-                  </span>
-                  TradeMind
-                </span>
-                <span className="pro-pill">Pro</span>
-              </div>
-              <p className="tool-formula">Journal <span className="ar">→</span> patronen <span className="ar">→</span> betere uitvoering.</p>
-              <div className="arrow"><span className="btn-link">Naar de tool <ArrowRight /></span></div>
-            </Link>
-          </div>
-          <div style={{ marginTop: 32 }}>
             <Link className="btn btn-gold" href="/premium">Bekijk alle premium features</Link>
+          </div>
+
+          <div className="tools-panel reveal">
+            <div className="tp-head">
+              <span className="tp-title">Sanders Capital Desk</span>
+              <span className="tp-live"><span className="d" />Pro</span>
+            </div>
+
+            <Link className="tp-row feature" href="/tools/fx-selector/v2">
+              <span className="tp-idx">01</span>
+              <span className="tp-ic">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h4l2.5-6 4 12 2.5-6H21" /></svg>
+              </span>
+              <span className="tp-main">
+                <span className="tp-name">Daily Macro Briefing &amp; Execution Engine</span>
+                <span className="tp-formula">Macro-bias <span className="ar">→</span> concrete calls <span className="ar">→</span> instap, stop en target</span>
+              </span>
+              <span className="tp-go"><ArrowRight /></span>
+            </Link>
+
+            <Link className="tp-row" href="/tools/fx-analyse">
+              <span className="tp-idx">02</span>
+              <span className="tp-ic">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>
+              </span>
+              <span className="tp-main">
+                <span className="tp-name">Fundamentals</span>
+                <span className="tp-formula">Rente, inflatie en CB-bias <span className="ar">→</span> één valutascore</span>
+              </span>
+              <span className="tp-go"><ArrowRight /></span>
+            </Link>
+
+            <Link className="tp-row" href="/tools/tradescope">
+              <span className="tp-idx">03</span>
+              <span className="tp-ic">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5h16v14H4z" /><path d="M4 10h16M9 5v14" /></svg>
+              </span>
+              <span className="tp-main">
+                <span className="tp-name">TradeMind</span>
+                <span className="tp-formula">Journal <span className="ar">→</span> patronen <span className="ar">→</span> betere uitvoering</span>
+              </span>
+              <span className="tp-go"><ArrowRight /></span>
+            </Link>
           </div>
         </div>
       </section>
