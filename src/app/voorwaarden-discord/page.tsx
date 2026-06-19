@@ -9,27 +9,41 @@ export const metadata: Metadata = {
 
 export default function VoorwaardenDiscordPage() {
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-24">
-      <FadeIn>
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-semibold text-heading mb-4">
-          Algemene Voorwaarden Discord
-        </h1>
-        <p className="text-sm text-text-dim mb-12">
-          Laatst bijgewerkt: 26 maart 2026
-        </p>
-      </FadeIn>
+    <div>
+      {/* Page head */}
+      <div className="border-b border-border bg-bg-elevated">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-20 pb-14 sm:pt-24 sm:pb-16">
+          <FadeIn>
+            <div className="flex items-center gap-2 text-xs font-mono tracking-wide text-text-dim">
+              <Link href="/" className="hover:text-accent transition-colors">Home</Link>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+              <span>Voorwaarden Discord</span>
+            </div>
+            <span className="mt-5 inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-accent before:content-[''] before:w-6 before:h-px before:bg-accent/70">
+              Juridisch
+            </span>
+            <h1 className="mt-4 text-3xl sm:text-4xl md:text-5xl font-display font-bold text-heading tracking-tight">
+              Algemene Voorwaarden Discord
+            </h1>
+            <p className="mt-4 text-base sm:text-lg text-text-muted leading-relaxed max-w-[60ch]">
+              Laatst bijgewerkt: 26 maart 2026. Door lid te worden van de Sanders Capital
+              Discord-server ga je akkoord met onderstaande voorwaarden. Deze voorwaarden gelden
+              aanvullend op de{' '}
+              <Link href="/voorwaarden" className="text-accent hover:text-accent-light transition-colors underline underline-offset-2">
+                Algemene Voorwaarden
+              </Link>{' '}
+              van sanderscapital.nl.
+            </p>
+          </FadeIn>
+        </div>
+      </div>
 
-      <FadeIn delay={100}>
-        <div className="space-y-8 text-text leading-relaxed text-sm sm:text-base">
-
-          <p className="text-text-muted">
-            Door lid te worden van de Sanders Capital Discord-server ga je akkoord met
-            onderstaande voorwaarden. Deze voorwaarden gelden aanvullend op de{' '}
-            <Link href="/voorwaarden" className="text-accent-light hover:text-heading transition-colors underline underline-offset-2">
-              Algemene Voorwaarden
-            </Link>{' '}
-            van sanderscapital.nl.
-          </p>
+      {/* Body */}
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 py-20 sm:py-24">
+        <FadeIn delay={100}>
+          <div className="space-y-12 text-text leading-relaxed text-sm sm:text-base">
 
           {/* 1 */}
           <section>
@@ -209,8 +223,9 @@ export default function VoorwaardenDiscordPage() {
               en ermee akkoord gaat.
             </p>
           </section>
-        </div>
-      </FadeIn>
+          </div>
+        </FadeIn>
+      </section>
     </div>
   )
 }
