@@ -195,7 +195,7 @@ function ScorecardDisplay({ card }: { card: Scorecard }) {
       </div>
 
       {card.highlights.length > 0 && (
-        <div className="space-y-1 pt-3 border-t border-white/[0.06]">
+        <div className="space-y-1 pt-3 border-t border-black/[0.08]">
           {card.highlights.map((h, i) => (
             <p key={i} className="text-xs text-text-muted">• {h}</p>
           ))}
@@ -430,7 +430,7 @@ function InsightSection({ title, icon, insights, color }: { title: string; icon:
                 <p className="text-xs text-text-muted leading-relaxed">{insight.description}</p>
               </div>
               {insight.metric && (
-                <span className="text-xs font-mono font-semibold text-heading whitespace-nowrap px-2 py-1 rounded bg-white/5">
+                <span className="text-xs font-mono font-semibold text-heading whitespace-nowrap px-2 py-1 rounded bg-[rgba(12,22,38,0.04)]">
                   {insight.metric}
                 </span>
               )}
