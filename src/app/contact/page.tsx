@@ -75,75 +75,150 @@ const contactLinks = [
 
 export default function ContactPage() {
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-24">
-      {/* Header */}
-      <FadeIn>
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-semibold text-heading mb-6">
-          Contact
-        </h1>
-      </FadeIn>
-
-      {/* Situaties */}
-      <FadeIn delay={100}>
-        <div className="mb-12">
-          <p className="text-text leading-relaxed mb-6">
-            Herken je een van deze situaties?
-          </p>
-          <div className="space-y-3 mb-8">
-            {situations.map((s, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />
-                <span className="text-text-muted text-sm">{s}</span>
-              </div>
-            ))}
-          </div>
-          <p className="text-text leading-relaxed">
-            Neem contact op via onderstaande kanalen, of{' '}
-            <a
-              href="https://discord.gg/g8m3rryCRv"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-accent-light hover:text-heading transition-colors underline underline-offset-2"
-            >
-              join de Discord community
-            </a>{' '}
-            om direct in contact te komen met andere leden.
-          </p>
-        </div>
-      </FadeIn>
-
-      {/* Contact opties */}
-      <FadeIn delay={200}>
-        <h2 className="text-xl font-display font-semibold text-heading mb-6">
-          Manieren om contact op te nemen
-        </h2>
-        <div className="space-y-3">
-          {contactLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              target={link.href.startsWith('mailto') ? undefined : '_blank'}
-              rel={link.href.startsWith('mailto') ? undefined : 'noopener noreferrer'}
-              className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-bg-card border border-border hover:border-border-light transition-colors group"
-            >
-              <div className="w-10 h-10 rounded-lg bg-bg-hover flex items-center justify-center text-accent-light group-hover:text-heading transition-colors shrink-0">
-                {link.icon}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-heading">{link.label}</p>
-                <p className="text-xs text-text-muted truncate">{link.value}</p>
-              </div>
-              <svg className="w-4 h-4 text-text-dim ml-auto shrink-0 group-hover:text-text-muted transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
+    <div>
+      {/* Page head / hero */}
+      <div className="relative overflow-hidden border-b border-border bg-bg-elevated">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 pb-14 sm:pt-20 sm:pb-16 relative">
+          <FadeIn>
+            <nav className="flex items-center gap-2 text-xs font-mono tracking-wide text-text-dim">
+              <Link href="/" className="hover:text-accent-light transition-colors">
+                Home
+              </Link>
+              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 6l6 6-6 6" />
               </svg>
-            </a>
-          ))}
+              <span>Contact</span>
+            </nav>
+            <span className="mt-4 inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-accent before:h-px before:w-6 before:bg-accent/70 before:content-['']">
+              Contact
+            </span>
+            <h1 className="mt-4 text-4xl sm:text-5xl md:text-6xl font-display font-bold text-heading tracking-tight leading-[1.02]">
+              Even sparren?
+            </h1>
+            <p className="mt-5 max-w-[60ch] text-base sm:text-lg text-text-muted leading-relaxed">
+              Een vraag over de content, de tools of de community? Stuur een bericht of kies een van
+              de kanalen hieronder, we lezen alles.
+            </p>
+          </FadeIn>
         </div>
-      </FadeIn>
+      </div>
 
-      <FadeIn delay={300}>
-        <DisclaimerBadge className="mt-12" />
-      </FadeIn>
+      {/* Main section */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
+        <div className="grid lg:grid-cols-[1.3fr_0.9fr] gap-10 lg:gap-12 items-start">
+          {/* Form card (visual only) */}
+          <FadeIn>
+            <div className="glass-elevated rounded-xl p-6 sm:p-9 shadow-lg">
+              <form className="space-y-[18px]">
+                <div className="grid sm:grid-cols-2 gap-[18px]">
+                  <div>
+                    <label className="block mb-2 text-[11.5px] font-mono font-medium uppercase tracking-[0.06em] text-text-dim">
+                      Naam
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Je naam"
+                      className="w-full rounded-lg border border-border bg-surface px-3.5 py-3 text-[15px] text-text placeholder:text-text-dim transition-colors focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-[11.5px] font-mono font-medium uppercase tracking-[0.06em] text-text-dim">
+                      E-mail
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="jij@voorbeeld.nl"
+                      className="w-full rounded-lg border border-border bg-surface px-3.5 py-3 text-[15px] text-text placeholder:text-text-dim transition-colors focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block mb-2 text-[11.5px] font-mono font-medium uppercase tracking-[0.06em] text-text-dim">
+                    Onderwerp
+                  </label>
+                  <select className="w-full appearance-none rounded-lg border border-border bg-surface px-3.5 py-3 text-[15px] text-text transition-colors focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20">
+                    <option>Algemene vraag</option>
+                    <option>Premium &amp; tools</option>
+                    <option>Community</option>
+                    <option>Samenwerking</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-2 text-[11.5px] font-mono font-medium uppercase tracking-[0.06em] text-text-dim">
+                    Bericht
+                  </label>
+                  <textarea
+                    placeholder="Waar kunnen we mee helpen?"
+                    className="w-full min-h-[130px] resize-y rounded-lg border border-border bg-surface px-3.5 py-3 text-[15px] text-text placeholder:text-text-dim transition-colors focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="w-full inline-flex items-center justify-center gap-2.5 rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-white transition-all hover:-translate-y-px hover:shadow-lg hover:shadow-accent/30"
+                >
+                  Verstuur bericht
+                </button>
+                <p className="mt-3.5 flex items-center justify-center gap-2 text-[11px] font-mono tracking-wide text-text-dim">
+                  <span className="w-[5px] h-[5px] rounded-full bg-accent" />
+                  Visuele weergave, dit formulier verstuurt nog niet.
+                </p>
+              </form>
+            </div>
+          </FadeIn>
+
+          {/* Aside: situaties, contact channels, disclaimer */}
+          <FadeIn delay={100}>
+            <div className="flex flex-col gap-[18px]">
+              {/* Situaties */}
+              <div className="glass rounded-xl p-6">
+                <p className="text-sm font-semibold text-heading">Herken je een van deze situaties?</p>
+                <div className="mt-4 space-y-3">
+                  {situations.map((s, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-accent mt-2 shrink-0" />
+                      <span className="text-text-muted text-sm leading-relaxed">{s}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Contact channels */}
+              {contactLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target={link.href.startsWith('mailto') ? undefined : '_blank'}
+                  rel={link.href.startsWith('mailto') ? undefined : 'noopener noreferrer'}
+                  className="flex items-start gap-3.5 group"
+                >
+                  <div className="w-11 h-11 rounded-md bg-surface border border-border grid place-items-center text-accent group-hover:border-accent transition-colors shrink-0">
+                    {link.icon}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-heading">{link.label}</div>
+                    <div className="text-[13.5px] text-text-muted truncate group-hover:text-accent-light transition-colors">
+                      {link.value}
+                    </div>
+                  </div>
+                </a>
+              ))}
+
+              {/* Disclaimer card */}
+              <div className="glass rounded-xl p-6 mt-1.5">
+                <div className="flex items-center gap-2 mb-2 text-[11px] font-mono tracking-wide text-text-dim">
+                  <span className="w-[5px] h-[5px] rounded-full bg-accent" />
+                  Let op
+                </div>
+                <p className="text-[13.5px] text-text-muted leading-relaxed mb-4">
+                  Sanders Capital biedt educatieve content, geen financieel advies. We geven geen
+                  persoonlijke trade-aanbevelingen.
+                </p>
+                <DisclaimerBadge />
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
     </div>
   )
 }
