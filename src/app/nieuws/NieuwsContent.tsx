@@ -745,7 +745,7 @@ export default function NieuwsContent() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       {/* Article Reader Modal */}
       {selectedArticle && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-[rgba(12,22,38,0.45)] backdrop-blur-sm overflow-y-auto py-4 sm:py-8 px-2 sm:px-4" onClick={() => setSelectedArticle(null)}>
@@ -842,31 +842,34 @@ export default function NieuwsContent() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-lg bg-accent-glow flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
-              <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
-              <path d="M18 14h-8" /><path d="M15 18h-5" /><path d="M10 6h8v4h-8V6Z" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-display font-semibold text-heading">
-              Nieuws
-            </h1>
-            <p className="text-sm text-text-muted">
-              Gecureerd financieel nieuws, gefilterd op relevantie voor FX
-            </p>
-          </div>
+      {/* Page head / hero */}
+      <div className="mb-10 sm:mb-12">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 font-mono text-[11.5px] tracking-wide text-text-dim mb-5">
+          <a href="/" className="hover:text-accent-light transition-colors">Home</a>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+          <span className="text-text-muted">Nieuws</span>
         </div>
-        <p className="text-text-muted max-w-2xl text-sm leading-relaxed mt-3">
-          Alleen het nieuws dat er toe doet: centrale bank beslissingen, rentebeleid, inflatie,
-          geopolitieke ontwikkelingen en macro-economische data. Automatisch vertaald en gefilterd.
+
+        {/* Eyebrow */}
+        <span className="inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-accent before:content-[''] before:w-6 before:h-px before:bg-accent before:opacity-70">
+          Nieuws
+        </span>
+
+        {/* Display heading */}
+        <h1 className="mt-4 text-3xl sm:text-5xl font-display font-extrabold tracking-tight text-heading leading-[1.02]">
+          Dagelijks financieel nieuws
+        </h1>
+
+        {/* Intro */}
+        <p className="mt-5 max-w-[60ch] text-base sm:text-lg text-text-muted leading-relaxed">
+          Het laatste financiële nieuws, kort samengevat en geduid. Alleen wat er toe doet:
+          centrale bank beslissingen, rentebeleid, inflatie, geopolitiek en macro-economische
+          data — automatisch vertaald en gefilterd op relevantie voor FX.
         </p>
 
         {/* Sources */}
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <span className="text-[11px] text-text-dim">Bronnen:</span>
           {[
             { name: 'Federal Reserve', url: 'https://www.federalreserve.gov' },
@@ -885,6 +888,10 @@ export default function NieuwsContent() {
         </div>
       </div>
 
+      {/* Two-column layout: news feed + aside */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_0.9fr] gap-8 lg:gap-12 items-start">
+      {/* ── Left column: feed ── */}
+      <div className="min-w-0">
       {/* Live FX Widget */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2.5">
@@ -1045,14 +1052,18 @@ export default function NieuwsContent() {
               </div>
 
               {/* Articles for this date */}
-              <div className="space-y-2.5">
+              <div className="divide-y divide-border border-t border-border">
                 {group.articles.map((article) => (
                   <button
                     key={article.id}
                     onClick={() => setSelectedArticle(article)}
-                    className="block w-full text-left p-4 sm:p-5 rounded-xl bg-bg-card border border-border hover:border-border-light transition-all group cursor-pointer"
+                    className="block w-full text-left py-5 sm:py-6 transition-colors group cursor-pointer"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-5">
+                      {/* Mono time column (news-item .time) */}
+                      <span className="hidden sm:block font-mono text-xs text-accent font-medium whitespace-nowrap pt-1 min-w-[64px]">
+                        {timeAgo(article.publishedAt)}
+                      </span>
                       <div className="flex-1 min-w-0">
                         {/* Source, category & relevance badges */}
                         <div className="flex items-center gap-1.5 mb-2 flex-wrap">
@@ -1077,8 +1088,8 @@ export default function NieuwsContent() {
                           <ImpactIndicator article={article} compact />
                         </div>
 
-                        {/* Title */}
-                        <h3 className="text-sm sm:text-base font-semibold text-heading group-hover:text-accent-light transition-colors leading-snug mb-1">
+                        {/* Title (news-item h3) */}
+                        <h3 className="font-display text-lg sm:text-xl font-bold text-heading group-hover:text-accent-light transition-colors leading-snug">
                           {getDisplayTitle(article, showDutch)}
                           {showDutch && !article.titleNl && (
                             <span className="ml-1.5 text-[8px] px-1 py-0.5 rounded bg-amber-500/10 text-amber-400/60 font-normal align-middle">EN</span>
@@ -1087,14 +1098,14 @@ export default function NieuwsContent() {
 
                         {/* Summary */}
                         {article.summary && (
-                          <p className="text-xs sm:text-sm text-text-muted line-clamp-2 leading-relaxed mb-1.5">
+                          <p className="mt-2 text-sm text-text-muted line-clamp-2 leading-relaxed">
                             {getDisplaySummary(article, showDutch)}
                           </p>
                         )}
 
                         {/* Relevance context */}
                         {article.relevanceContext && (
-                          <p className="text-[11px] text-accent-light/70 flex items-center gap-1.5">
+                          <p className="mt-2 text-[11px] text-accent-light/70 flex items-center gap-1.5">
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                               <polyline points="20 6 9 17 4 12" />
                             </svg>
@@ -1103,9 +1114,9 @@ export default function NieuwsContent() {
                         )}
                       </div>
 
-                      {/* Time */}
+                      {/* Time (mobile) + chevron */}
                       <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1 shrink-0">
-                        <span className="text-xs text-text-dim whitespace-nowrap">
+                        <span className="sm:hidden font-mono text-xs text-accent font-medium whitespace-nowrap">
                           {timeAgo(article.publishedAt)}
                         </span>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-dim group-hover:text-accent-light transition-colors">
@@ -1120,9 +1131,56 @@ export default function NieuwsContent() {
           ))}
         </div>
       )}
+      </div>
+      {/* ── End left column ── */}
+
+      {/* ── Right column: aside ── */}
+      <aside className="flex flex-col gap-5 lg:sticky lg:top-24">
+        {/* Agenda card */}
+        <div className="glass rounded-xl border border-border p-6">
+          <span className="inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-accent before:content-[''] before:w-6 before:h-px before:bg-accent before:opacity-70">
+            Vandaag
+          </span>
+          <h3 className="mt-3 mb-4 font-display text-xl font-bold text-heading">Agenda</h3>
+          <div className="flex flex-col gap-3.5">
+            <div className="flex justify-between text-sm">
+              <span className="text-text-muted font-mono">14:30</span>
+              <span className="font-semibold text-heading">US CPI</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-text-muted font-mono">16:00</span>
+              <span className="font-semibold text-heading">Fed speakers</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-text-muted font-mono">20:00</span>
+              <span className="font-semibold text-heading">FOMC notulen</span>
+            </div>
+          </div>
+          <a href="/kalender" className="mt-5 inline-flex items-center gap-2 text-[13.5px] font-semibold text-accent hover:gap-3 transition-all group">
+            Volledige kalender
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-1">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </a>
+        </div>
+
+        {/* Disclaimer note card */}
+        <div className="glass rounded-xl border border-border p-6">
+          <div className="flex items-center gap-2 font-mono text-[11px] tracking-wide text-text-dim mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+            Let op
+          </div>
+          <p className="text-[13.5px] text-text-muted leading-relaxed m-0">
+            Nieuws is ter informatie en educatie. Geen financieel advies.
+          </p>
+        </div>
+      </aside>
+      {/* ── End right column ── */}
+      </div>
+      {/* End two-column layout */}
 
       {/* Disclaimer */}
-      <div className="mt-8 text-center">
+      <div className="mt-10 text-center">
         <p className="text-[11px] text-text-dim leading-relaxed max-w-lg mx-auto">
           Nieuwsartikelen worden automatisch gefilterd en vertaald uit publieke RSS feeds.
           Sanders Capital is niet verantwoordelijk voor de inhoud van externe bronnen.
