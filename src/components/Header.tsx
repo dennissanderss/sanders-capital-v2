@@ -20,10 +20,7 @@ const navLinks = [
 const nieuwsDropdown = [
   { href: '/nieuws', label: 'Dagelijks Financieel Nieuws', desc: 'Het laatste financiële nieuws', icon: 'pulse' },
   { href: '/tools/kalender', label: 'Economische Kalender', desc: 'Aankomende events & data', icon: 'calendar' },
-]
-
-const blogDropdown = [
-  { href: '/blog', label: 'Artikelen', desc: 'Educatieve artikelen & modules', icon: 'book' },
+  { href: '/blog', label: 'Sanders Capital Artikelen', desc: 'Educatieve artikelen & modules', icon: 'book' },
   { href: '/blog/fx-outlook', label: 'FX Outlook', desc: 'Marktanalyses & macro verwachtingen', icon: 'pulse' },
 ]
 
@@ -164,7 +161,7 @@ export default function Header() {
           <div className="relative group/nieuws">
             <button
               className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading flex items-center gap-1 cursor-pointer ${
-                pathname.startsWith('/nieuws') || pathname === '/tools/kalender' ? 'text-heading' : 'text-text-muted'
+                pathname.startsWith('/nieuws') || pathname.startsWith('/blog') || pathname === '/tools/kalender' ? 'text-heading' : 'text-text-muted'
               }`}
               onClick={() => setOpenDropdown(openDropdown === 'nieuws' ? null : 'nieuws')}
             >
@@ -172,7 +169,7 @@ export default function Header() {
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className={`mt-0.5 transition-transform duration-200 ${openDropdown === 'nieuws' ? 'rotate-180' : ''} group-hover/nieuws:rotate-180`}>
                 <path d="M2.5 4 5 6.5 7.5 4" />
               </svg>
-              {(pathname.startsWith('/nieuws') || pathname === '/tools/kalender') && (
+              {(pathname.startsWith('/nieuws') || pathname.startsWith('/blog') || pathname === '/tools/kalender') && (
                 <span className="absolute -bottom-1 left-0 right-0 h-px bg-accent" />
               )}
             </button>
@@ -180,48 +177,6 @@ export default function Header() {
             <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent ${openDropdown === 'nieuws' ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/nieuws:opacity-100 group-hover/nieuws:visible'}`}>
               <div className="rounded-xl shadow-2xl border border-[rgba(12,22,38,0.10)] py-2 min-w-[280px]" style={{ background: 'rgba(255, 255, 255, 0.97)', backdropFilter: 'blur(24px)' }}>
                 {nieuwsDropdown.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-[rgba(12,22,38,0.05)] ${
-                      pathname === item.href ? 'bg-[rgba(59,130,246,0.10)]' : ''
-                    }`}
-                  >
-                    <span className={`mt-0.5 flex-shrink-0 ${pathname === item.href ? 'text-accent-light' : 'text-text-dim'}`}>
-                      <NavIcon icon={item.icon} />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <span className={`text-sm font-medium ${pathname === item.href ? 'text-heading' : 'text-text-muted'} transition-colors`}>
-                        {item.label}
-                      </span>
-                      <p className="text-xs text-text-dim mt-0.5 leading-relaxed">{item.desc}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Blog dropdown */}
-          <div className="relative group/blog">
-            <button
-              className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading flex items-center gap-1 cursor-pointer ${
-                pathname.startsWith('/blog') ? 'text-heading' : 'text-text-muted'
-              }`}
-              onClick={() => setOpenDropdown(openDropdown === 'blog' ? null : 'blog')}
-            >
-              Blog
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className={`mt-0.5 transition-transform duration-200 ${openDropdown === 'blog' ? 'rotate-180' : ''} group-hover/blog:rotate-180`}>
-                <path d="M2.5 4 5 6.5 7.5 4" />
-              </svg>
-              {pathname.startsWith('/blog') && (
-                <span className="absolute -bottom-1 left-0 right-0 h-px bg-accent" />
-              )}
-            </button>
-
-            <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent ${openDropdown === 'blog' ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/blog:opacity-100 group-hover/blog:visible'}`}>
-              <div className="rounded-xl shadow-2xl border border-[rgba(12,22,38,0.10)] py-2 min-w-[260px]" style={{ background: 'rgba(255, 255, 255, 0.97)', backdropFilter: 'blur(24px)' }}>
-                {blogDropdown.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
@@ -456,22 +411,6 @@ export default function Header() {
           <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim mb-3 font-semibold">Nieuws</p>
           <div className="w-full flex flex-col items-center gap-1 mb-6">
             {nieuwsDropdown.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`w-full py-2.5 text-sm rounded-lg transition-colors ${
-                  pathname === item.href ? 'text-[#2563eb] bg-[rgba(59,130,246,0.10)]' : 'text-text-muted hover:text-heading hover:bg-[rgba(12,22,38,0.05)]'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Blog section */}
-          <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim mb-3 font-semibold">Blog</p>
-          <div className="w-full flex flex-col items-center gap-1 mb-6">
-            {blogDropdown.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
