@@ -140,30 +140,43 @@ export default async function PremiumPage() {
   const isLoggedIn = !!user
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-24">
-      <FadeIn>
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-display font-semibold text-heading mb-4">
+    <div>
+      {/* Page head / hero */}
+      <div className="relative overflow-hidden border-b border-d-line bg-gradient-to-b from-[#0b1526] to-d-bg">
+        <div className="pointer-events-none absolute -right-32 -top-40 h-[420px] w-[420px] rounded-full bg-[radial-gradient(closest-side,rgba(59,130,246,0.18),transparent_70%)] blur-2xl" />
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-16">
+          <nav className="flex items-center gap-2 font-body text-[11.5px] tracking-[0.03em] text-d-ink-3">
+            <Link href="/" className="hover:text-accent transition-colors">Home</Link>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+            <span>Premium</span>
+          </nav>
+          <span className="mt-5 inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-accent before:h-px before:w-6 before:bg-accent/70 before:content-['']">
             Premium
+          </span>
+          <h1 className="mt-4 font-display text-4xl md:text-6xl font-semibold tracking-tight text-white">
+            Structuur, geen ruis
           </h1>
-          <p className="text-text-muted max-w-2xl mx-auto">
-            Professionele tools, exclusieve content en verdiepende analyses. Alles wat je nodig hebt om data-gedreven te handelen.
+          <p className="mt-5 max-w-[60ch] text-lg leading-relaxed text-d-ink-2">
+            De meeste traders missen geen strategie, ze missen structuur. Premium geeft je een objectieve macro-analyse, een
+            getimede uitvoering en inzicht in je eigen performance, op &eacute;&eacute;n plek.
           </p>
         </div>
-      </FadeIn>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-24">
 
       {/* Premium Tools */}
-      <div className="max-w-5xl mx-auto mb-24">
+      <div className="max-w-5xl mx-auto mb-20 sm:mb-24">
         <FadeIn>
           <div className="text-center mb-12">
-            <span className="text-xs tracking-[0.2em] uppercase text-accent-light mb-3 block font-body">
-              Gebouwd voor traders
+            <span className="inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-accent-light mb-4 before:h-px before:w-6 before:bg-accent/70 before:content-['']">
+              Wat je krijgt
             </span>
-            <h2 className="text-2xl md:text-3xl font-display font-semibold text-heading mb-3">
-              Wat zit erin?
+            <h2 className="text-3xl md:text-4xl font-display font-semibold tracking-tight text-heading mb-4">
+              Vier tools, &eacute;&eacute;n werkstroom
             </h2>
-            <p className="text-text-muted max-w-xl mx-auto">
-              Elke tool lost een specifiek probleem op. Samen vormen ze een compleet systeem voor serieuze traders.
+            <p className="text-text-muted max-w-xl mx-auto leading-relaxed">
+              Van fundamentele bias naar getimede uitvoering naar gestructureerde evaluatie. De tools praten met elkaar.
             </p>
           </div>
         </FadeIn>
@@ -173,22 +186,22 @@ export default async function PremiumPage() {
             <FadeIn key={tool.name} delay={i * 100} className="h-full">
               <Link
                 href={tool.href}
-                className="block h-full p-6 rounded-xl bg-bg-card border border-border hover:border-accent-dim/40 transition-all group relative overflow-hidden"
+                className="block h-full p-7 rounded-xl bg-bg-card border border-border shadow-sm hover:border-accent-dim/50 hover:shadow-md transition-all group relative overflow-hidden"
               >
                 {'comingSoon' in tool && (
-                  <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded bg-accent/15 text-accent-light border border-accent/20">
+                  <span className="absolute top-4 right-4 font-mono text-[9px] tracking-[0.12em] uppercase px-2 py-1 rounded bg-accent-glow text-accent-light border border-accent/20">
                     Binnenkort
                   </span>
                 )}
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-accent-glow flex items-center justify-center text-accent-light shrink-0 group-hover:bg-accent-dim/20 transition-colors">
+                  <div className="w-11 h-11 rounded-lg bg-accent-glow border border-accent/15 flex items-center justify-center text-accent-light shrink-0 group-hover:bg-accent-dim/20 transition-colors">
                     {tool.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-display font-semibold text-heading mb-1.5 group-hover:text-accent-light transition-colors">
+                    <h3 className="font-display text-xl font-semibold text-heading mb-1.5 group-hover:text-accent-light transition-colors">
                       {tool.name}
                     </h3>
-                    <p className="text-sm text-text-muted leading-relaxed mb-2">
+                    <p className="text-sm text-text-muted leading-relaxed mb-2.5">
                       {tool.description}
                     </p>
                     <p className="text-xs text-accent-light/80 flex items-center gap-1.5">
@@ -207,60 +220,60 @@ export default async function PremiumPage() {
 
       {/* Pricing */}
       {isLoggedIn ? (
-        <div className="max-w-5xl mx-auto mb-24">
+        <div className="max-w-5xl mx-auto mb-20 sm:mb-24">
           <FadeIn>
             <div className="text-center mb-12">
-              <span className="text-xs tracking-[0.2em] uppercase text-gold mb-3 block font-body">
+              <span className="inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-accent-light mb-4 before:h-px before:w-6 before:bg-accent/70 before:content-['']">
                 Investeer in je groei
               </span>
-              <h2 className="text-2xl md:text-3xl font-display font-semibold text-heading mb-3">
-                Pricing
+              <h2 className="text-3xl md:text-4xl font-display font-semibold tracking-tight text-heading mb-3">
+                Kies je toegang
               </h2>
             </div>
           </FadeIn>
 
-          <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto items-stretch">
             {/* Free tier */}
-            <FadeIn delay={100}>
-              <div className="p-7 rounded-xl bg-bg-card border border-border h-full flex flex-col">
-                <div className="mb-6">
-                  <h3 className="text-lg font-display font-semibold text-heading mb-1">Gratis</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-display font-bold text-heading">&euro;0</span>
-                  </div>
-                  <p className="text-xs text-text-dim mt-1">Voor altijd gratis</p>
+            <FadeIn delay={100} className="h-full">
+              <div className="p-8 rounded-xl bg-bg-card border border-border shadow-sm h-full flex flex-col">
+                <h3 className="font-display text-2xl font-semibold tracking-tight text-heading">Gratis</h3>
+                <p className="text-sm text-text-dim mt-2 min-h-[40px]">Begin met de kennisbank en de community.</p>
+                <div className="mt-5 flex items-baseline gap-1.5">
+                  <span className="font-display text-5xl font-bold leading-none tracking-tight text-heading">&euro;0</span>
+                  <span className="font-mono text-[13px] text-text-dim">/ maand</span>
                 </div>
-                <ul className="space-y-3 mb-8 flex-1">
+                <ul className="mt-6 pt-6 border-t border-border space-y-3 flex-1">
                   {freeFeatures.map((f) => (
-                    <li key={f} className="flex items-center gap-3 text-sm">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light shrink-0">
+                    <li key={f} className="flex gap-3 text-sm leading-snug">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent shrink-0 mt-0.5">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                       <span className="text-text">{f}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="px-6 py-3 rounded-lg border border-border text-center text-sm text-text-dim">
+                <div className="mt-6 w-full px-6 py-3.5 rounded-lg border border-border text-center text-sm font-semibold text-text-dim">
                   Actief
                 </div>
               </div>
             </FadeIn>
 
-            {/* Monthly tier */}
-            <FadeIn delay={200}>
-              <div className="p-7 rounded-xl bg-bg-card border border-border h-full flex flex-col">
-                <div className="mb-6">
-                  <h3 className="text-lg font-display font-semibold text-heading mb-1">Maandelijks</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-display font-bold text-heading">&euro;68,25</span>
-                    <span className="text-sm text-text-muted">/maand</span>
-                  </div>
-                  <p className="text-xs text-text-dim mt-1">Op elk moment opzegbaar</p>
+            {/* Monthly tier — featured */}
+            <FadeIn delay={200} className="h-full">
+              <div className="relative p-8 rounded-xl bg-bg-card border border-accent/40 shadow-[0_0_0_1px_rgba(59,130,246,0.25),0_20px_50px_-32px_rgba(12,22,38,0.3)] h-full flex flex-col">
+                <span className="absolute -top-3 left-8 font-mono text-[9.5px] tracking-[0.1em] uppercase font-semibold text-white bg-accent px-3 py-1.5 rounded">
+                  Aanbevolen
+                </span>
+                <h3 className="font-display text-2xl font-semibold tracking-tight text-heading">Maandelijks</h3>
+                <p className="text-sm text-text-dim mt-2 min-h-[40px]">Alle tools voor dagelijkse structuur en uitvoering.</p>
+                <div className="mt-5 flex items-baseline gap-1.5">
+                  <span className="font-display text-5xl font-bold leading-none tracking-tight text-heading">&euro;68,25</span>
+                  <span className="font-mono text-[13px] text-text-dim">/ maand</span>
                 </div>
-                <ul className="space-y-3 mb-8 flex-1">
+                <ul className="mt-6 pt-6 border-t border-border space-y-3 flex-1">
                   {premiumFeatures.map((f) => (
-                    <li key={f} className="flex items-center gap-3 text-sm">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold shrink-0">
+                    <li key={f} className="flex gap-3 text-sm leading-snug">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent shrink-0 mt-0.5">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                       <span className="text-text">{f}</span>
@@ -269,7 +282,7 @@ export default async function PremiumPage() {
                 </ul>
                 <Link
                   href="/contact"
-                  className="block text-center px-6 py-3 rounded-lg border border-gold/30 text-gold text-sm font-medium hover:bg-gold/10 transition-colors"
+                  className="mt-6 block text-center px-6 py-3.5 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-semibold transition-colors"
                 >
                   Neem contact op
                 </Link>
@@ -277,23 +290,21 @@ export default async function PremiumPage() {
             </FadeIn>
 
             {/* Lifetime tier */}
-            <FadeIn delay={300}>
-              <div className="p-7 rounded-xl bg-bg-card border border-gold/30 h-full relative overflow-hidden flex flex-col">
-                <div className="absolute top-0 right-0 px-3 py-1 bg-gold/15 text-gold text-xs rounded-bl-lg font-medium">
+            <FadeIn delay={300} className="h-full">
+              <div className="relative p-8 rounded-xl bg-bg-card border border-border shadow-sm h-full flex flex-col overflow-hidden">
+                <span className="absolute top-0 right-0 font-mono text-[9.5px] tracking-[0.1em] uppercase font-semibold text-accent-light bg-accent-glow px-3 py-1.5 rounded-bl-lg">
                   Beste waarde
+                </span>
+                <h3 className="font-display text-2xl font-semibold tracking-tight text-heading">Lifetime Access</h3>
+                <p className="text-sm text-text-dim mt-2 min-h-[40px]">Premium met volledige toegang, eenmalig.</p>
+                <div className="mt-5 flex items-baseline gap-1.5">
+                  <span className="font-display text-5xl font-bold leading-none tracking-tight text-heading">&euro;699</span>
+                  <span className="font-mono text-[13px] text-text-dim">eenmalig</span>
                 </div>
-                <div className="mb-6">
-                  <h3 className="text-lg font-display font-semibold text-heading mb-1">Lifetime Access</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-display font-bold text-heading">&euro;699</span>
-                    <span className="text-sm text-text-muted">eenmalig</span>
-                  </div>
-                  <p className="text-xs text-text-dim mt-1">Volledige toegang, geen verdere kosten</p>
-                </div>
-                <ul className="space-y-3 mb-8 flex-1">
+                <ul className="mt-6 pt-6 border-t border-border space-y-3 flex-1">
                   {[...premiumFeatures, 'Alle toekomstige tools & updates'].map((f) => (
-                    <li key={f} className="flex items-center gap-3 text-sm">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold shrink-0">
+                    <li key={f} className="flex gap-3 text-sm leading-snug">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent shrink-0 mt-0.5">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                       <span className="text-text">{f}</span>
@@ -302,7 +313,7 @@ export default async function PremiumPage() {
                 </ul>
                 <Link
                   href="/contact"
-                  className="block text-center px-6 py-3 rounded-lg bg-gold/20 border border-gold/30 text-gold text-sm font-medium hover:bg-gold/30 transition-colors"
+                  className="mt-6 block text-center px-6 py-3.5 rounded-lg border border-accent/30 text-accent-light text-sm font-semibold hover:border-accent hover:bg-accent-glow transition-colors"
                 >
                   Neem contact op
                 </Link>
@@ -310,10 +321,15 @@ export default async function PremiumPage() {
             </FadeIn>
           </div>
 
+          <p className="mt-6 flex items-center justify-center gap-2 font-mono text-[11px] tracking-[0.03em] text-text-dim">
+            <span className="w-[5px] h-[5px] rounded-full bg-accent" />
+            Educatief, geen financieel advies.
+          </p>
+
           {/* Price justification */}
           <FadeIn delay={400}>
-            <div className="max-w-3xl mx-auto mt-12 rounded-2xl border border-border bg-bg-card/50 px-6 sm:px-8 py-6 sm:py-8">
-              <h3 className="text-lg font-display font-semibold text-heading mb-5 flex items-center gap-2">
+            <div className="max-w-3xl mx-auto mt-12 rounded-xl border border-border bg-bg-card shadow-sm px-6 sm:px-8 py-6 sm:py-8">
+              <h3 className="text-xl font-display font-semibold tracking-tight text-heading mb-5 flex items-center gap-2">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold">
                   <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                 </svg>
@@ -368,28 +384,28 @@ export default async function PremiumPage() {
       ) : (
         /* Not logged in */
         <FadeIn>
-          <div className="max-w-2xl mx-auto mb-24 p-8 rounded-2xl bg-bg-card border border-border text-center">
-            <div className="w-14 h-14 rounded-2xl bg-gold-dim flex items-center justify-center mx-auto mb-5">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold">
+          <div className="max-w-2xl mx-auto mb-20 sm:mb-24 p-8 sm:p-10 rounded-xl bg-bg-card border border-border shadow-sm text-center">
+            <div className="w-14 h-14 rounded-xl bg-accent-glow border border-accent/15 flex items-center justify-center mx-auto mb-5">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
             </div>
-            <h3 className="text-xl font-display font-semibold text-heading mb-2">
+            <h3 className="text-2xl font-display font-semibold tracking-tight text-heading mb-2">
               Pricing beschikbaar na registratie
             </h3>
-            <p className="text-text-muted mb-6 max-w-md mx-auto">
+            <p className="text-text-muted mb-6 max-w-md mx-auto leading-relaxed">
               Maak een gratis account aan om de volledige pricing, vergelijking en onderbouwing te bekijken.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 href="/register"
-                className="px-6 py-3 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-medium transition-colors"
+                className="px-6 py-3.5 rounded-lg bg-accent hover:bg-accent-light text-white text-sm font-semibold transition-colors"
               >
                 Gratis registreren
               </Link>
               <Link
                 href="/login"
-                className="px-6 py-3 rounded-lg border border-border text-heading text-sm font-medium hover:bg-bg-hover transition-colors"
+                className="px-6 py-3.5 rounded-lg border border-border text-heading text-sm font-semibold hover:bg-bg-hover transition-colors"
               >
                 Inloggen
               </Link>
@@ -400,8 +416,8 @@ export default async function PremiumPage() {
 
       {/* How it works */}
       <FadeIn>
-        <div className="max-w-4xl mx-auto mb-24">
-          <h2 className="text-2xl font-display font-semibold text-heading text-center mb-12">
+        <div className="max-w-4xl mx-auto mb-20 sm:mb-24">
+          <h2 className="text-3xl md:text-4xl font-display font-semibold tracking-tight text-heading text-center mb-12">
             Hoe het werkt
           </h2>
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
@@ -417,8 +433,8 @@ export default async function PremiumPage() {
                       {item.step}
                     </span>
                   </div>
-                  <h3 className="font-display font-semibold text-heading mb-2">{item.title}</h3>
-                  <p className="text-sm text-text-muted">{item.desc}</p>
+                  <h3 className="font-display text-lg font-semibold text-heading mb-2">{item.title}</h3>
+                  <p className="text-sm text-text-muted leading-relaxed">{item.desc}</p>
                 </div>
               </FadeIn>
             ))}
@@ -429,14 +445,14 @@ export default async function PremiumPage() {
       {/* FAQ */}
       <FadeIn>
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-display font-semibold text-heading text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-display font-semibold tracking-tight text-heading text-center mb-12">
             Veelgestelde vragen
           </h2>
           <div className="space-y-4">
             {faqItems.map((item, i) => (
               <FadeIn key={i} delay={i * 100}>
-                <div className="p-6 rounded-xl bg-bg-card border border-border">
-                  <h3 className="font-semibold text-heading mb-2">{item.q}</h3>
+                <div className="p-6 sm:p-7 rounded-xl bg-bg-card border border-border shadow-sm">
+                  <h3 className="font-display text-lg font-semibold text-heading mb-2">{item.q}</h3>
                   <p className="text-sm text-text-muted leading-relaxed">{item.a}</p>
                 </div>
               </FadeIn>
@@ -447,15 +463,16 @@ export default async function PremiumPage() {
 
       {/* CTA */}
       <FadeIn>
-        <div className="text-center mt-24">
+        <div className="text-center mt-20 sm:mt-24">
           <Link
             href={isLoggedIn ? '/contact' : '/register'}
-            className="inline-block px-8 py-3.5 rounded-lg bg-accent hover:bg-accent-light text-white font-medium transition-colors"
+            className="inline-block px-8 py-3.5 rounded-lg bg-accent hover:bg-accent-light text-white font-semibold transition-colors"
           >
             {isLoggedIn ? 'Neem contact op' : 'Gratis aanmelden'}
           </Link>
         </div>
       </FadeIn>
+      </div>
     </div>
   )
 }
