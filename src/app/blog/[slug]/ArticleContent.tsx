@@ -4,15 +4,22 @@ import Link from 'next/link'
 import { useEffect, useRef } from 'react'
 
 const articleStyles = `
-  .article-content h2 { font-family: var(--font-display); font-size: 2rem; font-weight: 700; color: var(--color-heading); margin-top: 3rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border); line-height: 1.2; }
-  .article-content h3 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; color: var(--color-heading); margin-top: 2.25rem; margin-bottom: 0.5rem; line-height: 1.3; }
-  .article-content p { margin-bottom: 1.25rem; line-height: 1.85; color: var(--color-text); }
+  .article-content { max-width: 760px; }
+  .article-content > *:first-child { margin-top: 0; }
+  .article-content h2 { font-family: var(--font-display); font-size: 2.125rem; font-weight: 700; color: var(--color-heading); margin: 3rem 0 1.125rem; padding-bottom: 0; border-bottom: none; line-height: 1.12; letter-spacing: -0.018em; }
+  .article-content h3 { font-family: var(--font-display); font-size: 1.5625rem; font-weight: 700; color: var(--color-heading); margin: 2.25rem 0 0.75rem; line-height: 1.2; letter-spacing: -0.018em; }
+  .article-content p { font-size: 1.0625rem; margin-bottom: 1.375rem; line-height: 1.78; color: var(--color-text); }
   .article-content strong { font-weight: 600; color: var(--color-heading); }
   .article-content em { font-style: italic; color: var(--color-accent-light); }
-  .article-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.25rem; }
-  .article-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.25rem; }
-  .article-content li { margin-bottom: 0.4rem; line-height: 1.75; color: var(--color-text); }
-  .article-content blockquote { border-left: 3px solid var(--color-accent-dim); padding-left: 1rem; margin: 1.5rem 0; color: var(--color-text-muted); font-style: italic; }
+  .article-content ul { list-style-type: disc; padding-left: 1.375rem; margin-bottom: 1.375rem; }
+  .article-content ol { list-style-type: decimal; padding-left: 1.375rem; margin-bottom: 1.375rem; }
+  .article-content li { font-size: 1.0625rem; margin-bottom: 0.5625rem; line-height: 1.7; color: var(--color-text); }
+  .article-content li::marker { color: var(--color-accent); }
+  .article-content blockquote { margin: 2rem 0; padding: 0.375rem 0 0.375rem 1.625rem; border-left: 2px solid var(--color-accent); font-family: var(--font-display); font-size: 1.6875rem; font-weight: 500; font-style: normal; line-height: 1.32; letter-spacing: -0.01em; color: var(--color-heading); }
+  .article-content a { color: var(--color-accent); }
+  .article-content figure, .article-content .figure { margin: 2rem 0; border: 1px solid var(--color-border); border-radius: 5px; overflow: hidden; background: var(--color-bg-card, #fff); }
+  .article-content figure img, .article-content .figure img { border-radius: 0; margin: 0; }
+  .article-content figure figcaption, .article-content .figure .cap { padding: 0.8125rem 1rem; font-size: 0.71875rem; letter-spacing: 0.03em; color: var(--color-text-dim); border-top: 1px solid var(--color-border); }
   .article-content img { max-width: 100%; border-radius: 6px; display: block; }
   .article-content img[data-broken="1"] { display: none !important; }
   .article-content img[style*="float:left"],
@@ -61,6 +68,22 @@ export default function ArticleContent({
       <>
         <style>{articleStyles}</style>
         <article ref={articleRef} className="article-content" dangerouslySetInnerHTML={{ __html: content }} />
+
+        <div className="mt-12 pt-7 border-t border-border flex flex-wrap items-center justify-between gap-5">
+          <span className="inline-flex items-center gap-2 text-xs tracking-wide text-text-dim">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+            Educatief, geen financieel advies
+          </span>
+          <Link
+            href="/blog"
+            className="group inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-accent-light transition-colors"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px] transition-transform group-hover:-translate-x-1">
+              <path d="M19 12H5M11 6l-6 6 6 6" />
+            </svg>
+            Terug naar artikelen
+          </Link>
+        </div>
       </>
     )
   }
