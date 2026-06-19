@@ -30,7 +30,7 @@ function SummaryBar({ regime, regimeColor, confidence, topPairs, winRate, totalT
     green: 'border-green-500/40 bg-green-500/5',
     blue: 'border-accent/40 bg-accent/5',
     amber: 'border-amber-500/40 bg-amber-500/5',
-    gray: 'border-white/10 bg-white/[0.02]',
+    gray: 'border-black/[0.08] bg-[rgba(12,22,38,0.03)]',
   }
   const accent = accentMap[regimeColor] || accentMap.gray
 
@@ -51,7 +51,7 @@ function SummaryBar({ regime, regimeColor, confidence, topPairs, winRate, totalT
           <span className="font-display font-bold text-heading text-sm sm:text-base">{regime}</span>
         </div>
 
-        <span className="text-white/10">|</span>
+        <span className="text-black/10">|</span>
 
         {/* Confidence */}
         <div className="flex items-center gap-1.5">
@@ -59,7 +59,7 @@ function SummaryBar({ regime, regimeColor, confidence, topPairs, winRate, totalT
           <span className="text-[9px] text-text-dim uppercase tracking-wider">conf</span>
         </div>
 
-        <span className="text-white/10 hidden sm:inline">|</span>
+        <span className="text-black/10 hidden sm:inline">|</span>
 
         {/* Top Pairs */}
         <div className="hidden sm:flex items-center gap-3">
@@ -74,7 +74,7 @@ function SummaryBar({ regime, regimeColor, confidence, topPairs, winRate, totalT
           ))}
         </div>
 
-        <span className="text-white/10 hidden sm:inline">|</span>
+        <span className="text-black/10 hidden sm:inline">|</span>
 
         {/* Win Rate */}
         <div className="flex items-center gap-1.5">
@@ -90,7 +90,7 @@ function SummaryBar({ regime, regimeColor, confidence, topPairs, winRate, totalT
           <button
             onClick={onRefresh}
             disabled={loading}
-            className="p-1.5 rounded-lg hover:bg-white/[0.05] transition-colors text-text-dim hover:text-heading disabled:opacity-50"
+            className="p-1.5 rounded-lg hover:bg-[rgba(12,22,38,0.04)] transition-colors text-text-dim hover:text-heading disabled:opacity-50"
             title="Ververs data"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={loading ? 'animate-spin' : ''}>
