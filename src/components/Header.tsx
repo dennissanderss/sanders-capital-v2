@@ -21,7 +21,6 @@ const nieuwsDropdown = [
   { href: '/nieuws', label: 'Dagelijks Financieel Nieuws', desc: 'Het laatste financiële nieuws', icon: 'pulse' },
   { href: '/tools/kalender', label: 'Economische Kalender', desc: 'Aankomende events & data', icon: 'calendar' },
   { href: '/blog', label: 'Sanders Capital Artikelen', desc: 'Educatieve artikelen & modules', icon: 'book' },
-  { href: '/blog/fx-outlook', label: 'FX Outlook', desc: 'Marktanalyses & macro verwachtingen', icon: 'pulse' },
 ]
 
 const toolsDropdown = [
@@ -33,30 +32,18 @@ const toolsDropdown = [
   { href: '/tools/rente', slug: 'rente', label: 'Rentetarieven', desc: 'Centrale bank rentes', icon: 'percent' },
 ]
 
-interface KbCategory {
-  name: string
-  slug: string
-  icon: string
-  is_premium: boolean
-}
-
-
 export default function Header() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [scrolled, setScrolled] = useState(false)
-  const [kbCategories, setKbCategories] = useState<KbCategory[]>([])
   const [toolPremiumMap, setToolPremiumMap] = useState<Record<string, boolean>>({})
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const desktopNavRef = useRef<HTMLElement>(null)
 
-  // Fetch categories & tool settings from DB
+  // Fetch tool settings (premium flags) from DB
   const fetchData = () => {
     const supabase = createClient()
-    supabase.from('kennisbank_categories').select('name, slug, icon, is_premium').order('order_index').then(({ data }) => {
-      if (data) setKbCategories(data)
-    })
     supabase.from('tool_settings').select('slug, is_premium').then(({ data }) => {
       if (data) {
         const map: Record<string, boolean> = {}
@@ -192,52 +179,6 @@ export default function Header() {
                         {item.label}
                       </span>
                       <p className="text-xs text-text-dim mt-0.5 leading-relaxed">{item.desc}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Kennisbank dropdown */}
-          <div className="relative group/kb">
-            <button
-              className={`relative text-sm tracking-wide transition-colors duration-200 hover:text-heading flex items-center gap-1 cursor-pointer ${
-                pathname.startsWith('/kennisbank') ? 'text-heading' : 'text-text-muted'
-              }`}
-              onClick={() => setOpenDropdown(openDropdown === 'kb' ? null : 'kb')}
-            >
-              Kennisbank
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className={`mt-0.5 transition-transform duration-200 ${openDropdown === 'kb' ? 'rotate-180' : ''} group-hover/kb:rotate-180`}>
-                <path d="M2.5 4 5 6.5 7.5 4" />
-              </svg>
-              {pathname.startsWith('/kennisbank') && (
-                <span className="absolute -bottom-1 left-0 right-0 h-px bg-accent" />
-              )}
-            </button>
-
-            <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent ${openDropdown === 'kb' ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/kb:opacity-100 group-hover/kb:visible'}`}>
-              <div className="rounded-xl shadow-2xl border border-[rgba(12,22,38,0.10)] py-2 min-w-[280px]" style={{ background: 'rgba(255, 255, 255, 0.97)', backdropFilter: 'blur(24px)' }}>
-                {kbCategories.map((cat) => (
-                  <Link
-                    key={cat.slug}
-                    href={`/kennisbank#${cat.slug}`}
-                    className="flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-[rgba(12,22,38,0.05)]"
-                  >
-                    <span className="mt-0.5 flex-shrink-0 text-text-dim">
-                      <NavIcon icon={cat.icon} />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-text-muted transition-colors">
-                          {cat.name}
-                        </span>
-                        {cat.is_premium && (
-                          <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/10 text-accent-light leading-none">
-                            Pro
-                          </span>
-                        )}
-                      </div>
                     </div>
                   </Link>
                 ))}
@@ -419,25 +360,6 @@ export default function Header() {
                 }`}
               >
                 {item.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Kennisbank section */}
-          <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim mb-3 font-semibold">Kennisbank</p>
-          <div className="w-full flex flex-col items-center gap-1 mb-6">
-            {kbCategories.map((cat) => (
-              <Link
-                key={cat.slug}
-                href={`/kennisbank#${cat.slug}`}
-                className="w-full py-2.5 text-sm text-text-muted hover:text-heading hover:bg-[rgba(12,22,38,0.05)] rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                {cat.name}
-                {cat.is_premium && (
-                  <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/10 text-accent-light leading-none">
-                    Pro
-                  </span>
-                )}
               </Link>
             ))}
           </div>
