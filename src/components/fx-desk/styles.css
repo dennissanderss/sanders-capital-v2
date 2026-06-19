@@ -6,37 +6,37 @@
    ============================================================ */
 
 .fx-desk {
-  /* canvas — aligned with site's cool dark palette */
-  --bg:            #080a0e;
-  --bg-2:         #0d1016;
-  --bg-3:         #1a1e28;
-  --bg-inset:     #050709;
+  /* canvas — light editorial palette */
+  --bg:            #f5f7fb;
+  --bg-2:         #ffffff;
+  --bg-3:         #f3f6fb;
+  --bg-inset:     #eaeef6;
 
   /* lines — neutral, slightly cool */
-  --line:          rgba(255, 255, 255, 0.10);
-  --line-soft:     rgba(255, 255, 255, 0.05);
-  --line-strong:   rgba(255, 255, 255, 0.18);
+  --line:          rgba(12, 22, 38, 0.10);
+  --line-soft:     rgba(12, 22, 38, 0.05);
+  --line-strong:   rgba(12, 22, 38, 0.17);
 
-  /* text — cool off-white, matches site --color-* tokens */
-  --ink:           #f0f1f5;
-  --ink-2:         #b0b5c9;
-  --ink-3:         #949ab0;
-  --ink-4:         #5a6275;
+  /* text — dark cool ink on light */
+  --ink:           #0c1626;
+  --ink-2:         #3f4a5c;
+  --ink-3:         #6b7585;
+  --ink-4:         #9aa3b2;
 
-  /* accent — gold (essentially identical to site's --color-gold) */
-  --gold:          #c9a466;
-  --gold-soft:     rgba(201, 164, 102, 0.14);
-  --gold-line:     rgba(201, 164, 102, 0.30);
+  /* accent — blue */
+  --gold:          #2563eb;
+  --gold-soft:     rgba(59, 130, 246, 0.10);
+  --gold-line:     rgba(59, 130, 246, 0.30);
 
-  /* outcome — sage/terracotta still read clearly on cool background */
-  --win:           #7e9b6f;
-  --win-bg:        rgba(126, 155, 111, 0.12);
-  --loss:          #b9725f;
-  --loss-bg:       rgba(185, 114, 95, 0.12);
-  --pending:       #8c93a6;
-  --pending-bg:    rgba(140, 147, 166, 0.10);
+  /* outcome — green/red/neutral read clearly on light background */
+  --win:           #2f9e6f;
+  --win-bg:        rgba(47, 158, 111, 0.12);
+  --loss:          #d4593f;
+  --loss-bg:       rgba(212, 89, 63, 0.12);
+  --pending:       #7b8593;
+  --pending-bg:    rgba(123, 133, 147, 0.12);
 
-  --shadow:        0 1px 0 rgba(255,255,255,0.02), 0 18px 40px -28px rgba(0,0,0,0.9);
+  --shadow:        0 1px 0 rgba(255,255,255,0.6), 0 18px 40px -28px rgba(12,22,38,0.22);
 
   /* alias project fonts to design tokens */
   --font-head: var(--font-display), Georgia, serif;
@@ -44,8 +44,8 @@
   --maxw: 1180px;
 
   background:
-    radial-gradient(1200px 600px at 70% -10%, rgba(61, 110, 165, 0.06), transparent 60%),
-    radial-gradient(900px 500px at 20% 110%, rgba(201, 164, 102, 0.04), transparent 60%),
+    radial-gradient(1200px 600px at 70% -10%, rgba(59, 130, 246, 0.06), transparent 60%),
+    radial-gradient(900px 500px at 20% 110%, rgba(59, 130, 246, 0.04), transparent 60%),
     var(--bg);
   color: var(--ink);
   font-family: var(--font-body);
@@ -313,7 +313,7 @@
 .fx-desk .status .sd { width: 6px; height: 6px; border-radius: 50%; }
 .fx-desk .status.ready { color: var(--gold); background: var(--gold-soft); }
 .fx-desk .status.ready .sd { background: var(--gold); }
-.fx-desk .status.watch { color: var(--ink-2); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); }
+.fx-desk .status.watch { color: var(--ink-2); background: rgba(12,22,38,0.03); border: 1px solid var(--line-soft); }
 .fx-desk .status.watch .sd { background: var(--ink-3); }
 
 /* ============================================================
@@ -342,7 +342,7 @@
   transition: background .15s;
 }
 .fx-desk .call-list .row:last-child { border-bottom: none; }
-.fx-desk .call-list .row:hover { background: rgba(255,255,255,0.018); }
+.fx-desk .call-list .row:hover { background: rgba(12,22,38,0.04); }
 .fx-desk .call-list .row.sel { background: var(--gold-soft); box-shadow: inset 2px 0 0 var(--gold); }
 .fx-desk .cl-pair { display: flex; align-items: center; gap: 12px; }
 .fx-desk .cl-pair .p { font-family: var(--font-head); font-size: 19px; font-weight: 600; }
@@ -453,7 +453,7 @@
 .fx-desk .setups .srow .end { display: flex; justify-content: flex-end; }
 
 /* waiting */
-.fx-desk .waiting { border: 1px solid var(--line-soft); border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.012); }
+.fx-desk .waiting { border: 1px solid var(--line-soft); border-radius: 3px; overflow: hidden; background: rgba(12,22,38,0.03); }
 .fx-desk .waiting .wrow {
   display: grid;
   grid-template-columns: 1.6fr 0.6fr 1.6fr auto;
@@ -481,7 +481,7 @@
   text-decoration: none;
 }
 .fx-desk .flowlink svg { width: 13px; height: 13px; transition: transform .18s; }
-.fx-desk .flowlink:hover { color: #e6cd91; }
+.fx-desk .flowlink:hover { color: #2563eb; }
 .fx-desk .flowlink:hover svg { transform: translateX(2px); }
 .fx-desk .flowlink.back { color: var(--ink-3); }
 .fx-desk .flowlink.back:hover { color: var(--ink); }
@@ -556,7 +556,7 @@
   background: transparent; border: none; color: var(--ink);
   padding: 18px 22px; text-align: left;
 }
-.fx-desk .accordion-head:hover { background: rgba(255,255,255,0.015); }
+.fx-desk .accordion-head:hover { background: rgba(12,22,38,0.03); }
 .fx-desk .accordion-head .left { display: flex; align-items: center; gap: 13px; }
 .fx-desk .accordion-head .ttl { font-family: var(--font-head); font-size: 21px; font-weight: 600; }
 .fx-desk .accordion-head .hint { font-size: 11.5px; color: var(--ink-3); }
@@ -727,7 +727,7 @@
 .fx-desk .watch-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .fx-desk .watch-card {
   border: 1px solid var(--line-soft); border-radius: 3px;
-  background: rgba(255,255,255,0.012); padding: 15px 16px 14px;
+  background: rgba(12,22,38,0.03); padding: 15px 16px 14px;
 }
 .fx-desk .watch-card .wc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
 .fx-desk .watch-card .wc-pair { font-family: var(--font-head); font-size: 20px; font-weight: 600; color: var(--ink-2); }
@@ -753,7 +753,7 @@
 .fx-desk .fn-row { display: grid; grid-template-columns: 132px 1fr 30px; align-items: center; gap: 13px; }
 .fx-desk .fn-label { font-size: 12px; color: var(--ink-2); }
 .fx-desk .fn-bar { height: 11px; background: var(--bg-inset); border: 1px solid var(--line-soft); border-radius: 2px; overflow: hidden; }
-.fx-desk .fn-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), #e3c98c); }
+.fx-desk .fn-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), #60a5fa); }
 .fx-desk .fn-row.final .fn-bar > span { background: var(--gold); }
 .fx-desk .fn-count { font-family: var(--font-head); font-size: 17px; font-weight: 600; color: var(--gold); text-align: right; }
 .fx-desk .fn-row.final .fn-count { color: var(--gold); }
