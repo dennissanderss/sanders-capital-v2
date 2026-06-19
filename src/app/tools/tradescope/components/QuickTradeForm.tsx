@@ -370,7 +370,7 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
       <div>
         <label className="block text-[10px] text-text-dim mb-1.5">Screenshots <span className="text-text-dim/50">(Ctrl+V om te plakken)</span></label>
         <div
-          className="rounded-xl border-2 border-dashed border-white/[0.08] hover:border-accent/30 transition-colors p-3 cursor-pointer"
+          className="rounded-xl border-2 border-dashed border-black/[0.08] hover:border-accent/30 transition-colors p-3 cursor-pointer"
           onClick={() => fileInputRef.current?.click()}
         >
           <input
@@ -392,7 +392,7 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
             <div className="flex flex-wrap gap-2">
               {pendingImages.map((img, idx) => (
                 <div key={idx} className="relative group">
-                  <img src={img.preview} alt={`Screenshot ${idx + 1}`} className="h-16 w-auto rounded-lg border border-white/[0.08] object-cover" />
+                  <img src={img.preview} alt={`Screenshot ${idx + 1}`} className="h-16 w-auto rounded-lg border border-black/[0.08] object-cover" />
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); removeImage(idx) }}
@@ -400,7 +400,7 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
                   >×</button>
                 </div>
               ))}
-              <div className="h-16 w-16 rounded-lg border border-dashed border-white/[0.1] flex items-center justify-center text-text-dim text-lg hover:border-accent/30 transition-colors">+</div>
+              <div className="h-16 w-16 rounded-lg border border-dashed border-black/[0.08] flex items-center justify-center text-text-dim text-lg hover:border-accent/30 transition-colors">+</div>
             </div>
           )}
         </div>
@@ -419,7 +419,7 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
 
       {/* Auto-calculated info */}
       {(calc.rr !== null || calc.pipsSL !== null || calc.pipsTP !== null || calc.positionSize !== null) && (
-        <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3">
+        <div className="rounded-xl bg-[rgba(12,22,38,0.03)] border border-black/[0.08] p-3">
           <p className="text-[10px] text-text-dim uppercase tracking-wider mb-2">Berekend</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {calc.rr !== null && (
@@ -453,7 +453,7 @@ export default function QuickTradeForm({ accounts, defaultAccountId, saving, onS
       )}
 
       {/* Submit */}
-      <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/[0.06]">
+      <div className="flex items-center justify-end gap-3 pt-2 border-t border-black/[0.08]">
         <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-text-muted hover:text-heading transition-colors">
           Annuleren
         </button>

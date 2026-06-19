@@ -164,7 +164,7 @@ export default function LanguageSelector() {
 
       <button
         onClick={() => { initTranslate(); setOpen(!open) }}
-        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-text-dim hover:text-heading hover:bg-white/[0.06] transition-colors"
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-text-dim hover:text-heading hover:bg-[rgba(12,22,38,0.04)] transition-colors"
         title="Vertaal pagina"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -176,15 +176,15 @@ export default function LanguageSelector() {
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-1 py-1.5 rounded-xl shadow-2xl border border-white/[0.12] min-w-[170px] z-50" style={{ background: 'rgba(13, 14, 20, 0.97)', backdropFilter: 'blur(24px)' }}>
+        <div className="absolute top-full right-0 mt-1 py-1.5 rounded-xl shadow-2xl border border-[rgba(12,22,38,0.10)] min-w-[170px] z-50" style={{ background: 'rgba(255, 255, 255, 0.97)', backdropFilter: 'blur(24px)' }}>
           {languages.map((lang) => (
             <button
               key={lang.code}
               onClick={() => selectLanguage(lang.code)}
               className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
                 activeLang === lang.code
-                  ? 'text-heading bg-white/[0.06]'
-                  : 'text-text-muted hover:text-heading hover:bg-white/[0.08]'
+                  ? 'text-heading bg-[rgba(12,22,38,0.04)]'
+                  : 'text-text-muted hover:text-heading hover:bg-[rgba(12,22,38,0.04)]'
               }`}
             >
               <span className="text-sm">{lang.flag}</span>

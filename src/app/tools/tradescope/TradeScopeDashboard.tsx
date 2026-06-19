@@ -387,7 +387,7 @@ export default function TradeScopeDashboard() {
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-colors ${
               activeTab === tab.id
                 ? 'bg-accent/15 text-accent-light border border-accent/30'
-                : 'text-text-muted hover:text-heading hover:bg-white/5'
+                : 'text-text-muted hover:text-heading hover:bg-[rgba(12,22,38,0.04)]'
             }`}
           >
             {tab.icon}

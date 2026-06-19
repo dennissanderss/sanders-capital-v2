@@ -36,7 +36,7 @@ export default function AnalyticsTab({ trades, metrics }: Props) {
           (s) => metrics.sessionStats[s]?.pnl || 0
         ),
         backgroundColor: ['London', 'New York', 'Overlap', 'Asia'].map(
-          (s) => (metrics.sessionStats[s]?.pnl || 0) >= 0 ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'
+          (s) => (metrics.sessionStats[s]?.pnl || 0) >= 0 ? 'rgba(47,158,111,0.7)' : 'rgba(212,89,63,0.7)'
         ),
         borderRadius: 4,
       },
@@ -60,7 +60,7 @@ export default function AnalyticsTab({ trades, metrics }: Props) {
         {
           label: 'Trades',
           data: Object.values(hours).map((h) => h.count),
-          backgroundColor: 'rgba(61,110,165,0.6)',
+          backgroundColor: 'rgba(59,130,246,0.6)',
           borderRadius: 2,
           yAxisID: 'y',
         },
@@ -92,7 +92,7 @@ export default function AnalyticsTab({ trades, metrics }: Props) {
         {
           label: 'Maand P/L',
           data: months.map(([, pnl]) => pnl),
-          backgroundColor: months.map(([, pnl]) => pnl >= 0 ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'),
+          backgroundColor: months.map(([, pnl]) => pnl >= 0 ? 'rgba(47,158,111,0.7)' : 'rgba(212,89,63,0.7)'),
           borderRadius: 4,
         },
       ],
@@ -113,7 +113,7 @@ export default function AnalyticsTab({ trades, metrics }: Props) {
           label: 'Cumulatief P/L',
           data: data.map((d) => d.value),
           borderColor: COLORS.accent,
-          backgroundColor: 'rgba(61,110,165,0.1)',
+          backgroundColor: 'rgba(59,130,246,0.1)',
           fill: true,
           tension: 0.3,
           pointRadius: 0,
@@ -148,7 +148,7 @@ export default function AnalyticsTab({ trades, metrics }: Props) {
           data: Object.values(buckets).map((b) => b.count > 0 ? b.pnl / b.count : 0),
           backgroundColor: Object.values(buckets).map((b) => {
             const avg = b.count > 0 ? b.pnl / b.count : 0
-            return avg >= 0 ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'
+            return avg >= 0 ? 'rgba(47,158,111,0.7)' : 'rgba(212,89,63,0.7)'
           }),
           borderRadius: 4,
         },
@@ -193,7 +193,7 @@ export default function AnalyticsTab({ trades, metrics }: Props) {
           label: 'Trades per week',
           data: weeks.map(([, c]) => c),
           borderColor: COLORS.accent,
-          backgroundColor: 'rgba(61,110,165,0.1)',
+          backgroundColor: 'rgba(59,130,246,0.1)',
           fill: true,
           tension: 0.4,
           pointRadius: 2,
@@ -228,7 +228,7 @@ export default function AnalyticsTab({ trades, metrics }: Props) {
                     <span className="text-heading">{stat.trades}x</span>
                     <span className="text-text-dim">·</span>
                     <span className="text-text-dim">{stat.winRate.toFixed(0)}% WR</span>
-                    <span className={stat.pnl >= 0 ? 'text-green-400' : 'text-red-400'}>{formatMoney(stat.pnl)}</span>
+                    <span className={stat.pnl >= 0 ? 'text-[#2f9e6f]' : 'text-[#d4593f]'}>{formatMoney(stat.pnl)}</span>
                   </div>
                 </div>
               ) : null

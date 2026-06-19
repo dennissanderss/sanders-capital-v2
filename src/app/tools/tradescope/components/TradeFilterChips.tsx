@@ -34,15 +34,15 @@ export default function TradeFilterChips({ filtersByCategory, selectedIds, onTog
                   className={`px-2.5 py-1 rounded-lg text-xs border transition-all ${
                     isSelected
                       ? 'shadow-sm'
-                      : 'hover:border-white/[0.15]'
+                      : 'hover:border-black/[0.08]'
                   }`}
                   style={isSelected ? {
-                    borderColor: filter.color ? `${filter.color}60` : 'rgba(61,110,165,0.5)',
-                    backgroundColor: filter.color ? `${filter.color}20` : 'rgba(61,110,165,0.15)',
-                    color: filter.color || '#7ba3d0',
+                    borderColor: filter.color ? `${filter.color}60` : 'rgba(59,130,246,0.5)',
+                    backgroundColor: filter.color ? `${filter.color}20` : 'rgba(59,130,246,0.12)',
+                    color: filter.color || '#2563eb',
                   } : {
-                    borderColor: 'rgba(255,255,255,0.08)',
-                    backgroundColor: 'rgba(255,255,255,0.02)',
+                    borderColor: 'rgba(12,22,38,0.10)',
+                    backgroundColor: 'rgba(12,22,38,0.04)',
                     color: 'inherit',
                   }}
                 >

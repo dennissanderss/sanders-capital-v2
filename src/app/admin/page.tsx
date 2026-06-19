@@ -544,7 +544,7 @@ export default function AdminPage() {
 
       {/* MOVE MODAL */}
       {moveModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(12,22,38,0.35)] backdrop-blur-sm">
           <div className="glass-elevated rounded-2xl p-6 w-full max-w-md mx-4">
             {moveModal.type === 'articleToKb' && (
               <>
@@ -798,7 +798,7 @@ export default function AdminPage() {
                           </span>
                         )}
                         {isCompleted && daysUntilReset !== null && (
-                          <span className="text-[10px] text-text-dim bg-white/5 px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <span className="text-[10px] text-text-dim bg-[rgba(12,22,38,0.04)] px-1.5 py-0.5 rounded flex items-center gap-1">
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                             </svg>
@@ -900,7 +900,7 @@ export default function AdminPage() {
                       <span className="text-text-dim">Database</span>
                       <span className="text-text-muted font-mono">{dbStats ? `${dbStats.totalRows} rijen` : '—'} / 500 MB</span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-[rgba(12,22,38,0.04)] overflow-hidden">
                       <div className="h-full bg-emerald-500/50 rounded-full transition-all" style={{ width: `${Math.min(((dbStats?.totalRows || 0) / 5000) * 100, 100)}%` }} />
                     </div>
                     <p className="text-[10px] text-text-dim mt-0.5">{dbStats?.tables || 0} tabellen</p>
@@ -910,7 +910,7 @@ export default function AdminPage() {
                       <span className="text-text-dim">Storage</span>
                       <span className="text-text-muted font-mono">{dbStats?.storageMb || 0} MB / 1 GB</span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-[rgba(12,22,38,0.04)] overflow-hidden">
                       <div className="h-full bg-emerald-500/50 rounded-full transition-all" style={{ width: `${Math.min(((dbStats?.storageMb || 0) / 1024) * 100, 100)}%` }} />
                     </div>
                   </div>
@@ -930,7 +930,7 @@ export default function AdminPage() {
                 <p className="text-sm font-semibold text-heading mb-2">Tech Stack</p>
                 <div className="flex flex-wrap gap-1.5">
                   {['Next.js 15', 'React 19', 'TypeScript', 'Tailwind CSS', 'Supabase', 'Vercel'].map(tech => (
-                    <span key={tech} className="text-[10px] px-2 py-1 rounded-md bg-white/5 border border-border text-text-muted">{tech}</span>
+                    <span key={tech} className="text-[10px] px-2 py-1 rounded-md bg-[rgba(12,22,38,0.04)] border border-border text-text-muted">{tech}</span>
                   ))}
                 </div>
               </div>
@@ -1492,7 +1492,7 @@ export default function AdminPage() {
                   </div>
                   {/* Action buttons */}
                   {!isAdmin && (
-                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.04] flex-wrap">
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[rgba(12,22,38,0.10)] flex-wrap">
                       {/* Role buttons */}
                       {!isBanned && (
                         <>
@@ -1553,7 +1553,7 @@ export default function AdminPage() {
                     </div>
                   )}
                   {isAdmin && (
-                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.04]">
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[rgba(12,22,38,0.10)]">
                       <button onClick={() => changeUserRole(u.id, 'premium')} className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-heading transition-colors">
                         Verwijder Admin
                       </button>

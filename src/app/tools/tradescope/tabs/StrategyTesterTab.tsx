@@ -61,7 +61,7 @@ export default function StrategyTesterTab({ trades, monteCarloData, startingBala
       {
         label: 'P95 (Best case)',
         data: p95,
-        borderColor: 'rgba(34,197,94,0.3)',
+        borderColor: 'rgba(47,158,111,0.45)',
         backgroundColor: 'transparent',
         borderDash: [4, 4],
         borderWidth: 1,
@@ -71,8 +71,8 @@ export default function StrategyTesterTab({ trades, monteCarloData, startingBala
       {
         label: 'P75',
         data: p75,
-        borderColor: 'rgba(34,197,94,0.5)',
-        backgroundColor: 'rgba(34,197,94,0.05)',
+        borderColor: 'rgba(47,158,111,0.6)',
+        backgroundColor: 'rgba(47,158,111,0.08)',
         fill: '+1',
         borderWidth: 1,
         pointRadius: 0,
@@ -90,8 +90,8 @@ export default function StrategyTesterTab({ trades, monteCarloData, startingBala
       {
         label: 'P25',
         data: p25,
-        borderColor: 'rgba(239,68,68,0.5)',
-        backgroundColor: 'rgba(239,68,68,0.05)',
+        borderColor: 'rgba(212,89,63,0.6)',
+        backgroundColor: 'rgba(212,89,63,0.08)',
         fill: '+1',
         borderWidth: 1,
         pointRadius: 0,
@@ -100,7 +100,7 @@ export default function StrategyTesterTab({ trades, monteCarloData, startingBala
       {
         label: 'P5 (Worst case)',
         data: p5,
-        borderColor: 'rgba(239,68,68,0.3)',
+        borderColor: 'rgba(212,89,63,0.45)',
         backgroundColor: 'transparent',
         borderDash: [4, 4],
         borderWidth: 1,
@@ -174,7 +174,7 @@ export default function StrategyTesterTab({ trades, monteCarloData, startingBala
                   display: true,
                   position: 'top',
                   labels: {
-                    color: '#5a6178',
+                    color: '#9aa3b2',
                     font: { size: 10 },
                     boxWidth: 12,
                     padding: 16,

@@ -14,7 +14,7 @@ interface Props {
 }
 
 const COLORS = [
-  '#3d6ea5', '#22c55e', '#ef4444', '#f59e0b', '#8b5cf6',
+  '#3b82f6', '#22c55e', '#ef4444', '#f59e0b', '#8b5cf6',
   '#ec4899', '#06b6d4', '#f97316', '#6366f1', '#14b8a6',
 ]
 
@@ -129,7 +129,7 @@ export default function FilterManager({
       {categories.map(category => (
         <div key={category} className="rounded-xl glass overflow-hidden">
           {/* Category header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04]">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-black/[0.08]">
             {renamingCategory === category ? (
               <div className="flex items-center gap-2 flex-1">
                 <input
@@ -151,7 +151,7 @@ export default function FilterManager({
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => { setRenamingCategory(category); setRenameCategoryValue(category) }}
-                    className="p-1.5 rounded hover:bg-white/[0.06] text-text-dim hover:text-heading transition-colors"
+                    className="p-1.5 rounded hover:bg-[rgba(12,22,38,0.04)] text-text-dim hover:text-heading transition-colors"
                     title="Hernoemen"
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -192,8 +192,8 @@ export default function FilterManager({
                     <span
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border transition-colors"
                       style={{
-                        borderColor: filter.color ? `${filter.color}40` : 'rgba(255,255,255,0.08)',
-                        backgroundColor: filter.color ? `${filter.color}10` : 'rgba(255,255,255,0.02)',
+                        borderColor: filter.color ? `${filter.color}40` : 'rgba(12,22,38,0.10)',
+                        backgroundColor: filter.color ? `${filter.color}10` : 'rgba(12,22,38,0.04)',
                         color: filter.color || 'inherit',
                       }}
                     >

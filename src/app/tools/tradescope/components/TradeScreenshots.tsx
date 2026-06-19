@@ -155,7 +155,7 @@ export default function TradeScreenshots({ tradeId, screenshots: initial, onUpda
       {screenshots.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {screenshots.map(s => (
-            <div key={s.id} className="relative group aspect-video rounded-lg overflow-hidden bg-white/[0.03] border border-border">
+            <div key={s.id} className="relative group aspect-video rounded-lg overflow-hidden bg-[rgba(12,22,38,0.03)] border border-border">
               <img
                 src={getPublicUrl(s.storage_path)}
                 alt={s.label || 'Screenshot'}

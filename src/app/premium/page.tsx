@@ -332,7 +332,7 @@ export default async function PremiumPage() {
                     { label: 'Fundamentele data services', price: '~$500+/jaar', desc: 'Daily Macro Briefing + Fundamentals dashboard' },
                     { label: 'Trading community & begeleiding', price: 'Onbetaalbaar', desc: 'Directe ondersteuning van een ervaren trader' },
                   ].map((item) => (
-                    <div key={item.label} className="rounded-lg bg-white/[0.02] border border-white/[0.06] px-4 py-3">
+                    <div key={item.label} className="rounded-lg bg-[rgba(12,22,38,0.03)] border border-black/[0.08] px-4 py-3">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-heading font-medium">{item.label}</span>
                         <span className="text-xs text-gold font-mono">{item.price}</span>
@@ -342,7 +342,7 @@ export default async function PremiumPage() {
                   ))}
                 </div>
 
-                <div className="pt-3 border-t border-white/[0.06]">
+                <div className="pt-3 border-t border-black/[0.08]">
                   <p>
                     <strong className="text-heading">Gezamenlijke marktwaarde: meer dan &euro;1.000 per jaar.</strong>{' '}
                     Daarnaast beschik je over een fundamenteel model met een{' '}

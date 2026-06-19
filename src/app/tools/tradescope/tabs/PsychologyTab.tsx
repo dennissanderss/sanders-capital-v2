@@ -396,7 +396,7 @@ export default function PsychologyTab({ trades }: Props) {
                 data={{
                   labels: emotionStats.map(e => e.label),
                   datasets: [
-                    { label: 'Win Rate %', data: emotionStats.map(e => e.winRate), backgroundColor: 'rgba(61, 110, 165, 0.6)', borderRadius: 4 },
+                    { label: 'Win Rate %', data: emotionStats.map(e => e.winRate), backgroundColor: 'rgba(59, 130, 246, 0.6)', borderRadius: 4 },
                   ],
                 }}
                 options={{ ...darkThemeDefaults, indexAxis: 'y' as const, scales: { x: { ...darkThemeDefaults.scales?.x, max: 100 } }, plugins: { ...darkThemeDefaults.plugins, legend: { display: false } } }}
@@ -404,7 +404,7 @@ export default function PsychologyTab({ trades }: Props) {
             </div>
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-xs">
-                <thead><tr className="border-b border-white/[0.06]">
+                <thead><tr className="border-b border-black/[0.08]">
                   <th className="px-2 py-1.5 text-left text-text-dim">Emotie</th>
                   <th className="px-2 py-1.5 text-right text-text-dim">Trades</th>
                   <th className="px-2 py-1.5 text-right text-text-dim">Win Rate</th>
@@ -413,7 +413,7 @@ export default function PsychologyTab({ trades }: Props) {
                 </tr></thead>
                 <tbody>
                   {emotionStats.map((e, i) => (
-                    <tr key={i} className="border-b border-white/[0.03]">
+                    <tr key={i} className="border-b border-black/[0.08]">
                       <td className="px-2 py-1.5 text-heading">{e.label}</td>
                       <td className="px-2 py-1.5 text-right text-text-muted">{e.total}</td>
                       <td className={`px-2 py-1.5 text-right ${e.winRate >= 55 ? 'text-green-400' : e.winRate >= 45 ? 'text-amber-400' : 'text-red-400'}`}>{e.winRate.toFixed(1)}%</td>
@@ -435,7 +435,7 @@ export default function PsychologyTab({ trades }: Props) {
           <div className="glass rounded-xl p-4">
             <div className="grid grid-cols-5 gap-2">
               {qualityCorrelation.map(q => (
-                <div key={q.score} className={`text-center p-3 rounded-lg ${q.count > 0 ? 'bg-white/[0.03]' : ''}`}>
+                <div key={q.score} className={`text-center p-3 rounded-lg ${q.count > 0 ? 'bg-[rgba(12,22,38,0.04)]' : ''}`}>
                   <p className="text-lg font-bold text-heading">{q.score}</p>
                   <p className="text-[10px] text-text-dim mb-2">{q.count} trades</p>
                   {q.count > 0 && (
@@ -463,7 +463,7 @@ export default function PsychologyTab({ trades }: Props) {
             <p className="text-xs text-text-dim mb-3">Komt je gevoel overeen met het resultaat? Hoge confidence zou hogere win rate moeten geven.</p>
             <div className="grid grid-cols-5 gap-2">
               {confidenceAccuracy.map(c => (
-                <div key={c.level} className="text-center p-3 rounded-lg bg-white/[0.03]">
+                <div key={c.level} className="text-center p-3 rounded-lg bg-[rgba(12,22,38,0.04)]">
                   <p className="text-xs text-text-dim mb-1">Conf. {c.level}</p>
                   <p className="text-sm font-semibold text-heading">{c.count > 0 ? `${c.winRate.toFixed(0)}%` : '—'}</p>
                   <p className="text-[10px] text-text-dim">{c.count} trades</p>
@@ -502,7 +502,7 @@ export default function PsychologyTab({ trades }: Props) {
             <div className="glass rounded-xl p-4">
               <p className="text-xs font-semibold text-heading mb-3">Discipline Score → Resultaat</p>
               {routineCorrelation.disciplineScores.map((d, i) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
+                <div key={i} className="flex items-center justify-between py-2 border-b border-black/[0.08] last:border-0">
                   <span className="text-xs text-text-muted">{d.label}</span>
                   <div className="flex items-center gap-4">
                     <span className="text-xs text-text-dim">{d.count} trades</span>
@@ -521,7 +521,7 @@ export default function PsychologyTab({ trades }: Props) {
             <div className="glass rounded-xl p-4">
               <p className="text-xs font-semibold text-heading mb-3">Gewoonten → Resultaat</p>
               {routineCorrelation.habits.map((h, i) => (
-                <div key={i} className="py-2 border-b border-white/[0.04] last:border-0">
+                <div key={i} className="py-2 border-b border-black/[0.08] last:border-0">
                   <p className="text-xs text-text-muted mb-1">{h.label}</p>
                   <div className="flex items-center gap-4 text-[11px]">
                     <span className="text-green-400">Ja: {h.pos.winRate.toFixed(0)}% WR ({h.pos.count})</span>

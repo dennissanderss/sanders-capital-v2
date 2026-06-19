@@ -246,7 +246,7 @@ export default function ImportTab({ accounts, onImportComplete }: Props) {
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-white/[0.06]">
+                  <tr className="border-b border-black/[0.08]">
                     <th className="px-3 py-2 text-left text-text-dim font-medium">#</th>
                     <th className="px-3 py-2 text-left text-text-dim font-medium">Datum</th>
                     <th className="px-3 py-2 text-left text-text-dim font-medium">Paar</th>
@@ -258,7 +258,7 @@ export default function ImportTab({ accounts, onImportComplete }: Props) {
                 </thead>
                 <tbody>
                   {parsedTrades.slice(0, 20).map((t, i) => (
-                    <tr key={i} className="border-b border-white/[0.03] hover:bg-white/[0.02]">
+                    <tr key={i} className="border-b border-black/[0.08] hover:bg-[rgba(12,22,38,0.03)]">
                       <td className="px-3 py-2 text-text-dim">{i + 1}</td>
                       <td className="px-3 py-2 text-heading">{t.openDate.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', year: '2-digit' })}</td>
                       <td className="px-3 py-2 text-heading font-medium">{t.symbol}</td>
@@ -275,7 +275,7 @@ export default function ImportTab({ accounts, onImportComplete }: Props) {
                 </tbody>
               </table>
               {parsedTrades.length > 20 && (
-                <p className="px-3 py-2 text-xs text-text-dim text-center border-t border-white/[0.06]">
+                <p className="px-3 py-2 text-xs text-text-dim text-center border-t border-black/[0.08]">
                   + {parsedTrades.length - 20} meer trades...
                 </p>
               )}

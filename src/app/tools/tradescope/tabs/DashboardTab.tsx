@@ -72,7 +72,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
         label: 'Equity',
         data: metrics.equityCurve.map((p) => p.equity),
         borderColor: COLORS.accent,
-        backgroundColor: 'rgba(61,110,165,0.1)',
+        backgroundColor: 'rgba(59,130,246,0.1)',
         fill: true,
         tension: 0.3,
         pointRadius: 0,
@@ -89,7 +89,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
         label: 'Drawdown %',
         data: metrics.drawdownCurve.map((p) => p.drawdown),
         borderColor: COLORS.red,
-        backgroundColor: 'rgba(239,68,68,0.15)',
+        backgroundColor: 'rgba(212,89,63,0.15)',
         fill: true,
         tension: 0.3,
         pointRadius: 0,
@@ -105,7 +105,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
       {
         label: 'P/L',
         data: trades.map((t) => t.profitLoss),
-        backgroundColor: trades.map((t) => t.profitLoss >= 0 ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'),
+        backgroundColor: trades.map((t) => t.profitLoss >= 0 ? 'rgba(47,158,111,0.7)' : 'rgba(212,89,63,0.7)'),
         borderRadius: 2,
       },
     ],
@@ -117,7 +117,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
     datasets: [
       {
         data: [metrics.wins, metrics.losses, metrics.breakeven],
-        backgroundColor: ['rgba(34,197,94,0.8)', 'rgba(239,68,68,0.8)', 'rgba(90,97,120,0.5)'],
+        backgroundColor: ['rgba(47,158,111,0.8)', 'rgba(212,89,63,0.8)', 'rgba(123,133,147,0.5)'],
         borderWidth: 0,
       },
     ],
@@ -149,7 +149,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
         {
           label: 'P/L',
           data: days.map((d) => metrics.dayStats[d]?.pnl || 0),
-          backgroundColor: days.map((d) => (metrics.dayStats[d]?.pnl || 0) >= 0 ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'),
+          backgroundColor: days.map((d) => (metrics.dayStats[d]?.pnl || 0) >= 0 ? 'rgba(47,158,111,0.7)' : 'rgba(212,89,63,0.7)'),
           borderRadius: 4,
         },
       ],
@@ -162,7 +162,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
     datasets: [
       {
         data: [metrics.totalLongs, metrics.totalShorts],
-        backgroundColor: ['rgba(61,110,165,0.8)', 'rgba(184,147,90,0.8)'],
+        backgroundColor: ['rgba(59,130,246,0.8)', 'rgba(37,99,235,0.8)'],
         borderWidth: 0,
       },
     ],
@@ -362,8 +362,8 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
             />
           </div>
           <div className="flex justify-center gap-4 mt-3 text-xs">
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#3d6ea5]" /> {metrics.totalLongs}L ({formatPct(metrics.longWinRate)})</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#b8935a]" /> {metrics.totalShorts}S ({formatPct(metrics.shortWinRate)})</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#3b82f6]" /> {metrics.totalLongs}L ({formatPct(metrics.longWinRate)})</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#2563eb]" /> {metrics.totalShorts}S ({formatPct(metrics.shortWinRate)})</span>
           </div>
         </div>
 
@@ -375,7 +375,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
                 labels: Object.keys(rrBuckets),
                 datasets: [{
                   data: Object.values(rrBuckets),
-                  backgroundColor: 'rgba(61,110,165,0.6)',
+                  backgroundColor: 'rgba(59,130,246,0.6)',
                   borderRadius: 3,
                 }],
               }}
@@ -494,11 +494,11 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
 
         {/* Month navigation */}
         <div className="flex items-center justify-between mb-3">
-          <button onClick={() => navigateMonth(-1)} className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors">
+          <button onClick={() => navigateMonth(-1)} className="p-1.5 rounded-lg hover:bg-[rgba(12,22,38,0.04)] transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim"><polyline points="15 18 9 12 15 6" /></svg>
           </button>
           <h4 className="text-sm font-medium text-heading capitalize">{calendarData.monthName}</h4>
-          <button onClick={() => navigateMonth(1)} className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors">
+          <button onClick={() => navigateMonth(1)} className="p-1.5 rounded-lg hover:bg-[rgba(12,22,38,0.04)] transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim"><polyline points="9 18 15 12 9 6" /></svg>
           </button>
         </div>
@@ -531,10 +531,10 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
                   } ${isSelected ? 'ring-2 ring-accent' : ''}`}
                   style={hasTrades ? {
                     backgroundColor: cell.pnl! >= 0
-                      ? `rgba(34,197,94,${0.1 + intensity * 0.45})`
-                      : `rgba(239,68,68,${0.1 + intensity * 0.45})`,
+                      ? `rgba(47,158,111,${0.1 + intensity * 0.45})`
+                      : `rgba(212,89,63,${0.1 + intensity * 0.45})`,
                   } : {
-                    backgroundColor: 'rgba(255,255,255,0.02)',
+                    backgroundColor: 'rgba(12,22,38,0.03)',
                   }}
                 >
                   <span className={`text-[11px] leading-none ${hasTrades ? 'text-text-muted' : 'text-text-dim/40'}`}>
@@ -585,12 +585,12 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
       {/* ── Day Detail Side Panel ── */}
       {selectedDay && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setSelectedDay(null)} />
+          <div className="fixed inset-0 z-40 bg-[rgba(12,22,38,0.35)]" onClick={() => setSelectedDay(null)} />
           <div className="fixed top-0 right-0 z-50 h-full w-[85vw] sm:w-full max-w-sm overflow-y-auto transition-transform duration-300 ease-out"
-            style={{ background: 'rgba(10, 12, 16, 0.99)', backdropFilter: 'blur(40px)', borderLeft: '1px solid rgba(255,255,255,0.08)' }}
+            style={{ background: 'rgba(255, 255, 255, 0.99)', backdropFilter: 'blur(40px)', borderLeft: '1px solid rgba(12,22,38,0.10)' }}
           >
             {/* Panel header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(12,22,38,0.10)]">
               <div>
                 <h3 className="text-sm font-semibold text-heading">
                   {new Date(selectedDay + 'T12:00:00').toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -604,7 +604,7 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
                   )}
                 </p>
               </div>
-              <button onClick={() => setSelectedDay(null)} className="p-2 rounded-lg hover:bg-white/[0.06] transition-colors">
+              <button onClick={() => setSelectedDay(null)} className="p-2 rounded-lg hover:bg-[rgba(12,22,38,0.04)] transition-colors">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
               </button>
             </div>
@@ -615,12 +615,12 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
                 <p className="text-xs text-text-dim text-center py-8">Geen trades op deze dag</p>
               ) : (
                 dayTrades.map((t, i) => (
-                  <div key={i} className="p-3 rounded-xl border border-white/[0.06] bg-white/[0.02] space-y-2">
+                  <div key={i} className="p-3 rounded-xl border border-[rgba(12,22,38,0.10)] bg-[rgba(12,22,38,0.03)] space-y-2">
                     {/* Trade header */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-heading">{t.symbol}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${t.action === 'buy' ? 'bg-[#3d6ea5]/20 text-[#5a8ec4]' : 'bg-[#b8935a]/20 text-[#b8935a]'}`}>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${t.action === 'buy' ? 'bg-[#3b82f6]/15 text-[#2563eb]' : 'bg-[#2563eb]/15 text-[#1d4ed8]'}`}>
                           {t.action === 'buy' ? 'LONG' : 'SHORT'}
                         </span>
                       </div>
@@ -685,12 +685,12 @@ export default function DashboardTab({ trades, metrics, startingBalance }: Props
             </thead>
             <tbody>
               {trades.map((t, i) => (
-                <tr key={i} className="border-b border-border/30 hover:bg-white/[0.02] transition-colors">
+                <tr key={i} className="border-b border-border/30 hover:bg-[rgba(12,22,38,0.03)] transition-colors">
                   <td className="py-2 px-2 text-text-dim">{t.tradeNumber}</td>
                   <td className="py-2 px-2 text-text-muted">{t.openDate.toLocaleDateString('nl-NL')}</td>
                   <td className="py-2 px-2 text-heading font-medium">{t.symbol}</td>
                   <td className="py-2 px-2">
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${t.action === 'buy' ? 'bg-[#3d6ea5]/20 text-[#5a8ec4]' : 'bg-[#b8935a]/20 text-[#b8935a]'}`}>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${t.action === 'buy' ? 'bg-[#3b82f6]/15 text-[#2563eb]' : 'bg-[#2563eb]/15 text-[#1d4ed8]'}`}>
                       {t.action === 'buy' ? 'LONG' : 'SHORT'}
                     </span>
                   </td>

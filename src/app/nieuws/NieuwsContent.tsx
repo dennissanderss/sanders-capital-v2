@@ -474,7 +474,7 @@ function ImpactIndicator({ article, compact = false }: { article: NewsArticle; c
         </svg>
       </button>
       {expanded && (
-        <div className="mt-2 pt-2 border-t border-white/[0.06]">
+        <div className="mt-2 pt-2 border-t border-black/[0.08]">
           <p className={`text-xs leading-relaxed ${isBullish ? 'text-green-300/80' : 'text-red-300/80'}`}>
             {impact.explanation}
           </p>
@@ -615,7 +615,7 @@ function FxWidget() {
     return (
       <div className="flex items-center gap-3 overflow-x-auto pb-1">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="shrink-0 w-[110px] h-[52px] rounded-lg bg-white/[0.03] border border-white/[0.06] animate-pulse" />
+          <div key={i} className="shrink-0 w-[110px] h-[52px] rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08] animate-pulse" />
         ))}
       </div>
     )
@@ -631,7 +631,7 @@ function FxWidget() {
             className={`shrink-0 px-3 py-2 rounded-lg border transition-all duration-300 ${
               flash === 'up' ? 'bg-green-500/[0.08] border-green-500/25' :
               flash === 'down' ? 'bg-red-500/[0.08] border-red-500/25' :
-              'bg-white/[0.03] border-white/[0.06] hover:border-white/[0.12]'
+              'bg-[rgba(12,22,38,0.04)] border-black/[0.08] hover:border-black/[0.12]'
             }`}
           >
             <div className="text-[10px] text-text-dim font-medium">{rate.pair}</div>
@@ -748,12 +748,12 @@ export default function NieuwsContent() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
       {/* Article Reader Modal */}
       {selectedArticle && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm overflow-y-auto py-4 sm:py-8 px-2 sm:px-4" onClick={() => setSelectedArticle(null)}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-[rgba(12,22,38,0.45)] backdrop-blur-sm overflow-y-auto py-4 sm:py-8 px-2 sm:px-4" onClick={() => setSelectedArticle(null)}>
           <div className="w-full max-w-2xl rounded-2xl bg-bg-card border border-border shadow-2xl" onClick={e => e.stopPropagation()}>
             {/* Reader header */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-border">
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] px-2 py-0.5 rounded border font-medium ${sourceColors[selectedArticle.source] || 'bg-white/[0.06] text-text-muted border-white/[0.08]'}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded border font-medium ${sourceColors[selectedArticle.source] || 'bg-[rgba(12,22,38,0.04)] text-text-muted border-black/[0.08]'}`}>
                   {selectedArticle.source}
                 </span>
                 <span className="text-xs text-text-dim">{timeAgo(selectedArticle.publishedAt)}</span>
@@ -762,11 +762,11 @@ export default function NieuwsContent() {
                 {/* Language toggle in reader */}
                 <button
                   onClick={() => setShowDutch(!showDutch)}
-                  className="text-[10px] px-2 py-1 rounded border border-white/[0.08] text-text-dim hover:text-heading transition-colors"
+                  className="text-[10px] px-2 py-1 rounded border border-black/[0.08] text-text-dim hover:text-heading transition-colors"
                 >
                   {showDutch ? 'EN' : 'NL'}
                 </button>
-                <button onClick={() => setSelectedArticle(null)} className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors">
+                <button onClick={() => setSelectedArticle(null)} className="p-1.5 rounded-lg hover:bg-[rgba(12,22,38,0.04)] transition-colors">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
                     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
@@ -908,7 +908,7 @@ export default function NieuwsContent() {
                 className={`px-3.5 py-1.5 rounded-lg text-sm whitespace-nowrap transition-all ${
                   activeCategory === cat.value
                     ? 'bg-accent/15 text-accent-light border border-accent/25'
-                    : 'bg-white/[0.03] text-text-muted border border-white/[0.06] hover:bg-white/[0.06] hover:text-heading'
+                    : 'bg-[rgba(12,22,38,0.04)] text-text-muted border border-black/[0.08] hover:bg-[rgba(12,22,38,0.06)] hover:text-heading'
                 }`}
               >
                 {cat.label}
@@ -922,8 +922,8 @@ export default function NieuwsContent() {
               onClick={() => setShowDutch(!showDutch)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-all ${
                 showDutch
-                  ? 'bg-white/[0.06] border-white/[0.1] text-heading'
-                  : 'bg-white/[0.03] border-white/[0.06] text-text-muted hover:text-heading'
+                  ? 'bg-[rgba(12,22,38,0.06)] border-black/[0.1] text-heading'
+                  : 'bg-[rgba(12,22,38,0.04)] border-black/[0.08] text-text-muted hover:text-heading'
               }`}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -948,8 +948,8 @@ export default function NieuwsContent() {
               onClick={() => setActiveDays(range.value)}
               className={`px-2.5 py-1 rounded-md text-xs whitespace-nowrap transition-all ${
                 activeDays === range.value
-                  ? 'bg-white/[0.08] text-heading border border-white/[0.12]'
-                  : 'text-text-dim hover:text-text-muted hover:bg-white/[0.04] border border-transparent'
+                  ? 'bg-[rgba(12,22,38,0.06)] text-heading border border-black/[0.12]'
+                  : 'text-text-dim hover:text-text-muted hover:bg-[rgba(12,22,38,0.04)] border border-transparent'
               }`}
             >
               {range.label}
@@ -992,11 +992,11 @@ export default function NieuwsContent() {
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="p-5 rounded-xl bg-bg-card border border-border animate-pulse">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-16 h-5 rounded bg-white/[0.06]" />
-                <div className="w-12 h-5 rounded bg-white/[0.06]" />
+                <div className="w-16 h-5 rounded bg-[rgba(12,22,38,0.06)]" />
+                <div className="w-12 h-5 rounded bg-[rgba(12,22,38,0.06)]" />
               </div>
-              <div className="w-3/4 h-5 rounded bg-white/[0.06] mb-2" />
-              <div className="w-full h-4 rounded bg-white/[0.04]" />
+              <div className="w-3/4 h-5 rounded bg-[rgba(12,22,38,0.06)] mb-2" />
+              <div className="w-full h-4 rounded bg-[rgba(12,22,38,0.04)]" />
             </div>
           ))}
         </div>
@@ -1056,10 +1056,10 @@ export default function NieuwsContent() {
                       <div className="flex-1 min-w-0">
                         {/* Source, category & relevance badges */}
                         <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-                          <span className={`text-[10px] px-2 py-0.5 rounded border font-medium ${sourceColors[article.source] || 'bg-white/[0.06] text-text-muted border-white/[0.08]'}`}>
+                          <span className={`text-[10px] px-2 py-0.5 rounded border font-medium ${sourceColors[article.source] || 'bg-[rgba(12,22,38,0.04)] text-text-muted border-black/[0.08]'}`}>
                             {article.source}
                           </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-text-dim">
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(12,22,38,0.04)] border border-black/[0.08] text-text-dim">
                             {categoryLabels[article.category] || article.category}
                           </span>
                           {article.relevanceScore >= 5 && (
@@ -1069,7 +1069,7 @@ export default function NieuwsContent() {
                           )}
                           {/* Currency impact badges */}
                           {article.affectedCurrencies.slice(0, 3).map(c => (
-                            <span key={c} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-text-dim font-mono font-bold">
+                            <span key={c} className="text-[9px] px-1.5 py-0.5 rounded bg-[rgba(12,22,38,0.04)] border border-black/[0.08] text-text-dim font-mono font-bold">
                               {c}
                             </span>
                           ))}

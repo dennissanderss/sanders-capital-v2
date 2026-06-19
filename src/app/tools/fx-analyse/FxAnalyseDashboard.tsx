@@ -181,7 +181,7 @@ export default function FxAnalyseDashboard() {
                     <>Beide valuta&apos;s hebben dezelfde rente. Het renteverschil is neutraal; andere factoren bepalen de richting.</>
                   )}
                 </p>
-                <div className="mt-3 p-3 rounded bg-white/[0.03]">
+                <div className="mt-3 p-3 rounded bg-[rgba(12,22,38,0.03)]">
                   <p className="text-xs text-text-dim">
                     <strong className="text-text-muted">Waarom is dit belangrijk?</strong> Grote beleggers en instituties verplaatsen geld naar de valuta met de hoogste rente (dit heet &quot;carry trade&quot;). Het renteverschil is vaak de belangrijkste fundamentele driver op de lange termijn.
                   </p>
@@ -203,7 +203,7 @@ export default function FxAnalyseDashboard() {
                     <StanceBadge bias={data.quoteCB.bias} />
                   </div>
                 </div>
-                <div className="mt-3 p-3 rounded bg-white/[0.03]">
+                <div className="mt-3 p-3 rounded bg-[rgba(12,22,38,0.03)]">
                   <p className="text-xs text-text-dim">
                     <strong className="text-text-muted">Hoe lees je dit?</strong> &quot;Restrictief&quot; = rente hoog houden (hawkish, goed voor de valuta). &quot;Verruimend&quot; = rente verlagen (dovish, slecht voor de valuta). De richting is belangrijker dan het niveau: een centrale bank die naar verruiming beweegt is bearish, ook als de rente nog hoog is.
                   </p>
@@ -263,7 +263,7 @@ export default function FxAnalyseDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {Object.values(data.sources).map((src, i) => (
                     <a key={i} href={src.url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-start gap-2 p-2.5 rounded-lg bg-white/[0.02] border border-border/50 hover:border-border-light transition-colors group">
+                      className="flex items-start gap-2 p-2.5 rounded-lg bg-[rgba(12,22,38,0.03)] border border-border/50 hover:border-border-light transition-colors group">
                       <svg className="w-3.5 h-3.5 mt-0.5 text-accent-light/50 group-hover:text-accent-light shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
                       </svg>
@@ -312,7 +312,7 @@ function Section({ number, title, children }: { number: number; title: string; c
 
 function CBCard({ currency, cb }: { currency: string; cb: CBData }) {
   return (
-    <div className="p-4 rounded-lg bg-white/[0.02] border border-border/50">
+    <div className="p-4 rounded-lg bg-[rgba(12,22,38,0.03)] border border-border/50">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-bold text-heading">{currency}</span>
         <span className="text-lg font-display font-semibold text-accent-light">{cb.rate}%</span>
@@ -339,7 +339,7 @@ function CBCard({ currency, cb }: { currency: string; cb: CBData }) {
 function StanceBadge({ bias }: { bias: string }) {
   const isHawkish = bias.includes('verkrappend') || bias.includes('afwachtend')
   const isDovish = bias.includes('verruimend')
-  const color = isHawkish ? '#4caf50' : isDovish ? '#ef5350' : '#6b7084'
+  const color = isHawkish ? '#2f9e6f' : isDovish ? '#d4593f' : '#7b8593'
   return (
     <span className="inline-block text-xs px-2 py-0.5 rounded-full mt-1" style={{ background: color + '22', color }}>
       {bias}
@@ -353,10 +353,10 @@ function RateDiffBar({ base, quote }: { base: number; quote: number }) {
   const quotePct = (quote / max) * 100
   return (
     <div className="flex gap-1 h-3">
-      <div className="flex-1 bg-white/5 rounded-full overflow-hidden">
+      <div className="flex-1 bg-[rgba(12,22,38,0.06)] rounded-full overflow-hidden">
         <div className="h-full rounded-full bg-accent-light transition-all" style={{ width: `${basePct}%` }} />
       </div>
-      <div className="flex-1 bg-white/5 rounded-full overflow-hidden">
+      <div className="flex-1 bg-[rgba(12,22,38,0.06)] rounded-full overflow-hidden">
         <div className="h-full rounded-full bg-gold transition-all" style={{ width: `${quotePct}%` }} />
       </div>
     </div>

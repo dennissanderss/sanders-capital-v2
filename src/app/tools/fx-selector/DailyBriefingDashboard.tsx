@@ -308,7 +308,7 @@ function BiasTag({ bias }: { bias: string }) {
   const isDovish = b.includes('verruimend')
   const color = isHawkish ? 'bg-green-500/15 text-green-400 border-green-500/20'
     : isDovish ? 'bg-red-500/15 text-red-400 border-red-500/20'
-    : 'bg-white/10 text-text-muted border-border'
+    : 'bg-[rgba(12,22,38,0.06)] text-text-muted border-border'
   return (
     <span className={`text-[11px] px-2 py-0.5 rounded border ${color} whitespace-nowrap`}>
       {bias}
@@ -486,7 +486,7 @@ export default function DailyBriefingDashboard() {
                       )}
                       {tomorrowEvts.length > 0 && (
                         <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
-                          <span className="text-[10px] font-semibold uppercase tracking-wider text-text-dim bg-white/[0.04] px-2 py-0.5 rounded">Morgen</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-text-dim bg-[rgba(12,22,38,0.04)] px-2 py-0.5 rounded">Morgen</span>
                           {tomorrowEvts.map((evt, i) => (
                             <div key={i} className="flex items-center gap-1.5 text-xs">
                               <span className="text-sm leading-none">{flagEmoji(evt.flag)}</span>
@@ -524,7 +524,7 @@ export default function DailyBriefingDashboard() {
                 data.regime === 'Risk-On' ? 'bg-gradient-to-r from-green-500/10 to-green-500/5' :
                 data.regime === 'USD Dominant' ? 'bg-gradient-to-r from-blue-500/10 to-blue-500/5' :
                 data.regime === 'USD Zwak' ? 'bg-gradient-to-r from-amber-500/10 to-amber-500/5' :
-                'bg-gradient-to-r from-white/5 to-white/[0.02]'
+                'bg-gradient-to-r from-[rgba(12,22,38,0.05)] to-[rgba(12,22,38,0.02)]'
               }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -551,7 +551,7 @@ export default function DailyBriefingDashboard() {
                 <p className="text-sm text-text-muted leading-relaxed">{data.regimeExplain}</p>
 
                 {/* Educational: Why is this risk-on/off? */}
-                <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                <div className="mt-3 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                   <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider mb-2">Waarom Risk-On of Risk-Off?</p>
                   {data.regime === 'Risk-Off' && (
                     <p className="text-[11px] text-text-dim leading-relaxed">
@@ -588,7 +588,7 @@ export default function DailyBriefingDashboard() {
                     </svg>
                     Waarom {data.regime}? De cijfers erachter
                   </summary>
-                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] space-y-3">
+                  <div className="mt-3 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08] space-y-3">
                     {/* Safe-haven vs high-yield scores */}
                     {(() => {
                       const safeHavens = data.currencyRanking.filter(c => ['JPY', 'CHF', 'USD'].includes(c.currency))
@@ -598,7 +598,7 @@ export default function DailyBriefingDashboard() {
                       return (
                         <>
                           <div className="grid grid-cols-2 gap-3">
-                            <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                            <div className="p-2.5 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                               <p className="text-[10px] text-text-dim uppercase tracking-wider mb-2">Safe-Haven (JPY, CHF, USD)</p>
                               {safeHavens.map(c => (
                                 <div key={c.currency} className="flex items-center justify-between text-xs mb-1">
@@ -611,14 +611,14 @@ export default function DailyBriefingDashboard() {
                                   </div>
                                 </div>
                               ))}
-                              <div className="mt-2 pt-2 border-t border-white/[0.05] flex items-center justify-between text-[10px]">
+                              <div className="mt-2 pt-2 border-t border-black/[0.08] flex items-center justify-between text-[10px]">
                                 <span className="text-text-dim">Gemiddeld</span>
                                 <span className={`font-mono font-bold ${safeAvg > 0 ? 'text-green-400' : safeAvg < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                                   {safeAvg > 0 ? '+' : ''}{safeAvg.toFixed(1)}
                                 </span>
                               </div>
                             </div>
-                            <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                            <div className="p-2.5 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                               <p className="text-[10px] text-text-dim uppercase tracking-wider mb-2">High-Yield (AUD, NZD, CAD)</p>
                               {highYield.map(c => (
                                 <div key={c.currency} className="flex items-center justify-between text-xs mb-1">
@@ -631,7 +631,7 @@ export default function DailyBriefingDashboard() {
                                   </div>
                                 </div>
                               ))}
-                              <div className="mt-2 pt-2 border-t border-white/[0.05] flex items-center justify-between text-[10px]">
+                              <div className="mt-2 pt-2 border-t border-black/[0.08] flex items-center justify-between text-[10px]">
                                 <span className="text-text-dim">Gemiddeld</span>
                                 <span className={`font-mono font-bold ${highAvg > 0 ? 'text-green-400' : highAvg < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                                   {highAvg > 0 ? '+' : ''}{highAvg.toFixed(1)}
@@ -644,7 +644,7 @@ export default function DailyBriefingDashboard() {
                             data.regime === 'Risk-On' ? 'bg-green-500/[0.05] border-green-500/15 text-green-300/80' :
                             data.regime === 'USD Dominant' ? 'bg-blue-500/[0.05] border-blue-500/15 text-blue-300/80' :
                             data.regime === 'USD Zwak' ? 'bg-amber-500/[0.05] border-amber-500/15 text-amber-300/80' :
-                            'bg-white/[0.03] border-border text-text-dim'
+                            'bg-[rgba(12,22,38,0.04)] border-border text-text-dim'
                           }`}>
                             {data.regime === 'Risk-Off' && `Safe-haven gemiddeld (${safeAvg > 0 ? '+' : ''}${safeAvg.toFixed(1)}) is sterker dan high-yield (${highAvg > 0 ? '+' : ''}${highAvg.toFixed(1)}) → kapitaal stroomt naar veilige havens → Risk-Off.`}
                             {data.regime === 'Risk-On' && `High-yield gemiddeld (${highAvg > 0 ? '+' : ''}${highAvg.toFixed(1)}) is sterker dan safe-haven (${safeAvg > 0 ? '+' : ''}${safeAvg.toFixed(1)}) → kapitaal zoekt rendement → Risk-On.`}
@@ -667,7 +667,7 @@ export default function DailyBriefingDashboard() {
                     Hoe wordt het regime bepaald?
                   </summary>
                   <div className="mt-3 space-y-3">
-                    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                    <div className="p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                       <p className="text-xs text-text-dim leading-relaxed">{data.regimeMethodology}</p>
                     </div>
                     <div className="p-3 rounded-lg bg-accent-glow/10 border border-accent-dim/20">
@@ -696,7 +696,7 @@ export default function DailyBriefingDashboard() {
                         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs ${
                           isStrong ? 'bg-green-500/[0.08] border-green-500/20 text-green-400' :
                           isWeak ? 'bg-red-500/[0.08] border-red-500/20 text-red-400' :
-                          'bg-white/[0.03] border-border text-text-dim'
+                          'bg-[rgba(12,22,38,0.04)] border-border text-text-dim'
                         }`}
                       >
                         <span className="font-bold text-heading text-[11px]">{i + 1}.</span>
@@ -774,7 +774,7 @@ export default function DailyBriefingDashboard() {
               <div className={`p-4 rounded-xl border ${
                 intermarketConclusion.sentiment === 'risk-off' ? 'bg-red-500/[0.06] border-red-500/20' :
                 intermarketConclusion.sentiment === 'risk-on' ? 'bg-green-500/[0.06] border-green-500/20' :
-                'bg-white/[0.03] border-border'
+                'bg-[rgba(12,22,38,0.04)] border-border'
               }`}>
                 <div className="flex items-center gap-2 mb-1.5">
                   <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">Conclusie</p>
@@ -800,7 +800,7 @@ export default function DailyBriefingDashboard() {
                 </svg>
                 Waarom leiden deze combinaties tot Risk-On of Risk-Off?
               </summary>
-              <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] space-y-3">
+              <div className="mt-3 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08] space-y-3">
                 <p className="text-[11px] text-text-dim leading-relaxed">
                   Intermarket signalen zijn verbonden door kapitaalstromen. Grote beleggers (pensioenfondsen, hedgefunds) verschuiven miljarden tussen aandelen, obligaties, grondstoffen en valuta&apos;s. Deze verschuivingen laten een herkenbaar patroon achter:
                 </p>
@@ -836,8 +836,8 @@ export default function DailyBriefingDashboard() {
                   const isUp = signal.direction === 'up'
                   const isDown = signal.direction === 'down'
                   return (
-                    <div key={signal.key} className="rounded-xl bg-white/[0.02] border border-border/50 overflow-hidden">
-                      <div className="px-4 py-2.5 bg-white/[0.02] border-b border-border/30 flex items-center justify-between">
+                    <div key={signal.key} className="rounded-xl bg-[rgba(12,22,38,0.03)] border border-border/50 overflow-hidden">
+                      <div className="px-4 py-2.5 bg-[rgba(12,22,38,0.03)] border-b border-border/30 flex items-center justify-between">
                         <p className="text-sm font-semibold text-heading">{signal.name}</p>
                         <div className="flex items-center gap-2">
                           {signal.current !== null && (
@@ -943,17 +943,17 @@ export default function DailyBriefingDashboard() {
                       )}
                     </div>
                     {/* Explanation block */}
-                    <div className="text-[11px] text-text leading-relaxed space-y-2.5 bg-white/[0.03] rounded-lg px-3.5 py-3 border border-white/[0.05]">
+                    <div className="text-[11px] text-text leading-relaxed space-y-2.5 bg-[rgba(12,22,38,0.04)] rounded-lg px-3.5 py-3 border border-black/[0.08]">
                       <div>
                         <p className="text-heading font-semibold mb-0.5">Hoe wordt de score berekend?</p>
                         <p>Per valuta wordt een score bepaald op basis van <span className="text-accent-light">het officiële beleid van de centrale bank</span>. De data komt uit persconferenties, policy statements en forward guidance na rentevergaderingen. Deze data staat in <a href="/tools/rente" className="text-accent-light underline underline-offset-2 hover:text-accent-light/80">Tools → Rentetarieven</a> en wordt handmatig bijgewerkt bij elke vergadering.</p>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-white/[0.03] rounded px-2.5 py-1.5 border border-white/[0.04]">
+                        <div className="bg-[rgba(12,22,38,0.04)] rounded px-2.5 py-1.5 border border-black/[0.08]">
                           <p className="text-[10px] text-accent-light font-semibold uppercase tracking-wider mb-0.5">Hawkish = sterke valuta</p>
                           <p className="text-text-muted text-[10px]">Rente hoog houden of verhogen. Toon: inflatiebestrijding prioriteit. Voorbeeld: &quot;We blijven verkrappen tot inflatie op target is.&quot;</p>
                         </div>
-                        <div className="bg-white/[0.03] rounded px-2.5 py-1.5 border border-white/[0.04]">
+                        <div className="bg-[rgba(12,22,38,0.04)] rounded px-2.5 py-1.5 border border-black/[0.08]">
                           <p className="text-[10px] text-red-400/90 font-semibold uppercase tracking-wider mb-0.5">Dovish = zwakke valuta</p>
                           <p className="text-text-muted text-[10px]">Rente verlagen of verruimen. Toon: groei stimuleren. Voorbeeld: &quot;We zien ruimte om het beleid te versoepelen.&quot;</p>
                         </div>
@@ -966,7 +966,7 @@ export default function DailyBriefingDashboard() {
                         <p className="text-heading font-semibold mb-0.5">Wat meten we?</p>
                         <p>Alleen paren met <span className="text-accent-light font-semibold">sterke overtuiging</span> (score ≥ 3.5 of ≤ −3.5) worden bijgehouden. De <span className="text-accent-light">entry</span> is de sluiting van de daily candle op de dag van de call. De <span className="text-accent-light">exit</span> is de sluiting van de volgende daily candle. Bewoog de prijs in de richting van de call → <span className="text-green-400 font-semibold">correct</span>. Ertegen → <span className="text-red-400 font-semibold">incorrect</span>.</p>
                       </div>
-                      <p className="text-text-muted text-[10px] pt-0.5 border-t border-white/[0.04]">{trackStats.startDate ? `Meting loopt sinds ${new Date(trackStats.startDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}` : 'Trackrecord wordt opgebouwd'} · Daily close → daily close · Databron: <a href="/tools/rente" className="text-accent-light/70 underline underline-offset-2">Rentetarieven</a>, handmatig bijgewerkt bij elke CB vergadering · Dit meet de fundamentele bias, niet je entry of structure break.</p>
+                      <p className="text-text-muted text-[10px] pt-0.5 border-t border-black/[0.08]">{trackStats.startDate ? `Meting loopt sinds ${new Date(trackStats.startDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}` : 'Trackrecord wordt opgebouwd'} · Daily close → daily close · Databron: <a href="/tools/rente" className="text-accent-light/70 underline underline-offset-2">Rentetarieven</a>, handmatig bijgewerkt bij elke CB vergadering · Dit meet de fundamentele bias, niet je entry of structure break.</p>
                     </div>
                   </div>
                   <div className="px-5 py-4 bg-bg-card">
@@ -999,7 +999,7 @@ export default function DailyBriefingDashboard() {
                         {/* Win rate bar */}
                         {trackStats.total > 0 && (
                           <div className="mb-4">
-                            <div className="h-3 rounded-full bg-white/5 overflow-hidden flex">
+                            <div className="h-3 rounded-full bg-[rgba(12,22,38,0.06)] overflow-hidden flex">
                               <div
                                 className="h-full bg-green-500/60 transition-all duration-500"
                                 style={{ width: `${trackStats.winRate}%` }}
@@ -1064,7 +1064,7 @@ export default function DailyBriefingDashboard() {
                                       </span>
                                     </div>
                                     {/* Detail row — entry */}
-                                    <div className="px-3 py-1.5 bg-white/[0.02] border-t border-white/[0.04] flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px]">
+                                    <div className="px-3 py-1.5 bg-[rgba(12,22,38,0.03)] border-t border-black/[0.08] flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px]">
                                       <div className="flex items-center gap-1.5">
                                         <span className="text-accent-light/60 font-semibold">Entry</span>
                                         <span className="font-mono text-text-muted">{record.date}</span>
@@ -1132,7 +1132,7 @@ export default function DailyBriefingDashboard() {
                                       <span className="text-[10px] text-text-muted">score {record.score}</span>
                                       <span className="ml-auto font-mono text-amber-400 text-[10px]">afwachten...</span>
                                     </div>
-                                    <div className="px-3 py-1.5 bg-white/[0.02] border-t border-white/[0.04] flex items-center gap-x-4 gap-y-1 text-[10px]">
+                                    <div className="px-3 py-1.5 bg-[rgba(12,22,38,0.03)] border-t border-black/[0.08] flex items-center gap-x-4 gap-y-1 text-[10px]">
                                       <div className="flex items-center gap-1.5">
                                         <span className="text-accent-light/60 font-semibold">Entry</span>
                                         <span className="font-mono text-text-muted">{record.date}</span>
@@ -1208,7 +1208,7 @@ export default function DailyBriefingDashboard() {
                       <div className="px-4 sm:px-5 py-3 flex items-center gap-3">
                         {/* Direction indicator */}
                         <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                          dirColor === 'green' ? 'bg-green-500/10' : dirColor === 'red' ? 'bg-red-500/10' : 'bg-white/[0.05]'
+                          dirColor === 'green' ? 'bg-green-500/10' : dirColor === 'red' ? 'bg-red-500/10' : 'bg-[rgba(12,22,38,0.06)]'
                         }`}>
                           <span className={`text-base font-bold ${
                             dirColor === 'green' ? 'text-green-400' : dirColor === 'red' ? 'text-red-400' : 'text-text-dim'
@@ -1227,7 +1227,7 @@ export default function DailyBriefingDashboard() {
                               {tf.direction}
                             </span>
                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                              tf.conviction === 'sterk' ? 'bg-accent/15 text-accent-light' : 'bg-white/[0.07] text-text-dim'
+                              tf.conviction === 'sterk' ? 'bg-accent/15 text-accent-light' : 'bg-[rgba(12,22,38,0.06)] text-text-dim'
                             }`}>
                               {tf.conviction}
                             </span>
@@ -1271,7 +1271,7 @@ export default function DailyBriefingDashboard() {
                         )}
 
                         {isExpanded && tf.explanation && tf.explanation.length > 0 && (
-                          <div className="mt-2 p-3 rounded-lg bg-white/[0.02] border border-white/[0.05] space-y-1.5">
+                          <div className="mt-2 p-3 rounded-lg bg-[rgba(12,22,38,0.03)] border border-black/[0.08] space-y-1.5">
                             {tf.explanation.map((line: string, i: number) => (
                               <p key={i} className="text-[11px] text-text-muted leading-relaxed">
                                 {line}
@@ -1320,7 +1320,7 @@ export default function DailyBriefingDashboard() {
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
                 Vandaag &amp; Morgen: High Impact
-                <span className="text-[10px] font-normal text-text-dim bg-white/5 px-2 py-0.5 rounded ml-1">
+                <span className="text-[10px] font-normal text-text-dim bg-[rgba(12,22,38,0.06)] px-2 py-0.5 rounded ml-1">
                   {data.todayEvents.length} events
                 </span>
               </summary>

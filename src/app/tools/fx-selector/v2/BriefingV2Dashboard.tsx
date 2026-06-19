@@ -409,7 +409,7 @@ function ConfidenceRing({ value, size = 64 }: { value: number; size?: number }) 
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(12,22,38,0.10)" strokeWidth="4" />
         <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth="4"
           strokeDasharray={circumference} strokeDashoffset={offset}
           strokeLinecap="round" className="transition-all duration-1000" />
@@ -429,7 +429,7 @@ function ScoreLegend() {
     <div className="inline-flex items-center gap-2 text-[8px] text-text-dim/60 ml-1">
       <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-400/70 border border-green-500/10">&ge;3.0 Trade</span>
       <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400/70 border border-amber-500/10">2-3 Watch</span>
-      <span className="px-1.5 py-0.5 rounded bg-white/[0.04] text-text-dim/50 border border-white/[0.06]">&lt;2 Geen</span>
+      <span className="px-1.5 py-0.5 rounded bg-[rgba(12,22,38,0.04)] text-text-dim/50 border border-black/[0.08]">&lt;2 Geen</span>
     </div>
   )
 }
@@ -452,9 +452,9 @@ function SignalPill({ direction, label, value, unit, changePct, previousClose, c
     return `${unit === '$' ? '$' : ''}${v.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${unit === '%' ? '%' : ''}`
   }
   return (
-    <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-3.5 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-all group">
+    <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-3.5 py-2.5 rounded-xl bg-[rgba(12,22,38,0.04)] border border-black/[0.08] hover:border-black/[0.10] transition-all group">
       <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 ${
-        isUp ? 'bg-green-500/10 text-green-400' : isDown ? 'bg-red-500/10 text-red-400' : 'bg-white/[0.04] text-text-dim'
+        isUp ? 'bg-green-500/10 text-green-400' : isDown ? 'bg-red-500/10 text-red-400' : 'bg-[rgba(12,22,38,0.04)] text-text-dim'
       }`}>
         {isUp ? (
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="18 15 12 9 6 15" /></svg>
@@ -615,7 +615,7 @@ export default function BriefingV2Dashboard() {
     green: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/25', glow: 'shadow-green-500/10' },
     blue: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/25', glow: 'shadow-blue-500/10' },
     amber: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/25', glow: 'shadow-amber-500/10' },
-    gray: { bg: 'bg-white/[0.04]', text: 'text-text-muted', border: 'border-white/[0.08]', glow: '' },
+    gray: { bg: 'bg-[rgba(12,22,38,0.04)]', text: 'text-text-muted', border: 'border-black/[0.08]', glow: '' },
   }
 
   const rc = regimeColors[data?.regimeColor || 'gray']
@@ -720,7 +720,7 @@ export default function BriefingV2Dashboard() {
                     {lastUpdate && (
                       <span className="text-[9px] text-text-dim/50 font-normal hidden sm:inline">Laatste update: {lastUpdate}</span>
                     )}
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/[0.06] text-text-dim border border-white/[0.06]">
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-[rgba(12,22,38,0.06)] text-text-dim border border-black/[0.08]">
                       Bron: {data.regimeSource || 'centraal bank beleid'}
                     </span>
                   </div>
@@ -765,7 +765,7 @@ export default function BriefingV2Dashboard() {
                     Hoe berekend? ({data.regimeConfidence ?? data.confidence}% regime zekerheid)
                   </button>
                   {showConfidenceBreakdown && (
-                    <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                    <div className="mt-2 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                       <p className="text-[10px] text-text-dim mb-3 leading-relaxed">
                         De regime zekerheid geeft aan hoe duidelijk het centraal bank beeld is. Dit is puur gebaseerd op de spread tussen de sterkste en zwakste valuta. Hoe groter het verschil, hoe duidelijker het regime.
                       </p>
@@ -781,14 +781,14 @@ export default function BriefingV2Dashboard() {
                                 <span className="text-text-muted">Fundamentele duidelijkheid</span>
                                 <span className="font-mono text-heading">{regConf}%</span>
                               </div>
-                              <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                              <div className="h-1.5 bg-[rgba(12,22,38,0.06)] rounded-full overflow-hidden">
                                 <div className={`h-full rounded-full transition-all ${regConf >= 65 ? 'bg-green-500/60' : regConf >= 40 ? 'bg-amber-500/60' : 'bg-red-500/60'}`} style={{ width: `${Math.min(100, regConf)}%` }} />
                               </div>
                               <p className="text-[9px] text-text-dim/50 mt-0.5">
                                 Spread van {spread.toFixed ? spread.toFixed(1) : spread} punten tussen sterkste en zwakste valuta. Een spread van 6+ = zeer duidelijk, 4+ = duidelijk, 2+ = onduidelijk.
                               </p>
                             </div>
-                            <div className="pt-2 mt-2 border-t border-white/[0.05] text-[10px] font-mono text-text-dim">
+                            <div className="pt-2 mt-2 border-t border-black/[0.08] text-[10px] font-mono text-text-dim">
                               Regime zekerheid: {regConf}%
                             </div>
                           </div>
@@ -806,7 +806,7 @@ export default function BriefingV2Dashboard() {
                     </svg>
                     Waarom is dit {data.regime}?
                   </summary>
-                  <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                  <div className="mt-2 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                     {data.regime === 'Risk-Off' && (
                       <p className="text-[11px] text-text-dim leading-relaxed">
                         In een <strong className="text-red-400">Risk-Off</strong> omgeving zijn beleggers bang voor economische onzekerheid. Ze verkopen risicovolle beleggingen (aandelen, high-yield valuta&apos;s zoals AUD, NZD, CAD) en vluchten naar &quot;veilige havens&quot; (JPY, CHF, goud, staatsobligaties). Dit gebeurt wanneer centrale banken van veilige-haven landen een hawkish beleid voeren of wanneer er geopolitieke spanningen zijn. Het resultaat: JPY en CHF worden sterker, AUD en NZD worden zwakker.
@@ -838,7 +838,7 @@ export default function BriefingV2Dashboard() {
 
               {/* Currency Strength Ranking — CLICKABLE for score breakdown */}
               {data.currencyRanking && data.currencyRanking.length > 0 && (
-                <div className="px-5 sm:px-6 py-4 border-t border-white/[0.06]">
+                <div className="px-5 sm:px-6 py-4 border-t border-black/[0.08]">
                   <div className="flex items-center gap-2 mb-2">
                     <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider">Valuta Sterkte: van sterk naar zwak</p>
                     <span className="text-[8px] text-text-dim/50">(klik voor detail)</span>
@@ -860,7 +860,7 @@ export default function BriefingV2Dashboard() {
                           }${
                             isStrong ? 'bg-green-500/[0.08] border-green-500/20 text-green-400 hover:bg-green-500/[0.12]' :
                             isWeak ? 'bg-red-500/[0.08] border-red-500/20 text-red-400 hover:bg-red-500/[0.12]' :
-                            'bg-white/[0.03] border-border text-text-dim hover:bg-white/[0.06]'
+                            'bg-[rgba(12,22,38,0.04)] border-border text-text-dim hover:bg-[rgba(12,22,38,0.06)]'
                           }`}
                         >
                           <span className="font-bold text-heading text-[11px]">{i + 1}.</span>
@@ -877,7 +877,7 @@ export default function BriefingV2Dashboard() {
                     const ccy = data.currencyRanking.find(c => c.currency === expandedCurrency)
                     if (!ccy) return null
                     return (
-                      <div key={ccy.currency} className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] transition-all duration-200">
+                      <div key={ccy.currency} className="mt-3 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08] transition-all duration-200">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-xs font-semibold text-heading">{ccy.currency}: Score Opbouw</p>
                           <button onClick={(e) => { e.stopPropagation(); setExpandedCurrency(null) }} className="text-text-dim hover:text-heading p-1">
@@ -886,7 +886,7 @@ export default function BriefingV2Dashboard() {
                         </div>
                         <div className="space-y-1.5">
                           {/* CB Bias */}
-                          <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-white/[0.02]">
+                          <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-[rgba(12,22,38,0.04)]">
                             <span className="text-text-dim">CB Beleid ({ccy.bank || '\u2014'}): <span className="text-text-muted">{ccy.bias || 'onbekend'}</span></span>
                             <span className={`font-mono font-bold ${ccy.baseScore > 0 ? 'text-green-400' : ccy.baseScore < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                               {ccy.baseScore > 0 ? '+' : ''}{ccy.baseScore.toFixed(1)}
@@ -894,13 +894,13 @@ export default function BriefingV2Dashboard() {
                           </div>
                           {/* Rate */}
                           {ccy.rate !== null && (
-                            <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-white/[0.02]">
+                            <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-[rgba(12,22,38,0.04)]">
                               <span className="text-text-dim">Rente: <span className="text-text-muted">{ccy.rate}%</span></span>
                               <span className="text-[10px] text-text-dim">(onderdeel van basis score)</span>
                             </div>
                           )}
                           {/* News bonus */}
-                          <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-white/[0.02]">
+                          <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded bg-[rgba(12,22,38,0.04)]">
                             <span className="text-text-dim">Nieuws sentiment bonus</span>
                             <span className={`font-mono font-bold ${ccy.newsBonus > 0 ? 'text-green-400' : ccy.newsBonus < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                               {ccy.newsBonus > 0 ? '+' : ''}{ccy.newsBonus.toFixed(1)}
@@ -955,7 +955,7 @@ export default function BriefingV2Dashboard() {
                     </svg>
                     Waarom {data.regime}? De cijfers erachter
                   </summary>
-                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] space-y-3">
+                  <div className="mt-3 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08] space-y-3">
                     {(() => {
                       const safeHavens = data.currencyRanking.filter(c => ['JPY', 'CHF', 'USD'].includes(c.currency))
                       const highYield = data.currencyRanking.filter(c => ['AUD', 'NZD', 'CAD'].includes(c.currency))
@@ -964,7 +964,7 @@ export default function BriefingV2Dashboard() {
                       return (
                         <>
                           <div className="grid grid-cols-2 gap-3">
-                            <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                            <div className="p-2.5 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                               <p className="text-[10px] text-text-dim uppercase tracking-wider mb-2">Safe-Haven (JPY, CHF, USD)</p>
                               {safeHavens.map(c => (
                                 <div key={c.currency} className="flex items-center justify-between text-xs mb-1">
@@ -977,14 +977,14 @@ export default function BriefingV2Dashboard() {
                                   </div>
                                 </div>
                               ))}
-                              <div className="mt-2 pt-2 border-t border-white/[0.05] flex items-center justify-between text-[10px]">
+                              <div className="mt-2 pt-2 border-t border-black/[0.08] flex items-center justify-between text-[10px]">
                                 <span className="text-text-dim">Gemiddeld</span>
                                 <span className={`font-mono font-bold ${safeAvg > 0 ? 'text-green-400' : safeAvg < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                                   {safeAvg > 0 ? '+' : ''}{safeAvg.toFixed(1)}
                                 </span>
                               </div>
                             </div>
-                            <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                            <div className="p-2.5 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                               <p className="text-[10px] text-text-dim uppercase tracking-wider mb-2">High-Yield (AUD, NZD, CAD)</p>
                               {highYield.map(c => (
                                 <div key={c.currency} className="flex items-center justify-between text-xs mb-1">
@@ -997,7 +997,7 @@ export default function BriefingV2Dashboard() {
                                   </div>
                                 </div>
                               ))}
-                              <div className="mt-2 pt-2 border-t border-white/[0.05] flex items-center justify-between text-[10px]">
+                              <div className="mt-2 pt-2 border-t border-black/[0.08] flex items-center justify-between text-[10px]">
                                 <span className="text-text-dim">Gemiddeld</span>
                                 <span className={`font-mono font-bold ${highAvg > 0 ? 'text-green-400' : highAvg < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                                   {highAvg > 0 ? '+' : ''}{highAvg.toFixed(1)}
@@ -1010,7 +1010,7 @@ export default function BriefingV2Dashboard() {
                             data.regime === 'Risk-On' ? 'bg-green-500/[0.05] border-green-500/15 text-green-300/80' :
                             data.regime === 'USD Dominant' ? 'bg-blue-500/[0.05] border-blue-500/15 text-blue-300/80' :
                             data.regime === 'USD Zwak' ? 'bg-amber-500/[0.05] border-amber-500/15 text-amber-300/80' :
-                            'bg-white/[0.03] border-border text-text-dim'
+                            'bg-[rgba(12,22,38,0.04)] border-border text-text-dim'
                           }`}>
                             {data.regime === 'Risk-Off' && `Safe-haven gemiddeld (${safeAvg > 0 ? '+' : ''}${safeAvg.toFixed(1)}) is sterker dan high-yield (${highAvg > 0 ? '+' : ''}${highAvg.toFixed(1)}) \u2192 kapitaal stroomt naar veilige havens \u2192 Risk-Off.`}
                             {data.regime === 'Risk-On' && `High-yield gemiddeld (${highAvg > 0 ? '+' : ''}${highAvg.toFixed(1)}) is sterker dan safe-haven (${safeAvg > 0 ? '+' : ''}${safeAvg.toFixed(1)}) \u2192 kapitaal zoekt rendement \u2192 Risk-On.`}
@@ -1032,7 +1032,7 @@ export default function BriefingV2Dashboard() {
                     </svg>
                     Hoe wordt het regime bepaald?
                   </summary>
-                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                  <div className="mt-3 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                     <div className="space-y-3">
                       <p className="text-xs text-text-dim leading-relaxed">{data.regimeMethodology}</p>
                       <div className="p-3 rounded-lg bg-accent-glow/10 border border-accent-dim/20">
@@ -1103,7 +1103,7 @@ export default function BriefingV2Dashboard() {
                         }${
                           score > 0 ? 'bg-green-500/[0.06] border-green-500/15 hover:bg-green-500/[0.1]' :
                           score < 0 ? 'bg-red-500/[0.06] border-red-500/15 hover:bg-red-500/[0.1]' :
-                          'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]'
+                          'bg-[rgba(12,22,38,0.04)] border-black/[0.08] hover:bg-[rgba(12,22,38,0.04)]'
                         }`}
                       >
                         <p className="text-xs font-bold text-heading mb-1">{ccy}</p>
@@ -1126,7 +1126,7 @@ export default function BriefingV2Dashboard() {
                   const ccyRank = data.currencyRanking.find(c => c.currency === expandedSentiment)
                   if (!s) return null
                   return (
-                    <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] transition-all duration-200">
+                    <div className="mt-3 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08] transition-all duration-200">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-xs font-semibold text-heading">{expandedSentiment}: Nieuws Sentiment Detail</p>
                         <button onClick={() => setExpandedSentiment(null)} className="text-text-dim hover:text-heading">
@@ -1177,7 +1177,7 @@ export default function BriefingV2Dashboard() {
                         )}
                         {/* Empty state: no headlines */}
                         {s.headlines.length === 0 && (
-                          <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                          <div className="p-2.5 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                             <p className="text-[10px] text-text-muted leading-relaxed">
                               <strong className="text-heading">Geen recente headlines gevonden</strong> voor {expandedSentiment} in de afgelopen 72 uur
                               die een duidelijk hawkish of bearish signaal bevatten.
@@ -1221,27 +1221,27 @@ export default function BriefingV2Dashboard() {
 
               {/* Top News Headlines (collapsible) */}
               {data.topNews.length > 0 && (
-                <div className="border-t border-white/[0.04]">
+                <div className="border-t border-black/[0.08]">
                   <details className="group">
-                    <summary className="px-5 sm:px-6 py-3 flex items-center gap-2 cursor-pointer hover:bg-white/[0.02] transition-colors list-none [&::-webkit-details-marker]:hidden">
+                    <summary className="px-5 sm:px-6 py-3 flex items-center gap-2 cursor-pointer hover:bg-[rgba(12,22,38,0.04)] transition-colors list-none [&::-webkit-details-marker]:hidden">
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-dim transition-transform group-open:rotate-90 shrink-0">
                         <polyline points="9 18 15 12 9 6" />
                       </svg>
                       <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Belangrijkste Headlines ({data.topNews.slice(0, 8).length} artikelen)</p>
                     </summary>
-                    <div className="divide-y divide-white/[0.03] border-t border-white/[0.04]">
+                    <div className="divide-y divide-black/[0.06] border-t border-black/[0.08]">
                       {data.topNews.slice(0, 8).map(article => (
                         <a
                           key={article.id}
                           href={article.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block px-5 sm:px-6 py-3 hover:bg-white/[0.02] transition-colors group/link"
+                          className="block px-5 sm:px-6 py-3 hover:bg-[rgba(12,22,38,0.04)] transition-colors group/link"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 mb-1">
-                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.06] text-text-dim font-medium">{article.source}</span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[rgba(12,22,38,0.06)] text-text-dim font-medium">{article.source}</span>
                                 {article.affectedCurrencies.slice(0, 3).map(c => (
                                   <span key={c} className="text-[9px] px-1.5 py-0.5 rounded bg-accent/10 text-accent-light font-mono font-bold">{c}</span>
                                 ))}
@@ -1266,7 +1266,7 @@ export default function BriefingV2Dashboard() {
               )}
 
               {/* Expandable: News methodology */}
-              <div className="px-5 sm:px-6 py-4 border-t border-white/[0.04]">
+              <div className="px-5 sm:px-6 py-4 border-t border-black/[0.08]">
                 <details className="mt-3 group">
                   <summary className="flex items-center gap-2 text-xs text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
@@ -1274,22 +1274,22 @@ export default function BriefingV2Dashboard() {
                     </svg>
                     Hoe wordt nieuws geanalyseerd?
                   </summary>
-                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                  <div className="mt-3 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                     <div className="space-y-3">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                        <div className="p-2.5 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                           <p className="text-[10px] text-accent-light font-semibold mb-1">Keyword Analyse</p>
                           <p className="text-[10px] text-text-dim leading-relaxed">
                             Artikelen worden gescand op bullish keywords (hawkish, rate hike, strong, surge, beat) en bearish keywords (dovish, rate cut, weak, recession, decline). Per match wordt het sentiment voor de betreffende valuta aangepast.
                           </p>
                         </div>
-                        <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                        <div className="p-2.5 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                           <p className="text-[10px] text-accent-light font-semibold mb-1">Recency Weging</p>
                           <p className="text-[10px] text-text-dim leading-relaxed">
                             Recent nieuws weegt zwaarder: artikelen van &lt;12u geleden krijgen factor 1.5x, 12-24u = 1.2x, 24-48u = 1.0x, ouder = 0.7x.
                           </p>
                         </div>
-                        <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                        <div className="p-2.5 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                           <p className="text-[10px] text-accent-light font-semibold mb-1">Begrenzing</p>
                           <p className="text-[10px] text-text-dim leading-relaxed">
                             Het nieuws-effect is begrensd op maximaal +-2.0 punten per valuta. Dit voorkomt dat een enkele nieuwsgolf de fundamentele analyse volledig overstemt. CB beleid blijft altijd de basis.
@@ -1308,11 +1308,11 @@ export default function BriefingV2Dashboard() {
                     </svg>
                     Databronnen
                   </summary>
-                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                  <div className="mt-3 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                     <p className="text-[10px] text-text-dim mb-2">RSS feeds worden automatisch elke 2 uur opgehaald uit de volgende bronnen:</p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                       {['Federal Reserve', 'ECB', 'ForexLive', 'CNBC', 'Bloomberg', 'BBC', 'NY Times'].map(source => (
-                        <div key={source} className="flex items-center gap-1.5 text-[10px] text-text-muted px-2 py-1.5 rounded bg-white/[0.02] border border-white/[0.04]">
+                        <div key={source} className="flex items-center gap-1.5 text-[10px] text-text-muted px-2 py-1.5 rounded bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                           <span className="w-1 h-1 rounded-full bg-accent-light/40 shrink-0" />
                           {source}
                         </div>
@@ -1375,7 +1375,7 @@ export default function BriefingV2Dashboard() {
                     ? (alignment > 65 ? 'bg-green-500/[0.06] border-green-500/20' : alignment >= 35 ? 'bg-amber-500/[0.06] border-amber-500/20' : 'bg-red-500/[0.06] border-red-500/20')
                     : (intermarketConclusion.sentiment === 'risk-off' ? 'bg-red-500/[0.06] border-red-500/20' :
                        intermarketConclusion.sentiment === 'risk-on' ? 'bg-green-500/[0.06] border-green-500/20' :
-                       'bg-white/[0.03] border-border')
+                       'bg-[rgba(12,22,38,0.04)] border-border')
                   return (
                     <div className={`p-4 rounded-xl border ${alignBg}`}>
                       <div className="flex items-center justify-between">
@@ -1410,7 +1410,7 @@ export default function BriefingV2Dashboard() {
                                   </svg>
                                   Wat betekent {alignment}% alignment?
                                 </summary>
-                                <div className="mt-2 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                                <div className="mt-2 p-2.5 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                                   <p className="text-[10px] text-text-dim leading-relaxed">
                                     {alignment < 30
                                       ? `Slechts ${alignment}% van de intermarket indicatoren bevestigt het regime. Dit betekent dat goud, VIX, S&P 500 en obligatierentes niet in lijn bewegen met het verwachte patroon. Signalen zijn daardoor minder betrouwbaar.`
@@ -1445,7 +1445,7 @@ export default function BriefingV2Dashboard() {
                     </svg>
                     Waarom leiden deze combinaties tot Risk-On of Risk-Off?
                   </summary>
-                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05] space-y-3">
+                  <div className="mt-3 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08] space-y-3">
                     <p className="text-[11px] text-text-dim leading-relaxed">
                       Intermarket signalen zijn verbonden door kapitaalstromen. Grote beleggers (pensioenfondsen, hedgefunds) verschuiven miljarden tussen aandelen, obligaties, grondstoffen en valuta&apos;s. Deze verschuivingen laten een herkenbaar patroon achter:
                     </p>
@@ -1485,8 +1485,8 @@ export default function BriefingV2Dashboard() {
                       const isDown = signal.direction === 'down'
                       const info = INTERMARKET_HOW_TO_READ[signal.key]
                       return (
-                        <div key={signal.key} className="rounded-xl bg-white/[0.02] border border-border/50 overflow-hidden">
-                          <div className="px-4 py-2.5 bg-white/[0.02] border-b border-border/30 flex items-center justify-between">
+                        <div key={signal.key} className="rounded-xl bg-[rgba(12,22,38,0.04)] border border-border/50 overflow-hidden">
+                          <div className="px-4 py-2.5 bg-[rgba(12,22,38,0.04)] border-b border-border/30 flex items-center justify-between">
                             <p className="text-sm font-semibold text-heading">{signal.name}</p>
                             <div className="flex items-center gap-2">
                               {signal.current !== null && (
@@ -1509,12 +1509,12 @@ export default function BriefingV2Dashboard() {
                               <>
                                 <p className="text-[11px] text-text-dim leading-relaxed">{info.summary}</p>
                                 <p className="text-[11px] text-text-dim leading-relaxed">{info.detail}</p>
-                                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                                <div className="p-2 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                                   <p className="text-[10px] text-text-dim leading-relaxed">
                                     <strong className="text-text-muted">Niveaus:</strong> {info.levels}
                                   </p>
                                 </div>
-                                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                                <div className="p-2 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                                   <p className="text-[10px] text-text-dim leading-relaxed">
                                     <strong className="text-text-muted">FX Impact:</strong> {info.fxImpact}
                                   </p>
@@ -1542,26 +1542,26 @@ export default function BriefingV2Dashboard() {
                     </svg>
                     Hoe bevestigen intermarket signalen het regime?
                   </summary>
-                  <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                  <div className="mt-3 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                     <div className="space-y-2 text-[10px] text-text-dim leading-relaxed">
                       <p>
                         Intermarket signalen worden gebruikt als bevestiging van het macro regime dat in Stap 1 is bepaald op basis van centraal bank beleid.
                         Ze veranderen het regime niet, maar verhogen of verlagen de zekerheid score.
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                        <div className="p-2 rounded bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                           <p className="text-accent-light font-semibold mb-1">Risk-Off bevestigd als:</p>
                           <p>VIX stijgt + S&amp;P 500 daalt + Goud stijgt (minimaal 3 van 4 risk-off signalen)</p>
                         </div>
-                        <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                        <div className="p-2 rounded bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                           <p className="text-accent-light font-semibold mb-1">Risk-On bevestigd als:</p>
                           <p>VIX daalt + S&amp;P 500 stijgt + Goud daalt (minimaal 3 van 4 risk-on signalen)</p>
                         </div>
-                        <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                        <div className="p-2 rounded bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                           <p className="text-accent-light font-semibold mb-1">USD Dominant bevestigd als:</p>
                           <p>Yields stijgen OF minimaal 2 risk-off signalen actief</p>
                         </div>
-                        <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                        <div className="p-2 rounded bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                           <p className="text-accent-light font-semibold mb-1">USD Zwak bevestigd als:</p>
                           <p>Yields dalen OF minimaal 2 risk-on signalen actief</p>
                         </div>
@@ -1623,8 +1623,8 @@ export default function BriefingV2Dashboard() {
                             <span className="text-[10px] text-text-dim">Alle geanalyseerde paren</span>
                             <span className="text-xs font-mono font-bold text-heading">{totalPairs}</span>
                           </div>
-                          <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
-                            <div className="h-full rounded-full bg-white/[0.15]" style={{ width: '100%' }} />
+                          <div className="h-2 bg-[rgba(12,22,38,0.06)] rounded-full overflow-hidden">
+                            <div className="h-full rounded-full bg-[rgba(12,22,38,0.20)]" style={{ width: '100%' }} />
                           </div>
                         </div>
                       </div>
@@ -1641,7 +1641,7 @@ export default function BriefingV2Dashboard() {
                             <span className="text-[10px] text-text-dim">Fundamentele divergentie (score &ge; 2.0)</span>
                             <span className="text-xs font-mono font-bold text-amber-400">{scorePass.length}</span>
                           </div>
-                          <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                          <div className="h-2 bg-[rgba(12,22,38,0.06)] rounded-full overflow-hidden">
                             <div className="h-full rounded-full bg-amber-500/40" style={{ width: `${Math.max(5, (scorePass.length / totalPairs) * 100)}%` }} />
                           </div>
                         </div>
@@ -1659,7 +1659,7 @@ export default function BriefingV2Dashboard() {
                             <span className="text-[10px] text-text-muted font-semibold">Concrete trades (alle filters)</span>
                             <span className="text-xs font-mono font-bold text-green-400">{finalCount}</span>
                           </div>
-                          <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                          <div className="h-2 bg-[rgba(12,22,38,0.06)] rounded-full overflow-hidden">
                             <div className="h-full rounded-full bg-green-500/50" style={{ width: `${Math.max(5, (finalCount / totalPairs) * 100)}%` }} />
                           </div>
                         </div>
@@ -1668,16 +1668,16 @@ export default function BriefingV2Dashboard() {
 
                     {/* Compact summary */}
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">
+                      <span className="text-[9px] px-2 py-1 rounded-full bg-[rgba(12,22,38,0.04)] border border-black/[0.08] text-text-dim">
                         Score &ge; 2.0
                       </span>
-                      <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim inline-flex items-center gap-1.5">
+                      <span className="text-[9px] px-2 py-1 rounded-full bg-[rgba(12,22,38,0.04)] border border-black/[0.08] text-text-dim inline-flex items-center gap-1.5">
                         IM alignment: {imAlignment}% <AlignmentLabel value={imAlignment} />
                       </span>
-                      <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">
+                      <span className="text-[9px] px-2 py-1 rounded-full bg-[rgba(12,22,38,0.04)] border border-black/[0.08] text-text-dim">
                         Regime: {data.regime}
                       </span>
-                      <span className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">
+                      <span className="text-[9px] px-2 py-1 rounded-full bg-[rgba(12,22,38,0.04)] border border-black/[0.08] text-text-dim">
                         Contrarian timing
                       </span>
                     </div>
@@ -1685,7 +1685,7 @@ export default function BriefingV2Dashboard() {
 
                   {/* Collapsible: Divergence Alerts */}
                   {data.divergences && Object.keys(data.divergences).length > 0 && (
-                    <div className="px-5 sm:px-6 pb-3 border-t border-white/[0.04]">
+                    <div className="px-5 sm:px-6 pb-3 border-t border-black/[0.08]">
                       <details className="group">
                         <summary className="flex items-center gap-2 py-2 text-[11px] text-amber-400/70 cursor-pointer hover:text-amber-400 transition-colors">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
@@ -1702,7 +1702,7 @@ export default function BriefingV2Dashboard() {
 
                   {/* Collapsible: Watchlist */}
                   {watchlist.length > 0 && (
-                    <div className="px-5 sm:px-6 pb-3 border-t border-white/[0.04]">
+                    <div className="px-5 sm:px-6 pb-3 border-t border-black/[0.08]">
                       <details className="group">
                         <summary className="flex items-center gap-2 py-2 text-[11px] text-text-dim cursor-pointer hover:text-text-muted transition-colors">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
@@ -1710,7 +1710,7 @@ export default function BriefingV2Dashboard() {
                           </svg>
                           Watchlist ({watchlist.length}) — score &ge; 2.0 maar niet door alle filters
                         </summary>
-                        <div className="mt-1 divide-y divide-white/[0.03]">
+                        <div className="mt-1 divide-y divide-black/[0.06]">
                           {watchlist.map(wp => {
                             const wIsBullish = wp.direction.includes('bullish')
                             const wIsBearish = wp.direction.includes('bearish')
@@ -1741,7 +1741,7 @@ export default function BriefingV2Dashboard() {
                   )}
 
                   {/* Collapsible: All pairs table */}
-                  <div className="px-5 sm:px-6 pb-3 border-t border-white/[0.04]">
+                  <div className="px-5 sm:px-6 pb-3 border-t border-black/[0.08]">
                     <details className="group">
                       <summary className="flex items-center gap-2 py-2 text-[11px] text-text-dim cursor-pointer hover:text-text-muted transition-colors">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
@@ -1755,7 +1755,7 @@ export default function BriefingV2Dashboard() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-[10px]">
                           <thead>
-                            <tr className="border-b border-white/[0.04]">
+                            <tr className="border-b border-black/[0.08]">
                               <th className="px-2 py-1.5 text-left text-text-dim font-medium">Paar</th>
                               <th className="px-2 py-1.5 text-left text-text-dim font-medium">Richting</th>
                               <th className="px-2 py-1.5 text-center text-text-dim font-medium">Score</th>
@@ -1764,7 +1764,7 @@ export default function BriefingV2Dashboard() {
                           </thead>
                           <tbody>
                             {data.pairBiases.map(pair => (
-                              <tr key={pair.pair} className="border-b border-white/[0.02] hover:bg-white/[0.02]">
+                              <tr key={pair.pair} className="border-b border-black/[0.08] hover:bg-[rgba(12,22,38,0.04)]">
                                 <td className="px-2 py-1.5 font-mono font-bold text-heading">{pair.pair}</td>
                                 <td className="px-2 py-1.5">
                                   <span className={`text-[9px] font-bold ${
@@ -1794,7 +1794,7 @@ export default function BriefingV2Dashboard() {
                   </div>
 
                   {/* Collapsible: How trade focus works */}
-                  <div className="px-5 sm:px-6 pb-4 border-t border-white/[0.04]">
+                  <div className="px-5 sm:px-6 pb-4 border-t border-black/[0.08]">
                     <details className="group">
                       <summary className="flex items-center gap-2 py-2 text-[11px] text-accent-light/60 cursor-pointer hover:text-accent-light transition-colors">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
@@ -1802,24 +1802,24 @@ export default function BriefingV2Dashboard() {
                         </svg>
                         Hoe werkt het filterproces?
                       </summary>
-                      <div className="mt-2 p-4 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                      <div className="mt-2 p-4 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                         <div className="space-y-3 text-[10px] text-text-dim leading-relaxed">
                           <p className="text-text-muted">Elk paar doorloopt <strong className="text-heading">4 filters</strong>. Alleen paren die <strong className="text-green-400">alle 4 passeren</strong> worden een concrete trade en opgenomen in het trackrecord.</p>
 
                           <div className="grid grid-cols-2 gap-2">
-                            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <div className="p-2.5 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                               <p className="text-accent-light font-semibold mb-1">1. Fundamenteel</p>
                               <p className="text-[9px]">Score verschil tussen valutaparen &ge; 2.0. De score is opgebouwd uit het CB beleid (hawkish/dovish) &times; 2, het renteverschil &times; 1.5, en een nieuws bonus.</p>
                             </div>
-                            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <div className="p-2.5 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                               <p className="text-accent-light font-semibold mb-1">2. Intermarket</p>
                               <p className="text-[9px]">De globale intermarket alignment moet &gt; 50% zijn. Dit meet of VIX, S&amp;P500, Gold, Yields en Oil het macro regime bevestigen.</p>
                             </div>
-                            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <div className="p-2.5 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                               <p className="text-accent-light font-semibold mb-1">3. Contrarian (Mean Reversion)</p>
                               <p className="text-[9px]">De prijs moet in de afgelopen 5 handelsdagen <em>tegen</em> de fundamentele richting bewogen hebben. We kopen dips en verkopen rallies.</p>
                             </div>
-                            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <div className="p-2.5 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                               <p className="text-accent-light font-semibold mb-1">4. Trackrecord</p>
                               <p className="text-[9px]">Elke concrete trade wordt automatisch getracked. Na 1 handelsdag meten we of de prijs in de juiste richting bewoog. Dit levert de live winrate.</p>
                             </div>
@@ -1861,7 +1861,7 @@ export default function BriefingV2Dashboard() {
             <div className="mb-3 ml-11" />
 
             {/* Score legenda */}
-            <div className="mb-4 rounded-xl bg-white/[0.02] border border-white/[0.06] px-4 py-3">
+            <div className="mb-4 rounded-xl bg-[rgba(12,22,38,0.04)] border border-black/[0.08] px-4 py-3">
               <p className="text-[10px] font-semibold text-heading uppercase tracking-wider mb-2">Hoe lees je de score?</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
                 <div className="flex items-center gap-2">
@@ -1908,7 +1908,7 @@ export default function BriefingV2Dashboard() {
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold ${
                             trade.isBullish ? 'bg-green-500/15 text-green-400' :
                             trade.isBearish ? 'bg-red-500/15 text-red-400' :
-                            'bg-white/[0.06] text-text-dim'
+                            'bg-[rgba(12,22,38,0.06)] text-text-dim'
                           }`}>
                             {trade.isBullish ? '\u25B2' : trade.isBearish ? '\u25BC' : '\u2014'}
                           </div>
@@ -1918,7 +1918,7 @@ export default function BriefingV2Dashboard() {
                               <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                                 trade.isBullish ? 'bg-green-500/15 text-green-400 border border-green-500/20' :
                                 trade.isBearish ? 'bg-red-500/15 text-red-400 border border-red-500/20' :
-                                'bg-white/[0.06] text-text-dim border border-white/[0.08]'
+                                'bg-[rgba(12,22,38,0.06)] text-text-dim border border-black/[0.08]'
                               }`}>
                                 {trade.isBullish ? 'LONG' : trade.isBearish ? 'SHORT' : 'NEUTRAAL'}
                               </span>
@@ -1939,21 +1939,21 @@ export default function BriefingV2Dashboard() {
                       </div>
 
                       {/* Trade details grid */}
-                      <div className="px-5 py-3 border-t border-white/[0.06]">
+                      <div className="px-5 py-3 border-t border-black/[0.08]">
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                          <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                          <div className="p-2 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                             <span className="text-[9px] text-text-dim uppercase tracking-wider block mb-0.5">Call</span>
                             <span className="text-[11px] font-mono font-semibold text-accent-light">{callTimestamp}</span>
                           </div>
-                          <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                          <div className="p-2 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                             <span className="text-[9px] text-text-dim uppercase tracking-wider block mb-0.5">Entry</span>
                             <span className="text-[11px] font-mono font-semibold text-text-muted">dagkoers vandaag</span>
                           </div>
-                          <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                          <div className="p-2 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                             <span className="text-[9px] text-text-dim uppercase tracking-wider block mb-0.5">Exit</span>
                             <span className="text-[11px] font-mono font-semibold text-text-muted">dagkoers +1 handelsdag</span>
                           </div>
-                          <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                          <div className="p-2 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                             <span className="text-[9px] text-text-dim uppercase tracking-wider block mb-0.5">Methode</span>
                             <span className="text-[11px] font-mono font-semibold text-purple-400/80">mean reversion</span>
                           </div>
@@ -2004,10 +2004,10 @@ export default function BriefingV2Dashboard() {
                             </svg>
                             Waarom dit paar?
                           </summary>
-                          <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                          <div className="mt-2 p-3 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                             <div className="space-y-2">
                               <div className="grid grid-cols-2 gap-2">
-                                <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                                <div className="p-2 rounded bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                                   <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">{trade.base} (base)</p>
                                   <p className={`text-sm font-mono font-bold ${(trade.baseRank?.score || 0) > 0 ? 'text-green-400' : (trade.baseRank?.score || 0) < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                                     {(trade.baseRank?.score || 0) > 0 ? '+' : ''}{(trade.baseRank?.score || 0).toFixed(1)}
@@ -2017,7 +2017,7 @@ export default function BriefingV2Dashboard() {
                                     {(trade.baseRank?.newsBonus || 0) !== 0 && ` | Nieuws: ${(trade.baseRank?.newsBonus || 0) > 0 ? '+' : ''}${(trade.baseRank?.newsBonus || 0).toFixed(1)}`}
                                   </p>
                                 </div>
-                                <div className="p-2 rounded bg-white/[0.02] border border-white/[0.04]">
+                                <div className="p-2 rounded bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                                   <p className="text-[10px] text-text-dim uppercase tracking-wider mb-1">{trade.quote} (quote)</p>
                                   <p className={`text-sm font-mono font-bold ${(trade.quoteRank?.score || 0) > 0 ? 'text-green-400' : (trade.quoteRank?.score || 0) < 0 ? 'text-red-400' : 'text-text-dim'}`}>
                                     {(trade.quoteRank?.score || 0) > 0 ? '+' : ''}{(trade.quoteRank?.score || 0).toFixed(1)}
@@ -2131,7 +2131,7 @@ export default function BriefingV2Dashboard() {
             {/* ── Terugkijken: eerdere calls ── */}
             {trackRecords.length > 0 && (
               <div className="mt-4 rounded-2xl border border-border bg-bg-card overflow-hidden">
-                <button onClick={() => setShowHistory(!showHistory)} className="w-full px-5 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                <button onClick={() => setShowHistory(!showHistory)} className="w-full px-5 py-3 flex items-center justify-between hover:bg-[rgba(12,22,38,0.04)] transition-colors">
                   <div className="flex items-center gap-2">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                     <span className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Eerdere Calls Terugkijken</span>
@@ -2154,10 +2154,10 @@ export default function BriefingV2Dashboard() {
                   const visibleDates = historyDate ? [historyDate] : sortedDates.filter(d => d !== today).slice(0, 7)
 
                   return (
-                    <div className="px-5 pb-4 border-t border-white/[0.04]">
+                    <div className="px-5 pb-4 border-t border-black/[0.08]">
                       {/* Datum knoppen */}
                       <div className="flex flex-wrap gap-1.5 mt-3 mb-3">
-                        <button onClick={() => setHistoryDate(null)} className={`text-[9px] px-2 py-1 rounded-lg border transition-colors ${!historyDate ? 'border-accent/40 bg-accent/10 text-accent-light' : 'border-white/[0.06] text-text-dim hover:text-text-muted'}`}>
+                        <button onClick={() => setHistoryDate(null)} className={`text-[9px] px-2 py-1 rounded-lg border transition-colors ${!historyDate ? 'border-accent/40 bg-accent/10 text-accent-light' : 'border-black/[0.08] text-text-dim hover:text-text-muted'}`}>
                           Laatste 7 dagen
                         </button>
                         {sortedDates.filter(d => d !== today).slice(0, 14).map(date => {
@@ -2169,7 +2169,7 @@ export default function BriefingV2Dashboard() {
                           const wr = resolved.length > 0 ? Math.round((correct / resolved.length) * 100) : null
                           return (
                             <button key={date} onClick={() => setHistoryDate(historyDate === date ? null : date)}
-                              className={`text-[9px] px-2 py-1 rounded-lg border transition-colors ${historyDate === date ? 'border-accent/40 bg-accent/10 text-accent-light' : 'border-white/[0.06] text-text-dim hover:text-text-muted'}`}>
+                              className={`text-[9px] px-2 py-1 rounded-lg border transition-colors ${historyDate === date ? 'border-accent/40 bg-accent/10 text-accent-light' : 'border-black/[0.08] text-text-dim hover:text-text-muted'}`}>
                               {label}
                               <span className="ml-1 font-mono">{dayRecords.length}t</span>
                               {wr !== null && <span className={`ml-1 font-mono font-bold ${wr >= 55 ? 'text-green-400' : wr >= 45 ? 'text-amber-400' : 'text-red-400'}`}>{wr}%</span>}
@@ -2208,7 +2208,7 @@ export default function BriefingV2Dashboard() {
                                   <div key={r.id || `${r.pair}-${r.date}`} className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
                                     r.result === 'correct' ? 'border-green-500/15 bg-green-500/[0.03]' :
                                     r.result === 'incorrect' ? 'border-red-500/15 bg-red-500/[0.03]' :
-                                    'border-white/[0.06] bg-white/[0.02]'
+                                    'border-black/[0.08] bg-[rgba(12,22,38,0.04)]'
                                   }`}>
                                     <div className="flex items-center gap-2">
                                       <span className={`w-2 h-2 rounded-full ${r.result === 'correct' ? 'bg-green-400' : r.result === 'incorrect' ? 'bg-red-400' : 'bg-amber-400'}`} />
@@ -2255,7 +2255,7 @@ export default function BriefingV2Dashboard() {
             {data?.v3 && (
               <div className="mt-4 rounded-2xl border border-border bg-bg-card overflow-hidden">
                 <details className="group">
-                  <summary className="px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
+                  <summary className="px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-[rgba(12,22,38,0.04)] transition-colors">
                     <div className="flex items-center gap-2">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-dim"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
                       <span className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium">Alle Signalen (Detail)</span>
@@ -2267,9 +2267,9 @@ export default function BriefingV2Dashboard() {
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
                   </summary>
-                  <div className="px-5 pb-4 border-t border-white/[0.04]">
+                  <div className="px-5 pb-4 border-t border-black/[0.08]">
                     {/* Legenda */}
-                    <div className="mt-3 mb-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                    <div className="mt-3 mb-4 p-3 rounded-xl bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                       <p className="text-[10px] font-semibold text-heading uppercase tracking-wider mb-2">Legenda — Wat betekenen de 4 filters?</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[9px] text-text-dim">
                         <div className="flex items-start gap-2">
@@ -2301,7 +2301,7 @@ export default function BriefingV2Dashboard() {
                           </div>
                         </div>
                       </div>
-                      <div className="mt-2 pt-2 border-t border-white/[0.04] flex items-center gap-4 text-[9px]">
+                      <div className="mt-2 pt-2 border-t border-black/[0.08] flex items-center gap-4 text-[9px]">
                         <div className="flex items-center gap-1.5">
                           <span className="inline-block w-2 h-2 rounded-full bg-green-400" />
                           <span className="text-text-dim">Alle 4 filters gepasseerd = concrete trade</span>
@@ -2369,8 +2369,8 @@ export default function BriefingV2Dashboard() {
                               isInTrackrecord
                                 ? 'bg-green-500/[0.04] border-green-500/20'
                                 : isNeutral
-                                  ? 'bg-white/[0.01] border-white/[0.03] opacity-25'
-                                  : 'bg-white/[0.01] border-white/[0.05] hover:bg-white/[0.03]'
+                                  ? 'bg-[rgba(12,22,38,0.03)] border-black/[0.08] opacity-25'
+                                  : 'bg-[rgba(12,22,38,0.03)] border-black/[0.08] hover:bg-[rgba(12,22,38,0.04)]'
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
@@ -2390,21 +2390,21 @@ export default function BriefingV2Dashboard() {
                               <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap justify-end">
                                 <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold cursor-help relative group/badge ${scorePass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}>
                                   S {sig.score > 0 ? '+' : ''}{sig.score}
-                                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/badge:block z-30 px-2.5 py-1.5 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted whitespace-nowrap pointer-events-none">
+                                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/badge:block z-30 px-2.5 py-1.5 rounded-lg bg-[#ffffff] border border-black/[0.08] shadow-xl text-[9px] text-text-muted whitespace-nowrap pointer-events-none">
                                     <strong className="text-heading">Score:</strong> {sig.score > 0 ? '+' : ''}{sig.score} | Nodig: &ge; 2.0 of &le; -2.0<br/>
                                     CB beleid &times;2 + rente &times;1.5 + nieuws
                                   </span>
                                 </span>
                                 <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold cursor-help relative group/badge ${imPass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}>
                                   IM {data.intermarketAlignment ?? 0}%
-                                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/badge:block z-30 px-2.5 py-1.5 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted whitespace-nowrap pointer-events-none">
+                                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/badge:block z-30 px-2.5 py-1.5 rounded-lg bg-[#ffffff] border border-black/[0.08] shadow-xl text-[9px] text-text-muted whitespace-nowrap pointer-events-none">
                                     <strong className="text-heading">Intermarket:</strong> {data.intermarketAlignment ?? 0}% | Nodig: &gt; 50%<br/>
                                     Bevestigen VIX, S&amp;P, Gold, Yields het regime?
                                   </span>
                                 </span>
                                 <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold cursor-help relative group/badge ${contrarianPass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}>
                                   C {pips5d > 0 ? '+' : ''}{pips5d}
-                                  <span className="absolute bottom-full right-0 mb-1.5 hidden group-hover/badge:block z-30 px-2.5 py-1.5 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted whitespace-nowrap pointer-events-none">
+                                  <span className="absolute bottom-full right-0 mb-1.5 hidden group-hover/badge:block z-30 px-2.5 py-1.5 rounded-lg bg-[#ffffff] border border-black/[0.08] shadow-xl text-[9px] text-text-muted whitespace-nowrap pointer-events-none">
                                     <strong className="text-heading">Contrarian:</strong> prijs {pips5d > 0 ? '+' : ''}{pips5d} pips in 5 dagen<br/>
                                     {contrarianPass
                                       ? `\u2713 Prijs ging tegen de ${isBullish ? 'bullish' : 'bearish'} richting = mean reversion kans`
@@ -2414,7 +2414,7 @@ export default function BriefingV2Dashboard() {
                                 </span>
                                 <span className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-bold cursor-help relative group/badge ${directionPass ? 'bg-green-500/10 text-green-400/80 border border-green-500/15' : 'bg-red-500/10 text-red-400/50 border border-red-500/10'}`}>
                                   R {directionPass ? '\u2713' : '\u2717'}
-                                  <span className="absolute bottom-full right-0 mb-1.5 hidden group-hover/badge:block z-30 px-2.5 py-1.5 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted whitespace-nowrap pointer-events-none">
+                                  <span className="absolute bottom-full right-0 mb-1.5 hidden group-hover/badge:block z-30 px-2.5 py-1.5 rounded-lg bg-[#ffffff] border border-black/[0.08] shadow-xl text-[9px] text-text-muted whitespace-nowrap pointer-events-none">
                                     <strong className="text-heading">Richting:</strong> {isBullish ? 'Bullish (long)' : isBearish ? 'Bearish (short)' : 'Neutraal'}<br/>
                                     {directionPass ? '\u2713 Duidelijke bias aanwezig' : '\u2717 Geen duidelijke richting'}
                                   </span>
@@ -2439,7 +2439,7 @@ export default function BriefingV2Dashboard() {
                     </div>
 
                     {/* Kansmodel per filtercombinatie */}
-                    <div className="mt-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                    <div className="mt-4 p-3 rounded-xl bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                       <p className="text-[10px] font-semibold text-heading uppercase tracking-wider mb-2">Kansmodel — Wat als je afwijkt van het advies?</p>
                       <p className="text-[9px] text-text-dim mb-2">Onderstaande winrates zijn gebaseerd op 12 maanden backtesting (21 paren). Hoe meer filters je overslaat, hoe lager je kans.</p>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -2448,7 +2448,7 @@ export default function BriefingV2Dashboard() {
                           <p className="text-[8px] text-green-400/60 font-semibold mt-0.5">4/4 filters</p>
                           <p className="text-[8px] text-text-dim">Trackrecord advies</p>
                           <span className="absolute top-1 right-1.5 text-[8px] text-text-dim/30">&#9432;</span>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/k1:block z-30 w-56 px-3 py-2 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted text-left pointer-events-none">
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/k1:block z-30 w-56 px-3 py-2 rounded-lg bg-[#ffffff] border border-black/[0.08] shadow-xl text-[9px] text-text-muted text-left pointer-events-none">
                             <p className="font-semibold text-heading mb-1">Onderbouwing</p>
                             <p>399 trades gebacktest over 12 maanden (apr 2025 &ndash; apr 2026) op 21 valutaparen.</p>
                             <p className="mt-1">223 correct / 176 incorrect = <strong className="text-green-400">56% winrate</strong></p>
@@ -2460,7 +2460,7 @@ export default function BriefingV2Dashboard() {
                           <p className="text-[8px] text-amber-400/60 font-semibold mt-0.5">3/4 filters</p>
                           <p className="text-[8px] text-text-dim">Zonder contrarian</p>
                           <span className="absolute top-1 right-1.5 text-[8px] text-text-dim/30">&#9432;</span>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/k2:block z-30 w-56 px-3 py-2 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted text-left pointer-events-none">
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/k2:block z-30 w-56 px-3 py-2 rounded-lg bg-[#ffffff] border border-black/[0.08] shadow-xl text-[9px] text-text-muted text-left pointer-events-none">
                             <p className="font-semibold text-heading mb-1">Onderbouwing</p>
                             <p>700 trades zonder contrarian filter over 12 maanden.</p>
                             <p className="mt-1">373 correct / 327 incorrect = <strong className="text-amber-400">53% winrate</strong></p>
@@ -2472,7 +2472,7 @@ export default function BriefingV2Dashboard() {
                           <p className="text-[8px] text-orange-400/60 font-semibold mt-0.5">3/4 filters</p>
                           <p className="text-[8px] text-text-dim">Zonder IM check</p>
                           <span className="absolute top-1 right-1.5 text-[8px] text-text-dim/30">&#9432;</span>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/k3:block z-30 w-56 px-3 py-2 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted text-left pointer-events-none">
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/k3:block z-30 w-56 px-3 py-2 rounded-lg bg-[#ffffff] border border-black/[0.08] shadow-xl text-[9px] text-text-muted text-left pointer-events-none">
                             <p className="font-semibold text-heading mb-1">Onderbouwing</p>
                             <p>Intermarket alignment genegeerd &mdash; trades ook op dagen dat VIX, S&amp;P etc. het regime niet bevestigen.</p>
                             <p className="mt-1">Minder betrouwbaar omdat de marktomgeving niet meewerkt. Elke filter die je weglaat kost ~3% winrate.</p>
@@ -2483,7 +2483,7 @@ export default function BriefingV2Dashboard() {
                           <p className="text-[8px] text-red-400/60 font-semibold mt-0.5">2/4 filters</p>
                           <p className="text-[8px] text-text-dim">Alleen score + richting</p>
                           <span className="absolute top-1 right-1.5 text-[8px] text-text-dim/30">&#9432;</span>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/k4:block z-30 w-56 px-3 py-2 rounded-lg bg-[#0d1016] border border-white/10 shadow-xl text-[9px] text-text-muted text-left pointer-events-none">
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/k4:block z-30 w-56 px-3 py-2 rounded-lg bg-[#ffffff] border border-black/[0.08] shadow-xl text-[9px] text-text-muted text-left pointer-events-none">
                             <p className="font-semibold text-heading mb-1">Onderbouwing</p>
                             <p>1.402 trades met alleen score en richting &mdash; geen contrarian, geen IM bevestiging.</p>
                             <p className="mt-1">669 correct / 733 incorrect = <strong className="text-red-400">48% winrate</strong></p>
@@ -2510,7 +2510,7 @@ export default function BriefingV2Dashboard() {
             <div className="rounded-2xl border border-border bg-bg-card overflow-hidden">
               <button
                 onClick={() => setShowTrackRecord(!showTrackRecord)}
-                className="w-full px-5 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
+                className="w-full px-5 py-3 flex items-center justify-between hover:bg-[rgba(12,22,38,0.04)] transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-light">
@@ -2533,7 +2533,7 @@ export default function BriefingV2Dashboard() {
               </button>
 
               {showTrackRecord && (
-                <div className="px-5 pb-5 border-t border-white/[0.04]">
+                <div className="px-5 pb-5 border-t border-black/[0.08]">
                   {trackStats.startDate && (
                     <div className="mt-3 mb-2 flex items-center gap-2 text-[10px] text-text-dim">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -2557,7 +2557,7 @@ export default function BriefingV2Dashboard() {
                       { label: 'Pending', value: trackStats.pending, color: 'text-amber-400', daily: todayChanges ? todayChanges.pending : 0, isPercent: false },
                       { label: 'Win Rate', value: `${trackStats.winRate}%`, color: trackStats.winRate >= 55 ? 'text-green-400' : trackStats.winRate >= 45 ? 'text-amber-400' : 'text-red-400', daily: todayChanges ? todayChanges.winRateDiff : 0, isPercent: true },
                     ].map(stat => (
-                      <div key={stat.label} className="p-2 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+                      <div key={stat.label} className="p-2 rounded-xl bg-[rgba(12,22,38,0.04)] border border-black/[0.08] text-center">
                         <p className={`text-lg font-mono font-bold ${stat.color}`}>{stat.value}</p>
                         <p className="text-[9px] text-text-dim">{stat.label}</p>
                         {todayChanges ? (
@@ -2572,7 +2572,7 @@ export default function BriefingV2Dashboard() {
                   </div>
 
                   {trackStats.newsInfluenced && trackStats.newsInfluenced.total > 0 && (
-                    <div className="mb-4 p-2 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                    <div className="mb-4 p-2 rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08]">
                       <div className="flex items-center gap-4 text-[10px]">
                         <span className="text-text-muted">Trades met nieuws invloed: <strong className="text-heading">{trackStats.newsInfluenced.total}</strong></span>
                         <span className={`font-mono font-bold ${trackStats.newsInfluenced.winRate >= 55 ? 'text-green-400' : 'text-amber-400'}`}>{trackStats.newsInfluenced.winRate}% win rate</span>
@@ -2610,7 +2610,7 @@ export default function BriefingV2Dashboard() {
                           return record.date || ''
                         }
                         return (
-                          <div key={record.id} className="rounded-lg bg-white/[0.02] border border-white/[0.04] overflow-hidden">
+                          <div key={record.id} className="rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08] overflow-hidden">
                             <div className={`px-3 py-1.5 flex items-center justify-between ${
                               record.direction.includes('bullish') ? 'bg-gradient-to-r from-green-500/[0.04] to-transparent' : 'bg-gradient-to-r from-red-500/[0.04] to-transparent'
                             }`}>
@@ -2628,7 +2628,7 @@ export default function BriefingV2Dashboard() {
                                 }`}>{record.result === 'correct' ? '\u2713' : record.result === 'incorrect' ? '\u2717' : '\u23F3'}</span>
                               </div>
                             </div>
-                            <div className="px-3 py-1.5 border-t border-white/[0.03] flex flex-wrap items-center gap-3 text-[9px] text-text-dim">
+                            <div className="px-3 py-1.5 border-t border-black/[0.08] flex flex-wrap items-center gap-3 text-[9px] text-text-dim">
                               <span>Call: <span className="font-mono text-accent-light/70">{formatCallTime()}</span></span>
                               <span>Entry: <span className="font-mono text-text-muted">{record.entry_price ?? '—'}</span></span>
                               <span>Exit: <span className="font-mono text-text-muted">{record.exit_price ?? '—'}</span></span>
@@ -2681,7 +2681,7 @@ export default function BriefingV2Dashboard() {
           </div>
 
           {/* ── Methodology Footer ── */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+          <div className="rounded-xl border border-black/[0.08] bg-[rgba(12,22,38,0.04)] p-5">
             <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim font-medium mb-3">Methode &amp; Databronnen</p>
 
             <div className="space-y-3 text-[11px] text-text-dim leading-relaxed">
@@ -2702,9 +2702,9 @@ export default function BriefingV2Dashboard() {
                 <div className="flex items-center gap-2 text-[10px] mt-1 mb-2 flex-wrap">
                   <span className="px-2 py-1 rounded bg-accent/10 border border-accent/20 text-accent-light font-semibold">Daily Macro Briefing</span>
                   <span className="text-text-dim/30">&rarr;</span>
-                  <span className="px-2 py-1 rounded bg-white/[0.04] border border-white/[0.06] text-text-muted">Execution Engine</span>
+                  <span className="px-2 py-1 rounded bg-[rgba(12,22,38,0.04)] border border-black/[0.08] text-text-muted">Execution Engine</span>
                   <span className="text-text-dim/30">&rarr;</span>
-                  <span className="px-2 py-1 rounded bg-white/[0.04] border border-white/[0.06] text-text-muted">Trackrecord</span>
+                  <span className="px-2 py-1 rounded bg-[rgba(12,22,38,0.04)] border border-black/[0.08] text-text-muted">Trackrecord</span>
                 </div>
                 <p className="text-[10px]">
                   De <strong className="text-text-muted">Briefing</strong> bepaalt welke paren fundamenteel sterk zijn (de &ldquo;wat&rdquo;).
@@ -2723,7 +2723,7 @@ export default function BriefingV2Dashboard() {
                     { bron: 'Dagkoersen (21 valutaparen)', detail: 'Yahoo Finance, dagelijks vernieuwd' },
                     { bron: 'Track Record', detail: 'Supabase DB, dagelijks automatisch geresolved na 1 handelsdag' },
                   ].map(item => (
-                    <div key={item.bron} className="flex items-start gap-1.5 p-1.5 rounded bg-white/[0.02]">
+                    <div key={item.bron} className="flex items-start gap-1.5 p-1.5 rounded bg-[rgba(12,22,38,0.04)]">
                       <span className="text-accent-light/40 mt-0.5">&#x2022;</span>
                       <div>
                         <span className="text-text-muted font-medium">{item.bron}</span>
@@ -2744,7 +2744,7 @@ export default function BriefingV2Dashboard() {
 
             <div className="mt-3 flex flex-wrap gap-2">
               {['CB Beleid x2', 'Rente x1.5', 'Nieuws bonus', 'Intermarket >50%', 'Contrarian 5d', '21 Paren', 'Hold 1d', 'Dagkoers NY Close'].map(tag => (
-                <span key={tag} className="text-[9px] px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-text-dim">{tag}</span>
+                <span key={tag} className="text-[9px] px-2 py-1 rounded-full bg-[rgba(12,22,38,0.04)] border border-black/[0.08] text-text-dim">{tag}</span>
               ))}
             </div>
           </div>

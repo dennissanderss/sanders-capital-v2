@@ -106,7 +106,7 @@ function PriceChartSvg({
   const win = outcome === 'correct'
   const loss = outcome === 'incorrect'
   const open = outcome === 'pending'
-  const C = { gold: '#c9a466', win: '#7e9b6f', loss: '#b9725f', neutral: '#8c93a6' }
+  const C = { gold: '#2563eb', win: '#2f9e6f', loss: '#d4593f', neutral: '#9aa3b2' }
 
   const pts = series.map((v, i) => [x(i), y(v)])
   const line = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ')
@@ -127,12 +127,12 @@ function PriceChartSvg({
     <svg className="chart-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Koersverloop met niveaus">
       <defs>
         <linearGradient id="fxd-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#c9a466" stopOpacity="0.16" />
-          <stop offset="100%" stopColor="#c9a466" stopOpacity="0" />
+          <stop offset="0%" stopColor="#2563eb" stopOpacity="0.16" />
+          <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
         </linearGradient>
         <linearGradient id="fxd-holdfill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#c9a466" stopOpacity="0.09" />
-          <stop offset="100%" stopColor="#c9a466" stopOpacity="0.015" />
+          <stop offset="0%" stopColor="#2563eb" stopOpacity="0.09" />
+          <stop offset="100%" stopColor="#2563eb" stopOpacity="0.015" />
         </linearGradient>
       </defs>
 
@@ -173,9 +173,9 @@ function PriceChartSvg({
       })}
 
       <path d={area} fill="url(#fxd-fill)" />
-      <path d={line} fill="none" stroke="#c9a466" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d={line} fill="none" stroke="#2563eb" strokeWidth="1.6" strokeLinejoin="round" />
 
-      <circle cx={eX} cy={y(entry)} r="5.5" fill="#080a0e" stroke={C.gold} strokeWidth="1.6" />
+      <circle cx={eX} cy={y(entry)} r="5.5" fill="#ffffff" stroke={C.gold} strokeWidth="1.6" />
       <circle cx={eX} cy={y(entry)} r="2" fill={C.gold} />
 
       {!open && hitV !== null && (() => {
@@ -184,7 +184,7 @@ function PriceChartSvg({
         return (
           <g>
             <line x1={cX} y1={padT} x2={cX} y2={H - padB} stroke={hitC} strokeWidth="1" strokeDasharray="2 3" opacity="0.55" />
-            <circle cx={cX} cy={my} r="6" fill="#080a0e" stroke={hitC} strokeWidth="1.9" />
+            <circle cx={cX} cy={my} r="6" fill="#ffffff" stroke={hitC} strokeWidth="1.9" />
             <circle cx={cX} cy={my} r="2.4" fill={hitC} />
             <text x={cX} y={ty} textAnchor="middle" fill={hitC} fontSize="10" fontWeight="700" fontFamily="DM Sans" letterSpacing="0.07em">
               {win ? 'TP GERAAKT' : 'STOP GERAAKT'}
@@ -194,7 +194,7 @@ function PriceChartSvg({
       })()}
       {open && (
         <g>
-          <circle cx={x(n - 1)} cy={y(series[n - 1])} r="5" fill="#080a0e" stroke={C.neutral} strokeWidth="1.6" />
+          <circle cx={x(n - 1)} cy={y(series[n - 1])} r="5" fill="#ffffff" stroke={C.neutral} strokeWidth="1.6" />
           <text x={x(n - 1)} y={y(series[n - 1]) - 11} textAnchor="middle" fill={C.neutral} fontSize="10" fontWeight="600" fontFamily="DM Sans" letterSpacing="0.06em">
             OPEN
           </text>

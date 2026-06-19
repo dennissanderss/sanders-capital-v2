@@ -71,13 +71,13 @@ export default function RoutinesTab() {
         {/* Calendar */}
         <div className="glass rounded-xl p-4">
           <div className="flex items-center justify-between mb-4">
-            <button onClick={() => setCurrentMonth(new Date(year, month - 1))} className="p-1.5 rounded hover:bg-white/5 text-text-dim hover:text-heading transition-colors">
+            <button onClick={() => setCurrentMonth(new Date(year, month - 1))} className="p-1.5 rounded hover:bg-[rgba(12,22,38,0.04)] text-text-dim hover:text-heading transition-colors">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
             </button>
             <h3 className="text-sm font-semibold text-heading capitalize">
               {MONTHS_NL[month]} {year}
             </h3>
-            <button onClick={() => setCurrentMonth(new Date(year, month + 1))} className="p-1.5 rounded hover:bg-white/5 text-text-dim hover:text-heading transition-colors">
+            <button onClick={() => setCurrentMonth(new Date(year, month + 1))} className="p-1.5 rounded hover:bg-[rgba(12,22,38,0.04)] text-text-dim hover:text-heading transition-colors">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
             </button>
           </div>
@@ -106,7 +106,7 @@ export default function RoutinesTab() {
                 if (score >= 8) bgColor = 'bg-green-500/20'
                 else if (score >= 5) bgColor = 'bg-amber-500/15'
                 else if (score > 0) bgColor = 'bg-red-500/15'
-                else bgColor = 'bg-white/5'
+                else bgColor = 'bg-[rgba(12,22,38,0.04)]'
               }
 
               return (
@@ -115,7 +115,7 @@ export default function RoutinesTab() {
                   onClick={() => { setSelectedDate(dateStr); setEditing(false) }}
                   className={`aspect-square flex flex-col items-center justify-center rounded-lg text-xs transition-all ${
                     isSelected ? 'ring-1 ring-accent-light' : ''
-                  } ${bgColor || 'hover:bg-white/5'} ${
+                  } ${bgColor || 'hover:bg-[rgba(12,22,38,0.04)]'} ${
                     isToday ? 'font-bold text-heading' : routine ? 'text-heading' : 'text-text-dim'
                   }`}
                 >
@@ -381,12 +381,12 @@ function RoutineForm({ routine, saving, onSave, onCancel }: {
 // ─── Helper components ─────────────────────────────────────
 function ScoreDisplay({ label, value, max }: { label: string; value: number | null; max: number }) {
   const pct = value ? (value / max) * 100 : 0
-  const color = value ? (value >= max * 0.7 ? 'bg-green-500' : value >= max * 0.4 ? 'bg-amber-500' : 'bg-red-500') : 'bg-white/10'
+  const color = value ? (value >= max * 0.7 ? 'bg-green-500' : value >= max * 0.4 ? 'bg-amber-500' : 'bg-red-500') : 'bg-[rgba(12,22,38,0.10)]'
   return (
     <div>
       <p className="text-[10px] text-text-dim mb-1">{label}</p>
       <div className="flex items-center gap-2">
-        <div className="flex-1 h-1.5 rounded-full bg-white/5">
+        <div className="flex-1 h-1.5 rounded-full bg-[rgba(12,22,38,0.04)]">
           <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
         </div>
         <span className="text-xs font-medium text-heading">{value || '—'}</span>
@@ -409,7 +409,7 @@ function MoodSelector({ value, onChange }: { value: number | null; onChange: (v:
           key={m.v}
           type="button"
           onClick={() => onChange(m.v)}
-          className={`w-8 h-8 rounded-lg text-sm transition-all ${value === m.v ? 'bg-accent/20 ring-1 ring-accent/30 scale-110' : 'hover:bg-white/5'}`}
+          className={`w-8 h-8 rounded-lg text-sm transition-all ${value === m.v ? 'bg-accent/20 ring-1 ring-accent/30 scale-110' : 'hover:bg-[rgba(12,22,38,0.04)]'}`}
         >
           {m.e}
         </button>
@@ -431,7 +431,7 @@ function SliderField({ label, value, onChange }: { label: string; value: number 
             className={`flex-1 h-5 rounded text-[9px] transition-colors ${
               value && i < value
                 ? i < 3 ? 'bg-red-500/40' : i < 6 ? 'bg-amber-500/40' : 'bg-green-500/40'
-                : 'bg-white/5 hover:bg-white/10'
+                : 'bg-[rgba(12,22,38,0.04)] hover:bg-[rgba(12,22,38,0.10)]'
             }`}
           />
         ))}
@@ -461,7 +461,7 @@ function CheckItem({ label, checked, negative, isNegative }: { label: string; ch
       ) : negative ? (
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
       ) : (
-        <div className="w-3 h-3 rounded-sm border border-white/10" />
+        <div className="w-3 h-3 rounded-sm border border-black/[0.08]" />
       )}
       <span className={`${checked ? 'text-heading' : negative ? 'text-red-400' : 'text-text-dim'}`}>{label}</span>
     </div>

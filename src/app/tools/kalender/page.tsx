@@ -39,7 +39,7 @@ function ImpactBadge({ impact }: { impact: string }) {
   const color = impact === 'hoog' ? 'bg-red-500/15 text-red-400 border-red-500/20'
     : impact === 'medium' ? 'bg-amber-500/15 text-amber-400 border-amber-500/20'
     : impact === 'laag' ? 'bg-yellow-400/15 text-yellow-400 border-yellow-400/20'
-    : 'bg-white/5 text-text-dim border-border'
+    : 'bg-[rgba(12,22,38,0.04)] text-text-dim border-border'
   return <span className={`text-[10px] px-1.5 py-0.5 rounded border ${color} capitalize`}>{impact}</span>
 }
 
@@ -526,10 +526,10 @@ export default function KalenderPage() {
                           </tr>
                           {/* Expanded explanation */}
                           {isExpanded && (
-                            <tr className="bg-white/[0.02]">
+                            <tr className="bg-[rgba(12,22,38,0.03)]">
                               <td colSpan={7} className="px-4 sm:px-6 py-3">
                                 <div className="grid sm:grid-cols-3 gap-3 text-[11px]">
-                                  <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-2.5">
+                                  <div className="rounded-lg bg-[rgba(12,22,38,0.04)] border border-black/[0.08] px-3 py-2.5">
                                     <p className="text-accent-light font-semibold mb-1 uppercase tracking-wider text-[10px]">Wat is dit?</p>
                                     <p className="text-text-muted leading-relaxed">{explanation.what}</p>
                                   </div>

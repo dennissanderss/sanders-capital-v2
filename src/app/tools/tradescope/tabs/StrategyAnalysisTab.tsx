@@ -247,7 +247,7 @@ export default function StrategyAnalysisTab({ trades, strategies, setups, accoun
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="border-b border-white/[0.06]">
+                        <tr className="border-b border-black/[0.08]">
                           <th className="px-3 py-2.5 text-left text-text-dim font-medium">Filter</th>
                           <th className="px-3 py-2.5 text-right text-text-dim font-medium">Trades</th>
                           <th className="px-3 py-2.5 text-right text-text-dim font-medium">Win Rate</th>
@@ -261,7 +261,7 @@ export default function StrategyAnalysisTab({ trades, strategies, setups, accoun
                           const isBest = row === best && categoryData.length > 1
                           const isWorst = row === worst && categoryData.length > 1 && worst.totalPnl < 0
                           return (
-                            <tr key={row.label} className={`border-b border-white/[0.03] ${isBest ? 'bg-green-500/[0.03]' : isWorst ? 'bg-red-500/[0.03]' : 'hover:bg-white/[0.02]'}`}>
+                            <tr key={row.label} className={`border-b border-black/[0.06] ${isBest ? 'bg-green-500/[0.06]' : isWorst ? 'bg-red-500/[0.06]' : 'hover:bg-[rgba(12,22,38,0.04)]'}`}>
                               <td className="px-3 py-2.5">
                                 <div className="flex items-center gap-2">
                                   {row.color && <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: row.color }} />}
@@ -356,7 +356,7 @@ export default function StrategyAnalysisTab({ trades, strategies, setups, accoun
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-white/[0.06]">
+              <tr className="border-b border-black/[0.08]">
                 <th className="px-3 py-2.5 text-left text-text-dim font-medium">{DIMENSIONS.find(d => d.id === dimension)?.label}</th>
                 <th className="px-3 py-2.5 text-right text-text-dim font-medium">Trades</th>
                 <th className="px-3 py-2.5 text-right text-text-dim font-medium">Win Rate</th>
@@ -371,7 +371,7 @@ export default function StrategyAnalysisTab({ trades, strategies, setups, accoun
             </thead>
             <tbody>
               {groups.map((g, i) => (
-                <tr key={i} className="border-b border-white/[0.03] hover:bg-white/[0.02]">
+                <tr key={i} className="border-b border-black/[0.06] hover:bg-[rgba(12,22,38,0.04)]">
                   <td className="px-3 py-2.5">
                     <div className="flex items-center gap-2">
                       {g.color && <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: g.color }} />}

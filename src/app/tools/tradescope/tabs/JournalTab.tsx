@@ -365,7 +365,7 @@ function OpenTradeCard({ trade, onClose, onEdit }: { trade: TsTrade; onClose: (i
             onClick={() => setShowClose(!showClose)}
             className={`text-[10px] px-3 py-1.5 rounded-lg font-medium transition-all ${
               showClose
-                ? 'bg-white/[0.06] text-heading border border-white/[0.1]'
+                ? 'bg-[rgba(12,22,38,0.04)] text-heading border border-black/[0.08]'
                 : 'bg-accent/20 text-accent-light border border-accent/30 hover:bg-accent/30'
             }`}
           >
@@ -409,13 +409,13 @@ function OpenTradeCard({ trade, onClose, onEdit }: { trade: TsTrade; onClose: (i
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-text-dim">Fundamental correct?</span>
-              <button type="button" onClick={() => setToolBiasCorrect(toolBiasCorrect === true ? null : true)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${toolBiasCorrect === true ? 'bg-green-500/20 text-green-400 border border-green-500/40' : 'bg-white/[0.04] text-text-dim border border-white/[0.06] hover:border-white/[0.12]'}`}>Ja</button>
-              <button type="button" onClick={() => setToolBiasCorrect(toolBiasCorrect === false ? null : false)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${toolBiasCorrect === false ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-white/[0.04] text-text-dim border border-white/[0.06] hover:border-white/[0.12]'}`}>Nee</button>
+              <button type="button" onClick={() => setToolBiasCorrect(toolBiasCorrect === true ? null : true)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${toolBiasCorrect === true ? 'bg-green-500/20 text-green-400 border border-green-500/40' : 'bg-[rgba(12,22,38,0.04)] text-text-dim border border-black/[0.08] hover:border-black/[0.12]'}`}>Ja</button>
+              <button type="button" onClick={() => setToolBiasCorrect(toolBiasCorrect === false ? null : false)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${toolBiasCorrect === false ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-[rgba(12,22,38,0.04)] text-text-dim border border-black/[0.08] hover:border-black/[0.12]'}`}>Nee</button>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-text-dim">TA correct?</span>
-              <button type="button" onClick={() => setTaCorrect(taCorrect === true ? null : true)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${taCorrect === true ? 'bg-green-500/20 text-green-400 border border-green-500/40' : 'bg-white/[0.04] text-text-dim border border-white/[0.06] hover:border-white/[0.12]'}`}>Ja</button>
-              <button type="button" onClick={() => setTaCorrect(taCorrect === false ? null : false)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${taCorrect === false ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-white/[0.04] text-text-dim border border-white/[0.06] hover:border-white/[0.12]'}`}>Nee</button>
+              <button type="button" onClick={() => setTaCorrect(taCorrect === true ? null : true)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${taCorrect === true ? 'bg-green-500/20 text-green-400 border border-green-500/40' : 'bg-[rgba(12,22,38,0.04)] text-text-dim border border-black/[0.08] hover:border-black/[0.12]'}`}>Ja</button>
+              <button type="button" onClick={() => setTaCorrect(taCorrect === false ? null : false)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${taCorrect === false ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-[rgba(12,22,38,0.04)] text-text-dim border border-black/[0.08] hover:border-black/[0.12]'}`}>Nee</button>
             </div>
           </div>
         </div>
@@ -433,7 +433,7 @@ function TradeRow({ trade, onEdit, onDelete, onScreenshotUpdate, tradeCustomFilt
   return (
     <div className="rounded-xl glass overflow-hidden">
       <div
-        className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+        className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[rgba(12,22,38,0.03)] transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
         {/* Win/loss indicator */}
@@ -469,7 +469,7 @@ function TradeRow({ trade, onEdit, onDelete, onScreenshotUpdate, tradeCustomFilt
                 key={f.id}
                 className="text-[10px] px-1.5 py-0.5 rounded"
                 style={{
-                  backgroundColor: f.color ? `${f.color}15` : 'rgba(255,255,255,0.05)',
+                  backgroundColor: f.color ? `${f.color}15` : 'rgba(12,22,38,0.04)',
                   color: f.color || 'inherit',
                 }}
               >
@@ -504,7 +504,7 @@ function TradeRow({ trade, onEdit, onDelete, onScreenshotUpdate, tradeCustomFilt
           {trade.trade_quality && (
             <div className="flex gap-0.5">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className={`w-1.5 h-1.5 rounded-full ${i < trade.trade_quality! ? 'bg-accent-light' : 'bg-white/10'}`} />
+                <div key={i} className={`w-1.5 h-1.5 rounded-full ${i < trade.trade_quality! ? 'bg-accent-light' : 'bg-[rgba(12,22,38,0.10)]'}`} />
               ))}
             </div>
           )}
@@ -518,7 +518,7 @@ function TradeRow({ trade, onEdit, onDelete, onScreenshotUpdate, tradeCustomFilt
 
       {/* Expanded content */}
       {expanded && (
-        <div className="px-4 pb-4 pt-1 border-t border-white/[0.04]">
+        <div className="px-4 pb-4 pt-1 border-t border-black/[0.08]">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
             <div>
               <p className="text-[10px] text-text-dim mb-0.5">Entry</p>
@@ -595,7 +595,7 @@ function TradeRow({ trade, onEdit, onDelete, onScreenshotUpdate, tradeCustomFilt
           {trade.tags && trade.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-3">
               {trade.tags.map((tag, i) => (
-                <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-white/5 text-text-dim">#{tag}</span>
+                <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-[rgba(12,22,38,0.04)] text-text-dim">#{tag}</span>
               ))}
             </div>
           )}
@@ -606,7 +606,7 @@ function TradeRow({ trade, onEdit, onDelete, onScreenshotUpdate, tradeCustomFilt
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 pt-2 border-t border-white/[0.04]">
+          <div className="flex items-center gap-2 pt-2 border-t border-black/[0.08]">
             <button onClick={onEdit} className="text-xs text-accent-light hover:text-heading transition-colors">Bewerken</button>
             <button onClick={onDelete} className="text-xs text-red-400/60 hover:text-red-400 transition-colors">Verwijderen</button>
           </div>
@@ -915,10 +915,10 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 sm:pt-24 overflow-y-auto">
-      <div className="fixed inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative w-full max-w-2xl rounded-2xl border border-white/[0.08] shadow-2xl" style={{ background: 'rgba(13, 16, 22, 0.98)', backdropFilter: 'blur(32px)' }}>
+      <div className="fixed inset-0 bg-[rgba(12,22,38,0.35)]" onClick={onClose} />
+      <div className="relative w-full max-w-2xl rounded-2xl border border-black/[0.08] shadow-2xl" style={{ background: 'rgba(255, 255, 255, 0.98)', backdropFilter: 'blur(32px)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-black/[0.08]">
           <div className="flex items-center gap-4">
             <h2 className="text-lg font-display font-semibold text-heading">
               {trade ? 'Trade bewerken' : 'Nieuwe trade'}
@@ -951,14 +951,14 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
               </div>
             )}
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] transition-colors">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[rgba(12,22,38,0.04)] transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
 
         {/* Screenshot analyse balk */}
         {!trade && (
-          <div className="px-6 py-2 border-b border-white/[0.04] bg-purple-500/[0.03]">
+          <div className="px-6 py-2 border-b border-black/[0.08] bg-purple-500/[0.03]">
             <label className={`flex items-center justify-center gap-2 py-1.5 rounded-lg border text-xs transition-colors ${
               analyzing
                 ? 'bg-purple-500/20 border-purple-500/40 text-purple-300 animate-pulse cursor-wait'
@@ -1213,7 +1213,7 @@ function TradeFormModal({ trade, accounts, strategies, setups, saving, onSave, o
           </div>
 
           {/* Submit */}
-          <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/[0.06]">
+          <div className="flex items-center justify-end gap-3 pt-2 border-t border-black/[0.08]">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-text-muted hover:text-heading transition-colors">
               Annuleren
             </button>

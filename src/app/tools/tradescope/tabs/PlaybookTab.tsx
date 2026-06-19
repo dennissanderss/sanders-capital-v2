@@ -174,7 +174,7 @@ export default function PlaybookTab({ trades, strategies, setups }: Props) {
               {/* Card header */}
               <button
                 onClick={() => setExpandedEntry(isExpanded ? null : entry.key)}
-                className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
+                className="w-full px-5 py-4 flex items-center justify-between hover:bg-[rgba(12,22,38,0.03)] transition-colors"
               >
                 <div className="flex items-center gap-4">
                   <span className={`text-2xl font-display font-bold ${color}`}>{grade}</span>
@@ -282,7 +282,7 @@ export default function PlaybookTab({ trades, strategies, setups }: Props) {
                     <h4 className="text-xs font-medium text-heading mb-2">Laatste 5 trades</h4>
                     <div className="space-y-1">
                       {entry.trades.slice(-5).reverse().map(t => (
-                        <div key={t.id} className="flex items-center justify-between text-xs py-1.5 px-3 rounded-md bg-white/[0.02]">
+                        <div key={t.id} className="flex items-center justify-between text-xs py-1.5 px-3 rounded-md bg-[rgba(12,22,38,0.03)]">
                           <div className="flex items-center gap-3">
                             <span className={`w-1.5 h-1.5 rounded-full ${(t.profit_loss || 0) > 0 ? 'bg-green-400' : 'bg-red-400'}`} />
                             <span className="text-text-muted">{t.symbol}</span>

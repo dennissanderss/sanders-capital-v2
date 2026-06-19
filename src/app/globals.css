@@ -1,31 +1,41 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg: #080a0e;
-  --color-bg-elevated: #0d1016;
-  --color-bg-card: rgba(18, 23, 32, 0.7);
-  --color-bg-hover: rgba(26, 30, 40, 0.7);
-  --color-surface: #1a1e28;
-  --color-border: rgba(255, 255, 255, 0.12);
-  --color-border-light: rgba(255, 255, 255, 0.18);
-  --color-text: #dce0ea;
-  --color-text-muted: #b0b5c9;
-  --color-text-dim: #949ab0;
-  --color-heading: #f0f1f5;
-  --color-accent: #3d6ea5;
-  --color-accent-light: #5a8ec8;
-  --color-accent-dim: #2a4d75;
-  --color-accent-glow: rgba(61, 110, 165, 0.14);
-  --color-gold: #c9a466;
-  --color-gold-dim: rgba(184, 147, 90, 0.18);
+  /* LIGHT premium theme (white / cool grey / royal blue).
+     Token names kept so existing utilities re-skin automatically. */
+  --color-bg: #f5f7fb;
+  --color-bg-elevated: #ffffff;
+  --color-bg-card: #ffffff;
+  --color-bg-hover: #eef2f8;
+  --color-surface: #f3f6fb;
+  --color-border: rgba(12, 22, 38, 0.10);
+  --color-border-light: rgba(12, 22, 38, 0.17);
+  --color-text: #3f4a5c;
+  --color-text-muted: #6b7585;
+  --color-text-dim: #9aa3b2;
+  --color-heading: #0c1626;
+  --color-accent: #3b82f6;
+  --color-accent-light: #2563eb;
+  --color-accent-dim: rgba(59, 130, 246, 0.30);
+  --color-accent-glow: rgba(59, 130, 246, 0.12);
+  --color-gold: #2563eb;
+  --color-gold-dim: rgba(59, 130, 246, 0.14);
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body: 'DM Sans', -apple-system, sans-serif;
 
-  /* Glass tokens */
+  /* Dark zones (footer / opt-in dark bands) — kept for components that stay dark */
+  --color-d-bg: #0a1322;
+  --color-d-bg-2: #0f1b2e;
+  --color-d-ink: #eaf0fb;
+  --color-d-ink-2: #9fb0c8;
+  --color-d-ink-3: #647590;
+  --color-d-line: rgba(234, 240, 251, 0.10);
+
+  /* Glass tokens (light) */
   --glass-blur: 20px;
-  --glass-border: rgba(255, 255, 255, 0.10);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --glass-shadow-gold: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(184, 147, 90, 0.12);
+  --glass-border: rgba(12, 22, 38, 0.10);
+  --glass-shadow: 0 2px 8px rgba(12, 22, 38, 0.06), 0 20px 50px -32px rgba(12, 22, 38, 0.22);
+  --glass-shadow-gold: 0 8px 32px rgba(12, 22, 38, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 @layer base {
@@ -45,7 +55,7 @@
     overflow-x: hidden;
   }
 
-  /* Ambient background glows — give glass blur something to show through */
+  /* Ambient background glows — soft blue wash on the light canvas */
   body::before {
     content: '';
     position: fixed;
@@ -53,7 +63,7 @@
     left: -10%;
     width: 60%;
     height: 60%;
-    background: radial-gradient(ellipse, rgba(61, 110, 165, 0.08) 0%, transparent 70%);
+    background: radial-gradient(ellipse, rgba(59, 130, 246, 0.06) 0%, transparent 70%);
     pointer-events: none;
     z-index: 0;
   }
@@ -65,7 +75,7 @@
     right: -10%;
     width: 55%;
     height: 55%;
-    background: radial-gradient(ellipse, rgba(184, 147, 90, 0.05) 0%, transparent 70%);
+    background: radial-gradient(ellipse, rgba(59, 130, 246, 0.04) 0%, transparent 70%);
     pointer-events: none;
     z-index: 0;
   }
@@ -84,9 +94,9 @@
 
 /* ─── Glass effect utilities ──────────────────────────────── */
 
-/* Standard glass card */
+/* Standard glass card (light) */
 .glass {
-  background: rgba(18, 23, 32, 0.7) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border) !important;
@@ -95,27 +105,27 @@
 
 /* Elevated glass (modals, dropdowns) */
 .glass-elevated {
-  background: rgba(15, 19, 26, 0.78) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(12, 22, 38, 0.12) !important;
+  box-shadow: 0 16px 48px rgba(12, 22, 38, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-/* Premium / gold glass */
+/* Premium / accent glass */
 .glass-gold {
-  background: rgba(18, 23, 32, 0.65) !important;
+  background: rgba(255, 255, 255, 0.7) !important;
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid rgba(184, 147, 90, 0.2) !important;
+  border: 1px solid rgba(59, 130, 246, 0.22) !important;
   box-shadow: var(--glass-shadow-gold);
 }
 
 /* Hover state for glass cards */
 .glass-hover:hover {
-  background: rgba(24, 30, 42, 0.75) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(12, 22, 38, 0.15) !important;
+  box-shadow: 0 12px 40px rgba(12, 22, 38, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.7);
   transition: all 0.25s ease;
 }
 
@@ -218,11 +228,11 @@
 }
 select,
 select.form-input {
-  background-color: #121720 !important;
+  background-color: #ffffff !important;
 }
 select option {
-  background-color: #121720 !important;
-  color: #f0f1f5 !important;
+  background-color: #ffffff !important;
+  color: #0c1626 !important;
 }
 
 /* Scrollbar hide utility */
@@ -285,34 +295,4 @@ select option {
     scrollbar-width: thin;
     -webkit-overflow-scrolling: touch;
   }
-}
-
-/* ============================================================
-   Light header bar — only on the redesigned (light) home page.
-   Recolors the desktop nav labels to dark-on-light. Targets
-   `nav.items-center` so the dark mobile slide-out drawer (which
-   has no items-center on its <nav>) keeps its dark styling.
-   Dropdown popovers stay dark by design.
-   ============================================================ */
-.header-light nav.items-center > a,
-.header-light nav.items-center > div > button {
-  color: #475063;
-  transition: color 0.2s ease;
-}
-.header-light nav.items-center > a:hover,
-.header-light nav.items-center > div > button:hover {
-  color: #0c1626;
-}
-.header-light nav.items-center > a.text-heading,
-.header-light nav.items-center > div > button.text-heading {
-  color: #0c1626;
-}
-.header-light nav.items-center > a[href="/login"],
-.header-light nav.items-center > a[href="/dashboard"] {
-  color: #2563eb;
-  border-color: rgba(37, 99, 235, 0.30);
-}
-.header-light nav.items-center > a[href="/login"]:hover,
-.header-light nav.items-center > a[href="/dashboard"]:hover {
-  background: rgba(59, 130, 246, 0.08);
 }

@@ -37,19 +37,19 @@ function DivergenceAlert({ divergences }: DivergenceAlertProps) {
 
       <div className="space-y-2">
         {items.map(([ccy, div]) => (
-          <div key={ccy} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+          <div key={ccy} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-[rgba(12,22,38,0.03)] border border-black/[0.08]">
             {/* Valuta + pijlen die divergentie tonen */}
             <div className="flex items-center gap-2">
               <span className="font-mono font-bold text-heading text-sm">{ccy}</span>
               <div className="flex items-center gap-1">
                 <span className={`text-xs px-1.5 py-0.5 rounded ${
-                  div.fundamentalDirection === 'bullish' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                  div.fundamentalDirection === 'bullish' ? 'bg-[rgba(47,158,111,0.12)] text-[#2f9e6f]' : 'bg-[rgba(212,89,63,0.12)] text-[#d4593f]'
                 }`}>
                   Fund: {div.fundamentalDirection === 'bullish' ? '\u2191' : '\u2193'}
                 </span>
                 <span className="text-text-dim text-xs">vs</span>
                 <span className={`text-xs px-1.5 py-0.5 rounded ${
-                  div.priceDirection === 'up' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                  div.priceDirection === 'up' ? 'bg-[rgba(47,158,111,0.12)] text-[#2f9e6f]' : 'bg-[rgba(212,89,63,0.12)] text-[#d4593f]'
                 }`}>
                   Prijs: {div.priceDirection === 'up' ? '\u2191' : '\u2193'} {Math.abs(div.pricePct).toFixed(1)}%
                 </span>
@@ -72,7 +72,7 @@ function DivergenceAlert({ divergences }: DivergenceAlertProps) {
           </svg>
           Hoe werkt divergentie detectie?
         </summary>
-        <div className="mt-2 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] text-[10px] text-text-dim leading-relaxed space-y-2">
+        <div className="mt-2 p-3 rounded-lg bg-[rgba(12,22,38,0.03)] border border-black/[0.08] text-[10px] text-text-dim leading-relaxed space-y-2">
           <div className="flex items-start gap-2">
             <span className="text-purple-400 font-bold shrink-0">1.</span>
             <p><strong className="text-text-muted">Fundamentele richting:</strong> elke valuta krijgt een score op basis van centraal bank beleid (hawkish/dovish) en de rente t.o.v. het doel. Score &gt; +1.0 = bullish, &lt; -1.0 = bearish.</p>

@@ -99,7 +99,7 @@ function AccountsSection() {
                     <h3 className="text-sm font-semibold text-heading">{acc.name}</h3>
                     {acc.broker && <p className="text-xs text-text-dim mt-0.5">{acc.broker}</p>}
                   </div>
-                  <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded ${typeInfo?.color || 'text-text-dim bg-white/5'}`}>
+                  <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded ${typeInfo?.color || 'text-text-dim bg-[rgba(12,22,38,0.04)]'}`}>
                     {typeInfo?.label || acc.type}
                   </span>
                 </div>
@@ -175,12 +175,12 @@ function AccountsSection() {
 function StrategiesSection() {
   const { strategies, loading, create, remove } = useStrategies()
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', description: '', rules: '', color: '#3d6ea5' })
+  const [form, setForm] = useState({ name: '', description: '', rules: '', color: '#3b82f6' })
 
   const handleSave = async () => {
     if (!form.name.trim()) return
     await create({ name: form.name, description: form.description || null, rules: form.rules || null, color: form.color })
-    setForm({ name: '', description: '', rules: '', color: '#3d6ea5' })
+    setForm({ name: '', description: '', rules: '', color: '#3b82f6' })
     setShowForm(false)
   }
 

@@ -121,30 +121,16 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // The 2026 home uses a light theme, so it gets a light header bar.
-  // Interior pages are still dark and keep the existing dark header.
-  const isLight = pathname === '/'
-
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50${isLight ? ' header-light' : ''}`}
-      style={
-        isLight
-          ? {
-              background: 'rgba(245, 247, 251, 0.92)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              borderBottom: '1px solid rgba(12, 22, 38, 0.10)',
-              transition: 'background 0.4s ease, border-bottom 0.4s ease, backdrop-filter 0.4s ease',
-            }
-          : {
-              background: scrolled ? 'rgba(13, 16, 22, 0.85)' : 'transparent',
-              backdropFilter: scrolled ? 'blur(24px)' : 'none',
-              WebkitBackdropFilter: scrolled ? 'blur(24px)' : 'none',
-              borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
-              transition: 'background 0.4s ease, border-bottom 0.4s ease, backdrop-filter 0.4s ease',
-            }
-      }
+      className="fixed top-0 left-0 right-0 z-50"
+      style={{
+        background: 'rgba(245, 247, 251, 0.92)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderBottom: '1px solid rgba(12, 22, 38, 0.10)',
+        transition: 'background 0.4s ease, border-bottom 0.4s ease, backdrop-filter 0.4s ease',
+      }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 group">
@@ -156,7 +142,7 @@ export default function Header() {
             className="rounded"
             priority
           />
-          <span className={`text-lg font-semibold tracking-wider font-display ${isLight ? 'text-[#0c1626]' : 'text-heading'}`}>
+          <span className="text-lg font-semibold tracking-wider font-display text-[#0c1626]">
             SANDERS CAPITAL
           </span>
         </Link>
@@ -192,13 +178,13 @@ export default function Header() {
             </button>
 
             <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent ${openDropdown === 'nieuws' ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/nieuws:opacity-100 group-hover/nieuws:visible'}`}>
-              <div className="rounded-xl shadow-2xl border border-white/[0.12] py-2 min-w-[280px]" style={{ background: 'rgba(13, 14, 20, 0.97)', backdropFilter: 'blur(24px)' }}>
+              <div className="rounded-xl shadow-2xl border border-[rgba(12,22,38,0.10)] py-2 min-w-[280px]" style={{ background: 'rgba(255, 255, 255, 0.97)', backdropFilter: 'blur(24px)' }}>
                 {nieuwsDropdown.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-white/[0.08] ${
-                      pathname === item.href ? 'bg-white/[0.06]' : ''
+                    className={`flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-[rgba(12,22,38,0.05)] ${
+                      pathname === item.href ? 'bg-[rgba(59,130,246,0.10)]' : ''
                     }`}
                   >
                     <span className={`mt-0.5 flex-shrink-0 ${pathname === item.href ? 'text-accent-light' : 'text-text-dim'}`}>
@@ -234,13 +220,13 @@ export default function Header() {
             </button>
 
             <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent ${openDropdown === 'blog' ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/blog:opacity-100 group-hover/blog:visible'}`}>
-              <div className="rounded-xl shadow-2xl border border-white/[0.12] py-2 min-w-[260px]" style={{ background: 'rgba(13, 14, 20, 0.97)', backdropFilter: 'blur(24px)' }}>
+              <div className="rounded-xl shadow-2xl border border-[rgba(12,22,38,0.10)] py-2 min-w-[260px]" style={{ background: 'rgba(255, 255, 255, 0.97)', backdropFilter: 'blur(24px)' }}>
                 {blogDropdown.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-white/[0.08] ${
-                      pathname === item.href ? 'bg-white/[0.06]' : ''
+                    className={`flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-[rgba(12,22,38,0.05)] ${
+                      pathname === item.href ? 'bg-[rgba(59,130,246,0.10)]' : ''
                     }`}
                   >
                     <span className={`mt-0.5 flex-shrink-0 ${pathname === item.href ? 'text-accent-light' : 'text-text-dim'}`}>
@@ -276,12 +262,12 @@ export default function Header() {
             </button>
 
             <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent ${openDropdown === 'kb' ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/kb:opacity-100 group-hover/kb:visible'}`}>
-              <div className="rounded-xl shadow-2xl border border-white/[0.12] py-2 min-w-[280px]" style={{ background: 'rgba(13, 14, 20, 0.97)', backdropFilter: 'blur(24px)' }}>
+              <div className="rounded-xl shadow-2xl border border-[rgba(12,22,38,0.10)] py-2 min-w-[280px]" style={{ background: 'rgba(255, 255, 255, 0.97)', backdropFilter: 'blur(24px)' }}>
                 {kbCategories.map((cat) => (
                   <Link
                     key={cat.slug}
                     href={`/kennisbank#${cat.slug}`}
-                    className="flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-white/[0.08]"
+                    className="flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-[rgba(12,22,38,0.05)]"
                   >
                     <span className="mt-0.5 flex-shrink-0 text-text-dim">
                       <NavIcon icon={cat.icon} />
@@ -322,14 +308,14 @@ export default function Header() {
             </button>
 
             <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-transparent ${openDropdown === 'tools' ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/tools:opacity-100 group-hover/tools:visible'}`}>
-              <div className="rounded-xl shadow-2xl border border-white/[0.12] py-2 min-w-[280px]" style={{ background: 'rgba(13, 14, 20, 0.97)', backdropFilter: 'blur(24px)' }}>
+              <div className="rounded-xl shadow-2xl border border-[rgba(12,22,38,0.10)] py-2 min-w-[280px]" style={{ background: 'rgba(255, 255, 255, 0.97)', backdropFilter: 'blur(24px)' }}>
                 {toolsDropdown.map((item, i) => (
                   <div key={item.href}>
-                    {i === 4 && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
+                    {i === 4 && <div className="my-1.5 mx-3 h-px bg-[rgba(12,22,38,0.10)]" />}
                     <Link
                       href={item.href}
-                      className={`flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-white/[0.08] ${
-                        pathname === item.href ? 'bg-white/[0.06]' : ''
+                      className={`flex items-start gap-3 px-4 py-2.5 transition-all duration-150 hover:bg-[rgba(12,22,38,0.05)] ${
+                        pathname === item.href ? 'bg-[rgba(59,130,246,0.10)]' : ''
                       }`}
                     >
                       <span className={`mt-0.5 flex-shrink-0 ${pathname === item.href ? 'text-accent-light' : 'text-text-dim'}`}>
@@ -383,7 +369,7 @@ export default function Header() {
           ) : (
             <Link
               href="/login"
-              className="text-sm px-4 py-1.5 rounded-lg border border-accent/30 text-accent-light hover:bg-accent-glow transition-colors"
+              className="text-sm px-4 py-1.5 rounded-lg border border-[rgba(37,99,235,0.30)] text-[#2563eb] hover:bg-[rgba(59,130,246,0.08)] transition-colors"
             >
               Inloggen
             </Link>
@@ -396,15 +382,15 @@ export default function Header() {
           className="lg:hidden flex flex-col gap-1.5 p-3"
           aria-label="Menu"
         >
-          <span className={`w-5 h-px transition-transform duration-200 ${isLight ? 'bg-[#0c1626]' : 'bg-heading'} ${mobileOpen ? 'rotate-45 translate-y-[4px]' : ''}`} />
-          <span className={`w-5 h-px transition-opacity duration-200 ${isLight ? 'bg-[#0c1626]' : 'bg-heading'} ${mobileOpen ? 'opacity-0' : ''}`} />
-          <span className={`w-5 h-px transition-transform duration-200 ${isLight ? 'bg-[#0c1626]' : 'bg-heading'} ${mobileOpen ? '-rotate-45 -translate-y-[4px]' : ''}`} />
+          <span className={`w-5 h-px transition-transform duration-200 bg-[#0c1626] ${mobileOpen ? 'rotate-45 translate-y-[4px]' : ''}`} />
+          <span className={`w-5 h-px transition-opacity duration-200 bg-[#0c1626] ${mobileOpen ? 'opacity-0' : ''}`} />
+          <span className={`w-5 h-px transition-transform duration-200 bg-[#0c1626] ${mobileOpen ? '-rotate-45 -translate-y-[4px]' : ''}`} />
         </button>
       </div>
 
       {/* Mobile slide-out overlay */}
       <div
-        className={`lg:hidden fixed inset-0 z-40 bg-black/60 transition-opacity duration-300 ${
+        className={`lg:hidden fixed inset-0 z-40 bg-[rgba(12,22,38,0.35)] transition-opacity duration-300 ${
           mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setMobileOpen(false)}
@@ -418,18 +404,18 @@ export default function Header() {
         style={{
           width: '95%',
           maxWidth: '420px',
-          background: 'rgba(10, 12, 16, 0.99)',
+          background: 'rgba(255, 255, 255, 0.99)',
           backdropFilter: 'blur(40px)',
           WebkitBackdropFilter: 'blur(40px)',
-          borderLeft: '1px solid rgba(255,255,255,0.08)',
+          borderLeft: '1px solid rgba(12, 22, 38, 0.10)',
         }}
       >
         {/* Close button */}
-        <div className="flex items-center justify-between px-8 h-16 border-b border-white/[0.06]">
+        <div className="flex items-center justify-between px-8 h-16 border-b border-[rgba(12,22,38,0.10)]">
           <span className="text-sm font-display font-semibold text-heading tracking-wider">Menu</span>
           <button
             onClick={() => setMobileOpen(false)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[rgba(12,22,38,0.05)] transition-colors"
             aria-label="Sluiten"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -454,8 +440,8 @@ export default function Header() {
                 href={link.href}
                 className={`w-full py-3 text-base font-medium rounded-lg transition-colors ${
                   pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
-                    ? 'text-heading bg-white/[0.04]'
-                    : 'text-text-muted hover:text-heading hover:bg-white/[0.03]'
+                    ? 'text-[#2563eb] bg-[rgba(59,130,246,0.10)]'
+                    : 'text-text-muted hover:text-heading hover:bg-[rgba(12,22,38,0.05)]'
                 }`}
               >
                 {link.label}
@@ -464,7 +450,7 @@ export default function Header() {
           </div>
 
           {/* Divider */}
-          <div className="w-16 h-px bg-white/[0.08] mb-6" />
+          <div className="w-16 h-px bg-[rgba(12,22,38,0.10)] mb-6" />
 
           {/* Nieuws section */}
           <p className="text-[10px] uppercase tracking-[0.2em] text-text-dim mb-3 font-semibold">Nieuws</p>
@@ -474,7 +460,7 @@ export default function Header() {
                 key={item.href}
                 href={item.href}
                 className={`w-full py-2.5 text-sm rounded-lg transition-colors ${
-                  pathname === item.href ? 'text-heading bg-white/[0.04]' : 'text-text-muted hover:text-heading hover:bg-white/[0.03]'
+                  pathname === item.href ? 'text-[#2563eb] bg-[rgba(59,130,246,0.10)]' : 'text-text-muted hover:text-heading hover:bg-[rgba(12,22,38,0.05)]'
                 }`}
               >
                 {item.label}
@@ -490,7 +476,7 @@ export default function Header() {
                 key={item.href}
                 href={item.href}
                 className={`w-full py-2.5 text-sm rounded-lg transition-colors ${
-                  pathname === item.href ? 'text-heading bg-white/[0.04]' : 'text-text-muted hover:text-heading hover:bg-white/[0.03]'
+                  pathname === item.href ? 'text-[#2563eb] bg-[rgba(59,130,246,0.10)]' : 'text-text-muted hover:text-heading hover:bg-[rgba(12,22,38,0.05)]'
                 }`}
               >
                 {item.label}
@@ -505,7 +491,7 @@ export default function Header() {
               <Link
                 key={cat.slug}
                 href={`/kennisbank#${cat.slug}`}
-                className="w-full py-2.5 text-sm text-text-muted hover:text-heading hover:bg-white/[0.03] rounded-lg transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2.5 text-sm text-text-muted hover:text-heading hover:bg-[rgba(12,22,38,0.05)] rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 {cat.name}
                 {cat.is_premium && (
@@ -525,7 +511,7 @@ export default function Header() {
                 key={item.href}
                 href={item.href}
                 className={`w-full py-2.5 text-sm rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                  pathname === item.href ? 'text-heading bg-white/[0.04]' : 'text-text-muted hover:text-heading hover:bg-white/[0.03]'
+                  pathname === item.href ? 'text-[#2563eb] bg-[rgba(59,130,246,0.10)]' : 'text-text-muted hover:text-heading hover:bg-[rgba(12,22,38,0.05)]'
                 }`}
               >
                 {item.label}
@@ -539,12 +525,12 @@ export default function Header() {
           </div>
 
           {/* Divider */}
-          <div className="w-16 h-px bg-white/[0.08] mb-6" />
+          <div className="w-16 h-px bg-[rgba(12,22,38,0.10)] mb-6" />
 
           {/* Login / Dashboard */}
           <Link
             href={user ? '/dashboard' : '/login'}
-            className="w-full py-3 text-sm font-medium rounded-lg border border-accent/30 text-accent-light hover:bg-accent-glow transition-colors mb-4"
+            className="w-full py-3 text-sm font-medium rounded-lg border border-[rgba(37,99,235,0.30)] text-[#2563eb] hover:bg-[rgba(59,130,246,0.08)] transition-colors mb-4"
           >
             {user ? 'Dashboard' : 'Inloggen'}
           </Link>

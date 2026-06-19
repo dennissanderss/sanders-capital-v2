@@ -95,8 +95,8 @@ function directionArrow(dir: string) {
 }
 
 function directionColor(dir: string) {
-  if (dir === 'up') return 'var(--color-green, #4caf50)'
-  if (dir === 'down') return 'var(--color-red, #ef5350)'
+  if (dir === 'up') return 'var(--color-green, #2f9e6f)'
+  if (dir === 'down') return 'var(--color-red, #d4593f)'
   return 'var(--color-text-muted)'
 }
 
@@ -109,11 +109,11 @@ function biasLabel(val: number) {
 }
 
 function biasColor(val: number) {
-  if (val >= 1.5) return '#4caf50'
-  if (val >= 0.5) return '#81c784'
-  if (val > -0.5) return '#6b7084'
-  if (val > -1.5) return '#ef9a9a'
-  return '#ef5350'
+  if (val >= 1.5) return '#2f9e6f'
+  if (val >= 0.5) return '#5bbf93'
+  if (val > -0.5) return '#7b8593'
+  if (val > -1.5) return '#e09684'
+  return '#d4593f'
 }
 
 export default function FxSelectorDashboard() {
@@ -209,8 +209,8 @@ export default function FxSelectorDashboard() {
                 ))}
               </div>
               <div className="flex flex-wrap gap-2 mt-4">
-                <Badge label={`Regime: ${data.regime}`} color={data.regime === 'trend' ? '#4caf50' : data.regime === 'transition' ? '#ef5350' : '#6b7084'} />
-                <Badge label={`Sentiment: ${data.riskSentiment}`} color={data.riskSentiment === 'risk-on' ? '#4caf50' : data.riskSentiment === 'risk-off' ? '#ef5350' : '#6b7084'} />
+                <Badge label={`Regime: ${data.regime}`} color={data.regime === 'trend' ? '#2f9e6f' : data.regime === 'transition' ? '#d4593f' : '#7b8593'} />
+                <Badge label={`Sentiment: ${data.riskSentiment}`} color={data.riskSentiment === 'risk-on' ? '#2f9e6f' : data.riskSentiment === 'risk-off' ? '#d4593f' : '#7b8593'} />
               </div>
             </Section>
 
@@ -425,8 +425,8 @@ function StrengthBar({ value }: { value: number }) {
   const pct = ((value + 2) / 4) * 100
   const clamp = Math.max(5, Math.min(95, pct))
   return (
-    <div className="relative h-2 rounded-full bg-white/5 overflow-hidden">
-      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/10" />
+    <div className="relative h-2 rounded-full bg-[rgba(12,22,38,0.04)] overflow-hidden">
+      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-[rgba(12,22,38,0.10)]" />
       <div
         className="absolute top-0 bottom-0 rounded-full transition-all duration-500"
         style={{
@@ -465,7 +465,7 @@ function PairCard({ pair, type }: { pair: PairData; type: 'trade' | 'watch' }) {
         </div>
         <div className="flex items-center gap-3 text-xs text-text-dim">
           <span>Score: <strong className="text-heading">{pair.finalScore}</strong></span>
-          {pair.sizeHint && <span className="px-2 py-0.5 rounded bg-white/5">{pair.sizeHint}</span>}
+          {pair.sizeHint && <span className="px-2 py-0.5 rounded bg-[rgba(12,22,38,0.04)]">{pair.sizeHint}</span>}
         </div>
       </div>
       <p className="text-xs sm:text-sm text-text-muted">{pair.reason}</p>

@@ -57,9 +57,9 @@ interface Snapshot {
 const MAJOR_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD']
 
 const CHART_COLORS: Record<string, string> = {
-  USD: '#3d6ea5',
+  USD: '#3b82f6',
   EUR: '#5a8ec8',
-  GBP: '#c9a466',
+  GBP: '#2563eb',
   JPY: '#ef4444',
   CHF: '#22c55e',
   AUD: '#f59e0b',
@@ -459,7 +459,7 @@ function RateComparisonChart({
         display: true,
         position: 'top' as const,
         labels: {
-          color: '#9ea3b8',
+          color: '#6b7585',
           usePointStyle: true,
           pointStyle: 'circle',
           font: { size: 11 },
@@ -467,10 +467,10 @@ function RateComparisonChart({
         },
       },
       tooltip: {
-        backgroundColor: 'rgba(15, 18, 25, 0.95)',
-        titleColor: '#e8eaf0',
-        bodyColor: '#a0a8be',
-        borderColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: 'rgba(255, 255, 255, 0.97)',
+        titleColor: '#0c1626',
+        bodyColor: '#3f4a5c',
+        borderColor: 'rgba(12,22,38,0.10)',
         borderWidth: 1,
         padding: 12,
         cornerRadius: 8,
@@ -481,20 +481,20 @@ function RateComparisonChart({
     },
     scales: {
       x: {
-        grid: { color: 'rgba(255,255,255,0.04)' },
-        ticks: { color: '#5a6178', font: { size: 10 }, maxRotation: 45, minRotation: 0 },
+        grid: { color: 'rgba(12,22,38,0.06)' },
+        ticks: { color: '#9aa3b2', font: { size: 10 }, maxRotation: 45, minRotation: 0 },
       },
       y: {
-        grid: { color: 'rgba(255,255,255,0.04)' },
+        grid: { color: 'rgba(12,22,38,0.06)' },
         ticks: {
-          color: '#5a6178',
+          color: '#9aa3b2',
           font: { size: 10 },
           callback: (val) => `${val}%`,
         },
         title: {
           display: true,
           text: 'Beleidsrente (%)',
-          color: '#5a6178',
+          color: '#9aa3b2',
           font: { size: 11 },
         },
       },
@@ -550,8 +550,8 @@ function RateDifferentialView({
       datasets: [{
         label: `${ccyA} - ${ccyB} spread`,
         data: diffs,
-        borderColor: '#c9a466',
-        backgroundColor: 'rgba(201, 164, 102, 0.1)',
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(59, 130, 246, 0.10)',
         borderWidth: 2,
         pointRadius: 3,
         tension: 0.2,
@@ -567,10 +567,10 @@ function RateDifferentialView({
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(15, 18, 25, 0.95)',
-        titleColor: '#e8eaf0',
-        bodyColor: '#a0a8be',
-        borderColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: 'rgba(255, 255, 255, 0.97)',
+        titleColor: '#0c1626',
+        bodyColor: '#3f4a5c',
+        borderColor: 'rgba(12,22,38,0.10)',
         borderWidth: 1,
         padding: 12,
         cornerRadius: 8,
@@ -584,20 +584,20 @@ function RateDifferentialView({
     },
     scales: {
       x: {
-        grid: { color: 'rgba(255,255,255,0.04)' },
-        ticks: { color: '#5a6178', font: { size: 10 }, maxRotation: 45 },
+        grid: { color: 'rgba(12,22,38,0.06)' },
+        ticks: { color: '#9aa3b2', font: { size: 10 }, maxRotation: 45 },
       },
       y: {
-        grid: { color: 'rgba(255,255,255,0.04)' },
+        grid: { color: 'rgba(12,22,38,0.06)' },
         ticks: {
-          color: '#5a6178',
+          color: '#9aa3b2',
           font: { size: 10 },
           callback: (val) => `${Number(val) > 0 ? '+' : ''}${val}%`,
         },
         title: {
           display: true,
           text: 'Renteverschil (%)',
-          color: '#5a6178',
+          color: '#9aa3b2',
           font: { size: 11 },
         },
       },

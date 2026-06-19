@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 
 /* ─── Components ──────────────────────────────────────────────── */
 function Section({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`rounded-2xl border border-white/[0.06] bg-bg-card overflow-hidden ${className}`}>{children}</div>
+  return <div className={`rounded-2xl border border-black/[0.08] bg-bg-card overflow-hidden ${className}`}>{children}</div>
 }
 
 function SectionHead({ badge, badgeColor, title, sub }: { badge: string; badgeColor: string; title: string; sub?: string }) {
   return (
-    <div className="px-5 sm:px-6 py-4 border-b border-white/[0.04]">
+    <div className="px-5 sm:px-6 py-4 border-b border-black/[0.08]">
       <div className="flex items-center gap-2.5">
         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${badgeColor}`}>{badge}</span>
         <h2 className="text-base sm:text-lg font-display font-bold text-heading">{title}</h2>
@@ -53,7 +53,7 @@ export default function IntroductionPage() {
       {/* ═══ SYSTEEM FLOW ═══ */}
       <FadeIn>
         <Section>
-          <SectionHead badge="Overzicht" badgeColor="text-white bg-white/10" title="Hoe werkt het systeem?" sub="Drie lagen die samen één beslissing vormen" />
+          <SectionHead badge="Overzicht" badgeColor="text-[#0c1626] bg-[rgba(12,22,38,0.06)]" title="Hoe werkt het systeem?" sub="Drie lagen die samen één beslissing vormen" />
           <div className="p-5 sm:p-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Laag 1 */}
@@ -107,7 +107,7 @@ export default function IntroductionPage() {
               </div>
             </div>
 
-            <div className="mt-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] text-center">
+            <div className="mt-4 p-3 rounded-xl bg-[rgba(12,22,38,0.03)] border border-black/[0.08] text-center">
               <p className="text-[10px] text-text-dim">
                 <strong className="text-text-muted">Hiërarchie:</strong> Fundamentals bepalen de richting &rarr; Execution bepaalt het timing &rarr; TradeMind meet het resultaat.
                 De fundamentele laag is altijd leidend — de technische laag kan een trade nooit forceren als de fundamentals &ldquo;geen trade&rdquo; zeggen.
@@ -130,7 +130,7 @@ export default function IntroductionPage() {
               { n: '5', t: 'Concrete Trades', d: 'De paren die alle filters passeren. Inclusief call datum/tijd, richting, score en overtuiging. Elk wordt automatisch getracked in het live trackrecord.', c: 'text-purple-400' },
             ].map((s, i) => (
               <div key={i} className="flex items-start gap-3">
-                <span className={`text-xs font-bold ${s.c} bg-white/[0.05] w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5`}>{s.n}</span>
+                <span className={`text-xs font-bold ${s.c} bg-[rgba(12,22,38,0.04)] w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5`}>{s.n}</span>
                 <div>
                   <p className="text-sm font-semibold text-heading">{s.t}</p>
                   <p className="text-[10px] text-text-dim leading-relaxed mt-0.5">{s.d}</p>
@@ -145,7 +145,7 @@ export default function IntroductionPage() {
                 { v: '1 dag', l: 'Hold', s: 'Dagkoers NY close' },
                 { v: 'Live', l: 'Trackrecord', s: 'Auto-updated' },
               ].map((m, i) => (
-                <div key={i} className="p-2 rounded-lg bg-white/[0.02]">
+                <div key={i} className="p-2 rounded-lg bg-[rgba(12,22,38,0.03)]">
                   <p className="text-lg font-mono font-bold text-heading">{m.v}</p>
                   <p className="text-[8px] text-text-dim">{m.l}</p>
                   <p className="text-[7px] text-text-dim/50">{m.s}</p>
@@ -195,7 +195,7 @@ export default function IntroductionPage() {
                 { n: 'Balanced', wr: '61.7%', pf: '4.83', wk: '3.6', tr: 167 },
                 { n: 'Aggressive', wr: '58.0%', pf: '4.15', wk: '5.6', tr: 262 },
               ].map((m, i) => (
-                <div key={i} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                <div key={i} className="p-3 rounded-xl bg-[rgba(12,22,38,0.03)] border border-black/[0.08]">
                   <p className="text-[10px] font-semibold text-heading">{m.n}</p>
                   <p className="text-lg font-mono font-bold text-green-400">{m.wr}</p>
                   <p className="text-[8px] text-text-dim">PF {m.pf} · {m.wk}/week · {m.tr} trades</p>

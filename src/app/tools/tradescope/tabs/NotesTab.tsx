@@ -166,7 +166,7 @@ export default function NotesTab() {
               {items.map((item, index) => (
                 <div
                   key={item.id}
-                  className={`group flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors hover:bg-white/5 ${
+                  className={`group flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors hover:bg-[rgba(12,22,38,0.04)] ${
                     item.checked ? 'opacity-60' : ''
                   }`}
                 >
@@ -176,7 +176,7 @@ export default function NotesTab() {
                     className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
                       item.checked
                         ? 'bg-accent/30 border-accent/50'
-                        : 'border-white/20 hover:border-accent/40'
+                        : 'border-black/[0.08] hover:border-accent/40'
                     }`}
                   >
                     {item.checked && (
@@ -217,7 +217,7 @@ export default function NotesTab() {
                     <button
                       onClick={() => handleMove(index, 'up')}
                       disabled={index === 0}
-                      className="p-1 rounded hover:bg-white/10 text-text-dim hover:text-heading transition-colors disabled:opacity-20"
+                      className="p-1 rounded hover:bg-[rgba(12,22,38,0.04)] text-text-dim hover:text-heading transition-colors disabled:opacity-20"
                       title="Omhoog"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -228,7 +228,7 @@ export default function NotesTab() {
                     <button
                       onClick={() => handleMove(index, 'down')}
                       disabled={index === items.length - 1}
-                      className="p-1 rounded hover:bg-white/10 text-text-dim hover:text-heading transition-colors disabled:opacity-20"
+                      className="p-1 rounded hover:bg-[rgba(12,22,38,0.04)] text-text-dim hover:text-heading transition-colors disabled:opacity-20"
                       title="Omlaag"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -253,9 +253,9 @@ export default function NotesTab() {
 
           {/* Progress bar */}
           {items.length > 0 && (
-            <div className="mt-4 pt-3 border-t border-white/5">
+            <div className="mt-4 pt-3 border-t border-black/[0.08]">
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-1.5 rounded-full bg-white/5">
+                <div className="flex-1 h-1.5 rounded-full bg-[rgba(12,22,38,0.04)]">
                   <div
                     className="h-full rounded-full bg-accent/50 transition-all duration-300"
                     style={{ width: `${(items.filter(i => i.checked).length / items.length) * 100}%` }}

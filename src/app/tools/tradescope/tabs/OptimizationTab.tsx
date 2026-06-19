@@ -50,7 +50,7 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
         label: 'Eindbalans',
         data: optimized.map((o) => o.finalEquity),
         borderColor: COLORS.accent,
-        backgroundColor: 'rgba(61,110,165,0.1)',
+        backgroundColor: 'rgba(59,130,246,0.12)',
         fill: true,
         tension: 0.3,
         pointRadius: optimized.map((o) => o.riskPercent === optimal.riskPercent ? 6 : 3),
@@ -79,7 +79,7 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
       {
         label: 'Expectancy',
         data: optimized.map((o) => o.expectancy),
-        backgroundColor: optimized.map((o) => o.expectancy >= 0 ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'),
+        backgroundColor: optimized.map((o) => o.expectancy >= 0 ? 'rgba(47,158,111,0.7)' : 'rgba(212,89,63,0.7)'),
         borderRadius: 4,
       },
     ],
@@ -236,24 +236,24 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
                 legend: {
                   display: true,
                   position: 'top',
-                  labels: { color: '#5a6178', font: { size: 10 }, boxWidth: 12, padding: 16 },
+                  labels: { color: '#9aa3b2', font: { size: 10 }, boxWidth: 12, padding: 16 },
                 },
               },
               scales: {
                 x: {
                   ...darkThemeDefaults.scales?.x,
-                  title: { display: true, text: 'Risico per trade (%)', color: '#5a6178', font: { size: 10 } },
+                  title: { display: true, text: 'Risico per trade (%)', color: '#9aa3b2', font: { size: 10 } },
                 },
                 y: {
                   ...darkThemeDefaults.scales?.y,
                   position: 'left',
-                  title: { display: true, text: 'Eindbalans ($)', color: '#5a6178', font: { size: 10 } },
+                  title: { display: true, text: 'Eindbalans ($)', color: '#9aa3b2', font: { size: 10 } },
                 },
                 y1: {
                   ...darkThemeDefaults.scales?.y,
                   position: 'right',
                   grid: { display: false },
-                  title: { display: true, text: 'Max Drawdown (%)', color: '#5a6178', font: { size: 10 } },
+                  title: { display: true, text: 'Max Drawdown (%)', color: '#9aa3b2', font: { size: 10 } },
                 },
               },
             } as never}
@@ -332,7 +332,7 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
                 return (
                   <tr
                     key={i}
-                    className={`border-b border-border/30 transition-colors ${isOptimal ? 'bg-gold/[0.04]' : 'hover:bg-white/[0.02]'}`}
+                    className={`border-b border-border/30 transition-colors ${isOptimal ? 'bg-gold/[0.04]' : 'hover:bg-[rgba(12,22,38,0.04)]'}`}
                   >
                     <td className="py-2.5 px-3">
                       <div className="flex items-center gap-2">
@@ -389,15 +389,15 @@ export default function OptimizationTab({ trades, metrics, optimizationData, sta
           desc=""
         />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-text-muted leading-relaxed">
-          <div className="p-3 rounded-lg bg-white/[0.02]">
+          <div className="p-3 rounded-lg bg-[rgba(12,22,38,0.04)]">
             <p className="text-heading font-medium mb-1.5">Risico per trade</p>
             <p>Het percentage van je balans dat je riskeert per trade. Bij 1% en een $10.000 account riskeer je $100 per trade. Hoger risico = meer potentieel rendement, maar ook grotere drawdowns.</p>
           </div>
-          <div className="p-3 rounded-lg bg-white/[0.02]">
+          <div className="p-3 rounded-lg bg-[rgba(12,22,38,0.04)]">
             <p className="text-heading font-medium mb-1.5">Expectancy</p>
             <p>Hoeveel je gemiddeld verdient per trade. Berekend als: (win% x gem. winst) - (loss% x gem. verlies). Positief = winstgevend op de lange termijn.</p>
           </div>
-          <div className="p-3 rounded-lg bg-white/[0.02]">
+          <div className="p-3 rounded-lg bg-[rgba(12,22,38,0.04)]">
             <p className="text-heading font-medium mb-1.5">Max Drawdown</p>
             <p>De grootste daling van je piek-balans. Een drawdown van 20% betekent dat je account op een gegeven moment 20% lager stond dan het hoogste punt. Onder 20% is gezond.</p>
           </div>

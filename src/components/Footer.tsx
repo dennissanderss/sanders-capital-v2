@@ -32,13 +32,13 @@ function SocialIcon({ type }: { type: 'instagram' | 'youtube' | 'tiktok' | 'disc
 
 export default function Footer() {
   return (
-    <footer className="border-t border-border bg-bg-elevated/50 mt-auto">
+    <footer className="mt-auto border-t border-[rgba(234,240,251,0.10)] bg-[#0a1322] text-[#9fb0c8]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8 md:gap-10">
           {/* Brand */}
           <div>
-            <h3 className="font-display text-lg text-heading mb-3">Sanders Capital</h3>
-            <p className="text-sm text-text-muted leading-relaxed mb-4">
+            <h3 className="font-display text-lg text-[#eaf0fb] mb-3">Sanders Capital</h3>
+            <p className="text-sm text-[#9fb0c8] leading-relaxed mb-4">
               Educatieve content over financiële markten. Geen financieel advies.
             </p>
             <div className="flex gap-3">
@@ -53,7 +53,7 @@ export default function Footer() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-lg border border-border flex items-center justify-center text-text-muted hover:text-heading hover:border-border-light transition-colors"
+                  className="w-9 h-9 rounded-lg border border-[rgba(234,240,251,0.12)] flex items-center justify-center text-[#9fb0c8] hover:text-[#3b82f6] hover:border-[rgba(59,130,246,0.4)] transition-colors"
                 >
                   <SocialIcon type={social.type} />
                 </a>
@@ -63,7 +63,7 @@ export default function Footer() {
 
           {/* Navigatie */}
           <div>
-            <h4 className="text-sm font-semibold text-heading mb-4 tracking-wide">Navigatie</h4>
+            <h4 className="text-sm font-semibold text-[#eaf0fb] mb-4 tracking-wide">Navigatie</h4>
             <div className="flex flex-col gap-2.5">
               {[
                 { href: '/', label: 'Home' },
@@ -72,7 +72,7 @@ export default function Footer() {
                 { href: '/over', label: 'Over ons' },
                 { href: '/contact', label: 'Contact' },
               ].map((link) => (
-                <Link key={link.href} href={link.href} className="text-sm text-text-muted hover:text-heading transition-colors">
+                <Link key={link.href} href={link.href} className="text-sm text-[#9fb0c8] hover:text-[#3b82f6] transition-colors">
                   {link.label}
                 </Link>
               ))}
@@ -81,10 +81,10 @@ export default function Footer() {
 
           {/* Kennisbank */}
           <div>
-            <h4 className="text-sm font-semibold text-heading mb-4 tracking-wide">Kennisbank</h4>
+            <h4 className="text-sm font-semibold text-[#eaf0fb] mb-4 tracking-wide">Kennisbank</h4>
             <div className="flex flex-col gap-2.5">
               {['Risicomanagement', 'Psychologie', 'Marktstructuur', 'Fundamentals', 'Data-analyse'].map((item) => (
-                <Link key={item} href="/kennisbank" className="text-sm text-text-muted hover:text-heading transition-colors">
+                <Link key={item} href="/kennisbank" className="text-sm text-[#9fb0c8] hover:text-[#3b82f6] transition-colors">
                   {item}
                 </Link>
               ))}
@@ -93,32 +93,32 @@ export default function Footer() {
 
           {/* Juridisch */}
           <div>
-            <h4 className="text-sm font-semibold text-heading mb-4 tracking-wide">Juridisch</h4>
+            <h4 className="text-sm font-semibold text-[#eaf0fb] mb-4 tracking-wide">Juridisch</h4>
             <div className="flex flex-col gap-2.5">
-              <Link href="/disclaimer" className="text-sm text-text-muted hover:text-heading transition-colors">
+              <Link href="/disclaimer" className="text-sm text-[#9fb0c8] hover:text-[#3b82f6] transition-colors">
                 Disclaimer
               </Link>
-              <Link href="/disclaimer#privacy" className="text-sm text-text-muted hover:text-heading transition-colors">
+              <Link href="/disclaimer#privacy" className="text-sm text-[#9fb0c8] hover:text-[#3b82f6] transition-colors">
                 Privacy
               </Link>
-              <Link href="/voorwaarden" className="text-sm text-text-muted hover:text-heading transition-colors">
+              <Link href="/voorwaarden" className="text-sm text-[#9fb0c8] hover:text-[#3b82f6] transition-colors">
                 Algemene Voorwaarden
               </Link>
-              <Link href="/voorwaarden-discord" className="text-sm text-text-muted hover:text-heading transition-colors">
+              <Link href="/voorwaarden-discord" className="text-sm text-[#9fb0c8] hover:text-[#3b82f6] transition-colors">
                 Voorwaarden Discord
               </Link>
-              <a href="mailto:sanderscapital@hotmail.com" className="text-sm text-text-muted hover:text-heading transition-colors">
+              <a href="mailto:sanderscapital@hotmail.com" className="text-sm text-[#9fb0c8] hover:text-[#3b82f6] transition-colors">
                 sanderscapital@hotmail.com
               </a>
             </div>
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-text-dim">
+        <div className="mt-12 pt-6 border-t border-[rgba(234,240,251,0.10)] flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-[#647590]">
             &copy; {new Date().getFullYear()} Sanders Capital. Alle rechten voorbehouden.
           </p>
-          <Link href="/disclaimer" className="text-xs text-text-dim hover:text-text-muted transition-colors">
+          <Link href="/disclaimer" className="text-xs text-[#647590] hover:text-[#9fb0c8] transition-colors">
             Disclaimer &amp; Privacy
           </Link>
         </div>
