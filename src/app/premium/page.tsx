@@ -18,8 +18,7 @@ const freeFeatures = [
 const premiumFeatures = [
   'Daily Macro Briefing',
   'Fundamentals dashboard',
-  'TradeMind backtest analyse',
-  'TradeMind Journal',
+  'TradeMind (journal & backtest analyse)',
   'Premium artikelen & analyses',
   'Verdiepende kennisbank modules',
   'Exclusieve community kanalen',
@@ -53,7 +52,7 @@ const tools = [
   },
   {
     name: 'TradeMind',
-    description: 'Upload je backtest CSV en krijg direct inzicht in je performance: winrate, drawdown, sessie-analyse, Monte Carlo en meer.',
+    description: 'Je complete trading journal én backtest-analyse: log trades, ontdek patronen in je gedrag, en krijg inzicht in winrate, drawdown, sessie-analyse en Monte Carlo.',
     href: '/tools/tradescope',
     value: 'Vergelijkbaar met tools van +$200/jaar',
     icon: (
@@ -61,19 +60,6 @@ const tools = [
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
       </svg>
     ),
-  },
-  {
-    name: 'TradeMind Journal',
-    description: 'Je persoonlijke trading journal. Log trades, analyseer patronen in je gedrag en verbeter je edge structureel.',
-    href: '/tools',
-    value: 'Vervangt vergelijkbare journal tools (~$170/jaar)',
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-      </svg>
-    ),
-    comingSoon: true,
   },
 ]
 
@@ -176,11 +162,6 @@ export default async function PremiumPage() {
                 href={tool.href}
                 className="block h-full p-7 rounded-xl bg-bg-card border border-border shadow-sm hover:border-accent-dim/50 hover:shadow-md transition-all group relative overflow-hidden"
               >
-                {'comingSoon' in tool && (
-                  <span className="absolute top-4 right-4 font-mono text-[9px] tracking-[0.12em] uppercase px-2 py-1 rounded bg-accent-glow text-accent-light border border-accent/20">
-                    Binnenkort
-                  </span>
-                )}
                 <div className="flex items-start gap-4">
                   <div className="w-11 h-11 rounded-lg bg-accent-glow border border-accent/15 flex items-center justify-center text-accent-light shrink-0 group-hover:bg-accent-dim/20 transition-colors">
                     {tool.icon}
