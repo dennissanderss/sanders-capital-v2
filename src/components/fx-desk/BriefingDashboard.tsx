@@ -1,21 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Shell } from './Shell'
 import { Vandaag } from './briefing/Vandaag'
 import { Calls } from './briefing/Calls'
 import { useBriefingData, useTrackRecord } from './lib/hooks'
 
 export default function BriefingDashboard() {
-  const router = useRouter()
   const [tab, setTab] = useState<'vandaag' | 'calls'>('vandaag')
   const { data, loading, error } = useBriefingData()
   const trackrecord = useTrackRecord()
-
-  const goExecution = (_pair?: string) => {
-    router.push('/tools/execution')
-  }
 
   return (
     <Shell
@@ -35,7 +29,7 @@ export default function BriefingDashboard() {
           Briefing wordt geladen…
         </div>
       )}
-      {data && tab === 'vandaag' && <Vandaag data={data} onGoExecution={goExecution} />}
+      {data && tab === 'vandaag' && <Vandaag data={data} />}
       {data && tab === 'calls' && (
         <Calls records={trackrecord.records} loading={trackrecord.loading} />
       )}

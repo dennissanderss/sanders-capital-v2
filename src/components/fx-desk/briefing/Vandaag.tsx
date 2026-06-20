@@ -16,10 +16,9 @@ import type { ApiBriefingData, DeskCall, DeskIntermarket, DeskSentiment } from '
 
 interface VandaagProps {
   data: ApiBriefingData
-  onGoExecution?: (pair?: string) => void
 }
 
-export function Vandaag({ data, onGoExecution }: VandaagProps) {
+export function Vandaag({ data }: VandaagProps) {
   const { ready, watch } = adaptCalls(data)
   const today = adaptToday(data, ready.length)
   const fxScores = adaptFxScores(data)
@@ -71,7 +70,7 @@ export function Vandaag({ data, onGoExecution }: VandaagProps) {
       ) : (
         <div className="call-cards">
           {ready.map((c) => (
-            <EntryReadyCard key={c.pair} call={c} data={data} onGoExecution={onGoExecution} />
+            <EntryReadyCard key={c.pair} call={c} data={data} />
           ))}
         </div>
       )}
@@ -227,11 +226,9 @@ export function Vandaag({ data, onGoExecution }: VandaagProps) {
 function EntryReadyCard({
   call,
   data,
-  onGoExecution,
 }: {
   call: DeskCall
   data: ApiBriefingData
-  onGoExecution?: (pair?: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const reasoning = open ? adaptReasoning(data, call) : null
@@ -273,9 +270,6 @@ function EntryReadyCard({
       <div className="cc-foot">
         <button className={`flowlink ghost${open ? ' open' : ''}`} onClick={() => setOpen((o) => !o)}>
           Redenering <Icons.Chevron size={13} />
-        </button>
-        <button className="flowlink" onClick={() => onGoExecution?.(call.pair)}>
-          Naar executie <Icons.ArrowRight size={13} />
         </button>
       </div>
       {open && reasoning && (

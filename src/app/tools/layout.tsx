@@ -17,7 +17,6 @@ const premiumTools = [
   { href: '/tools/fx-selector', label: 'Introductie', slug: 'fx-selector', isIntro: true },
   { href: '/tools/fx-analyse', label: 'Fundamentals', slug: 'fx-analyse' },
   { href: '/tools/fx-selector/v2', label: 'Daily Macro Briefing', slug: 'fx-selector-v2', flowArrow: true },
-  { href: '/tools/execution', label: 'Execution Engine', slug: 'execution', flowArrow: true },
   { href: '/tools/tradescope', label: 'TradeMind', slug: 'tradescope', flowArrow: true },
 ] as const
 
@@ -83,12 +82,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
   return (
     <AuthGate sectionName="de tools">
     <div>
-      {/* Tools sub-navigation
-          TODO(nav-consolidation): deze sub-nav en de Shell-switcher in
-          src/components/fx-desk/Shell.tsx (BrandBar) leven nu naast elkaar
-          op /tools/fx-selector/v2 en /tools/execution. Bij de definitieve
-          cleanup-ronde samenvoegen tot één navigatieniveau. Niet in deze
-          frontend-rebuild-ronde. */}
+      {/* Tools sub-navigation */}
       <div className="border-b border-border bg-bg-elevated/50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide py-1 -mb-px">
