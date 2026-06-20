@@ -1,9 +1,8 @@
 // ─────────────────────────────────────────────────────────────
 // Conviction score — ONE shared source of truth.
 //
-// Mirror of the original `qualityScore` calculation that lived
-// inline in src/app/tools/execution/page.tsx (commit 861e427,
-// lines 120-125). Reproduced verbatim:
+// The 4-component `qualityScore` calculation. Numbers, weights and
+// clamps are the original, unchanged values:
 //
 //     const fundPts = Math.min(absScore / 5, 1) * 4
 //     const contrarianPts = contrarianPass
@@ -13,11 +12,8 @@
 //     const qualityScore = Math.min(10,
 //       Math.round((fundPts + contrarianPts + imPts + regimePts) * 10) / 10)
 //
-// This is NOT a scoring change. The numbers, weights and clamps
-// are identical to the existing in-app calculation. Reused here
-// so the Briefing's entry-ready cards, the Execution setups and
-// (eventually, after explicit OK) the historical Calls list and
-// the Prestatie buckets all show the SAME conviction number.
+// Shared so the Briefing's entry-ready cards and the historical
+// Calls list show the SAME conviction number.
 // ─────────────────────────────────────────────────────────────
 
 import type { ApiPairBias, ApiV3PairSignal, ApiTrackRecord } from './types'

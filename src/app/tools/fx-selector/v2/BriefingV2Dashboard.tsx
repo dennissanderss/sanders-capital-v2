@@ -2118,10 +2118,6 @@ export default function BriefingV2Dashboard() {
                           </p>
                         )
                       })()}
-                      <Link href="/tools/execution" className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg border border-accent/20 bg-accent/5 text-[11px] text-accent-light hover:bg-accent/10 transition-colors">
-                        <span>Bekijk Execution Engine voor timing &amp; momentum zones</span>
-                        <span>&rarr;</span>
-                      </Link>
                     </div>
                   )
                 })()}
@@ -2658,10 +2654,6 @@ export default function BriefingV2Dashboard() {
 
           {/* ── Tool Navigation Links ── */}
           <div className="flex flex-wrap gap-3 mb-6">
-            <Link href="/tools/execution" className="px-4 py-2.5 rounded-lg border border-accent/30 bg-accent/5 text-sm text-accent-light hover:text-heading hover:border-accent/50 transition-colors">
-              Execution Engine &rarr;
-              <span className="block text-[10px] text-text-dim">Timing &amp; entry met momentum zones</span>
-            </Link>
             <Link href="/tools/fx-analyse" className="px-4 py-2.5 rounded-lg border border-border text-sm text-text-muted hover:text-heading hover:border-border-light transition-colors">
               Macro Fundamentals &rarr;
               <span className="block text-[10px] text-text-dim">Leer hoe valutaparen werken</span>

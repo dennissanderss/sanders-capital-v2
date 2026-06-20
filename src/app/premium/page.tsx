@@ -53,17 +53,6 @@ const tools = [
     ),
   },
   {
-    name: 'Execution Engine',
-    description: 'Bewezen technisch timing model gekoppeld aan de Daily Briefing. 3 modellen (58-62% WR), vaste SL/TP, 1:3 RR. Live trackrecord.',
-    href: '/tools/execution',
-    value: '58-62% winrate, PF 4-5',
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-      </svg>
-    ),
-  },
-  {
     name: 'TradeMind',
     description: 'Upload je backtest CSV en krijg direct inzicht in je performance: winrate, drawdown, sessie-analyse, Monte Carlo en meer.',
     href: '/tools/tradescope',
