@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import RevealInit from './RevealInit'
 import Globe from './Globe'
+import Ticker from './Ticker'
 import './styles.css'
 
 // ─── icons (inline SVG, no library) ───────────────────────────
@@ -95,15 +96,8 @@ export default async function HomePage() {
       </section>
       <span id="verder" />
 
-      {/* VALUE STRIP */}
-      <div className="trust">
-        <div className="wrap trust-grid">
-          <div className="trust-cell"><div className="v">Kennisbank</div><div className="k">Gestructureerde educatie, gratis toegankelijk</div></div>
-          <div className="trust-cell"><div className="v">Daily Macro</div><div className="k">Dagelijkse fundamentele analyse</div></div>
-          <div className="trust-cell"><div className="v">Artikelen</div><div className="k">Educatieve artikelen &amp; analyses</div></div>
-          <div className="trust-cell"><div className="v">Community</div><div className="k">Leren en sparren op Discord</div></div>
-        </div>
-      </div>
+      {/* LIVE FX TICKER */}
+      <Ticker />
 
       {/* EDGE / MANIFEST */}
       <section className="sec edge-sec">

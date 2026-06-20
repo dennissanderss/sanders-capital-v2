@@ -225,14 +225,19 @@
 }
 
 /* ============================================================
-   TRUST STRIP
+   LIVE FX TICKER (marquee under the hero)
    ============================================================ */
-.home-2026 .trust { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--paper-2); }
-.home-2026 .trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
-.home-2026 .trust-cell { padding: 30px var(--h26-gut); border-right: 1px solid var(--line); }
-.home-2026 .trust-cell:last-child { border-right: none; }
-.home-2026 .trust-cell .v { font-family: 'Archivo', sans-serif; font-size: 22px; font-weight: 600; line-height: 1; color: var(--ink); letter-spacing: -0.01em; }
-.home-2026 .trust-cell .k { margin-top: 10px; font-size: 13px; color: var(--ink-3); }
+.home-2026 .ticker { background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: hidden; }
+.home-2026 .ticker-track { display: inline-flex; white-space: nowrap; animation: h26ticker 64s linear infinite; will-change: transform; }
+.home-2026 .ticker:hover .ticker-track { animation-play-state: paused; }
+.home-2026 .ticker-item { display: inline-flex; align-items: center; gap: 9px; padding: 12px 22px; border-right: 1px solid var(--line); font-family: 'Hanken Grotesk', sans-serif; font-size: 12.5px; font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
+.home-2026 .ticker-item .p { color: var(--ink); font-weight: 600; letter-spacing: 0.03em; }
+.home-2026 .ticker-item .pr { color: var(--ink-3); font-weight: 500; }
+.home-2026 .ticker-item .chg { display: inline-flex; align-items: center; gap: 3px; font-weight: 600; }
+.home-2026 .ticker-item .chg.up { color: var(--bull); }
+.home-2026 .ticker-item .chg.down { color: var(--bear); }
+@keyframes h26ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .home-2026 .ticker-track { animation: none; } }
 
 /* ============================================================
    EDGE / MANIFEST
