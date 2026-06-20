@@ -67,7 +67,7 @@ export default function Footer() {
             <div className="flex flex-col gap-2.5">
               {[
                 { href: '/', label: 'Home' },
-                { href: '/blog', label: 'Blog' },
+                { href: '/nieuws', label: 'Nieuws' },
                 { href: '/premium', label: 'Premium' },
                 { href: '/over', label: 'Over ons' },
                 { href: '/contact', label: 'Contact' },
