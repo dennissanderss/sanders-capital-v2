@@ -111,7 +111,7 @@ export default function DisclaimerPage() {
                 </p>
               </section>
 
-              <section>
+              <section id="privacy" className="scroll-mt-24">
                 <h2 className="text-2xl sm:text-3xl font-display font-semibold tracking-tight text-heading mb-4">
                   Privacy
                 </h2>
