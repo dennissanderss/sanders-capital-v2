@@ -24,7 +24,10 @@ export default function FadeIn({
           observer.unobserve(el)
         }
       },
-      { threshold: 0.1 }
+      // threshold 0 → fade in as soon as ANY part enters the viewport.
+      // (A higher threshold never fires for elements taller than the
+      // viewport — e.g. a long article — leaving them stuck at opacity 0.)
+      { threshold: 0 }
     )
 
     observer.observe(el)
