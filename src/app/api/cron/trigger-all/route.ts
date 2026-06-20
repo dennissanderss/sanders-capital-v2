@@ -24,7 +24,6 @@ export async function GET(request: Request) {
   const jobs = [
     '/api/cron/news',
     '/api/cron/trackrecord',
-    '/api/cron/execution',
   ]
 
   const results = await Promise.allSettled(
