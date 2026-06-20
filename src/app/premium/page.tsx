@@ -17,7 +17,6 @@ const freeFeatures = [
 
 const premiumFeatures = [
   'Daily Macro Briefing',
-  'Execution Engine (3 modellen)',
   'Fundamentals dashboard',
   'TradeMind backtest analyse',
   'TradeMind Journal',

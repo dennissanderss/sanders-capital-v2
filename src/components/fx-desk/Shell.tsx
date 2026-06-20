@@ -88,15 +88,12 @@ function BrandBar({ activeTool }: { activeTool: 'briefing' }) {
         <span className="brand-sub">FX Desk</span>
       </div>
       <div className="toolswitch">
-        {(Object.values(TOOL_CONFIG) as ShellToolConfig[]).map((t) => {
-          const I = t.key === 'briefing' ? Icons.Briefing : Icons.Engine
-          return (
-            <Link key={t.key} href={t.href} className={activeTool === t.key ? 'active' : ''}>
-              <I size={15} />
-              {t.key === 'briefing' ? 'Briefing' : 'Execution Engine'}
-            </Link>
-          )
-        })}
+        {(Object.values(TOOL_CONFIG) as ShellToolConfig[]).map((t) => (
+          <Link key={t.key} href={t.href} className={activeTool === t.key ? 'active' : ''}>
+            <Icons.Briefing size={15} />
+            {t.title}
+          </Link>
+        ))}
       </div>
     </div>
   )

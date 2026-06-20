@@ -2694,13 +2694,10 @@ export default function BriefingV2Dashboard() {
                 <div className="flex items-center gap-2 text-[10px] mt-1 mb-2 flex-wrap">
                   <span className="px-2 py-1 rounded bg-accent/10 border border-accent/20 text-accent-light font-semibold">Daily Macro Briefing</span>
                   <span className="text-text-dim/30">&rarr;</span>
-                  <span className="px-2 py-1 rounded bg-[rgba(12,22,38,0.04)] border border-black/[0.08] text-text-muted">Execution Engine</span>
-                  <span className="text-text-dim/30">&rarr;</span>
                   <span className="px-2 py-1 rounded bg-[rgba(12,22,38,0.04)] border border-black/[0.08] text-text-muted">Trackrecord</span>
                 </div>
                 <p className="text-[10px]">
-                  De <strong className="text-text-muted">Briefing</strong> bepaalt welke paren fundamenteel sterk zijn (de &ldquo;wat&rdquo;).
-                  De <strong className="text-text-muted">Execution Engine</strong> voegt momentum timing toe (de &ldquo;wanneer&rdquo;).
+                  De <strong className="text-text-muted">Briefing</strong> bepaalt welke paren fundamenteel sterk zijn en levert de concrete calls (de &ldquo;wat&rdquo;).
                   Het <strong className="text-text-muted">Trackrecord</strong> meet automatisch of de calls correct waren (de &ldquo;bewijs&rdquo;).
                 </p>
               </div>
