@@ -228,9 +228,7 @@
    LIVE FX TICKER (TradingView Ticker Tape, under the hero)
    ============================================================ */
 .home-2026 .tv-ticker-band { background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.home-2026 .tv-ticker-band .tradingview-widget-container { max-width: var(--h26-maxw); margin: 0 auto; }
-/* hide the small "Track all markets on TradingView" attribution row for a cleaner band */
-.home-2026 .tv-ticker-band .tradingview-widget-copyright { display: none; }
+.home-2026 .tv-ticker-band iframe { max-width: var(--h26-maxw); margin: 0 auto; }
 
 /* ============================================================
    EDGE / MANIFEST
