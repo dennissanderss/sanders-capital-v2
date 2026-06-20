@@ -102,9 +102,7 @@ export async function POST(request: Request) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         commands: [
-          { command: 'status', description: '📊 Huidige markt + actieve trades' },
-          { command: 'trades', description: '📋 Vandaag\'s trades overzicht' },
-          { command: 'track', description: '📈 Trackrecord statistieken' },
+          { command: 'status', description: '📊 Huidige markt + concrete calls' },
           { command: 'schema', description: '⏰ Data update tijden' },
           { command: 'help', description: '❓ Help & commando\'s' },
         ],
@@ -117,7 +115,7 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        description: 'Sanders Capital — FX Trade Alerts & Markt Analyse. Ontvang automatisch concrete trades, trackrecord updates en marktoverzichten. 4x per dag vers.',
+        description: 'Sanders Capital — FX Markt Analyse. Ontvang automatisch het dagelijkse marktregime, concrete calls en marktoverzichten. 4x per dag vers.',
       }),
     })
 
@@ -126,7 +124,7 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        short_description: 'FX Trade Alerts & Markt Analyse',
+        short_description: 'FX Markt Analyse',
       }),
     })
 
@@ -157,9 +155,9 @@ export async function POST(request: Request) {
     `  🌙  21:00 — Einde Handelsdag`,
     ``,
     `<b>Commando's:</b>`,
-    `  /status · /trades · /track · /schema`,
+    `  /status · /schema · /help`,
     ``,
-    `🔗 sanderscapital.nl/tools/execution`,
+    `🔗 sanderscapital.nl/tools/fx-selector/v2`,
   ].join('\n'))
 
   return NextResponse.json({ success, message: success ? 'Test notificatie verstuurd!' : 'Versturen mislukt' })
