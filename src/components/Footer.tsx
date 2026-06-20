@@ -34,7 +34,7 @@ export default function Footer() {
   return (
     <footer className="mt-auto border-t border-[rgba(234,240,251,0.10)] bg-[#0a1322] text-[#9fb0c8]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8 md:gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 md:gap-10">
           {/* Brand */}
           <div>
             <h3 className="font-display text-lg text-[#eaf0fb] mb-3">Sanders Capital</h3>
@@ -74,18 +74,6 @@ export default function Footer() {
               ].map((link) => (
                 <Link key={link.href} href={link.href} className="text-sm text-[#9fb0c8] hover:text-[#3b82f6] transition-colors">
                   {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Kennisbank */}
-          <div>
-            <h4 className="text-sm font-semibold text-[#eaf0fb] mb-4 tracking-wide">Kennisbank</h4>
-            <div className="flex flex-col gap-2.5">
-              {['Risicomanagement', 'Psychologie', 'Marktstructuur', 'Fundamentals', 'Data-analyse'].map((item) => (
-                <Link key={item} href="/kennisbank" className="text-sm text-[#9fb0c8] hover:text-[#3b82f6] transition-colors">
-                  {item}
                 </Link>
               ))}
             </div>
