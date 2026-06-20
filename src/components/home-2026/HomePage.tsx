@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import RevealInit from './RevealInit'
 import Globe from './Globe'
-import Ticker from './Ticker'
+import TradingViewTicker from './TradingViewTicker'
 import './styles.css'
 
 // ─── icons (inline SVG, no library) ───────────────────────────
@@ -96,8 +96,8 @@ export default async function HomePage() {
       </section>
       <span id="verder" />
 
-      {/* LIVE FX TICKER */}
-      <Ticker />
+      {/* LIVE FX TICKER (TradingView) */}
+      <TradingViewTicker />
 
       {/* EDGE / MANIFEST */}
       <section className="sec edge-sec">
