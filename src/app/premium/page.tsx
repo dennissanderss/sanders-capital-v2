@@ -40,9 +40,9 @@ const tools = [
   },
   {
     name: 'Fundamentals',
-    description: 'Rentetarieven, inflatiecijfers en centrale bank beleid per valuta. De data achter de scores, inclusief trackrecord.',
+    description: 'Leer hoe valutaparen werken: centrale banken, rente en macro-economie per paar uitgelegd. De kennis achter de scores in de Daily Briefing.',
     href: '/tools/fx-analyse',
-    value: 'LIVE_WIN_RATE winrate op trackrecord',
+    value: 'Macro per valutapaar, helder uitgelegd',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <line x1="12" y1="1" x2="12" y2="23" />

@@ -286,7 +286,7 @@ export default async function HomePage() {
               </span>
               <span className="tp-main">
                 <span className="tp-name">Fundamentals</span>
-                <span className="tp-formula">Rente, inflatie en CB-bias <span className="ar">→</span> één valutascore</span>
+                <span className="tp-formula">Centrale banken, rente en macro <span className="ar">→</span> hoe een valutapaar werkt</span>
               </span>
               <span className="tp-go"><ArrowRight /></span>
             </Link>
