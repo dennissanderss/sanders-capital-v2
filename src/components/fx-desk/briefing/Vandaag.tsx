@@ -7,12 +7,16 @@ import {
   adaptToday,
   adaptFxScores,
   adaptCalls,
-  adaptReasoning,
-  adaptIntermarket,
   adaptSentiment,
   buildFunnel,
+  getCurrencyFactorBreakdown,
+  getPairMomentum,
+  getPairIntermarket,
+  getRegimeAlignmentText,
+  getRegimeDrivers,
+  adaptIntermarketSection,
 } from '../lib/adapters'
-import type { ApiBriefingData, DeskCall, DeskIntermarket, DeskSentiment } from '../lib/types'
+import type { ApiBriefingData, DeskCall, DeskSentiment } from '../lib/types'
 
 interface VandaagProps {
   data: ApiBriefingData
@@ -22,9 +26,10 @@ export function Vandaag({ data }: VandaagProps) {
   const { ready, watch } = adaptCalls(data)
   const today = adaptToday(data, ready.length)
   const fxScores = adaptFxScores(data)
-  const intermarket = adaptIntermarket(data)
   const sentiment = adaptSentiment(data)
   const funnel = buildFunnel(data, ready.length)
+  const [regimeOpen, setRegimeOpen] = useState(false)
+  const drivers = getRegimeDrivers(data)
 
   return (
     <div className="fade">
@@ -33,33 +38,48 @@ export function Vandaag({ data }: VandaagProps) {
         <span className="le">{today.regime}</span>, {today.confidence}% confidence. {today.readyCount} entry-ready call{today.readyCount === 1 ? '' : 's'} vandaag, sterke valuta tegen zwakke.
       </p>
 
-      {/* ZONE 1 — VERDICT */}
-      <div className="verdict-head">
-        <div className="vh-item">
-          <span className="mono-label labelrow">
-            Regime
-            <InfoTip title="Regime" align="left">
-              <p>Risk-off betekent dat beleggers risico mijden en kapitaal naar veilige havens verschuiven. Risk-on is het omgekeerde.</p>
-              <p className="eg">Veilige havens zijn doorgaans <span className="term">USD</span>, <span className="term">JPY</span> en <span className="term">CHF</span>. Risk-on begunstigt juist AUD, NZD en groeigevoelige munten.</p>
-            </InfoTip>
-          </span>
-          <span className="vh-val">
-            <span className="regime-flag">
-              <span className="dot" style={{ background: today.regimeColor }} />
-              {today.regime}
+      {/* ZONE 1 — VERDICT (regime banner, uitklapbaar) */}
+      <div className="verdict-wrap">
+        <div className="verdict-head">
+          <button className="vh-item vh-clickable" onClick={() => setRegimeOpen((o) => !o)} aria-expanded={regimeOpen}>
+            <span className="mono-label">Regime</span>
+            <span className="vh-val">
+              <span className="regime-flag">
+                <span className="dot" style={{ background: today.regimeColor }} />
+                {today.regime}
+              </span>
             </span>
-          </span>
+            <Icons.Chevron size={15} className={`vh-chev${regimeOpen ? ' open' : ''}`} />
+          </button>
+          <div className="vh-sep" />
+          <div className="vh-item">
+            <span className="mono-label">Confidence</span>
+            <span className="vh-val num">{today.confidence}%</span>
+          </div>
+          <div className="vh-sep" />
+          <div className="vh-item">
+            <span className="mono-label">Datum</span>
+            <span className="vh-val dt">{today.date}</span>
+          </div>
         </div>
-        <div className="vh-sep" />
-        <div className="vh-item">
-          <span className="mono-label">Confidence</span>
-          <span className="vh-val num">{today.confidence}%</span>
-        </div>
-        <div className="vh-sep" />
-        <div className="vh-item">
-          <span className="mono-label">Datum</span>
-          <span className="vh-val dt">{today.date}</span>
-        </div>
+        {regimeOpen && (
+          <div className="regime-panel">
+            {data.regimeExplain && <p className="regime-oneline">{data.regimeExplain}</p>}
+            {drivers.length > 0 && (
+              <div className="regime-why">
+                <span className="cr-k">Waarom {today.regime}?</span>
+                <ul className="why-list">
+                  {drivers.map((d, i) => (
+                    <li key={i}>{d}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {!data.regimeExplain && drivers.length === 0 && (
+              <p className="regime-oneline" style={{ color: 'var(--ink-3)' }}>Geen aanvullende toelichting beschikbaar.</p>
+            )}
+          </div>
+        )}
       </div>
 
       <ZoneLabel live>Entry-ready vandaag</ZoneLabel>
@@ -150,7 +170,7 @@ export function Vandaag({ data }: VandaagProps) {
           </div>
         </div>
 
-        <IntermarketStrip items={intermarket.items} conclusion={intermarket.conclusion} />
+        <IntermarketSection data={data} />
         <SentimentStrip items={sentiment} />
       </div>
 
@@ -222,28 +242,20 @@ export function Vandaag({ data }: VandaagProps) {
   )
 }
 
-// ─── Entry-ready card with expandable reasoning ───────────────
-function EntryReadyCard({
-  call,
-  data,
-}: {
-  call: DeskCall
-  data: ApiBriefingData
-}) {
+// ─── Entry-ready card with subscore drill-down ────────────────
+function EntryReadyCard({ call, data }: { call: DeskCall; data: ApiBriefingData }) {
   const [open, setOpen] = useState(false)
-  const reasoning = open ? adaptReasoning(data, call) : null
+  const [openSub, setOpenSub] = useState<string | null>(null)
 
-  // Real 4-component conviction breakdown (lib/conviction.ts).
-  // Bars are scaled to each component's maximum so the eye reads
-  // them against their own ceiling rather than the largest other bar.
-  const breakdown = call.breakdown
+  const b = call.breakdown
+  const subs = b
     ? [
-        { k: 'Fundamentele onbalans', v: call.breakdown.fundPts, max: 4 },
-        { k: 'Contrarian (5d momentum)', v: call.breakdown.contrarianPts, max: 2.5 },
-        { k: 'Intermarket alignment', v: call.breakdown.imPts, max: 2 },
-        { k: 'Regime-alignment', v: call.breakdown.regimePts, max: 1.5 },
+        { key: 'fund', label: 'Fundamentele onbalans', val: b.fundPts },
+        { key: 'mom', label: '5d momentum', val: b.contrarianPts },
+        { key: 'im', label: 'Intermarket alignment', val: b.imPts },
+        { key: 'regime', label: 'Regime alignment', val: b.regimePts },
       ]
-    : null
+    : []
 
   return (
     <div className={`call-card${open ? ' open' : ''}`}>
@@ -254,15 +266,7 @@ function EntryReadyCard({
       <div className="cc-note">{call.note}</div>
       <div className="cc-row">
         <div>
-          <span className="mono-label cc-score-label labelrow">
-            Score
-            <InfoTip pos="top" align="left" title="Conviction-score">
-              <p>Een score van 0 tot 10 voor de fundamentele overtuiging achter de call. Hoe hoger, hoe sterker de case.</p>
-              <p className="eg">
-                <span className="stat">Calls van 8+ wonnen historisch boven 60%.</span>
-              </p>
-            </InfoTip>
-          </span>
+          <span className="mono-label cc-score-label">Score</span>
           <span className="cc-score num">{call.score.toFixed(1)}</span>
         </div>
         <StatusPill status={call.status} />
@@ -272,37 +276,23 @@ function EntryReadyCard({
           Redenering <Icons.Chevron size={13} />
         </button>
       </div>
-      {open && reasoning && (
+
+      {open && (
         <div className="cc-reason">
-          <div className="cr-item">
-            <span className="cr-k">Regime-bijdrage</span>
-            <p>{reasoning.regime}</p>
-          </div>
-          <div className="cr-item">
-            <span className="cr-k">Nieuws-sentiment</span>
-            <p>{reasoning.nieuws}</p>
-          </div>
-          <div className="cr-item">
-            <span className="cr-k">Intermarket-bevestiging</span>
-            <p>{reasoning.intermarket}</p>
-          </div>
-          <div className="cr-item">
-            <span className="cr-k">Score-opbouw (qualityScore)</span>
-            <div className="cr-bars">
-              {(breakdown || []).map(({ k, v, max }) => (
-                <div className="cr-bar" key={k}>
-                  <span className="cb-k">{k}</span>
-                  <span className="cb-track">
-                    <span style={{ width: `${Math.min(100, (v / max) * 100)}%` }} />
-                  </span>
-                  <span className="cb-v num">{v.toFixed(1)}</span>
-                </div>
-              ))}
-              <div className="cr-bar total">
-                <span className="cb-k">Conviction</span>
-                <span className="cb-track" />
-                <span className="cb-v num">{call.score.toFixed(1)}</span>
+          <div className="sub-rows">
+            {subs.map((s) => (
+              <div className={`sub-row${openSub === s.key ? ' open' : ''}`} key={s.key}>
+                <button className="sub-row-head" onClick={() => setOpenSub((k) => (k === s.key ? null : s.key))}>
+                  <span className="sub-label">{s.label}</span>
+                  <span className="sub-val num">{s.val.toFixed(1)}</span>
+                  <Icons.Chevron size={12} className={`sub-chev${openSub === s.key ? ' open' : ''}`} />
+                </button>
+                {openSub === s.key && <div className="sub-detail">{renderSubDetail(s.key, data, call)}</div>}
               </div>
+            ))}
+            <div className="sub-total">
+              <span className="sub-label">Conviction</span>
+              <span className="sub-val num accent">{call.score.toFixed(1)}</span>
             </div>
           </div>
         </div>
@@ -311,37 +301,106 @@ function EntryReadyCard({
   )
 }
 
-// ─── Intermarket strip ────────────────────────────────────────
-function IntermarketStrip({ items, conclusion }: { items: DeskIntermarket[]; conclusion: string }) {
-  const [openIM, setOpenIM] = useState<string | null>(null)
-  if (items.length === 0) return null
-  return (
-    <div className="strip">
-      <div className="strip-head">
-        <span className="strip-title">Intermarket</span>
-      </div>
-      <div className="im-row">
-        {items.map((it) => (
-          <div className="im-item" key={it.key}>
-            <span className="mono-label">{it.label}</span>
-            <span className="im-val num">{it.value}</span>
-            <span className={`im-chg ${it.dir}`}>
-              {it.dir === 'up' ? <Icons.Arrow size={11} /> : it.dir === 'down' ? <Icons.ArrowDown size={11} /> : <Icons.Dot size={9} />}
-              {it.chg}
-            </span>
-            <button className="im-details" onClick={() => setOpenIM(openIM === it.key ? null : it.key)}>
-              {openIM === it.key ? 'verbergen' : 'details'}
-            </button>
+function renderSubDetail(key: string, data: ApiBriefingData, call: DeskCall) {
+  if (key === 'fund') {
+    const baseFb = getCurrencyFactorBreakdown(data, call.base)
+    const quoteFb = getCurrencyFactorBreakdown(data, call.quote)
+    const cols = [baseFb, quoteFb].filter((x): x is NonNullable<typeof x> => x !== null)
+    if (cols.length === 0) return <p className="sub-note">Factor-breakdown niet beschikbaar.</p>
+    return (
+      <div className="factor-grid">
+        {cols.map((fb) => (
+          <div className="factor-col" key={fb.currency}>
+            <div className="factor-col-head">
+              <span className="fc-cur">{fb.currency}</span>
+              <span className="fc-total num">{fb.weightedTotal > 0 ? '+' : ''}{fb.weightedTotal.toFixed(1)}</span>
+            </div>
+            {fb.rows.map((r) => (
+              <div className="factor-row" key={r.key}>
+                <span className="fr-label">{r.label}</span>
+                <span className="fr-val num">{r.value > 0 ? '+' : ''}{r.value.toFixed(1)}</span>
+              </div>
+            ))}
           </div>
         ))}
       </div>
+    )
+  }
+  if (key === 'mom') {
+    const m = getPairMomentum(data, call)
+    if (!m) return <p className="sub-note">Momentum-data niet beschikbaar.</p>
+    return (
+      <div className="sub-lines">
+        <div className="sub-line"><span>Beweging (5 dagen)</span><span className="num">{m.pipMove > 0 ? '+' : ''}{m.pipMove} pips</span></div>
+        <div className="sub-line"><span>Zone</span><span>{m.zoneLabel}</span></div>
+        <p className="sub-note">{m.contrarianPass ? 'De prijs bewoog tégen de fundamentele richting — een mean-reversion kans.' : 'De prijs liep al mee met de fundamentals.'}</p>
+      </div>
+    )
+  }
+  if (key === 'im') {
+    const im = getPairIntermarket(data, call)
+    if (!im || im.instruments.length === 0) return <p className="sub-note">Intermarket-data niet beschikbaar.</p>
+    return (
+      <div className="sub-lines">
+        <div className="sub-line"><span>Alignment</span><span className="num">{im.alignment}%</span></div>
+        {im.instruments.map((ins, i) => (
+          <div className="im-pair-row" key={i}>
+            <span className="ipr-name">{ins.name}</span>
+            <span className="ipr-rel">{ins.relevance}</span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+  if (key === 'regime') {
+    const r = getRegimeAlignmentText(data, call)
+    return (
+      <div className="sub-lines">
+        <span className={`confirm-tag ${r.aligned ? 'yes' : 'no'}`}>{r.aligned ? 'past in regime' : 'neutraal in regime'}</span>
+        <p className="sub-note">{r.text}</p>
+      </div>
+    )
+  }
+  return null
+}
+
+// ─── Intermarket section (drill-down met uitleg per instrument) ─
+function IntermarketSection({ data }: { data: ApiBriefingData }) {
+  const [open, setOpen] = useState(false)
+  const sec = adaptIntermarketSection(data)
+  if (sec.instruments.length === 0) return null
+  return (
+    <div className="strip">
+      <button className="im-head-card" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <span className="strip-title">Intermarket</span>
+        <span className="im-align">
+          <span className="im-align-pct num">{sec.alignment}%</span>
+          <span className="im-align-label">{sec.label}</span>
+        </span>
+        <Icons.Chevron size={14} className={`im-head-chev${open ? ' open' : ''}`} />
+      </button>
       <div className="im-concl">
         <span className="d" />
-        {conclusion}
+        {sec.conclusion}
       </div>
-      {openIM && (
-        <div className="im-drawer">
-          <strong>{items.find((i) => i.key === openIM)?.label}.</strong> {items.find((i) => i.key === openIM)?.duiding}
+      {open && (
+        <div className="im-list">
+          {sec.instruments.map((ins) => (
+            <div className="im-list-row" key={ins.key}>
+              <div className="im-meta">
+                <span className="im-name">{ins.label}</span>
+                <span className="im-desc">{ins.description}</span>
+                <span className="im-interp">{ins.interpretation}</span>
+              </div>
+              <div className="im-right">
+                <span className="im-val num">{ins.value}</span>
+                <span className={`im-chg ${ins.dir}`}>
+                  {ins.dir === 'up' ? <Icons.Arrow size={11} /> : ins.dir === 'down' ? <Icons.ArrowDown size={11} /> : <Icons.Dot size={9} />}
+                  {ins.chg}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

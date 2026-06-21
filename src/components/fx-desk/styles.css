@@ -763,6 +763,105 @@
 .fx-desk .src-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .fx-desk .src-chip { font-size: 11.5px; color: var(--ink-2); border: 1px solid var(--line); border-radius: 2px; padding: 6px 12px; background: var(--bg-3); }
 
+/* ============================================================
+   REGIME BANNER (uitklapbaar) — Sessie 1
+   ============================================================ */
+.fx-desk .verdict-wrap { margin-bottom: 26px; }
+.fx-desk .verdict-wrap .verdict-head { margin-bottom: 0; }
+.fx-desk .vh-clickable {
+  border: none; background: transparent; text-align: left;
+  display: flex; align-items: center; gap: 13px; padding: 15px 22px;
+  transition: background .15s;
+}
+.fx-desk .vh-clickable:hover { background: rgba(12,22,38,0.03); }
+.fx-desk .vh-chev { color: var(--ink-3); transition: transform .22s; margin-left: 4px; }
+.fx-desk .vh-chev.open { transform: rotate(180deg); }
+.fx-desk .regime-panel {
+  border: 1px solid var(--line); border-top: none;
+  border-radius: 0 0 3px 3px; background: var(--bg-2);
+  padding: 18px 22px 20px;
+}
+.fx-desk .verdict-wrap .verdict-head { border-radius: 3px 3px 0 0; }
+.fx-desk .regime-oneline { margin: 0 0 14px; font-size: 14px; line-height: 1.55; color: var(--ink-2); max-width: 70ch; }
+.fx-desk .regime-why .cr-k { display: block; font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-bottom: 9px; }
+.fx-desk .why-list { margin: 0; padding-left: 18px; }
+.fx-desk .why-list li { font-size: 12.5px; line-height: 1.55; color: var(--ink-2); margin-bottom: 6px; }
+
+/* ============================================================
+   CALL CARD SUBSCORE DRILL-DOWN — Sessie 1
+   ============================================================ */
+.fx-desk .sub-rows { display: flex; flex-direction: column; gap: 2px; }
+.fx-desk .sub-row { border-bottom: 1px solid var(--line-soft); }
+.fx-desk .sub-row:last-of-type { border-bottom: none; }
+.fx-desk .sub-row-head {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  background: none; border: none; padding: 9px 0; text-align: left;
+  transition: color .15s;
+}
+.fx-desk .sub-row-head:hover .sub-label { color: var(--ink); }
+.fx-desk .sub-label { flex: 1; font-size: 12px; color: var(--ink-2); }
+.fx-desk .sub-val { font-size: 12px; font-weight: 600; color: var(--ink); width: 30px; text-align: right; }
+.fx-desk .sub-val.accent { color: var(--gold); }
+.fx-desk .sub-chev { color: var(--ink-4); transition: transform .2s; flex: none; }
+.fx-desk .sub-chev.open { transform: rotate(180deg); }
+.fx-desk .sub-detail { padding: 4px 0 12px; }
+.fx-desk .sub-total {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 4px; padding-top: 9px; border-top: 1px solid var(--line-soft);
+}
+.fx-desk .sub-total .sub-label { font-weight: 600; color: var(--ink); }
+
+/* factor table (base vs quote, 2 kolommen) */
+.fx-desk .factor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line-soft); border: 1px solid var(--line-soft); border-radius: 3px; overflow: hidden; }
+.fx-desk .factor-col { background: var(--bg-2); padding: 11px 12px 10px; }
+.fx-desk .factor-col-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; padding-bottom: 7px; border-bottom: 1px solid var(--line-soft); }
+.fx-desk .fc-cur { font-family: var(--font-head); font-size: 16px; font-weight: 600; }
+.fx-desk .fc-total { font-size: 12px; font-weight: 600; color: var(--ink); }
+.fx-desk .factor-row { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; }
+.fx-desk .fr-label { font-size: 11px; color: var(--ink-3); }
+.fx-desk .fr-val { font-size: 11px; font-weight: 600; color: var(--ink-2); }
+
+/* generic sub-detail lines */
+.fx-desk .sub-lines { display: flex; flex-direction: column; gap: 7px; }
+.fx-desk .sub-line { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--ink-2); }
+.fx-desk .sub-line .num { font-weight: 600; color: var(--ink); }
+.fx-desk .sub-note { margin: 4px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-3); }
+.fx-desk .im-pair-row { display: flex; gap: 10px; align-items: baseline; padding: 4px 0; border-top: 1px solid var(--line-soft); }
+.fx-desk .ipr-name { font-size: 11px; font-weight: 600; color: var(--ink-2); min-width: 56px; }
+.fx-desk .ipr-rel { font-size: 11px; color: var(--ink-3); line-height: 1.45; }
+.fx-desk .confirm-tag { display: inline-flex; align-self: flex-start; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 3px 8px; border-radius: 2px; }
+.fx-desk .confirm-tag.yes { color: var(--win); background: var(--win-bg); }
+.fx-desk .confirm-tag.no { color: var(--ink-3); background: rgba(12,22,38,0.05); }
+
+/* ============================================================
+   INTERMARKET SECTION (drill-down) — Sessie 1
+   ============================================================ */
+.fx-desk .im-head-card {
+  width: 100%; display: flex; align-items: center; gap: 14px;
+  background: none; border: none; padding: 11px 16px;
+  border-bottom: 1px solid var(--line-soft); text-align: left;
+  transition: background .15s;
+}
+.fx-desk .im-head-card:hover { background: rgba(12,22,38,0.03); }
+.fx-desk .im-head-card .strip-title { flex: 1; }
+.fx-desk .im-align { display: flex; align-items: baseline; gap: 8px; }
+.fx-desk .im-align-pct { font-family: var(--font-head); font-size: 18px; font-weight: 600; color: var(--ink); }
+.fx-desk .im-align-label { font-size: 11px; color: var(--ink-3); }
+.fx-desk .im-head-chev { color: var(--ink-3); transition: transform .22s; }
+.fx-desk .im-head-chev.open { transform: rotate(180deg); }
+.fx-desk .im-list { border-top: 1px solid var(--line-soft); }
+.fx-desk .im-list-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 13px 16px; border-bottom: 1px solid var(--line-soft);
+}
+.fx-desk .im-list-row:last-child { border-bottom: none; }
+.fx-desk .im-meta { display: flex; flex-direction: column; gap: 3px; }
+.fx-desk .im-meta .im-name { font-family: var(--font-head); font-size: 16px; font-weight: 600; }
+.fx-desk .im-meta .im-desc { font-size: 11px; color: var(--ink-4); }
+.fx-desk .im-meta .im-interp { font-size: 11.5px; color: var(--ink-2); line-height: 1.45; max-width: 60ch; }
+.fx-desk .im-right { display: flex; align-items: center; gap: 12px; flex: none; }
+.fx-desk .im-right .im-val { font-family: var(--font-head); font-size: 19px; font-weight: 600; line-height: 1; color: var(--ink); }
+
 /* fade-in */
 .fx-desk .fade { animation: fxdesk-fade .28s ease both; }
 @keyframes fxdesk-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
