@@ -8,6 +8,7 @@ import type {
   ApiBriefingData,
   ApiPairBias,
   ApiV3PairSignal,
+  ApiV3Factors,
   ApiTrackRecord,
   DeskToday,
   DeskFxScore,
@@ -19,6 +20,7 @@ import type {
   Direction,
   SentimentStand,
 } from './types'
+import { getIntermarketMeta } from '@/lib/intermarket-meta'
 import {
   convictionForLivePair,
   convictionForHistoricalRecord,
@@ -482,4 +484,117 @@ export function buildFunnel(api: ApiBriefingData, readyCount: number): { label: 
     { label: 'Score boven drempel', count: overThreshold },
     { label: 'Na intermarket & contrarian', count: readyCount },
   ]
+}
+
+// ─── Drill-down helpers (Sessie 1) ────────────────────────────
+
+export const FACTOR_LABELS: { key: keyof ApiV3Factors; label: string }[] = [
+  { key: 'cb', label: 'Centrale bank' },
+  { key: 'inflation', label: 'Inflatie' },
+  { key: 'growth', label: 'Groei' },
+  { key: 'sentiment', label: 'Sentiment' },
+  { key: 'commodity', label: 'Grondstoffen' },
+  { key: 'haven', label: 'Veilige haven' },
+  { key: 'momentum', label: 'Momentum' },
+]
+
+export interface FactorBreakdown {
+  currency: string
+  rows: { key: string; label: string; value: number }[]
+  weightedTotal: number
+}
+
+// Per-valuta 7-factor breakdown uit v3.currencyScores (al in de response).
+export function getCurrencyFactorBreakdown(api: ApiBriefingData, currency: string): FactorBreakdown | null {
+  const cs = api.v3?.currencyScores?.find((c) => c.currency === currency)
+  if (!cs) return null
+  return {
+    currency,
+    rows: FACTOR_LABELS.map(({ key, label }) => ({ key, label, value: +(cs.factors[key] ?? 0).toFixed(1) })),
+    weightedTotal: +(cs.weightedTotal ?? 0).toFixed(1),
+  }
+}
+
+export interface MomentumDetail { pipMove: number; zoneLabel: string; contrarianPass: boolean }
+
+export function getPairMomentum(api: ApiBriefingData, call: DeskCall): MomentumDetail | null {
+  const v3 = api.v3?.pairSignals?.find((s) => s.pair === call.pair)
+  if (!v3?.priceMomentum) return null
+  const pips = Math.round(v3.priceMomentum.pips5d ?? 0)
+  const abs = Math.abs(pips)
+  const isLong = call.dir === 'long'
+  const contrarianPass = (isLong && pips < 0) || (!isLong && pips > 0)
+  let zoneLabel: string
+  if (abs >= 30 && abs <= 120) zoneLabel = `${abs}p · optimale zone (30-120p)`
+  else if (abs < 30) zoneLabel = `${abs}p · te klein (<30p)`
+  else zoneLabel = `${abs}p · ver uitgerekt (>120p)`
+  return { pipMove: pips, zoneLabel, contrarianPass }
+}
+
+export interface PairIMInstrument { name: string; direction: string; relevance: string }
+
+export function getPairIntermarket(api: ApiBriefingData, call: DeskCall): { alignment: number; instruments: PairIMInstrument[] } | null {
+  const v3 = api.v3?.pairSignals?.find((s) => s.pair === call.pair)
+  if (!v3?.intermarket) return null
+  return {
+    alignment: Math.round(v3.intermarket.alignment ?? 0),
+    instruments: (v3.intermarket.signals ?? []).map((s) => ({
+      name: s.instrument.toUpperCase(),
+      direction: s.direction,
+      relevance: s.relevance,
+    })),
+  }
+}
+
+export function getRegimeAlignmentText(api: ApiBriefingData, call: DeskCall): { aligned: boolean; text: string } {
+  const aligned = (call.breakdown?.regimePts ?? 0) >= 1.5
+  const strong = call.dir === 'long' ? call.base : call.quote
+  const weak = call.dir === 'long' ? call.quote : call.base
+  return { aligned, text: regimeContribution(api.regime || 'Gemengd', strong, weak) }
+}
+
+export function getRegimeDrivers(api: ApiBriefingData): string[] {
+  return api.v3?.regime?.drivers ?? []
+}
+
+// ─── Intermarket section (drill-down met uitleg per instrument) ─
+export interface IMSectionInstrument {
+  key: string
+  label: string
+  description: string
+  interpretation: string
+  value: string
+  chg: string
+  dir: 'up' | 'down' | 'flat'
+}
+
+export function adaptIntermarketSection(api: ApiBriefingData): {
+  alignment: number
+  label: string
+  conclusion: string
+  instruments: IMSectionInstrument[]
+} {
+  const signals = api.intermarketSignals || []
+  const instruments: IMSectionInstrument[] = []
+  for (const key of INTERMARKET_ORDER) {
+    const s = signals.find((x) => x.key === key)
+    if (!s) continue
+    const meta = getIntermarketMeta(key)
+    instruments.push({
+      key: key.toUpperCase(),
+      label: meta.label,
+      description: meta.description,
+      interpretation: meta.interpretation,
+      value: s.current != null ? formatVal(s.current, key) : '—',
+      chg: s.changePct != null ? `${s.changePct >= 0 ? '+' : ''}${s.changePct.toFixed(s.key === 'us10y' ? 2 : 1)}%` : '—',
+      dir: s.direction,
+    })
+  }
+  const a = api.intermarketAlignment ?? 0
+  return {
+    alignment: Math.round(a),
+    label: a >= 65 ? 'gealigneerd' : a <= 35 ? 'verdeeld' : 'gemengd',
+    conclusion: intermarketConclusion(api),
+    instruments,
+  }
 }

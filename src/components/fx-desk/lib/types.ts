@@ -66,6 +66,25 @@ export interface ApiNewsSentiment {
   sentiment: string
 }
 
+export interface ApiV3Factors {
+  cb: number
+  inflation: number
+  growth: number
+  sentiment: number
+  commodity: number
+  haven: number
+  momentum: number
+}
+
+export interface ApiV3CurrencyScore {
+  currency: string
+  factors: ApiV3Factors
+  weightedTotal: number
+  rawTotal: number
+  rank: number
+  reasons: string[]
+}
+
 export interface ApiV3PairSignal {
   pair: string
   signal: string
@@ -128,6 +147,7 @@ export interface ApiBriefingData {
   newsCount?: number
   v3?: {
     regime: { macro: string; sub: string; confidence: number; drivers: string[]; color: string }
+    currencyScores?: ApiV3CurrencyScore[]
     pairSignals: ApiV3PairSignal[]
   } | null
 }
