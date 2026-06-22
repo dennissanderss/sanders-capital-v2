@@ -9,7 +9,7 @@ import {
   adaptCalls,
   adaptSentiment,
   buildFunnel,
-  getCurrencyFactorBreakdown,
+  getFundamentalBreakdown,
   getPairMomentum,
   getPairIntermarket,
   getRegimeAlignmentText,
@@ -20,9 +20,10 @@ import type { ApiBriefingData, DeskCall, DeskSentiment } from '../lib/types'
 
 interface VandaagProps {
   data: ApiBriefingData
+  onGoCalls?: () => void
 }
 
-export function Vandaag({ data }: VandaagProps) {
+export function Vandaag({ data, onGoCalls }: VandaagProps) {
   const { ready, watch } = adaptCalls(data)
   const today = adaptToday(data, ready.length)
   const fxScores = adaptFxScores(data)
@@ -90,7 +91,7 @@ export function Vandaag({ data }: VandaagProps) {
       ) : (
         <div className="call-cards">
           {ready.map((c) => (
-            <EntryReadyCard key={c.pair} call={c} data={data} />
+            <EntryReadyCard key={c.pair} call={c} data={data} onGoCalls={onGoCalls} />
           ))}
         </div>
       )}
@@ -242,8 +243,12 @@ export function Vandaag({ data }: VandaagProps) {
   )
 }
 
+// ─── helpers ──────────────────────────────────────────────────
+const sgn = (v: number) => (v > 0 ? '+' : '') + v.toFixed(1)
+const fmtPrice = (p: number | null, jpy: boolean) => (p == null ? '—' : p.toFixed(jpy ? 3 : 5))
+
 // ─── Entry-ready card with subscore drill-down ────────────────
-function EntryReadyCard({ call, data }: { call: DeskCall; data: ApiBriefingData }) {
+function EntryReadyCard({ call, data, onGoCalls }: { call: DeskCall; data: ApiBriefingData; onGoCalls?: () => void }) {
   const [open, setOpen] = useState(false)
   const [openSub, setOpenSub] = useState<string | null>(null)
 
@@ -275,10 +280,16 @@ function EntryReadyCard({ call, data }: { call: DeskCall; data: ApiBriefingData 
         <button className={`flowlink ghost${open ? ' open' : ''}`} onClick={() => setOpen((o) => !o)}>
           Redenering <Icons.Chevron size={13} />
         </button>
+        {call.status === 'ready' && onGoCalls && (
+          <button className="flowlink" onClick={onGoCalls}>
+            Bekijk in Calls <Icons.ArrowRight size={13} />
+          </button>
+        )}
       </div>
 
-      {open && (
+      {open && b && (
         <div className="cc-reason">
+          <p className="sub-intro">De conviction (max 10) is de optelsom van vier subscores. Klik een rij open om te zien hoe het cijfer is opgebouwd.</p>
           <div className="sub-rows">
             {subs.map((s) => (
               <div className={`sub-row${openSub === s.key ? ' open' : ''}`} key={s.key}>
@@ -292,6 +303,7 @@ function EntryReadyCard({ call, data }: { call: DeskCall; data: ApiBriefingData 
             ))}
             <div className="sub-total">
               <span className="sub-label">Conviction</span>
+              <span className="sub-sum num">{b.fundPts.toFixed(1)} + {b.contrarianPts.toFixed(1)} + {b.imPts.toFixed(1)} + {b.regimePts.toFixed(1)}</span>
               <span className="sub-val num accent">{call.score.toFixed(1)}</span>
             </div>
           </div>
@@ -302,62 +314,89 @@ function EntryReadyCard({ call, data }: { call: DeskCall; data: ApiBriefingData 
 }
 
 function renderSubDetail(key: string, data: ApiBriefingData, call: DeskCall) {
+  const b = call.breakdown
+  const jpy = call.pair.includes('JPY')
+
   if (key === 'fund') {
-    const baseFb = getCurrencyFactorBreakdown(data, call.base)
-    const quoteFb = getCurrencyFactorBreakdown(data, call.quote)
-    const cols = [baseFb, quoteFb].filter((x): x is NonNullable<typeof x> => x !== null)
-    if (cols.length === 0) return <p className="sub-note">Factor-breakdown niet beschikbaar.</p>
+    const fb = getFundamentalBreakdown(data, call)
     return (
-      <div className="factor-grid">
-        {cols.map((fb) => (
-          <div className="factor-col" key={fb.currency}>
-            <div className="factor-col-head">
-              <span className="fc-cur">{fb.currency}</span>
-              <span className="fc-total num">{fb.weightedTotal > 0 ? '+' : ''}{fb.weightedTotal.toFixed(1)}</span>
-            </div>
-            {fb.rows.map((r) => (
-              <div className="factor-row" key={r.key}>
-                <span className="fr-label">{r.label}</span>
-                <span className="fr-val num">{r.value > 0 ? '+' : ''}{r.value.toFixed(1)}</span>
+      <div className="sub-lines">
+        <p className="sub-explain">Het verschil tussen beide valutascores. Per valuta: centralebankbeleid (×2) + rente vs. doel + nieuws.</p>
+        <div className="factor-grid">
+          {[fb.base, fb.quote].map((c) => (
+            <div className="factor-col" key={c.currency}>
+              <div className="factor-col-head">
+                <span className="fc-cur">{c.currency}</span>
+                <span className="fc-total num">{sgn(c.total)}</span>
               </div>
-            ))}
-          </div>
-        ))}
+              <div className="factor-row"><span className="fr-label">CB-beleid{c.biasLabel ? ` · ${c.biasLabel}` : ''}</span><span className="fr-val num">{sgn(c.cb)}</span></div>
+              <div className="factor-row"><span className="fr-label">Rente vs. doel</span><span className="fr-val num">{sgn(c.rate)}</span></div>
+              <div className="factor-row"><span className="fr-label">Nieuws</span><span className="fr-val num">{sgn(c.news)}</span></div>
+            </div>
+          ))}
+        </div>
+        <p className="sub-formula">
+          Verschil: {call.base} {sgn(fb.base.total)} − {call.quote} {sgn(fb.quote.total)} = <b>{sgn(fb.diff)}</b><br />
+          Geschaald: min(|{fb.diff.toFixed(1)}| ÷ 5, 1) × 4 = <b className="accent">{(b?.fundPts ?? 0).toFixed(1)}</b>
+        </p>
       </div>
     )
   }
+
   if (key === 'mom') {
     const m = getPairMomentum(data, call)
     if (!m) return <p className="sub-note">Momentum-data niet beschikbaar.</p>
+    const pts = b?.contrarianPts ?? 0
     return (
       <div className="sub-lines">
-        <div className="sub-line"><span>Beweging (5 dagen)</span><span className="num">{m.pipMove > 0 ? '+' : ''}{m.pipMove} pips</span></div>
-        <div className="sub-line"><span>Zone</span><span>{m.zoneLabel}</span></div>
-        <p className="sub-note">{m.contrarianPass ? 'De prijs bewoog tégen de fundamentele richting — een mean-reversion kans.' : 'De prijs liep al mee met de fundamentals.'}</p>
+        <p className="sub-explain">De koers moet de afgelopen 5 dagen tégen de fundamentele richting zijn bewogen (mean-reversion: koop de dip / verkoop de rally).</p>
+        {m.price5dAgo != null && m.priceNow != null && (
+          <div className="sub-line"><span>Koers 5d geleden → nu</span><span className="num">{fmtPrice(m.price5dAgo, jpy)} → {fmtPrice(m.priceNow, jpy)}</span></div>
+        )}
+        <div className="sub-line"><span>Beweging</span><span className={`num ${m.pipMove >= 0 ? 'pos' : 'neg'}`}>{m.pipMove > 0 ? '+' : ''}{m.pipMove} pips</span></div>
+        <div className="sub-line"><span>Zone</span><span>{Math.abs(m.pipMove)}p · {m.zoneLabel}</span></div>
+        <p className="sub-formula">
+          {m.contrarianPass
+            ? (m.inZone ? 'Tegen de richting én in optimale zone (30-120p) → ' : 'Tegen de richting, maar buiten optimale zone → ')
+            : 'Liep mee met de fundamentals (geen mean-reversion) → '}
+          <b className="accent">{pts.toFixed(1)}</b>
+        </p>
       </div>
     )
   }
+
   if (key === 'im') {
     const im = getPairIntermarket(data, call)
-    if (!im || im.instruments.length === 0) return <p className="sub-note">Intermarket-data niet beschikbaar.</p>
+    if (!im) return <p className="sub-note">Intermarket-data niet beschikbaar.</p>
+    const pts = b?.imPts ?? 0
     return (
       <div className="sub-lines">
+        <p className="sub-explain">Alignment = welk deel van de markt-brede signalen (VIX, aandelen, goud, dollar, rente) bij deze richting past. 100% = alles bevestigt, 0% = alles spreekt tegen.</p>
         <div className="sub-line"><span>Alignment</span><span className="num">{im.alignment}%</span></div>
-        {im.instruments.map((ins, i) => (
-          <div className="im-pair-row" key={i}>
-            <span className="ipr-name">{ins.name}</span>
-            <span className="ipr-rel">{ins.relevance}</span>
+        <p className="sub-formula">{im.alignment}% ÷ 100 × 2 = <b className="accent">{pts.toFixed(1)}</b></p>
+        {im.instruments.length > 0 && (
+          <div className="im-relevance">
+            {im.instruments.map((ins, i) => (
+              <div className="im-pair-row" key={i}>
+                <span className="ipr-name">{ins.name}</span>
+                <span className="ipr-rel">{ins.relevance}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
     )
   }
+
   if (key === 'regime') {
     const r = getRegimeAlignmentText(data, call)
+    const pts = b?.regimePts ?? 0
     return (
       <div className="sub-lines">
-        <span className={`confirm-tag ${r.aligned ? 'yes' : 'no'}`}>{r.aligned ? 'past in regime' : 'neutraal in regime'}</span>
+        <p className="sub-explain">Past de richting van deze call bij het huidige marktregime ({data.regime})?</p>
+        <span className={`confirm-tag ${r.aligned ? 'yes' : 'no'}`}>{r.aligned ? 'past in regime' : 'neutraal'}</span>
         <p className="sub-note">{r.text}</p>
+        <p className="sub-formula">{r.aligned ? 'Past in het regime → ' : 'Neutraal in het regime → '}<b className="accent">{pts.toFixed(1)}</b></p>
       </div>
     )
   }

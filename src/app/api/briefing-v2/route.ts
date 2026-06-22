@@ -682,6 +682,8 @@ export async function GET() {
     // Provides sub-regime classification, multi-factor scoring,
     // pair-specific intermarket, tradeability, and 5-category signals.
     let v3Engine = null
+    // Ruwe 5d-prijsvenster per paar (voor de UI drill-down: van→naar prijs)
+    const pairPriceWindow: Record<string, { price5dAgo: number | null; priceNow: number | null }> = {}
     try {
       const engineInput: EngineInput = {
         cbRates: ratesResult as EngineCBRate[],
@@ -703,7 +705,7 @@ export async function GET() {
       )
 
       for (let i = 0; i < pairEntries.length; i++) {
-        const [, symbol] = pairEntries[i]
+        const [pair, symbol] = pairEntries[i]
         const resp = priceResponses[i]
         if (resp.status !== 'fulfilled' || !resp.value.ok) continue
         try {
@@ -712,12 +714,18 @@ export async function GET() {
           if (!result) continue
           const timestamps = result.timestamp || []
           const closes = result.indicators?.quote?.[0]?.close || []
-          engineInput.priceHistory[symbol] = timestamps
+          const hist = timestamps
             .map((ts: number, idx: number) => ({
               date: new Date(ts * 1000).toISOString().split('T')[0],
               close: closes[idx],
             }))
             .filter((d: { close: number | null }) => d.close != null)
+          engineInput.priceHistory[symbol] = hist
+          // 5 handelsdagen terug = index length-6 (laatste = vandaag)
+          pairPriceWindow[pair] = {
+            priceNow: hist.length > 0 ? hist[hist.length - 1].close : null,
+            price5dAgo: hist.length >= 6 ? hist[hist.length - 6].close : null,
+          }
         } catch { /* skip */ }
       }
 
@@ -783,7 +791,7 @@ export async function GET() {
             signals: ps.intermarket.signals,
           },
           reasons: ps.reasons,
-          priceMomentum: ps.priceMomentum,
+          priceMomentum: { ...ps.priceMomentum, ...(pairPriceWindow[ps.pair] || {}) },
         })),
         tradeFocus: v3Engine.tradeFocus.map(tf => ({
           pair: tf.pair,

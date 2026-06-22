@@ -862,6 +862,29 @@
 .fx-desk .im-right { display: flex; align-items: center; gap: 12px; flex: none; }
 .fx-desk .im-right .im-val { font-family: var(--font-head); font-size: 19px; font-weight: 600; line-height: 1; color: var(--ink); }
 
+/* drill-down uitleg + formules — Sessie 1.1 */
+.fx-desk .num.pos { color: var(--win); }
+.fx-desk .num.neg { color: var(--loss); }
+.fx-desk .sub-intro { margin: 0 0 12px; font-size: 11.5px; line-height: 1.5; color: var(--ink-3); }
+.fx-desk .sub-explain { margin: 0 0 9px; font-size: 11.5px; line-height: 1.5; color: var(--ink-3); }
+.fx-desk .sub-formula { margin: 9px 0 0; padding: 8px 10px; background: var(--bg-inset); border: 1px solid var(--line-soft); border-radius: 3px; font-size: 11.5px; line-height: 1.6; color: var(--ink-2); }
+.fx-desk .sub-formula b { color: var(--ink); font-weight: 600; }
+.fx-desk .sub-formula b.accent, .fx-desk .accent { color: var(--gold); }
+.fx-desk .sub-sum { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; margin-right: 8px; }
+.fx-desk .im-relevance { margin-top: 4px; }
+
+/* prestatie-overzicht (Calls-tab) */
+.fx-desk .perf-summary {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px;
+  background: var(--line-soft); border: 1px solid var(--line-soft);
+  border-radius: 3px; overflow: hidden; margin-bottom: 22px;
+}
+.fx-desk .perf-summary .ps { background: var(--bg-2); padding: 12px 14px; display: flex; flex-direction: column; gap: 7px; }
+.fx-desk .perf-summary .ps-v { font-family: var(--font-head); font-size: 22px; font-weight: 600; line-height: 1; color: var(--ink); }
+.fx-desk .perf-summary .ps-v.accent { color: var(--gold); }
+@media (max-width: 920px) { .fx-desk .perf-summary { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px) { .fx-desk .perf-summary { grid-template-columns: repeat(2, 1fr); } }
+
 /* fade-in */
 .fx-desk .fade { animation: fxdesk-fade .28s ease both; }
 @keyframes fxdesk-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }

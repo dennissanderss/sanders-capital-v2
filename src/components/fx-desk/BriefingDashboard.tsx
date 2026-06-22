@@ -29,7 +29,7 @@ export default function BriefingDashboard() {
           Briefing wordt geladen…
         </div>
       )}
-      {data && tab === 'vandaag' && <Vandaag data={data} />}
+      {data && tab === 'vandaag' && <Vandaag data={data} onGoCalls={() => setTab('calls')} />}
       {data && tab === 'calls' && (
         <Calls records={trackrecord.records} loading={trackrecord.loading} />
       )}

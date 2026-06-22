@@ -97,7 +97,7 @@ export interface ApiV3PairSignal {
     signals: { instrument: string; direction: string; strength: number; relevance: string }[]
   }
   reasons: string[]
-  priceMomentum: { direction: string; pips1d: number; pips5d: number; atr20d: number; extensionRatio: number }
+  priceMomentum: { direction: string; pips1d: number; pips5d: number; atr20d: number; extensionRatio: number; price5dAgo?: number | null; priceNow?: number | null }
 }
 
 export interface ApiTodayEvent {

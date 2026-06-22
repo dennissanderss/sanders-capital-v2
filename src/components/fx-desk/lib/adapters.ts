@@ -515,7 +515,43 @@ export function getCurrencyFactorBreakdown(api: ApiBriefingData, currency: strin
   }
 }
 
-export interface MomentumDetail { pipMove: number; zoneLabel: string; contrarianPass: boolean }
+// Fundamentele onbalans — uit de legacy currency-scores (de bron van de
+// pair-score). Per valuta: CB-beleid (×2) + rente vs target + nieuws = totaal.
+export interface FundCurrency { currency: string; cb: number; rate: number; news: number; total: number; biasLabel: string }
+export interface FundamentalBreakdown { base: FundCurrency; quote: FundCurrency; diff: number; fundPts: number }
+
+function fundRow(api: ApiBriefingData, ccy: string): FundCurrency {
+  const c = (api.currencyRanking || []).find((x) => x.currency === ccy)
+  const sb = c?.scoreBreakdown
+  return {
+    currency: ccy,
+    cb: +(sb?.biasMultiplied ?? 0).toFixed(1),
+    rate: +(sb?.rateScore ?? 0).toFixed(1),
+    news: +(sb?.newsCapped ?? 0).toFixed(1),
+    total: +(sb?.total ?? c?.score ?? 0).toFixed(1),
+    biasLabel: sb?.biasLabel || c?.bias || '',
+  }
+}
+
+export function getFundamentalBreakdown(api: ApiBriefingData, call: DeskCall): FundamentalBreakdown {
+  const base = fundRow(api, call.base)
+  const quote = fundRow(api, call.quote)
+  return {
+    base,
+    quote,
+    diff: +(base.total - quote.total).toFixed(1),
+    fundPts: call.breakdown?.fundPts ?? 0,
+  }
+}
+
+export interface MomentumDetail {
+  pipMove: number
+  zoneLabel: string
+  contrarianPass: boolean
+  inZone: boolean
+  price5dAgo: number | null
+  priceNow: number | null
+}
 
 export function getPairMomentum(api: ApiBriefingData, call: DeskCall): MomentumDetail | null {
   const v3 = api.v3?.pairSignals?.find((s) => s.pair === call.pair)
@@ -524,11 +560,19 @@ export function getPairMomentum(api: ApiBriefingData, call: DeskCall): MomentumD
   const abs = Math.abs(pips)
   const isLong = call.dir === 'long'
   const contrarianPass = (isLong && pips < 0) || (!isLong && pips > 0)
+  const inZone = abs >= 30 && abs <= 120
   let zoneLabel: string
-  if (abs >= 30 && abs <= 120) zoneLabel = `${abs}p · optimale zone (30-120p)`
-  else if (abs < 30) zoneLabel = `${abs}p · te klein (<30p)`
-  else zoneLabel = `${abs}p · ver uitgerekt (>120p)`
-  return { pipMove: pips, zoneLabel, contrarianPass }
+  if (inZone) zoneLabel = `optimale zone (30-120p)`
+  else if (abs < 30) zoneLabel = `te klein (<30p)`
+  else zoneLabel = `ver uitgerekt (>120p)`
+  return {
+    pipMove: pips,
+    zoneLabel,
+    contrarianPass,
+    inZone,
+    price5dAgo: v3.priceMomentum.price5dAgo ?? null,
+    priceNow: v3.priceMomentum.priceNow ?? null,
+  }
 }
 
 export interface PairIMInstrument { name: string; direction: string; relevance: string }
