@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createHash } from 'crypto'
 import Parser from 'rss-parser'
 import translate from 'google-translate-api-x'
 
@@ -285,9 +286,14 @@ async function fetchAndStoreFeeds(): Promise<void> {
         const analysis = analyzeRelevance(title, summary)
 
         if (analysis.score >= 1 || (source.priority === 1)) {
-          // Use content-based hash to prevent same story from different sources being stored twice
+          // Stable, collision-free id from a HASH of the full guid/link.
+          // (A truncated base64 of the link collided: feeds whose item links
+          // share a long common prefix — e.g. ForexLive → investing.com — all
+          // produced the same id, so only one article per feed ever stored and
+          // the news appeared frozen.)
           const contentKey = title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 60)
-          const id = `${source.name.replace(/\s/g, '')}-${Buffer.from(item.guid || item.link || contentKey).toString('base64').slice(0, 40)}`
+          const uniqueKey = (item.guid || item.link || contentKey).trim()
+          const id = `${source.name.replace(/\s/g, '')}-${createHash('sha1').update(uniqueKey).digest('hex').slice(0, 24)}`
           newArticles.push({
             id,
             title,
