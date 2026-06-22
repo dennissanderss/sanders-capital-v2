@@ -48,6 +48,24 @@ export function Calls({ records, loading }: CallsProps) {
     return desk.find((d) => d.id === selId) || filtered[0] || null
   }, [desk, filtered, selId])
 
+  const stats = useMemo(() => {
+    const resolved = desk.filter((d) => d.outcome !== 'pending')
+    const wins = resolved.filter((d) => d.outcome === 'correct')
+    const losses = resolved.filter((d) => d.outcome === 'incorrect')
+    const winPips = wins.reduce((s, d) => s + Math.max(0, d.pips || 0), 0)
+    const lossPips = losses.reduce((s, d) => s + Math.abs(Math.min(0, d.pips || 0)), 0)
+    const totalPips = Math.round(resolved.reduce((s, d) => s + (d.pips || 0), 0))
+    return {
+      resolved: resolved.length,
+      wins: wins.length,
+      losses: losses.length,
+      pending: desk.filter((d) => d.outcome === 'pending').length,
+      winrate: resolved.length ? Math.round((wins.length / resolved.length) * 100) : 0,
+      totalPips,
+      profitFactor: lossPips > 0 ? +(winPips / lossPips).toFixed(2) : wins.length > 0 ? 99 : 0,
+    }
+  }, [desk])
+
   return (
     <div className="fade">
       <p style={{
@@ -59,6 +77,18 @@ export function Calls({ records, loading }: CallsProps) {
       }}>
         De backtest. Elke call uit het trackrecord met instap, take profit, stop, uitkomst en de koersgrafiek per trade. Filter op uitkomst of paar.
       </p>
+
+      {/* Prestatie-overzicht (volledige trackrecord) */}
+      <div className="perf-summary">
+        <div className="ps"><span className="mono-label">Calls afgerond</span><span className="ps-v num">{stats.resolved}</span></div>
+        <div className="ps"><span className="mono-label">Wins</span><span className="ps-v num pos">{stats.wins}</span></div>
+        <div className="ps"><span className="mono-label">Verlies</span><span className="ps-v num neg">{stats.losses}</span></div>
+        <div className="ps"><span className="mono-label">Winrate</span><span className="ps-v num accent">{stats.winrate}%</span></div>
+        <div className="ps"><span className="mono-label">Totaal pips</span><span className={`ps-v num ${stats.totalPips >= 0 ? 'pos' : 'neg'}`}>{stats.totalPips >= 0 ? '+' : ''}{stats.totalPips}</span></div>
+        <div className="ps"><span className="mono-label">Profit factor</span><span className="ps-v num">{stats.profitFactor}</span></div>
+        <div className="ps"><span className="mono-label">Open</span><span className="ps-v num">{stats.pending}</span></div>
+      </div>
+
       <div className="calls-layout">
         {/* LEFT — filters + list */}
         <div>
