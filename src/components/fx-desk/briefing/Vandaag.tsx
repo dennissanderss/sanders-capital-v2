@@ -270,10 +270,10 @@ function EntryReadyCard({ call, data, onGoCalls }: { call: DeskCall; data: ApiBr
   const mom = getPairMomentum(data, call)
   const imAlign = Math.round(data.intermarketAlignment ?? 0)
   const criteria = [
-    { label: 'Fundamentele score ≥ 2,0', val: Math.abs(call.fundScore).toFixed(1), ok: Math.abs(call.fundScore) >= 2.0 },
+    { label: 'Fundamentele onbalans — score ≥ 2,0', val: Math.abs(call.fundScore).toFixed(1), ok: Math.abs(call.fundScore) >= 2.0 },
+    { label: '5d momentum — tégen de richting (contrarian)', val: mom ? `${mom.pipMove > 0 ? '+' : ''}${mom.pipMove}p` : '—', ok: mom?.contrarianPass ?? false },
     { label: 'Intermarket alignment ≥ 50%', val: `${imAlign}%`, ok: imAlign >= 50 },
-    { label: 'Koers bewoog tégen de richting (contrarian)', val: mom ? `${mom.pipMove > 0 ? '+' : ''}${mom.pipMove}p` : '—', ok: mom?.contrarianPass ?? false },
-    { label: 'Duidelijke richting', val: call.dir === 'long' ? 'Long' : 'Short', ok: true },
+    { label: 'Duidelijke richting (long/short)', val: call.dir === 'long' ? 'Long' : 'Short', ok: true },
   ]
 
   return (
@@ -312,7 +312,7 @@ function EntryReadyCard({ call, data, onGoCalls }: { call: DeskCall; data: ApiBr
                 <span className="crit-val num">{c.val}</span>
               </div>
             ))}
-            <p className="crit-note">Voldoet aan alle vier → <b>entry-ready</b>. De conviction hieronder (0-10) is de <b>kwaliteit</b> van de call, geen drempel om mee te tellen.</p>
+            <p className="crit-note">Voldoet aan alle vier → <b>entry-ready</b>. Dit zijn dezelfde drie subscores hieronder (onbalans, momentum, intermarket) + de richting. <b>Regime alignment</b> is géén voorwaarde — die telt alleen mee voor de conviction (de kwaliteit, 0-10).</p>
           </div>
           <p className="sub-intro">De conviction (max 10) is de optelsom van vier subscores. Klik een rij open voor de berekening.</p>
           <div className="sub-rows">
