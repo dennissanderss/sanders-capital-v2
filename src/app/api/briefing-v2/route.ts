@@ -682,8 +682,8 @@ export async function GET() {
     // Provides sub-regime classification, multi-factor scoring,
     // pair-specific intermarket, tradeability, and 5-category signals.
     let v3Engine = null
-    // Ruwe 5d-prijsvenster per paar (voor de UI drill-down: van→naar prijs)
-    const pairPriceWindow: Record<string, { price5dAgo: number | null; priceNow: number | null }> = {}
+    // Ruwe 5d-prijsvenster per paar (voor de UI drill-down: van→naar prijs + datums)
+    const pairPriceWindow: Record<string, { price5dAgo: number | null; priceNow: number | null; date5dAgo: string | null; dateNow: string | null }> = {}
     try {
       const engineInput: EngineInput = {
         cbRates: ratesResult as EngineCBRate[],
@@ -722,9 +722,13 @@ export async function GET() {
             .filter((d: { close: number | null }) => d.close != null)
           engineInput.priceHistory[symbol] = hist
           // 5 handelsdagen terug = index length-6 (laatste = vandaag)
+          const last = hist.length > 0 ? hist[hist.length - 1] : null
+          const ago = hist.length >= 6 ? hist[hist.length - 6] : null
           pairPriceWindow[pair] = {
-            priceNow: hist.length > 0 ? hist[hist.length - 1].close : null,
-            price5dAgo: hist.length >= 6 ? hist[hist.length - 6].close : null,
+            priceNow: last?.close ?? null,
+            price5dAgo: ago?.close ?? null,
+            dateNow: last?.date ?? null,
+            date5dAgo: ago?.date ?? null,
           }
         } catch { /* skip */ }
       }

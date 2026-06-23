@@ -246,6 +246,10 @@ export function Vandaag({ data, onGoCalls }: VandaagProps) {
 // ─── helpers ──────────────────────────────────────────────────
 const sgn = (v: number) => (v > 0 ? '+' : '') + v.toFixed(1)
 const fmtPrice = (p: number | null, jpy: boolean) => (p == null ? '—' : p.toFixed(jpy ? 3 : 5))
+const fmtDay = (iso: string | null) => {
+  if (!iso) return ''
+  try { return new Date(iso + 'T00:00:00Z').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', timeZone: 'UTC' }) } catch { return iso }
+}
 
 // ─── Entry-ready card with subscore drill-down ────────────────
 function EntryReadyCard({ call, data, onGoCalls }: { call: DeskCall; data: ApiBriefingData; onGoCalls?: () => void }) {
@@ -351,7 +355,10 @@ function renderSubDetail(key: string, data: ApiBriefingData, call: DeskCall) {
       <div className="sub-lines">
         <p className="sub-explain">De koers moet de afgelopen 5 dagen tégen de fundamentele richting zijn bewogen (mean-reversion: koop de dip / verkoop de rally).</p>
         {m.price5dAgo != null && m.priceNow != null && (
-          <div className="sub-line"><span>Koers 5d geleden → nu</span><span className="num">{fmtPrice(m.price5dAgo, jpy)} → {fmtPrice(m.priceNow, jpy)}</span></div>
+          <>
+            <div className="sub-line"><span>Start{m.date5dAgo ? ` · ${fmtDay(m.date5dAgo)}` : ' (5d geleden)'}</span><span className="num">{fmtPrice(m.price5dAgo, jpy)}</span></div>
+            <div className="sub-line"><span>Nu{m.dateNow ? ` · ${fmtDay(m.dateNow)}` : ''}</span><span className="num">{fmtPrice(m.priceNow, jpy)}</span></div>
+          </>
         )}
         <div className="sub-line"><span>Beweging</span><span className={`num ${m.pipMove >= 0 ? 'pos' : 'neg'}`}>{m.pipMove > 0 ? '+' : ''}{m.pipMove} pips</span></div>
         <div className="sub-line"><span>Zone</span><span>{Math.abs(m.pipMove)}p · {m.zoneLabel}</span></div>

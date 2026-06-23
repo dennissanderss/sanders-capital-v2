@@ -551,6 +551,8 @@ export interface MomentumDetail {
   inZone: boolean
   price5dAgo: number | null
   priceNow: number | null
+  date5dAgo: string | null
+  dateNow: string | null
 }
 
 export function getPairMomentum(api: ApiBriefingData, call: DeskCall): MomentumDetail | null {
@@ -572,6 +574,8 @@ export function getPairMomentum(api: ApiBriefingData, call: DeskCall): MomentumD
     inZone,
     price5dAgo: v3.priceMomentum.price5dAgo ?? null,
     priceNow: v3.priceMomentum.priceNow ?? null,
+    date5dAgo: v3.priceMomentum.date5dAgo ?? null,
+    dateNow: v3.priceMomentum.dateNow ?? null,
   }
 }
 
