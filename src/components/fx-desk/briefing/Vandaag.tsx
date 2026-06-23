@@ -266,6 +266,16 @@ function EntryReadyCard({ call, data, onGoCalls }: { call: DeskCall; data: ApiBr
       ]
     : []
 
+  // Voorwaarden om "entry-ready" (een call) te zijn — de echte drempels.
+  const mom = getPairMomentum(data, call)
+  const imAlign = Math.round(data.intermarketAlignment ?? 0)
+  const criteria = [
+    { label: 'Fundamentele score ≥ 2,0', val: Math.abs(call.fundScore).toFixed(1), ok: Math.abs(call.fundScore) >= 2.0 },
+    { label: 'Intermarket alignment ≥ 50%', val: `${imAlign}%`, ok: imAlign >= 50 },
+    { label: 'Koers bewoog tégen de richting (contrarian)', val: mom ? `${mom.pipMove > 0 ? '+' : ''}${mom.pipMove}p` : '—', ok: mom?.contrarianPass ?? false },
+    { label: 'Duidelijke richting', val: call.dir === 'long' ? 'Long' : 'Short', ok: true },
+  ]
+
   return (
     <div className={`call-card${open ? ' open' : ''}`}>
       <div className="cc-top">
@@ -293,7 +303,18 @@ function EntryReadyCard({ call, data, onGoCalls }: { call: DeskCall; data: ApiBr
 
       {open && b && (
         <div className="cc-reason">
-          <p className="sub-intro">De conviction (max 10) is de optelsom van vier subscores. Klik een rij open om te zien hoe het cijfer is opgebouwd.</p>
+          <div className="call-criteria">
+            <span className="cc-crit-title">Wanneer is het een call?</span>
+            {criteria.map((c, i) => (
+              <div className="crit-row" key={i}>
+                <span className={`crit-mark ${c.ok ? 'ok' : 'no'}`}>{c.ok ? '✓' : '✗'}</span>
+                <span className="crit-label">{c.label}</span>
+                <span className="crit-val num">{c.val}</span>
+              </div>
+            ))}
+            <p className="crit-note">Voldoet aan alle vier → <b>entry-ready</b>. De conviction hieronder (0-10) is de <b>kwaliteit</b> van de call, geen drempel om mee te tellen.</p>
+          </div>
+          <p className="sub-intro">De conviction (max 10) is de optelsom van vier subscores. Klik een rij open voor de berekening.</p>
           <div className="sub-rows">
             {subs.map((s) => (
               <div className={`sub-row${openSub === s.key ? ' open' : ''}`} key={s.key}>
@@ -311,6 +332,7 @@ function EntryReadyCard({ call, data, onGoCalls }: { call: DeskCall; data: ApiBr
               <span className="sub-val num accent">{call.score.toFixed(1)}</span>
             </div>
           </div>
+          <p className="sub-livenote">Dit is de <b>live</b> stand — score, regime en intermarket bewegen gedurende de dag mee. In de <b>Calls-tab</b> staat de conviction zoals die bij het uitsturen van de call is vastgelegd; die kan daarom afwijken.</p>
         </div>
       )}
     </div>

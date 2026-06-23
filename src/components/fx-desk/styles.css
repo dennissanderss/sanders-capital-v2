@@ -873,6 +873,20 @@
 .fx-desk .sub-sum { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; margin-right: 8px; }
 .fx-desk .im-relevance { margin-top: 4px; }
 
+/* "Wanneer is het een call?" — voorwaarden */
+.fx-desk .call-criteria { border: 1px solid var(--gold-line); background: var(--gold-soft); border-radius: 3px; padding: 12px 13px; margin-bottom: 14px; }
+.fx-desk .cc-crit-title { display: block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 9px; }
+.fx-desk .crit-row { display: flex; align-items: center; gap: 9px; padding: 3px 0; }
+.fx-desk .crit-mark { width: 15px; height: 15px; flex: none; display: grid; place-items: center; border-radius: 50%; font-size: 9px; font-weight: 700; }
+.fx-desk .crit-mark.ok { background: var(--win-bg); color: var(--win); }
+.fx-desk .crit-mark.no { background: var(--loss-bg); color: var(--loss); }
+.fx-desk .crit-label { flex: 1; font-size: 11.5px; color: var(--ink-2); }
+.fx-desk .crit-val { font-size: 11.5px; font-weight: 600; color: var(--ink); }
+.fx-desk .crit-note { margin: 9px 0 0; font-size: 11px; line-height: 1.5; color: var(--ink-2); }
+.fx-desk .crit-note b { color: var(--ink); font-weight: 600; }
+.fx-desk .sub-livenote { margin: 12px 0 0; font-size: 10.5px; line-height: 1.5; color: var(--ink-4); font-style: italic; }
+.fx-desk .sub-livenote b { color: var(--ink-3); font-weight: 600; font-style: normal; }
+
 /* prestatie-overzicht (Calls-tab) */
 .fx-desk .perf-summary {
   display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px;
