@@ -441,11 +441,24 @@ export async function GET(request: Request) {
       hasTranslation: !!(a.title_nl && a.title_nl !== a.title),  // True only if actually translated
     }))
 
-    const response: Record<string, unknown> = { articles: mapped, fetchedAt: new Date().toISOString() }
+    // De-duplicate by canonical url so the same story never shows twice
+    // (e.g. a one-time overlap after the id-scheme change, or a feed listing
+    // an article under multiple ids). Ordered by published_at desc, so the
+    // first occurrence kept is the most recent.
+    const seenUrls = new Set<string>()
+    const deduped = mapped.filter((a) => {
+      const u = (a.url || '').trim()
+      if (!u) return true
+      if (seenUrls.has(u)) return false
+      seenUrls.add(u)
+      return true
+    })
+
+    const response: Record<string, unknown> = { articles: deduped, fetchedAt: new Date().toISOString() }
     if (searchParams.get('debug') === 'true') {
       response.feedResults = lastFeedResults
       response.totalFeeds = FEEDS.length
-      response.dbCount = mapped.length
+      response.dbCount = deduped.length
     }
     return NextResponse.json(response)
   } catch {
