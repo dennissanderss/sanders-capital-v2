@@ -32,12 +32,15 @@ interface RateData {
   lastMove: string
   nextMeeting: string
   bias: string
+  meetingDate?: string | null
+  meetingPassed?: boolean
 }
 
 interface RatesResponse {
   rates: RateData[]
   generatedAt: string
   count: number
+  stale?: number
   source?: string
   error?: string
 }
@@ -387,7 +390,7 @@ function RateCard({ item, onClick }: { item: RateData; onClick: () => void }) {
         </div>
         <div className="flex justify-between">
           <span className="text-text-dim">Volgende</span>
-          <span className="text-text-muted">{item.nextMeeting || '—'}</span>
+          <span className="text-text-muted">{item.meetingPassed ? 'wordt bijgewerkt' : (item.nextMeeting || '—')}</span>
         </div>
       </div>
 
@@ -834,6 +837,17 @@ export default function RentePage() {
         {data && (
           <DataFreshnessBar generatedAt={data.generatedAt} source={data.source} />
         )}
+
+        {/* Staleness guard: warn when a scheduled meeting has passed and the
+            rate is awaiting a manual update — so data never silently goes stale */}
+        {data && (data.stale ?? data.rates.filter(r => r.meetingPassed).length) > 0 && (
+          <div className="mt-3 inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-amber-400/40 bg-amber-400/10 text-xs text-amber-500">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            Eén of meer rentebesluiten zijn geweest — die cijfers worden herzien.
+          </div>
+        )}
       </div>
 
       {/* Section tabs */}
@@ -949,13 +963,11 @@ export default function RentePage() {
                       let soonestCcy = ''
                       let soonestTime = Infinity
                       for (const r of withMeeting) {
-                        try {
-                          const t = new Date(r.nextMeeting).getTime()
-                          if (!isNaN(t) && t > Date.now() && t < soonestTime) {
-                            soonestTime = t
-                            soonestCcy = r.currency
-                          }
-                        } catch { /* skip */ }
+                        const t = r.meetingDate ? new Date(r.meetingDate).getTime() : new Date(r.nextMeeting).getTime()
+                        if (!isNaN(t) && t > Date.now() && t < soonestTime) {
+                          soonestTime = t
+                          soonestCcy = r.currency
+                        }
                       }
                       return withMeeting.map(r => {
                         const isSoonest = r.currency === soonestCcy
@@ -1144,7 +1156,7 @@ export default function RentePage() {
                             </span>
                           </td>
                           <td className="px-3 sm:px-5 py-3 text-xs text-text-dim hidden lg:table-cell">{item.lastMove || '—'}</td>
-                          <td className="px-3 sm:px-5 py-3 text-xs text-text-dim hidden lg:table-cell">{item.nextMeeting || '—'}</td>
+                          <td className="px-3 sm:px-5 py-3 text-xs text-text-dim hidden lg:table-cell">{item.meetingPassed ? 'wordt bijgewerkt' : (item.nextMeeting || '—')}</td>
                           <td className="px-3 py-3 text-center">
                             {item.sourceUrl ? (
                               <a

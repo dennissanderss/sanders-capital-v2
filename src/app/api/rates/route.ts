@@ -23,6 +23,32 @@ const FALLBACK_RATES = [
 // Major currencies shown first
 const MAJOR_ORDER = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD']
 
+// ── Staleness guard ──────────────────────────────────────────
+// Parse a "next meeting" string ("28-29 juli 2026", "6 augustus 2026",
+// or an ISO date) into a Date, so we can flag when a meeting has passed
+// (i.e. the rate row is due for a manual update).
+const NL_MONTHS: Record<string, number> = {
+  januari: 0, februari: 1, maart: 2, april: 3, mei: 4, juni: 5,
+  juli: 6, augustus: 7, september: 8, oktober: 9, november: 10, december: 11,
+}
+function parseMeetingDate(text: string): Date | null {
+  if (!text) return null
+  const s = text.trim()
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const t = Date.parse(s)
+    if (!isNaN(t)) return new Date(t)
+  }
+  // "28-29 juli 2026" → take the last day; "6 augustus 2026"
+  const m = s.toLowerCase().match(/(\d{1,2})(?:\s*[-–]\s*(\d{1,2}))?\s+([a-zé]+)\s+(\d{4})/)
+  if (m) {
+    const day = parseInt(m[2] || m[1], 10)
+    const month = NL_MONTHS[m[3]]
+    const year = parseInt(m[4], 10)
+    if (month !== undefined) return new Date(Date.UTC(year, month, day, 23, 59, 59))
+  }
+  return null
+}
+
 export async function GET() {
   let rates = FALLBACK_RATES
   let source = 'fallback'
@@ -68,10 +94,24 @@ export async function GET() {
     return a.currency.localeCompare(b.currency)
   })
 
+  // Flag rows whose scheduled meeting date has passed — these are due for a
+  // manual update, so consumers never present a past date as "upcoming".
+  const today = Date.now()
+  const withFlags = rates.map((r) => {
+    const d = parseMeetingDate(r.nextMeeting || '')
+    return {
+      ...r,
+      meetingDate: d ? d.toISOString() : null,
+      meetingPassed: d ? d.getTime() < today : false,
+    }
+  })
+  const staleCount = withFlags.filter((r) => r.meetingPassed).length
+
   return NextResponse.json({
-    rates,
+    rates: withFlags,
     generatedAt: new Date().toISOString(),
-    count: rates.length,
+    count: withFlags.length,
+    stale: staleCount,
     source,
   })
 }
