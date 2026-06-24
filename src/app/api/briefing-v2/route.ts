@@ -695,9 +695,11 @@ export async function GET() {
 
       // Fetch 25-day price history for all pairs (for ATR + momentum)
       const pairEntries = Object.entries(PAIR_SYMBOLS_V3)
+      // range=2mo zodat er na het droppen van de vormende candle nog ≥21
+      // voltooide dagen overblijven (tradeability vereist ≥21 bars).
       const priceResponses = await Promise.allSettled(
         pairEntries.map(([, symbol]) =>
-          fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1mo`, {
+          fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2mo`, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
             next: { revalidate: 300 },
           })
@@ -714,14 +716,19 @@ export async function GET() {
           if (!result) continue
           const timestamps = result.timestamp || []
           const closes = result.indicators?.quote?.[0]?.close || []
-          const hist = timestamps
+          // Alleen VOLTOOIDE dag-candles: de candle van vandaag beweegt nog
+          // en zou de momentum/contrarian-signalen de hele dag laten flippen.
+          // Een fundamenteel-gedreven dagcall hoort pas te veranderen als er
+          // een nieuwe dag-candle sluit, niet elke 5 minuten.
+          const rows: { date: string; close: number }[] = (timestamps as number[])
             .map((ts: number, idx: number) => ({
               date: new Date(ts * 1000).toISOString().split('T')[0],
-              close: closes[idx],
+              close: closes[idx] as number | null,
             }))
-            .filter((d: { close: number | null }) => d.close != null)
+            .filter((d): d is { date: string; close: number } => d.close != null)
+          const hist = dropFormingCandle(rows)
           engineInput.priceHistory[symbol] = hist
-          // 5 handelsdagen terug = index length-6 (laatste = vandaag)
+          // 5 handelsdagen terug = index length-6 (laatste = laatste close)
           const last = hist.length > 0 ? hist[hist.length - 1] : null
           const ago = hist.length >= 6 ? hist[hist.length - 6] : null
           pairPriceWindow[pair] = {
@@ -1000,7 +1007,7 @@ async function fetchCurrencyMomentum(marketData: Record<string, MarketQuote>): P
   const entries = Object.entries(proxyPairs)
   const responses = await Promise.allSettled(
     entries.map(([, { symbol }]) =>
-      fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=5d`, {
+      fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1mo`, {
         headers: { 'User-Agent': 'Mozilla/5.0' },
         next: { revalidate: 300 },
       })
@@ -1013,10 +1020,23 @@ async function fetchCurrencyMomentum(marketData: Record<string, MarketQuote>): P
     if (response.status !== 'fulfilled' || !response.value.ok) continue
     try {
       const json = await response.value.json()
-      const closes = json?.chart?.result?.[0]?.indicators?.quote?.[0]?.close
+      const result = json?.chart?.result?.[0]
+      const rawCloses = result?.indicators?.quote?.[0]?.close
+      const timestamps = result?.timestamp
+      // Verankerd op voltooide dag-candles (geen live tick) → stabiele
+      // currency-momentum strip binnen de dag.
+      const dated: { date: string; close: number }[] =
+        Array.isArray(timestamps) && Array.isArray(rawCloses) && timestamps.length === rawCloses.length
+          ? (timestamps as number[])
+              .map((ts, idx) => ({ date: new Date(ts * 1000).toISOString().split('T')[0], close: (rawCloses as (number | null)[])[idx] }))
+              .filter((d): d is { date: string; close: number } => d.close != null)
+          : ((rawCloses as (number | null)[] | undefined) ?? [])
+              .filter((c): c is number => c != null)
+              .map((c) => ({ date: '', close: c }))
+      const closes = dropFormingCandle(dated).map((d) => d.close)
       if (closes && closes.length >= 3) {
         const current = closes[closes.length - 1]
-        const prev3 = closes[closes.length - 3] // 3 days ago
+        const prev3 = closes[closes.length - 3] // 3 voltooide dagen terug
         if (current && prev3 && prev3 !== 0) {
           let changePct = +((current - prev3) / prev3 * 100).toFixed(2)
           if (invert) changePct = -changePct // Invert for JPY
@@ -1051,7 +1071,7 @@ async function fetchSingleQuote(symbol: string): Promise<Response | null> {
   // Try query1 first, then query2 as fallback
   for (const host of ['query1.finance.yahoo.com', 'query2.finance.yahoo.com']) {
     try {
-      const res = await fetch(`https://${host}/v8/finance/chart/${symbol}?interval=1d&range=5d`, {
+      const res = await fetch(`https://${host}/v8/finance/chart/${symbol}?interval=1d&range=1mo`, {
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
         next: { revalidate: 300 },
       })
@@ -1061,18 +1081,47 @@ async function fetchSingleQuote(symbol: string): Promise<Response | null> {
   return null
 }
 
+// Laat de nog-vormende dag-candle (die van vandaag, UTC) vallen zodat
+// intraday-ticks de fundamentele dagcall niet elke 5 minuten verschuiven.
+// Op weekenden/feestdagen is de laatste candle al voltooid (datum ≠ vandaag)
+// en blijft hij dus staan. Eén gedeelde regel voor alle koers-inputs.
+function dropFormingCandle<T extends { date: string }>(bars: T[]): T[] {
+  if (bars.length === 0) return bars
+  const todayUTC = new Date().toISOString().split('T')[0]
+  return bars[bars.length - 1].date === todayUTC ? bars.slice(0, -1) : bars
+}
+
 function parseQuote(key: string, json: Record<string, unknown>): MarketQuote | null {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const chart = json as any
-    const meta = chart?.chart?.result?.[0]?.meta
-    const closes = chart?.chart?.result?.[0]?.indicators?.quote?.[0]?.close
+    const result = chart?.chart?.result?.[0]
+    const meta = result?.meta
+    const closes = result?.indicators?.quote?.[0]?.close
+    const timestamps = result?.timestamp
 
     if (!meta || !closes || closes.length < 1) return null
 
-    const validCloses = (closes as (number | null)[]).filter((c): c is number => c != null)
-    const current = meta.regularMarketPrice ?? validCloses[validCloses.length - 1]
-    const previous = validCloses.length >= 2 ? validCloses[validCloses.length - 2] : validCloses[0]
+    // Meet op VOLTOOIDE dag-closes i.p.v. de live tick (regularMarketPrice),
+    // anders jittert de intermarket-alignment de hele dag → flippende calls.
+    const dated: { date: string; close: number }[] =
+      Array.isArray(timestamps) && timestamps.length === closes.length
+        ? (timestamps as number[])
+            .map((ts, i) => ({
+              date: new Date(ts * 1000).toISOString().split('T')[0],
+              close: (closes as (number | null)[])[i],
+            }))
+            .filter((d): d is { date: string; close: number } => d.close != null)
+        : (closes as (number | null)[])
+            .filter((c): c is number => c != null)
+            .map((c) => ({ date: '', close: c }))
+
+    const completed = dropFormingCandle(dated)
+    // Val terug op de ongetrimde reeks als trimmen te weinig overlaat.
+    const series = completed.length >= 2 ? completed : dated
+
+    const current = series.length > 0 ? series[series.length - 1].close : (meta.regularMarketPrice as number)
+    const previous = series.length >= 2 ? series[series.length - 2].close : series[0]?.close
 
     if (current == null || previous == null || previous === 0) return null
 
