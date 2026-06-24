@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { DirTag, OutcomeChip, ResultChip, fmt } from '../atoms'
+import { Icons } from '../icons'
 import { PriceChart } from '../PriceChart'
 import { adaptTrackRecord } from '../lib/adapters'
 import type { ApiTrackRecord, DeskCallHistoryRecord } from '../lib/types'
@@ -246,10 +247,113 @@ export function Calls({ records, loading }: CallsProps) {
               </div>
 
               <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--ink-2)', margin: '16px 0 0' }}>{sel.note}</p>
+
+              <ScoreDrilldown key={sel.id} sel={sel} />
             </>
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ─── Score drill-down — waarom scoort deze call X? ────────────
+// Toont dezelfde 4 subscores als de live entry-ready kaart in Vandaag,
+// maar opgebouwd uit de waarden die bij het uitsturen van de call zijn
+// vastgelegd (metadata). De diepere fund-sublaag per valuta (CB/rente/
+// nieuws) en exacte momentum-koersen bestaan alleen live; voor een
+// historische call tonen we de paar-score en pip-beweging.
+function ScoreDrilldown({ sel }: { sel: DeskCallHistoryRecord }) {
+  const [openSub, setOpenSub] = useState<string | null>(null)
+  const b = sel.breakdown
+
+  const absFund = Math.abs(sel.fundScore)
+  const absMom = Math.abs(sel.momentum5d)
+  const inZone = absMom >= 30 && absMom <= 120
+
+  const criteria = [
+    { label: 'Fundamentele onbalans — score ≥ 2,0', val: absFund.toFixed(1), ok: absFund >= 2.0 },
+    { label: '5d momentum — tégen de richting (contrarian)', val: `${sel.momentum5d > 0 ? '+' : ''}${sel.momentum5d}p`, ok: sel.contrarianPass },
+    { label: 'Intermarket alignment ≥ 50%', val: `${sel.imAlignment}%`, ok: sel.imAlignment >= 50 },
+    { label: 'Duidelijke richting (long/short)', val: sel.dir === 'long' ? 'Long' : 'Short', ok: true },
+  ]
+
+  const subs = [
+    { key: 'fund', label: 'Fundamentele onbalans', val: b.fundPts },
+    { key: 'mom', label: '5d momentum', val: b.contrarianPts },
+    { key: 'im', label: 'Intermarket alignment', val: b.imPts },
+    { key: 'regime', label: 'Regime alignment', val: b.regimePts },
+  ]
+
+  return (
+    <div className="cc-reason" style={{ marginTop: 20 }}>
+      <div className="call-criteria">
+        <span className="cc-crit-title">Wanneer is het een call?</span>
+        {criteria.map((c, i) => (
+          <div className="crit-row" key={i}>
+            <span className={`crit-mark ${c.ok ? 'ok' : 'no'}`}>{c.ok ? '✓' : '✗'}</span>
+            <span className="crit-label">{c.label}</span>
+            <span className="crit-val num">{c.val}</span>
+          </div>
+        ))}
+        <p className="crit-note">Voldoet aan alle vier → de call wordt uitgestuurd. <b>Regime alignment</b> is géén voorwaarde — die telt alleen mee voor de conviction (de kwaliteit, 0-10).</p>
+      </div>
+      <p className="sub-intro">De conviction ({sel.score.toFixed(1)} van 10) is de optelsom van vier subscores. Klik een rij open voor de berekening.</p>
+      <div className="sub-rows">
+        {subs.map((s) => (
+          <div className={`sub-row${openSub === s.key ? ' open' : ''}`} key={s.key}>
+            <button className="sub-row-head" onClick={() => setOpenSub((k) => (k === s.key ? null : s.key))}>
+              <span className="sub-label">{s.label}</span>
+              <span className="sub-val num">{s.val.toFixed(1)}</span>
+              <Icons.Chevron size={12} className={`sub-chev${openSub === s.key ? ' open' : ''}`} />
+            </button>
+            {openSub === s.key && (
+              <div className="sub-detail">
+                {s.key === 'fund' && (
+                  <div className="sub-lines">
+                    <p className="sub-explain">Het netto fundamentele verschil tussen beide valuta&apos;s ({sel.pair}), op een schaal van −5 tot +5. Hoe groter de onbalans, hoe meer punten (max 4).</p>
+                    <div className="sub-line"><span>Paar-score</span><span className="num">{sel.fundScore > 0 ? '+' : ''}{sel.fundScore.toFixed(1)}</span></div>
+                    <p className="sub-formula">Geschaald: min(|{sel.fundScore.toFixed(1)}| ÷ 5, 1) × 4 = <b className="accent">{b.fundPts.toFixed(1)}</b></p>
+                  </div>
+                )}
+                {s.key === 'mom' && (
+                  <div className="sub-lines">
+                    <p className="sub-explain">De koers moet de afgelopen 5 dagen tégen de fundamentele richting zijn bewogen (mean-reversion: koop de dip / verkoop de rally). Optimale zone: 30–120 pips.</p>
+                    <div className="sub-line"><span>Beweging (5d)</span><span className={`num ${sel.momentum5d >= 0 ? 'pos' : 'neg'}`}>{sel.momentum5d > 0 ? '+' : ''}{sel.momentum5d} pips</span></div>
+                    <div className="sub-line"><span>Zone</span><span>{absMom}p · {inZone ? 'optimaal (30–120)' : absMom < 30 ? 'klein (<30)' : 'groot (>120)'}</span></div>
+                    <p className="sub-formula">
+                      {sel.contrarianPass
+                        ? (inZone ? 'Tegen de richting én in optimale zone → ' : 'Tegen de richting, maar buiten optimale zone → ')
+                        : 'Liep mee met de fundamentals (geen mean-reversion) → '}
+                      <b className="accent">{b.contrarianPts.toFixed(1)}</b>
+                    </p>
+                  </div>
+                )}
+                {s.key === 'im' && (
+                  <div className="sub-lines">
+                    <p className="sub-explain">Alignment = welk deel van de markt-brede signalen (VIX, aandelen, goud, dollar, rente) bij deze richting paste. 100% = alles bevestigt, 0% = alles spreekt tegen.</p>
+                    <div className="sub-line"><span>Alignment</span><span className="num">{sel.imAlignment}%</span></div>
+                    <p className="sub-formula">{sel.imAlignment}% ÷ 100 × 2 = <b className="accent">{b.imPts.toFixed(1)}</b></p>
+                  </div>
+                )}
+                {s.key === 'regime' && (
+                  <div className="sub-lines">
+                    <p className="sub-explain">Past de richting van deze call bij het marktregime ({sel.regime}) op het moment van uitsturen?</p>
+                    <span className={`confirm-tag ${sel.regimeAligned ? 'yes' : 'no'}`}>{sel.regimeAligned ? 'past in regime' : 'neutraal'}</span>
+                    <p className="sub-formula">{sel.regimeAligned ? 'Past in het regime → ' : 'Neutraal in het regime → '}<b className="accent">{b.regimePts.toFixed(1)}</b></p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+        <div className="sub-total">
+          <span className="sub-label">Conviction</span>
+          <span className="sub-sum num">{b.fundPts.toFixed(1)} + {b.contrarianPts.toFixed(1)} + {b.imPts.toFixed(1)} + {b.regimePts.toFixed(1)}</span>
+          <span className="sub-val num accent">{sel.score.toFixed(1)}</span>
+        </div>
+      </div>
+      <p className="sub-livenote">Dit is de conviction zoals <b>vastgelegd bij het uitsturen</b> van de call. De live stand in de Vandaag-tab kan afwijken omdat score, regime en intermarket gedurende de dag meebewegen.</p>
     </div>
   )
 }

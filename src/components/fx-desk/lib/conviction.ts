@@ -141,7 +141,7 @@ function isAlignedWithRegime(
 //                  isAlignedWithRegime() helper above (identical
 //                  to the live API logic).
 
-export function convictionForHistoricalRecord(r: ApiTrackRecord): ConvictionBreakdown {
+export function convictionInputsForHistoricalRecord(r: ApiTrackRecord): ConvictionInputs {
   const absScore = Math.abs(r.score)
   const pips5d = r.metadata?.momentum5d ?? 0
   const isBullish = r.direction.includes('bullish')
@@ -156,11 +156,15 @@ export function convictionForHistoricalRecord(r: ApiTrackRecord): ConvictionBrea
     r.regime || 'Gemengd',
   )
 
-  return convictionBreakdown({
+  return {
     absScore,
     contrarianPass,
     absMom: Math.abs(pips5d),
     imAlignment,
     regimeAligned,
-  })
+  }
+}
+
+export function convictionForHistoricalRecord(r: ApiTrackRecord): ConvictionBreakdown {
+  return convictionBreakdown(convictionInputsForHistoricalRecord(r))
 }

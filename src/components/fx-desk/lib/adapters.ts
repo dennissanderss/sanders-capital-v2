@@ -24,6 +24,8 @@ import { getIntermarketMeta } from '@/lib/intermarket-meta'
 import {
   convictionForLivePair,
   convictionForHistoricalRecord,
+  convictionInputsForHistoricalRecord,
+  convictionBreakdown,
   type ConvictionBreakdown,
 } from './conviction'
 
@@ -378,7 +380,8 @@ export function adaptTrackRecord(records: ApiTrackRecord[]): DeskCallHistoryReco
 
       // Real 4-component conviction from the stored metadata
       // (regimeAligned derived from regime + direction + pair).
-      const conv = convictionForHistoricalRecord(r)
+      const convInputs = convictionInputsForHistoricalRecord(r)
+      const conv = convictionBreakdown(convInputs)
 
       return {
         id: r.id,
@@ -398,6 +401,12 @@ export function adaptTrackRecord(records: ApiTrackRecord[]): DeskCallHistoryReco
         close: r.exit_price,
         pips: r.pips_moved,
         note: buildNote(r),
+        breakdown: conv,
+        momentum5d: r.metadata?.momentum5d ?? 0,
+        contrarianPass: convInputs.contrarianPass,
+        imAlignment: Math.round(convInputs.imAlignment),
+        regime: r.regime || 'Gemengd',
+        regimeAligned: convInputs.regimeAligned,
       } satisfies DeskCallHistoryRecord
     })
     .filter((x): x is DeskCallHistoryRecord => x !== null)

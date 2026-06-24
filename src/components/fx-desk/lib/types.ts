@@ -266,4 +266,12 @@ export interface DeskCallHistoryRecord {
   close: number | null
   pips: number | null
   note: string
+  // Conviction-opbouw (zoals vastgelegd bij het uitsturen van de call) —
+  // voedt de "Waarom deze score?" drill-down in het detailpaneel.
+  breakdown: ConvictionBreakdownLite
+  momentum5d: number      // 5d koersbeweging in pips (kan +/-)
+  contrarianPass: boolean // bewoog de koers tégen de fundamentele richting?
+  imAlignment: number     // intermarket alignment 0..100 (%)
+  regime: string          // marktregime bij de call (bv. "USD Dominant")
+  regimeAligned: boolean  // past de richting bij het regime?
 }
