@@ -26,6 +26,7 @@ const nieuwsDropdown = [
 const toolsDropdown = [
   { href: '/tools/fx-analyse', slug: 'fx-analyse', label: 'Fundamentals', desc: 'Leer hoe centrale banken, rente en macro een valutapaar sturen', icon: 'layers', defaultPremium: true },
   { href: '/tools/fx-selector/v2', slug: 'fx-selector', label: 'Daily Macro Briefing', desc: 'Dagelijkse macro analyse & concrete trades', icon: 'compass', defaultPremium: true },
+  { href: '/tools/fundamental-briefing', slug: 'fundamental-briefing', label: 'Fundamental Briefing', desc: 'Schone fundamentele bias met vooruit-opgebouwd trackrecord', icon: 'compass', defaultPremium: true },
   { href: '/tools/tradescope', slug: 'tradescope', label: 'TradeMind', desc: 'Trading journal & performance analyse', icon: 'activity', defaultPremium: true },
   { href: '/tools/calculator', slug: 'calculator', label: 'Position Size Calculator', desc: 'Bereken je positiegrootte', icon: 'calculator' },
   { href: '/tools/rente', slug: 'rente', label: 'Rentetarieven', desc: 'Centrale bank rentes', icon: 'percent' },
