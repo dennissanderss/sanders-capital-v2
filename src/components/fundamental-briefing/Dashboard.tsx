@@ -75,10 +75,10 @@ export default function Dashboard() {
       {data && !loading && (
         <>
           {tab === 'vandaag' && (
-            <BriefingTab calls={data.dailyCalls} emptyText="Nog geen daily calls voor vandaag — ze worden 's ochtends gegenereerd zodra de markt-data binnen is." />
+            <BriefingTab calls={data.dailyCalls} kind="daily" emptyText="Nog geen dagcalls voor vandaag — ze worden 's ochtends gegenereerd zodra de markt-data binnen is." />
           )}
           {tab === 'weekly' && (
-            <BriefingTab calls={data.weeklyCalls} emptyText="Nog geen weekly calls — die worden maandagochtend gelockt." />
+            <BriefingTab calls={data.weeklyCalls} kind="weekly" emptyText="Nog geen weekcalls — die worden maandagochtend gelockt." />
           )}
           {tab === 'trackrecord' && <Trackrecord trackrecord={data.trackrecord} />}
         </>
