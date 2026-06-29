@@ -6,27 +6,62 @@ import { HORIZONS } from '@/lib/fundamental/constants'
 import { CallDetail } from './CallDetail'
 import { dirLabel, fmtDate, zekerheidTier } from './helpers'
 
+// Onder deze zekerheid is een call te zwak om te handelen (richting duidelijk,
+// maar momentum/markt/regime bevestigen 'm nauwelijks). Alleen weergave.
+const TRADE_MIN = 5
+
+function CallRow({ c, sel, onSelect }: { c: FbCall; sel: boolean; onSelect: () => void }) {
+  const long = c.direction === 'bullish'
+  const tier = zekerheidTier(c.conviction)
+  return (
+    <div className={`fb-row${sel ? ' sel' : ''}`} onClick={onSelect}>
+      <span className={`fb-chip ${long ? 'long' : 'short'}`}>{dirLabel(c.direction)}</span>
+      <div>
+        <div className="fb-row-pair">{c.pair}</div>
+        <div className="fb-row-meta">
+          <span className="fb-dots">
+            {HORIZONS.map((h) => {
+              const o = c.outcomes.find((x) => x.horizon === h)
+              const cls = !o || !o.resolved || o.correct == null ? '' : o.correct ? ' win' : ' loss'
+              return <span key={h} className={`fb-hdot${cls}`} title={`${h} dagen`} />
+            })}
+          </span>
+          {' '}· instap {fmtDate(c.entryDate)}
+        </div>
+      </div>
+      <div className="fb-row-conv-cell">
+        <span className="fb-row-conv num" title="zekerheid (0-10)">{c.conviction.toFixed(1)}</span>
+        <span className={`fb-ztag ${tier.cls}`}>{tier.label}</span>
+      </div>
+    </div>
+  )
+}
+
 export function BriefingTab({ calls, kind, emptyText, hoofdhorizon }: { calls: FbCall[]; kind: 'daily' | 'weekly'; emptyText: string; hoofdhorizon: number }) {
-  // Sterkste zekerheid bovenaan.
   const sorted = useMemo(() => [...calls].sort((a, b) => b.conviction - a.conviction), [calls])
-  const [selId, setSelId] = useState<string | null>(sorted[0]?.id ?? null)
+  const strong = useMemo(() => sorted.filter((c) => c.conviction >= TRADE_MIN), [sorted])
+  const weak = useMemo(() => sorted.filter((c) => c.conviction < TRADE_MIN), [sorted])
+
+  const [selId, setSelId] = useState<string | null>(null)
+  const [showWeak, setShowWeak] = useState(false)
 
   useEffect(() => {
-    if (!selId || !sorted.find((c) => c.id === selId)) setSelId(sorted[0]?.id ?? null)
-  }, [sorted, selId])
+    const pref = strong[0]?.id ?? sorted[0]?.id ?? null
+    if (!selId || !sorted.find((c) => c.id === selId)) setSelId(pref)
+  }, [sorted, strong, selId])
 
   const intro = (
     <p className="fb-calls-intro">
-      Een <b>call</b> = een paar met een duidelijke fundamentele richting. Het getal rechts is de <b>zekerheid</b> (0–10):
-      hoe sterk die richting is. <b>Sterkste bovenaan.</b> Een lage zekerheid (bv. 3.3) is een <b>zwakke</b> call —
-      de richting is duidelijk, maar momentum, markt en regime bevestigen 'm nauwelijks.
+      Een <b>call</b> = een paar met een duidelijke fundamentele richting. Het getal is de <b>zekerheid</b> (0–10): hoe sterk
+      die richting is bevestigd door momentum, markt en regime. <b>Alleen calls met genoeg bevestiging zijn het handelen waard</b> —
+      zwakke calls (onder de {TRADE_MIN}) staan apart, want die wil je niet traden.
     </p>
   )
 
   if (sorted.length === 0) {
     return <div>{intro}<div className="fb-empty">{emptyText}</div></div>
   }
-  const sel = sorted.find((c) => c.id === selId) || sorted[0]
+  const sel = sorted.find((c) => c.id === selId) || strong[0] || sorted[0]
 
   return (
     <div>
@@ -37,34 +72,26 @@ export function BriefingTab({ calls, kind, emptyText, hoofdhorizon }: { calls: F
         <span className="it"><span className="fb-hdot" /> nog wachten</span>
         <span className="it">5 bolletjes = 1 / 3 / 5 / 10 / 20 dagen</span>
       </div>
+
       <div className="fb-layout">
         <div className="fb-list">
-          {sorted.map((c) => {
-            const long = c.direction === 'bullish'
-            const tier = zekerheidTier(c.conviction)
-            return (
-              <div key={c.id} className={`fb-row${c.id === sel.id ? ' sel' : ''}`} onClick={() => setSelId(c.id)}>
-                <span className={`fb-chip ${long ? 'long' : 'short'}`}>{dirLabel(c.direction)}</span>
-                <div>
-                  <div className="fb-row-pair">{c.pair}</div>
-                  <div className="fb-row-meta">
-                    <span className="fb-dots">
-                      {HORIZONS.map((h) => {
-                        const o = c.outcomes.find((x) => x.horizon === h)
-                        const cls = !o || !o.resolved || o.correct == null ? '' : o.correct ? ' win' : ' loss'
-                        return <span key={h} className={`fb-hdot${cls}`} title={`${h} dagen`} />
-                      })}
-                    </span>
-                    {' '}· instap {fmtDate(c.entryDate)}
-                  </div>
+          <div className="fb-list-head">Tradeable calls{strong.length > 0 ? ` (${strong.length})` : ''}</div>
+          {strong.length === 0
+            ? <div className="fb-empty" style={{ padding: '22px 14px', fontSize: 12.5 }}>Geen calls met genoeg bevestiging vandaag — alle signalen zijn zwak. Vandaag liever niet handelen op deze tool.</div>
+            : strong.map((c) => <CallRow key={c.id} c={c} sel={c.id === sel.id} onSelect={() => setSelId(c.id)} />)}
+
+          {weak.length > 0 && (
+            <>
+              <button className="fb-weak-toggle" onClick={() => setShowWeak((s) => !s)}>
+                {showWeak ? '▲' : '▼'} Zwakkere signalen — niet handelen ({weak.length})
+              </button>
+              {showWeak && (
+                <div className="fb-weak-list">
+                  {weak.map((c) => <CallRow key={c.id} c={c} sel={c.id === sel.id} onSelect={() => setSelId(c.id)} />)}
                 </div>
-                <div className="fb-row-conv-cell">
-                  <span className="fb-row-conv num" title="zekerheid (0-10)">{c.conviction.toFixed(1)}</span>
-                  <span className={`fb-ztag ${tier.cls}`}>{tier.label}</span>
-                </div>
-              </div>
-            )
-          })}
+              )}
+            </>
+          )}
         </div>
         <CallDetail call={sel} hoofdhorizon={hoofdhorizon} />
       </div>

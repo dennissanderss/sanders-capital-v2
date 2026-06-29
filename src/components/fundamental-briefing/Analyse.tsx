@@ -15,17 +15,19 @@ function agg(calls: FbCall[], h: number) {
 function pfText(pf: number | null) { return pf == null ? '—' : pf === Infinity ? '∞' : pf.toFixed(2) }
 
 function Row({ label, a }: { label: string; a: ReturnType<typeof agg> }) {
+  const mark = a.n === 0 ? '' : a.tier.tier === 'ruis' ? '*' : a.tier.tier === 'voorlopig' ? '†' : ''
   return (
     <div className={`fb-an-row tier-${a.tier.tier}`}>
       <span className="fb-an-label">{label}</span>
       <span className="num fb-an-wr">{a.n === 0 ? '—' : `${a.winrate}%`}</span>
       <span className="num fb-an-pf">{pfText(a.pf)}</span>
-      <span className="fb-an-n">
-        n={a.n}
-        {a.n > 0 && a.tier.tier !== 'betrouwbaar' && <span className={`fb-an-tag ${a.tier.tier}`}>{a.tier.label}</span>}
-      </span>
+      <span className="fb-an-n num">{a.n === 0 ? '—' : `n=${a.n}${mark}`}</span>
     </div>
   )
+}
+
+function Foot() {
+  return <p className="fb-an-foot"><b>*</b> te weinig data (n&lt;30) — niet als edge lezen. <b>†</b> voorlopig (n&lt;100). Grijze rijen = onbetrouwbaar.</p>
 }
 
 export function Analyse({ calls }: { calls: FbCall[] }) {
@@ -84,11 +86,13 @@ export function Analyse({ calls }: { calls: FbCall[] }) {
           <div className="fb-bd-title">Per zekerheid <Tip text="Helpt zien of 'zekerder' ook vaker goed betekent." /></div>
           <div className="fb-an-head"><span></span><span>winrate</span><span>PF</span><span></span></div>
           {byBucket.map((g) => <Row key={g.label} label={g.label} a={agg(g.calls, hz)} />)}
+          <Foot />
         </div>
         <div className="fb-bd-card">
           <div className="fb-bd-title">Per termijn (huidige filters)</div>
           <div className="fb-an-head"><span></span><span>winrate</span><span>PF</span><span></span></div>
           {HORIZONS.map((h) => <Row key={h} label={HZ_LABEL[h]} a={agg(filtered, h)} />)}
+          <Foot />
         </div>
       </div>
 
@@ -96,6 +100,7 @@ export function Analyse({ calls }: { calls: FbCall[] }) {
         <div className="fb-bd-title">Per paar <Tip text="Op welke paren de fundamentele richting het best/slechtst werkt." /></div>
         <div className="fb-an-head"><span></span><span>winrate</span><span>PF</span><span></span></div>
         {byPair.length === 0 ? <div className="fb-note">Geen data voor deze filters.</div> : byPair.map((g) => <Row key={g.label} label={g.label} a={agg(g.calls, hz)} />)}
+        <Foot />
       </div>
     </div>
   )
