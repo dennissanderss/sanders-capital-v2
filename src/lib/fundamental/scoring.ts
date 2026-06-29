@@ -7,11 +7,11 @@
 // ─────────────────────────────────────────────────────────────
 import { convictionBreakdown, type ConvictionBreakdown } from '@/components/fx-desk/lib/conviction'
 import { MAJORS, BIAS_SCORES } from './constants'
-import type { CurrencyScore, Direction } from './types'
+import type { CurrencyScore, Direction, ImInstrument, NewsItem } from './types'
 
 export interface RateRow { currency: string; bank?: string; rate: number | null; target: number | null; bias: string }
 export interface NewsRow {
-  title: string; title_nl?: string | null; summary?: string | null
+  title: string; title_nl?: string | null; summary?: string | null; source?: string | null
   affected_currencies?: string[] | null; relevance_score?: number | null; published_at: string
 }
 
@@ -36,9 +36,10 @@ const BULL_WORDS = ['hawkish', 'tightening', 'restrictive', 'robust', 'surge', '
 const BEAR_PHRASES = ['rate cut', 'rate decrease', 'lower than expected', 'missed expectations', 'below expected', 'weaker than expected', 'dovish surprise', 'dovish pivot', 'easing cycle', 'below consensus', 'hard landing', 'debt crisis', 'oil prices fall', 'oil price drop', 'crude oil decline', 'under pressure', 'higher prices for', 'supply chain', 'iran deal']
 const BEAR_WORDS = ['dovish', 'easing', 'accommodative', 'recession', 'slowdown', 'contraction', 'crisis', 'warning', 'downgrade', 'stagflation', 'deteriorat', 'plunge', 'crash', 'tariff', 'trade war', 'sanction', 'tension', 'conflict', 'geopolit', 'uncertainty', 'risk', 'pressure', 'decline', 'fall', 'drop', 'slide', 'tumble', 'weak']
 
-export function analyzeNewsSentiment(articles: NewsRow[]): Record<string, { score: number; headlines: string[]; sentiment: string }> {
-  const s: Record<string, { score: number; headlines: string[] }> = {}
-  for (const c of MAJORS) s[c] = { score: 0, headlines: [] }
+export interface NewsSentiment { score: number; headlines: string[]; sentiment: string; detail: NewsItem[] }
+export function analyzeNewsSentiment(articles: NewsRow[]): Record<string, NewsSentiment> {
+  const s: Record<string, { score: number; headlines: string[]; detail: NewsItem[] }> = {}
+  for (const c of MAJORS) s[c] = { score: 0, headlines: [], detail: [] }
 
   for (const a of articles) {
     const text = `${a.title} ${a.summary || ''}`.toLowerCase()
@@ -54,15 +55,19 @@ export function analyzeNewsSentiment(articles: NewsRow[]): Record<string, { scor
     const hoursAgo = (Date.now() - new Date(a.published_at).getTime()) / 3600000
     const recency = hoursAgo < 12 ? 1.5 : hoursAgo < 24 ? 1.2 : hoursAgo < 48 ? 1.0 : 0.7
     const net = (bull - bear) * weight * recency * 0.25
+    // Het gewicht zoals het MEEWOOG (relevantie × recentheid). Geen wiskunde-
+    // wijziging: dit is exact de multiplier die in `net` zit.
+    const effWeight = +(weight * recency).toFixed(2)
     for (const c of ccys) {
       if (s[c]) {
         s[c].score += net
         if (s[c].headlines.length < 3) s[c].headlines.push(a.title_nl || a.title)
+        s[c].detail.push({ title: a.title_nl || a.title, source: a.source || 'onbekend', date: a.published_at, weight: effWeight })
       }
     }
   }
 
-  const out: Record<string, { score: number; headlines: string[]; sentiment: string }> = {}
+  const out: Record<string, NewsSentiment> = {}
   for (const c of MAJORS) {
     const score = Math.round(s[c].score * 10) / 10
     let sentiment = 'neutraal'
@@ -70,9 +75,24 @@ export function analyzeNewsSentiment(articles: NewsRow[]): Record<string, { scor
     else if (score >= 0.3) sentiment = 'positief'
     else if (score <= -1.0) sentiment = 'sterk negatief'
     else if (score <= -0.3) sentiment = 'negatief'
-    out[c] = { score, headlines: s[c].headlines, sentiment }
+    out[c] = { score, headlines: s[c].headlines, sentiment, detail: s[c].detail }
   }
   return out
+}
+
+// Welke intermarket-instrumenten de alignment bevestigden, gegeven het regime.
+// Beschrijvend; verandert calculateIntermarketAlignment NIET (zelfde condities).
+export function intermarketContributions(signals: ImSignal[], regime: string): ImInstrument[] {
+  const expect: Record<string, 'up' | 'down' | 'notup'> = {}
+  if (regime === 'Risk-Off') Object.assign(expect, { sp500: 'down', vix: 'up', gold: 'up', us10y: 'up', dxy: 'up' })
+  else if (regime === 'Risk-On') Object.assign(expect, { sp500: 'up', vix: 'down', gold: 'down', dxy: 'down' })
+  else if (regime === 'USD Dominant') Object.assign(expect, { dxy: 'up', us10y: 'up', sp500: 'notup' })
+  else if (regime === 'USD Zwak') Object.assign(expect, { dxy: 'down', us10y: 'down', sp500: 'up' })
+  return signals.map((sig) => {
+    const e = expect[sig.key]
+    const contributed = e === 'notup' ? sig.direction !== 'up' : e ? sig.direction === e : false
+    return { key: sig.key, direction: sig.direction, changePct: sig.changePct, contributed }
+  })
 }
 
 // ─── Valutascores (CB×2 + rente×1.5 + nieuws gecapt ±1.5) ──────

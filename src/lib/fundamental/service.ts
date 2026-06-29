@@ -8,7 +8,7 @@ import {
 } from './constants'
 import {
   analyzeNewsSentiment, computeCurrencyScores, determineRegime, computePairBias,
-  buildConviction, isAlignedWithRegime, calculateIntermarketAlignment,
+  buildConviction, isAlignedWithRegime, calculateIntermarketAlignment, intermarketContributions,
   type RateRow, type NewsRow, type ImSignal,
 } from './scoring'
 import {
@@ -36,7 +36,7 @@ async function fetchNews(sb: SupabaseClient): Promise<NewsRow[]> {
   const since = new Date(Date.now() - 3 * 86400000).toISOString()
   const { data } = await sb
     .from('news_articles')
-    .select('title, title_nl, summary, affected_currencies, relevance_score, published_at')
+    .select('title, title_nl, summary, source, affected_currencies, relevance_score, published_at')
     .gte('published_at', since)
     .gte('relevance_score', 2)
     .order('published_at', { ascending: false })
@@ -98,6 +98,9 @@ export async function generateBriefing(callType: CallType): Promise<{ created: n
     return { key: k, direction: ch.direction, changePct: ch.changePct }
   })
   const imAlignment = calculateIntermarketAlignment(imSignals, regime)
+  // Append-only (gat 1): per-instrument bijdrage, voor de uitklap. Zelfde
+  // condities als de alignment-berekening; verandert die niet.
+  const imContrib = intermarketContributions(imSignals, regime)
 
   type Draft = Omit<FbCall, 'id' | 'status' | 'outcomes'>
   const drafts: Draft[] = []
@@ -125,6 +128,13 @@ export async function generateBriefing(callType: CallType): Promise<{ created: n
       momentumStart: mom.start,
       momentumNow: mom.now,
       imAlignment,
+      // Append-only sleutels (gat 1 + 2). Oude rijen missen deze en tonen
+      // in de UI "niet vastgelegd voor deze call".
+      intermarket: imContrib,
+      newsDetail: {
+        [pb.base]: news[pb.base]?.detail || [],
+        [pb.quote]: news[pb.quote]?.detail || [],
+      },
     }
     drafts.push({
       callDate, callType, pair, base: pb.base, quote: pb.quote,

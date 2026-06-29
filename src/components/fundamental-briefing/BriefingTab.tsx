@@ -7,7 +7,7 @@ import { CallDetail } from './CallDetail'
 import { dirLabel, fmtDate } from './helpers'
 import { HowToRead } from './ui'
 
-export function BriefingTab({ calls, kind, emptyText }: { calls: FbCall[]; kind: 'daily' | 'weekly'; emptyText: string }) {
+export function BriefingTab({ calls, kind, emptyText, hoofdhorizon }: { calls: FbCall[]; kind: 'daily' | 'weekly'; emptyText: string; hoofdhorizon: number }) {
   const [selId, setSelId] = useState<string | null>(calls[0]?.id ?? null)
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export function BriefingTab({ calls, kind, emptyText }: { calls: FbCall[]; kind:
             )
           })}
         </div>
-        <CallDetail call={sel} />
+        <CallDetail call={sel} hoofdhorizon={hoofdhorizon} />
       </div>
     </div>
   )

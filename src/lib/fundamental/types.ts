@@ -73,6 +73,24 @@ export interface CurrencyFactors {
   newsHeadlines: string[]
 }
 
+// Append-only (gat 1): per intermarket-instrument de richting + bijdrage.
+// Optioneel → oude calls (zonder deze sleutel) blijven geldig.
+export interface ImInstrument {
+  key: string                 // sp500 | vix | gold | us10y | dxy
+  direction: 'up' | 'down' | 'flat'
+  changePct: number
+  contributed: boolean        // telde dit instrument mee in de alignment?
+}
+
+// Append-only (gat 2): de exact meegewogen nieuwskoppen per valuta, met het
+// gewicht zoals het in de scoreberekening zat. Optioneel → oude calls leeg.
+export interface NewsItem {
+  title: string
+  source: string
+  date: string | null
+  weight: number              // relevantie × recentheid (zoals meegewogen)
+}
+
 export interface CallReasoning {
   base: CurrencyFactors
   quote: CurrencyFactors
@@ -83,6 +101,8 @@ export interface CallReasoning {
   momentumStart: { date: string | null; price: number | null }
   momentumNow: { date: string | null; price: number | null }
   imAlignment: number
+  intermarket?: ImInstrument[]            // append-only (gat 1)
+  newsDetail?: Record<string, NewsItem[]> // append-only (gat 2), per valutacode
 }
 
 // Eén gelockte call met al zijn horizon-uitkomsten.
