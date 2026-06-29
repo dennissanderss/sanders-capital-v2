@@ -76,6 +76,15 @@ export function profitFactor(calls: FbCall[], horizon: number): number | null {
 
 export const HZ_LABEL: Record<number, string> = { 1: '1 dag', 3: '3 dagen', 5: '5 dagen', 10: '10 dagen', 20: '20 dagen' }
 
+// Zekerheid-indeling (alleen weergave — verandert de score niet).
+// Een call met lage zekerheid is een ZWAKKE call: richting duidelijk, maar
+// nauwelijks bevestigd door momentum/markt/regime.
+export function zekerheidTier(v: number): { label: string; cls: 'sterk' | 'matig' | 'zwak' } {
+  if (v >= 7) return { label: 'sterk', cls: 'sterk' }
+  if (v >= 5) return { label: 'matig', cls: 'matig' }
+  return { label: 'zwak', cls: 'zwak' }
+}
+
 export type SampleTier = 'ruis' | 'voorlopig' | 'betrouwbaar'
 // Sample-guard: voorkomt dat een dunne, mooi-ogende bucket als edge wordt gelezen.
 export function sampleTier(n: number): { tier: SampleTier; label: string } {

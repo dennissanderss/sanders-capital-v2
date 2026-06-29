@@ -1,52 +1,47 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FbCall } from '@/lib/fundamental/types'
 import { HORIZONS } from '@/lib/fundamental/constants'
 import { CallDetail } from './CallDetail'
-import { dirLabel, fmtDate } from './helpers'
-import { HowToRead } from './ui'
+import { dirLabel, fmtDate, zekerheidTier } from './helpers'
 
 export function BriefingTab({ calls, kind, emptyText, hoofdhorizon }: { calls: FbCall[]; kind: 'daily' | 'weekly'; emptyText: string; hoofdhorizon: number }) {
-  const [selId, setSelId] = useState<string | null>(calls[0]?.id ?? null)
+  // Sterkste zekerheid bovenaan.
+  const sorted = useMemo(() => [...calls].sort((a, b) => b.conviction - a.conviction), [calls])
+  const [selId, setSelId] = useState<string | null>(sorted[0]?.id ?? null)
 
   useEffect(() => {
-    if (!selId || !calls.find((c) => c.id === selId)) setSelId(calls[0]?.id ?? null)
-  }, [calls, selId])
+    if (!selId || !sorted.find((c) => c.id === selId)) setSelId(sorted[0]?.id ?? null)
+  }, [sorted, selId])
 
-  const howto = (
-    <HowToRead>
-      <p>
-        Dit zijn de {kind === 'weekly' ? 'weekcalls (elke maandagochtend gelockt)' : "dagcalls (elke ochtend gelockt, vast voor de dag)"}.
-        Elke regel is één <b>voorspelling</b>: een valutapaar met een richting en een zekerheid.
-      </p>
-      <ol>
-        <li><b>LONG</b> = de tool denkt dat het paar omhoog gaat, <b>SHORT</b> = omlaag.</li>
-        <li>Het getal rechts is de <b>zekerheid</b> (0-10): hoe sterk de fundamentals die richting steunen.</li>
-        <li>De <b>5 bolletjes</b> zijn de check-momenten (1/3/5/10/20 dagen): 🟢 goed · 🔴 fout · ⚪ nog wachten.</li>
-        <li>Klik een regel voor de volledige uitleg: tijdlijn, waarom deze zekerheid, en de factoren per valuta.</li>
-      </ol>
-    </HowToRead>
+  const intro = (
+    <p className="fb-calls-intro">
+      Een <b>call</b> = een paar met een duidelijke fundamentele richting. Het getal rechts is de <b>zekerheid</b> (0–10):
+      hoe sterk die richting is. <b>Sterkste bovenaan.</b> Een lage zekerheid (bv. 3.3) is een <b>zwakke</b> call —
+      de richting is duidelijk, maar momentum, markt en regime bevestigen 'm nauwelijks.
+    </p>
   )
 
-  if (calls.length === 0) {
-    return <div>{howto}<div className="fb-empty">{emptyText}</div></div>
+  if (sorted.length === 0) {
+    return <div>{intro}<div className="fb-empty">{emptyText}</div></div>
   }
-  const sel = calls.find((c) => c.id === selId) || calls[0]
+  const sel = sorted.find((c) => c.id === selId) || sorted[0]
 
   return (
     <div>
-      {howto}
+      {intro}
       <div className="fb-legend">
         <span className="it"><span className="fb-hdot win" /> goed</span>
         <span className="it"><span className="fb-hdot loss" /> fout</span>
         <span className="it"><span className="fb-hdot" /> nog wachten</span>
-        <span className="it">5 bolletjes = 1 / 3 / 5 / 10 / 20 dagen · getal = zekerheid (0-10)</span>
+        <span className="it">5 bolletjes = 1 / 3 / 5 / 10 / 20 dagen</span>
       </div>
       <div className="fb-layout">
         <div className="fb-list">
-          {calls.map((c) => {
+          {sorted.map((c) => {
             const long = c.direction === 'bullish'
+            const tier = zekerheidTier(c.conviction)
             return (
               <div key={c.id} className={`fb-row${c.id === sel.id ? ' sel' : ''}`} onClick={() => setSelId(c.id)}>
                 <span className={`fb-chip ${long ? 'long' : 'short'}`}>{dirLabel(c.direction)}</span>
@@ -63,7 +58,10 @@ export function BriefingTab({ calls, kind, emptyText, hoofdhorizon }: { calls: F
                     {' '}· instap {fmtDate(c.entryDate)}
                   </div>
                 </div>
-                <span className="fb-row-conv num" title="zekerheid (0-10)">{c.conviction.toFixed(1)}</span>
+                <div className="fb-row-conv-cell">
+                  <span className="fb-row-conv num" title="zekerheid (0-10)">{c.conviction.toFixed(1)}</span>
+                  <span className={`fb-ztag ${tier.cls}`}>{tier.label}</span>
+                </div>
               </div>
             )
           })}
