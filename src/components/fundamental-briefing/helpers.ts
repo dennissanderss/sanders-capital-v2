@@ -51,3 +51,35 @@ export function convictionBand(c: FbCall): string {
   if (v >= 6) return '6.0–7.0'
   return '< 6.0'
 }
+
+// Close-to-close resultaat in pips (positief = de voorspelde kant op).
+export function closeToClosePips(call: FbCall, o: HorizonOutcome | undefined): number | null {
+  if (!o || !o.resolved || o.exitPrice == null) return null
+  const mult = call.pair.includes('JPY') ? 100 : 10000
+  const raw = o.exitPrice - call.entryPrice
+  return Math.round((call.direction === 'bullish' ? raw : -raw) * mult)
+}
+
+// Profit factor op één horizon = som winst-pips ÷ som verlies-pips (close-to-close).
+export function profitFactor(calls: FbCall[], horizon: number): number | null {
+  let win = 0, loss = 0, n = 0
+  for (const c of calls) {
+    const p = closeToClosePips(c, outcomeAt(c, horizon))
+    if (p == null) continue
+    n++
+    if (p > 0) win += p; else loss += -p
+  }
+  if (n === 0) return null
+  if (loss === 0) return win > 0 ? Infinity : null
+  return +(win / loss).toFixed(2)
+}
+
+export const HZ_LABEL: Record<number, string> = { 1: '1 dag', 3: '3 dagen', 5: '5 dagen', 10: '10 dagen', 20: '20 dagen' }
+
+export type SampleTier = 'ruis' | 'voorlopig' | 'betrouwbaar'
+// Sample-guard: voorkomt dat een dunne, mooi-ogende bucket als edge wordt gelezen.
+export function sampleTier(n: number): { tier: SampleTier; label: string } {
+  if (n < 30) return { tier: 'ruis', label: 'te weinig data (n<30)' }
+  if (n < 100) return { tier: 'voorlopig', label: 'voorlopig (n<100)' }
+  return { tier: 'betrouwbaar', label: 'betrouwbaar' }
+}
