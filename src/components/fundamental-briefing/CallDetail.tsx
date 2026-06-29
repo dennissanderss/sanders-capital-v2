@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { FbCall, CurrencyFactors } from '@/lib/fundamental/types'
 import { HORIZONS } from '@/lib/fundamental/constants'
-import { fmtDate, fmtPrice, dirLabel, HZ_LABEL } from './helpers'
+import { fmtDate, fmtPrice, dirLabel, HZ_LABEL, zekerheidTier } from './helpers'
 import { Tip } from './ui'
 
 const sgn = (v: number) => `${v > 0 ? '+' : ''}${v}`
@@ -44,7 +44,7 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
         </div>
         <div className="fb-conv-big">
           <div className="v num">{call.conviction.toFixed(1)}</div>
-          <div className="l">zekerheid / 10 <Tip text={TIP.zekerheid} /></div>
+          <div className="l"><span className={`fb-ztag ${zekerheidTier(call.conviction).cls}`}>{zekerheidTier(call.conviction).label}</span> zekerheid / 10 <Tip text={TIP.zekerheid} /></div>
         </div>
       </div>
 
@@ -105,7 +105,10 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
       {/* Blok 2 — waarom deze zekerheid, uitklapbaar per subscore (Feature 3) */}
       <div className="fb-block">
         <h4 className="fb-block-title">Waarom zekerheid {call.conviction.toFixed(1)}? <Tip text={TIP.zekerheid} /></h4>
-        <p className="fb-block-intro">De zekerheid is de optelsom van vier onderdelen (max 10). Klik een onderdeel open voor de exacte input.</p>
+        <p className="fb-block-intro">
+          De zekerheid is de optelsom van vier onderdelen (max 10). <b>Laag = zwakke call</b> (richting duidelijk, maar weinig
+          bevestiging); hoog = sterke call. Klik een onderdeel open voor de exacte input.
+        </p>
 
         <div className="fb-subs">
           {/* 1. Fundamentele onbalans */}
@@ -129,14 +132,17 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
           <SubRow k="im" label={`Marktbrede bevestiging (${Math.round(r.imAlignment)}%)`} tip={TIP.marktbreed} val={b.imPts} open={openSub === 'im'} onClick={subToggle}>
             <p className="fb-sub-intro">Welk deel van de brede marktsignalen deze richting bevestigde. {Math.round(r.imAlignment)}% ÷ 100 × 2 = {b.imPts.toFixed(1)} punten.</p>
             {r.intermarket && r.intermarket.length > 0 ? (
-              <div className="fb-im-list">
-                {r.intermarket.map((ins) => (
-                  <div className="fb-sub-line" key={ins.key}>
-                    <span>{IM_NAME[ins.key] || ins.key} <span style={{ color: 'var(--ink-4)' }}>{DIR_NL[ins.direction]} {sgn(+ins.changePct.toFixed(2))}%</span></span>
-                    <span className={ins.contributed ? 'fb-pos' : ''} style={{ fontWeight: 600 }}>{ins.contributed ? 'bevestigt' : '—'}</span>
-                  </div>
-                ))}
-              </div>
+              <>
+                <div className="fb-im-list">
+                  {r.intermarket.map((ins) => (
+                    <div className="fb-sub-line" key={ins.key}>
+                      <span>{IM_NAME[ins.key] || ins.key} <span style={{ color: 'var(--ink-4)' }}>{DIR_NL[ins.direction]} {sgn(+ins.changePct.toFixed(2))}%</span></span>
+                      <span className={ins.contributed ? 'fb-pos' : ''} style={{ fontWeight: 600 }}>{ins.contributed ? 'bevestigt' : '—'}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="fb-sub-note" style={{ marginTop: 8 }}><b>—</b> = telt niet mee voor het {call.regime}-regime (elk regime kijkt naar andere instrumenten).</p>
+              </>
             ) : <p className="fb-sub-note">{NOT_STORED}</p>}
           </SubRow>
 

@@ -6,6 +6,7 @@ import type { FbDataResponse } from '@/lib/fundamental/types'
 import { BriefingTab } from './BriefingTab'
 import { Trackrecord } from './Trackrecord'
 import { Analyse } from './Analyse'
+import { HowItWorks } from './ui'
 
 type Lens = 'daytrade' | 'swing'
 type Tab = 'calls' | 'trackrecord' | 'analyse'
@@ -52,6 +53,8 @@ export default function Dashboard() {
           Elke call wordt eerlijk en zonder look-ahead op meerdere horizons gevolgd — puur of de richting goed zit.
         </p>
       </div>
+
+      <HowItWorks />
 
       {/* Lens-schakelaar */}
       <div className="fb-lens">
