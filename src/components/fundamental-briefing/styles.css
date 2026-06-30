@@ -296,6 +296,31 @@
 /* Calls-intro */
 .fb-calls-intro { font-size: 12.5px; line-height: 1.55; color: var(--ink-2); background: var(--bg-2); border: 1px solid var(--line); border-radius: 9px; padding: 11px 14px; margin: 0 0 14px; }
 
+/* Gewone-taal-samenvatting per call */
+.fb-plain { font-size: 14px; line-height: 1.6; color: var(--ink); background: var(--accent-soft); border: 1px solid var(--line); border-radius: 10px; padding: 13px 16px; margin: 14px 0 4px; }
+
+/* "Toon de berekening" */
+.fb-calc-toggle { width: 100%; background: var(--bg-2); border: 1px solid var(--line); border-radius: 9px; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink-2); padding: 11px 14px; cursor: pointer; text-align: left; margin-top: 8px; }
+.fb-calc-toggle:hover { color: var(--ink); border-color: var(--ink-4); }
+
+/* Header-rij + Rondleiding-knop */
+.fb-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.fb-tour-start { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: 12px; font-weight: 600; color: var(--accent); padding: 7px 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.fb-tour-start:hover { background: var(--accent-soft); }
+
+/* Rondleiding-overlay */
+.fb-tour-overlay { position: fixed; inset: 0; background: rgba(12,22,38,0.45); z-index: 1000; display: flex; align-items: flex-end; justify-content: center; padding: 24px; }
+.fb-tour-card { background: var(--bg); border-radius: 14px; box-shadow: 0 12px 40px rgba(12,22,38,.25); max-width: 440px; width: 100%; padding: 22px 24px; }
+.fb-tour-step { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); font-weight: 700; margin-bottom: 8px; }
+.fb-tour-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.fb-tour-text { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); margin: 0 0 18px; }
+.fb-tour-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.fb-tour-skip { background: none; border: none; font: inherit; font-size: 12.5px; color: var(--ink-3); cursor: pointer; }
+.fb-tour-nav { display: flex; gap: 8px; }
+.fb-tour-btn { background: var(--accent); border: none; color: #fff; font: inherit; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+.fb-tour-btn.ghost { background: var(--bg-inset); color: var(--ink-2); }
+@media (min-width: 760px) { .fb-tour-overlay { align-items: center; } }
+
 /* Tradeable vs zwakke calls */
 .fb-list-head { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); font-weight: 700; margin: 2px 2px 8px; }
 .fb-weak-toggle { width: 100%; background: none; border: 1px dashed var(--line); border-radius: 8px; font: inherit; font-size: 12px; color: var(--ink-3); padding: 9px 12px; cursor: pointer; margin-top: 12px; text-align: left; }

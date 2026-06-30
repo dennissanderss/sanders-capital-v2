@@ -6,10 +6,19 @@ import type { FbDataResponse } from '@/lib/fundamental/types'
 import { BriefingTab } from './BriefingTab'
 import { Trackrecord } from './Trackrecord'
 import { Analyse } from './Analyse'
-import { HowItWorks } from './ui'
+import { HowItWorks, Tour, type TourStep } from './ui'
 
 type Lens = 'daytrade' | 'swing'
 type Tab = 'calls' | 'trackrecord' | 'analyse'
+
+const TOUR: TourStep[] = [
+  { title: 'Welkom bij de Fundamental Briefing', text: 'Deze tool voorspelt per valutapaar een richting — omhoog of omlaag — op basis van de fundamentals, en houdt eerlijk bij of dat klopt. Even in 4 korte stappen.' },
+  { title: '1 · De calls van vandaag', tab: 'calls', text: 'Elk paar krijgt een richting (LONG = omhoog, SHORT = omlaag) en een zekerheid van 0 tot 10. Alleen de sterkere calls staan bovenaan als "tradeable"; zwakke staan apart — die wil je niet traden.' },
+  { title: '2 · Waarom een call?', tab: 'calls', text: 'Klik op een call. Bovenaan lees je in gewone taal waarom de tool deze richting verwacht. Wil je de exacte berekening? Klik "Toon de berekening".' },
+  { title: '3 · Klopte het? — Trackrecord', tab: 'trackrecord', text: 'Hier zie je van alle voorspellingen hoe vaak de richting goed zat, gemeten op 1 tot 20 dagen — met referentie- en eindkoers per call, zodat je het kunt nachecken.' },
+  { title: '4 · Analyse', tab: 'analyse', text: 'Hier splits je de resultaten uit per zekerheid, paar en termijn. Bij te weinig data krijg je een waarschuwing, zodat je geen toevalstreffer voor een patroon aanziet.' },
+  { title: 'Klaar!', text: 'Je kunt deze rondleiding altijd opnieuw starten via de knop "Rondleiding" bovenaan. Veel succes.' },
+]
 
 export default function Dashboard() {
   const [data, setData] = useState<FbDataResponse | null>(null)
@@ -17,6 +26,7 @@ export default function Dashboard() {
   const [err, setErr] = useState<string | null>(null)
   const [lens, setLens] = useState<Lens>('daytrade')
   const [tab, setTab] = useState<Tab>('calls')
+  const [tourIdx, setTourIdx] = useState<number | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -26,6 +36,21 @@ export default function Dashboard() {
       .catch((e) => { if (alive) { setErr(String(e)); setLoading(false) } })
     return () => { alive = false }
   }, [])
+
+  // Rondleiding: de eerste keer automatisch starten.
+  useEffect(() => {
+    try { if (!localStorage.getItem('fb_tour_v1')) setTourIdx(0) } catch { /* geen storage */ }
+  }, [])
+
+  // Tijdens de rondleiding het juiste tabblad tonen.
+  useEffect(() => {
+    if (tourIdx == null) return
+    const s = TOUR[tourIdx]
+    if (s?.tab) setTab(s.tab as Tab)
+    if (s?.lens) setLens(s.lens as Lens)
+  }, [tourIdx])
+
+  const closeTour = () => { setTourIdx(null); try { localStorage.setItem('fb_tour_v1', '1') } catch { /* */ } }
 
   const header = data?.header
 
@@ -47,7 +72,10 @@ export default function Dashboard() {
   return (
     <div className="fb-tool">
       <div className="fb-head">
-        <h1 className="fb-title">Fundamental Briefing</h1>
+        <div className="fb-head-row">
+          <h1 className="fb-title">Fundamental Briefing</h1>
+          <button className="fb-tour-start" onClick={() => setTourIdx(0)}>? Rondleiding</button>
+        </div>
         <p className="fb-sub">
           Fundamenteel-gedreven valuta-bias, één keer per ochtend gelockt en vast voor de dag (swing: maandag).
           Elke call wordt eerlijk en zonder look-ahead op meerdere horizons gevolgd — puur of de richting goed zit.
@@ -119,6 +147,16 @@ export default function Dashboard() {
           )}
           {tab === 'analyse' && <Analyse calls={cfg.trackrecord} />}
         </>
+      )}
+
+      {tourIdx != null && (
+        <Tour
+          steps={TOUR}
+          index={tourIdx}
+          onNext={() => setTourIdx((i) => Math.min(TOUR.length - 1, (i ?? 0) + 1))}
+          onPrev={() => setTourIdx((i) => Math.max(0, (i ?? 0) - 1))}
+          onClose={closeTour}
+        />
       )}
     </div>
   )

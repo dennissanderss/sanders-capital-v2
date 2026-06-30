@@ -12,6 +12,31 @@ export function Tip({ text }: { text: string }) {
   )
 }
 
+// Korte rondleiding die de eerste keer door de tool loopt.
+export interface TourStep { title: string; text: string; tab?: string; lens?: string }
+export function Tour({ steps, index, onNext, onPrev, onClose }: {
+  steps: TourStep[]; index: number; onNext: () => void; onPrev: () => void; onClose: () => void
+}) {
+  const step = steps[index]
+  const last = index === steps.length - 1
+  return (
+    <div className="fb-tour-overlay" role="dialog" aria-modal="true">
+      <div className="fb-tour-card">
+        <div className="fb-tour-step">Rondleiding · {index + 1}/{steps.length}</div>
+        <div className="fb-tour-title">{step.title}</div>
+        <p className="fb-tour-text">{step.text}</p>
+        <div className="fb-tour-actions">
+          <button className="fb-tour-skip" onClick={onClose}>Overslaan</button>
+          <div className="fb-tour-nav">
+            {index > 0 && <button className="fb-tour-btn ghost" onClick={onPrev}>Vorige</button>}
+            <button className="fb-tour-btn" onClick={last ? onClose : onNext}>{last ? 'Klaar' : 'Volgende'}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Vaste, visuele uitleg bovenaan de tool: in 3 stappen wat een call is en
 // wanneer hij juist of fout is. Standaard zichtbaar (kan ingeklapt worden).
 export function HowItWorks() {

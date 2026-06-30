@@ -1,4 +1,49 @@
-import type { FbCall, HorizonOutcome } from '@/lib/fundamental/types'
+import type { FbCall, HorizonOutcome, CurrencyFactors } from '@/lib/fundamental/types'
+
+// Korte driver-omschrijving per valuta uit de al-berekende factoren.
+function ccyDriver(f: CurrencyFactors): string {
+  const parts: string[] = []
+  if (f.cbPts >= 1) parts.push('havikse centrale bank')
+  else if (f.cbPts <= -1) parts.push('verruimende centrale bank')
+  if (f.ratePts > 0) parts.push('rente boven doel')
+  else if (f.ratePts < 0) parts.push('rente onder doel')
+  if (f.newsPts >= 0.3) parts.push('positief nieuws')
+  else if (f.newsPts <= -0.3) parts.push('negatief nieuws')
+  return parts.slice(0, 2).join(', ')
+}
+
+// Eén gewone-taal-zin: wat verwacht de tool en waarom. Puur uit opgeslagen
+// data — geen herberekening.
+export function plainSummary(call: FbCall): string {
+  const r = call.reasoning
+  const long = call.direction === 'bullish'
+  const strong = long ? r.base : r.quote
+  const weak = long ? r.quote : r.base
+  const driver = ccyDriver(strong)
+  const tier = zekerheidTier(call.conviction).cls
+
+  let mom: string
+  if (call.breakdown.contrarianPts > 0) {
+    mom = long
+      ? 'De koers daalde de afgelopen dagen juist — een gunstiger moment om long in te stappen.'
+      : 'De koers steeg de afgelopen dagen juist — een gunstiger moment om short in te stappen.'
+  } else {
+    mom = 'Het recente koersverloop gaf geen extra instapvoordeel.'
+  }
+
+  let conf: string
+  if (call.regime === 'Gemengd') {
+    conf = 'De bredere markt geeft nu geen duidelijke bevestiging (gemengd regime).'
+  } else {
+    const c = call.breakdown.imPts + call.breakdown.regimePts // max 3.5
+    conf = c >= 2.5 ? 'Markt en regime bevestigen de richting sterk.'
+      : c >= 1.5 ? 'Markt en regime bevestigen de richting deels.'
+      : 'Markt en regime bevestigen de richting nauwelijks.'
+  }
+
+  const sterkte = tier === 'sterk' ? 'Sterke' : tier === 'matig' ? 'Redelijke' : 'Zwakke'
+  return `De ${strong.currency} is fundamenteel sterker dan de ${weak.currency}${driver ? ` (${driver})` : ''}. ${mom} ${conf} → ${sterkte} ${long ? 'long' : 'short'} ${call.pair}.`
+}
 
 export function fmtDate(iso: string | null): string {
   if (!iso) return '—'

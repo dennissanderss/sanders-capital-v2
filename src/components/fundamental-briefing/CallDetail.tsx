@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { FbCall, CurrencyFactors } from '@/lib/fundamental/types'
 import { HORIZONS } from '@/lib/fundamental/constants'
-import { fmtDate, fmtPrice, dirLabel, HZ_LABEL, zekerheidTier } from './helpers'
+import { fmtDate, fmtPrice, dirLabel, HZ_LABEL, zekerheidTier, plainSummary } from './helpers'
 import { Tip } from './ui'
 
 const sgn = (v: number) => `${v > 0 ? '+' : ''}${v}`
@@ -32,6 +32,7 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
   const [selHz, setSelHz] = useState<number>(hoofdhorizon)
   const sel = call.outcomes.find((o) => o.horizon === selHz)
   const [openSub, setOpenSub] = useState<string | null>('fund')
+  const [showCalc, setShowCalc] = useState(false)
 
   const subToggle = (k: string) => setOpenSub((o) => (o === k ? null : k))
 
@@ -50,6 +51,8 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
           <div className="l"><span className={`fb-ztag ${zekerheidTier(call.conviction).cls}`}>{zekerheidTier(call.conviction).label}</span> zekerheid / 10 <Tip text={TIP.zekerheid} /></div>
         </div>
       </div>
+
+      <p className="fb-plain">{plainSummary(call)}</p>
 
       {/* Blok 1 — tijdlijn + win/loss helder (Feature 2) */}
       <div className="fb-block">
@@ -105,7 +108,12 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
         <p className="fb-note"><b>Let op:</b> dit meet of de <b>richting</b> klopte, niet of je de trade onderweg had kunnen uithouden. Alleen de slotkoers telt — geen take profit of stop loss.</p>
       </div>
 
-      {/* Blok 2 — waarom deze zekerheid, uitklapbaar per subscore (Feature 3) */}
+      {/* Blok 2 — de berekening, standaard ingeklapt */}
+      <button className="fb-calc-toggle" onClick={() => setShowCalc((s) => !s)}>
+        {showCalc ? '▲ Verberg de berekening' : '▾ Toon de berekening — hoe de zekerheid is opgebouwd'}
+      </button>
+
+      {showCalc && (
       <div className="fb-block">
         <h4 className="fb-block-title">Waarom zekerheid {call.conviction.toFixed(1)}? <Tip text={TIP.zekerheid} /></h4>
         <p className="fb-block-intro">
@@ -173,6 +181,7 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
           <div className="fb-sub-total"><span className="l">Samen</span><span className="v num">{b.fundPts.toFixed(1)} + {b.contrarianPts.toFixed(1)} + {b.imPts.toFixed(1)} + {b.regimePts.toFixed(1)} = {b.total.toFixed(1)}</span></div>
         </div>
       </div>
+      )}
     </div>
   )
 }
