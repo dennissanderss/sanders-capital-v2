@@ -12,7 +12,7 @@ type Lens = 'daytrade' | 'swing'
 type Tab = 'calls' | 'trackrecord' | 'analyse'
 
 const TOUR: TourStep[] = [
-  { title: 'Welkom bij de Fundamental Briefing', text: 'Deze tool voorspelt per valutapaar een richting — omhoog of omlaag — op basis van de fundamentals, en houdt eerlijk bij of dat klopt. Even in 4 korte stappen.' },
+  { title: 'Welkom bij de Fundamental Briefing', text: 'Deze tool voorspelt per valutapaar een richting — omhoog of omlaag — op basis van de fundamentals, en houdt eerlijk bij of dat klopt. Bovenaan kies je je stijl: Daytrade (kort, 1 dag aanhouden) of Swing (langer, ~een week). Even in 4 korte stappen.' },
   { title: '1 · De calls van vandaag', tab: 'calls', text: 'Elk paar krijgt een richting (LONG = omhoog, SHORT = omlaag) en een zekerheid van 0 tot 10. Alleen de sterkere calls staan bovenaan als "tradeable"; zwakke staan apart — die wil je niet traden.' },
   { title: '2 · Waarom een call?', tab: 'calls', text: 'Klik op een call. Bovenaan lees je in gewone taal waarom de tool deze richting verwacht. Wil je de exacte berekening? Klik "Toon de berekening".' },
   { title: '3 · Klopte het? — Trackrecord', tab: 'trackrecord', text: 'Hier zie je van alle voorspellingen hoe vaak de richting goed zat, gemeten op 1 tot 20 dagen — met referentie- en eindkoers per call, zodat je het kunt nachecken.' },
@@ -95,9 +95,13 @@ export default function Dashboard() {
           <span className="fb-lens-desc">weekcalls · meet op 5 dagen</span>
         </button>
       </div>
-      {lens === 'swing' && (
-        <div className="fb-exp-banner">⚗️ <b>Swing is experimenteel</b> en bouwt zich nog op — de weekcalls hebben tijd nodig om hun 5-daagse venster te vullen. Lees de cijfers voorlopig.</div>
-      )}
+      <div className={`fb-mode-banner${lens === 'swing' ? ' exp' : ''}`}>
+        {lens === 'daytrade' ? (
+          <><b>Daytrade — korte termijn.</b> Elke ochtend verse dagcalls die je dezelfde dag aanhoudt; de tool rekent af op <b>1 handelsdag</b>. Wil je langer aanhouden? Kies <b>Swing</b> hiernaast.</>
+        ) : (
+          <>⚗️ <b>Swing — langere termijn (experimenteel).</b> Weekcalls (maandagochtend gelockt) die je ongeveer <b>een week</b> aanhoudt; afgerekend op <b>5 handelsdagen</b>. De fundamentele analyse is gelijk aan daytrade — alleen de horizon verschilt. Bouwt zich nog op, lees de cijfers voorlopig.</>
+        )}
+      </div>
 
       {header && (
         <>
