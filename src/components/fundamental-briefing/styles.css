@@ -209,13 +209,13 @@
 .fb-exp-banner { background: rgba(217,142,43,.10); border: 1px solid rgba(217,142,43,.3); color: var(--ink-2); font-size: 12.5px; line-height: 1.5; padding: 10px 14px; border-radius: 9px; margin-bottom: 16px; }
 
 /* Uitklapbare subscores */
-.fb-sub-acc { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.fb-sub-acc { border: 1px solid var(--line); border-radius: 8px; }
 .fb-sub-head { width: 100%; display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; background: none; border: none; font: inherit; padding: 10px 12px; cursor: pointer; font-size: 12.5px; }
 .fb-sub-head .l { color: var(--ink-2); text-align: left; }
 .fb-sub-head .v { font-weight: 700; color: var(--ink); }
 .fb-sub-chev { font-size: 9px; color: var(--ink-4); }
 .fb-sub-acc.open .fb-sub-head { border-bottom: 1px solid var(--line-soft); }
-.fb-sub-body { padding: 12px; background: var(--bg-2); }
+.fb-sub-body { padding: 12px; background: var(--bg-2); border-radius: 0 0 8px 8px; }
 .fb-sub-intro { font-size: 12px; color: var(--ink-2); margin: 0 0 10px; line-height: 1.5; }
 .fb-sub-note { font-size: 12px; color: var(--ink-3); line-height: 1.5; }
 .fb-sub-callout { font-size: 12px; line-height: 1.5; color: var(--ink-2); background: rgba(217,142,43,.10); border: 1px solid rgba(217,142,43,.25); border-radius: 8px; padding: 9px 11px; margin: 0 0 10px; }
