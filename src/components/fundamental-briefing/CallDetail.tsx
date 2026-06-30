@@ -23,6 +23,9 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
   const long = call.direction === 'bullish'
   const b = call.breakdown
   const r = call.reasoning
+  // In een Gemengd regime is de alignment een neutrale 50% (geen markt-thema),
+  // niet door instrumenten verdiend — dat verklaart 50% + 1.0 punt met alle "—".
+  const isGemengd = call.regime === 'Gemengd'
 
   // Tijdlijn opent standaard op de hoofdhorizon van de lens (of de laatst beoordeelde).
   const lastResolved = [...HORIZONS].reverse().find((h) => call.outcomes.find((o) => o.horizon === h)?.resolved)
@@ -130,7 +133,17 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
 
           {/* 3. Marktbrede bevestiging */}
           <SubRow k="im" label={`Marktbrede bevestiging (${Math.round(r.imAlignment)}%)`} tip={TIP.marktbreed} val={b.imPts} open={openSub === 'im'} onClick={subToggle}>
-            <p className="fb-sub-intro">Welk deel van de brede marktsignalen deze richting bevestigde. {Math.round(r.imAlignment)}% ÷ 100 × 2 = {b.imPts.toFixed(1)} punten.</p>
+            <p className="fb-sub-intro">
+              Welk deel van de brede marktsignalen (aandelen, VIX, goud, dollar, rente) deze richting bevestigde.
+              De punten lopen lineair mee met het percentage (geen drempel): {Math.round(r.imAlignment)}% ÷ 100 × 2 = {b.imPts.toFixed(1)} punten — max 2 bij 100%.
+            </p>
+            {isGemengd && (
+              <p className="fb-sub-callout">
+                <b>Let op — Gemengd regime.</b> Er is nu geen duidelijk markt-thema (geen risk-on/risk-off), dus de marktsignalen kunnen de
+                richting niet bevestigen of tegenspreken. De tool gebruikt dan een <b>neutrale 50%</b> (= 1.0 punt). Geen instrument
+                &quot;bevestigt&quot; hier; <b>élke call krijgt in dit regime dezelfde neutrale 50%</b> — het zegt dus niets onderscheidends over deze call.
+              </p>
+            )}
             {r.intermarket && r.intermarket.length > 0 ? (
               <>
                 <div className="fb-im-list">
@@ -141,7 +154,11 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
                     </div>
                   ))}
                 </div>
-                <p className="fb-sub-note" style={{ marginTop: 8 }}><b>—</b> = telt niet mee voor het {call.regime}-regime (elk regime kijkt naar andere instrumenten).</p>
+                <p className="fb-sub-note" style={{ marginTop: 8 }}>
+                  {isGemengd
+                    ? <><b>—</b> = in een Gemengd regime worden deze instrumenten niet gelezen; je ziet wél wat de markt deed.</>
+                    : <><b>—</b> = telt niet mee voor het {call.regime}-regime (elk regime kijkt naar andere instrumenten).</>}
+                </p>
               </>
             ) : <p className="fb-sub-note">{NOT_STORED}</p>}
           </SubRow>
