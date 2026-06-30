@@ -124,11 +124,19 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
         <div className="fb-subs">
           {/* 1. Fundamentele onbalans */}
           <SubRow k="fund" label="Fundamentele onbalans" val={b.fundPts} open={openSub === 'fund'} onClick={subToggle}>
-            <p className="fb-sub-intro">Het verschil tussen beide valutascores. Per valuta: centrale bank (×2) + rente vs. doel (×1,5) + nieuws.</p>
+            <p className="fb-sub-intro">
+              Het verschil tussen beide valutascores. Het draait om de <b>richting van het beleid</b>, niet om het rente-niveau.
+              Per valuta: centralebankbeleid (havikse/verruimend, ×2) + rente t.o.v. het <b>eigen doel</b> van die centrale bank (×1,5) + nieuws.
+            </p>
             <div className="fb-factors">
               {[r.base, r.quote].map((c) => <FactorCol key={c.currency} c={c} newsDetail={r.newsDetail?.[c.currency]} />)}
             </div>
             <p className="fb-formula">Verschil: {r.base.currency} {sgn(+r.base.total.toFixed(1))} − {r.quote.currency} {sgn(+r.quote.total.toFixed(1))} = <b>{sgn(+call.fundScore.toFixed(1))}</b> → richting <b>{dirLabel(call.direction)}</b>.</p>
+            <p className="fb-sub-note" style={{ marginTop: 8 }}>
+              <b>Let op:</b> een hogere rente telt hier niet automatisch mee. We vergelijken de twee rentes <b>niet</b> met elkaar (carry),
+              maar kijken of een centrale bank verkrapt of verruimt, en of haar rente boven of onder haar <b>eigen</b> doel staat. Een lagere
+              rente die omhoog wordt geduwd kan dus sterker scoren dan een hogere rente die op hold staat.
+            </p>
           </SubRow>
 
           {/* 2. Recente koersbeweging */}
@@ -210,7 +218,7 @@ function FactorCol({ c, newsDetail }: { c: CurrencyFactors; newsDetail?: { title
         <span className="fb-fcol-total num">{c.total > 0 ? '+' : ''}{c.total.toFixed(1)}</span>
       </div>
       <div className="fb-frow"><span>Centrale bank · {c.biasLabel}</span><span className="v num">{c.cbPts > 0 ? '+' : ''}{c.cbPts.toFixed(1)}</span></div>
-      <div className="fb-frow"><span>Rente vs. doel{c.rate != null ? ` (${c.rate}% / ${c.target}%)` : ''}</span><span className="v num">{c.ratePts > 0 ? '+' : ''}{c.ratePts.toFixed(1)}</span></div>
+      <div className="fb-frow"><span>Rente vs. eigen doel{c.rate != null ? ` (${c.rate}% / ${c.target}%)` : ''}</span><span className="v num">{c.ratePts > 0 ? '+' : ''}{c.ratePts.toFixed(1)}</span></div>
       <button className="fb-frow fb-news-toggle" onClick={() => setNewsOpen((o) => !o)}>
         <span>Nieuws {(newsDetail?.length || c.newsHeadlines.length) ? `(${newsDetail?.length ?? c.newsHeadlines.length}) ▾` : ''}</span>
         <span className="v num">{c.newsPts > 0 ? '+' : ''}{c.newsPts.toFixed(1)}</span>
