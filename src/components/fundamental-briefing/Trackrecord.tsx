@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import type { FbCall } from '@/lib/fundamental/types'
 import { winStats, profitFactor, outcomeAt, closeToClosePips, fmtDate, fmtPrice, dirLabel, HZ_LABEL } from './helpers'
 import { Tip, HowToRead } from './ui'
@@ -12,9 +13,46 @@ function verdictOf(c: FbCall, h: number): 'win' | 'loss' | 'pending' {
 export function Trackrecord({ calls, hoofdhorizon, secondaryHorizons, lensLabel }: {
   calls: FbCall[]; hoofdhorizon: number; secondaryHorizons: number[]; lensLabel: string
 }) {
+  const [dateOpen, setDateOpen] = useState<Record<string, boolean>>({})
+
   const overall = winStats(calls, hoofdhorizon)
   const pf = profitFactor(calls, hoofdhorizon)
-  const list = [...calls].sort((a, b) => (a.callDate < b.callDate ? 1 : a.callDate > b.callDate ? -1 : b.conviction - a.conviction)).slice(0, 100)
+  const list = [...calls].sort((a, b) => (a.callDate < b.callDate ? 1 : a.callDate > b.callDate ? -1 : b.conviction - a.conviction)).slice(0, 200)
+
+  // Groepeer per datum (nieuwste eerst).
+  const groups: { date: string; rows: FbCall[] }[] = []
+  for (const c of list) {
+    const g = groups.find((x) => x.date === c.callDate)
+    if (g) g.rows.push(c); else groups.push({ date: c.callDate, rows: [c] })
+  }
+  const isOpen = (date: string, newest: boolean) => dateOpen[date] ?? newest
+  const toggle = (date: string, newest: boolean) => setDateOpen((m) => ({ ...m, [date]: !(m[date] ?? newest) }))
+
+  function Row({ c }: { c: FbCall }) {
+    const o = outcomeAt(c, hoofdhorizon)
+    const v = verdictOf(c, hoofdhorizon)
+    const long = c.direction === 'bullish'
+    const pips = closeToClosePips(c, o)
+    return (
+      <div className="fb-tr2-row">
+        <span className="num">{fmtDate(c.callDate)}</span>
+        <span><b>{c.pair}</b> <span className={`fb-chip ${long ? 'long' : 'short'}`}>{dirLabel(c.direction)}</span></span>
+        <span className="num">{fmtPrice(c.pair, c.entryPrice)}<br /><span className="fb-mono" style={{ textTransform: 'none' }}>{fmtDate(c.entryDate)}</span></span>
+        <span className="num">{o?.exitPrice != null ? <>{fmtPrice(c.pair, o.exitPrice)}<br /><span className="fb-mono" style={{ textTransform: 'none' }}>{fmtDate(o.exitDate)}</span></> : '—'}</span>
+        <span>
+          {v === 'pending'
+            ? <span className="fb-tr-verdict pending">wacht</span>
+            : <span className={`fb-tr-verdict ${v}`}>{v === 'win' ? 'JUIST' : 'ONJUIST'}{pips != null ? <span className="num" style={{ fontWeight: 400, marginLeft: 4 }}>{pips > 0 ? '+' : ''}{pips}p</span> : null}</span>}
+        </span>
+        <span className="fb-tr2-sec">
+          {secondaryHorizons.map((h) => {
+            const sv = verdictOf(c, h)
+            return <span key={h} className={`fb-mini ${sv}`} title={`${HZ_LABEL[h]}: ${sv === 'win' ? 'juist' : sv === 'loss' ? 'onjuist' : 'wacht'}`}>{sv === 'win' ? 'J' : sv === 'loss' ? 'O' : '·'}</span>
+          })}
+        </span>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -52,32 +90,23 @@ export function Trackrecord({ calls, hoofdhorizon, secondaryHorizons, lensLabel 
               <span>Datum</span><span>Paar</span><span>Referentie</span><span>Eindkoers</span><span>Na {HZ_LABEL[hoofdhorizon]}</span>
               <span className="fb-tr2-sec">{secondaryHorizons.map((h) => HZ_LABEL[h].replace(' dag', 'd').replace('en', '')).join(' / ')}</span>
             </div>
-            {list.map((c) => {
-              const o = outcomeAt(c, hoofdhorizon)
-              const v = verdictOf(c, hoofdhorizon)
-              const long = c.direction === 'bullish'
-              const pips = closeToClosePips(c, o)
+            {groups.map((g, gi) => {
+              const newest = gi === 0
+              const open = isOpen(g.date, newest)
+              const s = winStats(g.rows, hoofdhorizon)
+              const tally = s.n > 0 ? `${s.wins}/${s.n} juist` : `${g.rows.length === s.pending ? 'alle' : g.rows.length} nog wachten`
               return (
-                <div className="fb-tr2-row" key={c.id}>
-                  <span className="num">{fmtDate(c.callDate)}</span>
-                  <span><b>{c.pair}</b> <span className={`fb-chip ${long ? 'long' : 'short'}`}>{dirLabel(c.direction)}</span></span>
-                  <span className="num">{fmtPrice(c.pair, c.entryPrice)}<br /><span className="fb-mono" style={{ textTransform: 'none' }}>{fmtDate(c.entryDate)}</span></span>
-                  <span className="num">{o?.exitPrice != null ? <>{fmtPrice(c.pair, o.exitPrice)}<br /><span className="fb-mono" style={{ textTransform: 'none' }}>{fmtDate(o.exitDate)}</span></> : '—'}</span>
-                  <span>
-                    {v === 'pending'
-                      ? <span className="fb-tr-verdict pending">wacht</span>
-                      : <span className={`fb-tr-verdict ${v}`}>{v === 'win' ? 'JUIST' : 'ONJUIST'}{pips != null ? <span className="num" style={{ fontWeight: 400, marginLeft: 4 }}>{pips > 0 ? '+' : ''}{pips}p</span> : null}</span>}
-                  </span>
-                  <span className="fb-tr2-sec">
-                    {secondaryHorizons.map((h) => {
-                      const sv = verdictOf(c, h)
-                      return <span key={h} className={`fb-mini ${sv}`} title={`${HZ_LABEL[h]}: ${sv === 'win' ? 'juist' : sv === 'loss' ? 'onjuist' : 'wacht'}`}>{sv === 'win' ? 'J' : sv === 'loss' ? 'O' : '·'}</span>
-                    })}
-                  </span>
+                <div key={g.date}>
+                  <button className="fb-date-group" onClick={() => toggle(g.date, newest)}>
+                    <span className="fb-date-chev">{open ? '▾' : '▸'}</span>
+                    <span className="fb-date-label num">{fmtDate(g.date)}</span>
+                    <span className="fb-date-meta">{g.rows.length} call{g.rows.length === 1 ? '' : 's'} · {tally}</span>
+                  </button>
+                  {open && g.rows.map((c) => <Row key={c.id} c={c} />)}
                 </div>
               )
             })}
-            {calls.length > 100 && <p className="fb-note">Eerste 100 van {calls.length} getoond.</p>}
+            {calls.length > 200 && <p className="fb-note">Eerste 200 van {calls.length} getoond.</p>}
           </div>
         </>
       )}

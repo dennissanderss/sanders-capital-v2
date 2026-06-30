@@ -233,6 +233,11 @@
 
 /* trackrecord call-tabel (v2) */
 .fb-tr-list { margin-top: 18px; }
+.fb-date-group { width: 100%; display: flex; align-items: center; gap: 10px; background: var(--bg-2); border: none; border-bottom: 1px solid var(--line); font: inherit; font-size: 12px; padding: 9px 10px; cursor: pointer; text-align: left; color: var(--ink); }
+.fb-date-group:hover { background: var(--bg-inset); }
+.fb-date-chev { font-size: 9px; color: var(--ink-4); width: 10px; flex-shrink: 0; }
+.fb-date-label { font-weight: 700; }
+.fb-date-meta { color: var(--ink-3); font-size: 11px; }
 .fb-tr2-head, .fb-tr2-row { display: grid; grid-template-columns: 58px 1.3fr 86px 86px 128px 1fr; gap: 10px; align-items: center; padding: 9px 10px; }
 .fb-tr2-head { font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-4); font-weight: 600; border-bottom: 1px solid var(--line); }
 .fb-tr2-row { border-bottom: 1px solid var(--line-soft); font-size: 12px; }
