@@ -52,9 +52,7 @@ export function BriefingTab({ calls, kind, emptyText, hoofdhorizon }: { calls: F
 
   const intro = (
     <p className="fb-calls-intro">
-      Een <b>call</b> = een paar met een duidelijke fundamentele richting. Het getal is de <b>zekerheid</b> (0–10): hoe sterk
-      die richting is bevestigd door momentum, markt en regime. <b>Alleen calls met genoeg bevestiging zijn het handelen waard</b> —
-      zwakke calls (onder de {TRADE_MIN}) staan apart, want die wil je niet traden.
+      <b>Sterkste calls bovenaan.</b> Het getal is de zekerheid (0–10). Zwakke calls (onder de {TRADE_MIN}) staan apart — die wil je niet traden.
     </p>
   )
 

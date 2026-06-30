@@ -40,7 +40,9 @@ export function Tour({ steps, index, onNext, onPrev, onClose }: {
 // Vaste, visuele uitleg bovenaan de tool: in 3 stappen wat een call is en
 // wanneer hij juist of fout is. Standaard zichtbaar (kan ingeklapt worden).
 export function HowItWorks() {
-  const [open, setOpen] = useState(true)
+  // Standaard ingeklapt — houdt de bovenkant strak (dashboard i.p.v.
+  // handleiding). De rondleiding vangt de eerste kennismaking op.
+  const [open, setOpen] = useState(false)
   return (
     <div className="fb-hiw">
       <div className="fb-hiw-bar">
