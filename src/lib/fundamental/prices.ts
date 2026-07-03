@@ -85,6 +85,30 @@ export function momentum5d(hist: Candle[], pair: string): {
   return { pips, start: { date: ago.date, price: ago.close }, now: { date: last.date, price: last.close } }
 }
 
+// 14-daagse ATR in pips, op voltooide candles (simpel gemiddelde van de
+// true range — transparanter dan Wilder-smoothing en ruim goed genoeg om
+// pips te normaliseren per paar).
+export function atr14Pips(hist: Candle[], pair: string): number | null {
+  if (hist.length < 15) return null
+  const trs: number[] = []
+  for (let i = hist.length - 14; i < hist.length; i++) {
+    const c = hist[i], prev = hist[i - 1]
+    const tr = Math.max(c.high - c.low, Math.abs(c.high - prev.close), Math.abs(c.low - prev.close))
+    trs.push(tr)
+  }
+  const atr = trs.reduce((a, b) => a + b, 0) / trs.length
+  return Math.round(atr * pipMult(pair))
+}
+
+// 5-daagse % verandering (voor de grondstoffen-terms-of-trade).
+export function change5dPct(hist: Candle[]): number | null {
+  if (hist.length < 6) return null
+  const last = hist[hist.length - 1].close
+  const ago = hist[hist.length - 6].close
+  if (!ago) return null
+  return +(((last - ago) / ago) * 100).toFixed(2)
+}
+
 // Daily % change van een intermarket-instrument op voltooide candles.
 export function dailyChangePct(hist: Candle[]): { changePct: number; direction: 'up' | 'down' | 'flat' } {
   if (hist.length < 2) return { changePct: 0, direction: 'flat' }

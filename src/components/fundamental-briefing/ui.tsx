@@ -63,14 +63,14 @@ export function HowItWorks() {
 
           <div className="fb-hiw-step">
             <span className="fb-hiw-num">2</span>
-            <div className="fb-hiw-h">Zekerheid 0 – 10</div>
-            <p>Hoe sterk de fundamentals die richting steunen. De <b>sterkste calls staan bovenaan</b>.</p>
+            <div className="fb-hiw-h">Bias · Timing · Zekerheid</div>
+            <p><b>Bias</b> (0–10) = hoe sterk de fundamentals de richting steunen. <b>Timing</b> (0–10) = hoe gunstig dít instapmoment is (dip/rally, marktbevestiging, geen cijfers op komst). <b>Zekerheid</b> = de mix; de sterkste calls staan bovenaan.</p>
             <div className="fb-hiw-scale">
               <span className="z zwak">zwak<br />0–5</span>
               <span className="z matig">matig<br />5–7</span>
               <span className="z sterk">sterk<br />7–10</span>
             </div>
-            <p className="fb-hiw-sub">Een lage zekerheid (bv. <b>3.3</b>) is dus een <b>zwakke</b> call: richting duidelijk, maar nauwelijks bevestigd.</p>
+            <p className="fb-hiw-sub">Sterke bias + slechte timing? Dan wil je de call <b>zien</b>, maar wachten op een beter moment.</p>
           </div>
 
           <div className="fb-hiw-step">

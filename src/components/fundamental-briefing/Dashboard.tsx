@@ -13,7 +13,7 @@ type Tab = 'calls' | 'trackrecord' | 'analyse'
 
 const TOUR: TourStep[] = [
   { title: 'Welkom bij de Fundamental Briefing', text: 'Deze tool voorspelt per valutapaar een richting — omhoog of omlaag — op basis van de fundamentals, en houdt eerlijk bij of dat klopt. Bovenaan kies je je stijl: Daytrade (kort, 1 dag aanhouden) of Swing (langer, ~een week). Even in 4 korte stappen.' },
-  { title: '1 · De calls van vandaag', tab: 'calls', text: 'Elk paar krijgt een richting (LONG = omhoog, SHORT = omlaag) en een zekerheid van 0 tot 10. Alleen de sterkere calls staan bovenaan als "tradeable"; zwakke staan apart — die wil je niet traden.' },
+  { title: '1 · De calls van vandaag', tab: 'calls', text: 'Elk paar krijgt een richting (LONG = omhoog, SHORT = omlaag), een BIAS (hoe sterk de fundamentele these is) en een TIMING (hoe gunstig dit instapmoment is). Samen vormen ze de zekerheid van 0 tot 10. Sterke bias + slechte timing = interessant, maar nog even wachten.' },
   { title: '2 · Waarom een call?', tab: 'calls', text: 'Klik op een call. Bovenaan lees je in gewone taal waarom de tool deze richting verwacht. Wil je de exacte berekening? Klik "Toon de berekening".' },
   { title: '3 · Klopte het? — Trackrecord', tab: 'trackrecord', text: 'Hier zie je van alle voorspellingen hoe vaak de richting goed zat, gemeten op 1 tot 20 dagen — met referentie- en eindkoers per call, zodat je het kunt nachecken.' },
   { title: '4 · Analyse', tab: 'analyse', text: 'Hier splits je de resultaten uit per zekerheid, paar en termijn. Bij te weinig data krijg je een waarschuwing, zodat je geen toevalstreffer voor een patroon aanziet.' },
@@ -77,30 +77,22 @@ export default function Dashboard() {
           <button className="fb-tour-start" onClick={() => setTourIdx(0)}>? Rondleiding</button>
         </div>
         <p className="fb-sub">
-          Fundamenteel-gedreven valuta-bias, één keer per ochtend gelockt en vast voor de dag (swing: maandag).
-          Elke call wordt eerlijk en zonder look-ahead op meerdere horizons gevolgd — puur of de richting goed zit.
+          Fundamenteel-gedreven valuta-bias, één keer per ochtend gelockt en daarna eerlijk gevolgd — puur of de richting goed zit.
         </p>
       </div>
 
       <HowItWorks />
 
-      {/* Lens-schakelaar */}
+      {/* Lens-schakelaar — de uitleg zit ín de knop, geen aparte banner */}
       <div className="fb-lens">
         <button className={`fb-lens-btn${lens === 'daytrade' ? ' active' : ''}`} onClick={() => setLens('daytrade')}>
           <span className="fb-lens-name">Daytrade</span>
-          <span className="fb-lens-desc">dagcalls · meet op 1 dag</span>
+          <span className="fb-lens-desc">elke ochtend verse dagcalls · zelfde dag aanhouden · afgerekend op 1 handelsdag</span>
         </button>
         <button className={`fb-lens-btn${lens === 'swing' ? ' active' : ''}`} onClick={() => setLens('swing')}>
           <span className="fb-lens-name">Swing <span className="fb-exp">experimenteel</span></span>
-          <span className="fb-lens-desc">weekcalls · meet op 5 dagen</span>
+          <span className="fb-lens-desc">weekcalls, maandag gelockt · ~een week aanhouden · afgerekend op 5 handelsdagen</span>
         </button>
-      </div>
-      <div className={`fb-mode-banner${lens === 'swing' ? ' exp' : ''}`}>
-        {lens === 'daytrade' ? (
-          <><b>Daytrade — korte termijn.</b> Elke ochtend verse dagcalls die je dezelfde dag aanhoudt; de tool rekent af op <b>1 handelsdag</b>. Wil je langer aanhouden? Kies <b>Swing</b> hiernaast.</>
-        ) : (
-          <>⚗️ <b>Swing — langere termijn (experimenteel).</b> Weekcalls (maandagochtend gelockt) die je ongeveer <b>een week</b> aanhoudt; afgerekend op <b>5 handelsdagen</b>. De fundamentele analyse is gelijk aan daytrade — alleen de horizon verschilt. Bouwt zich nog op, lees de cijfers voorlopig.</>
-        )}
       </div>
 
       {header && (
@@ -108,22 +100,40 @@ export default function Dashboard() {
           <div className="fb-regime-bar">
             <span className="fb-regime-chip"><span className={`fb-dot ${header.regimeColor}`} />{header.regime}</span>
             <span className="fb-regime-explain">{header.regimeExplain}</span>
+            <span className={`fb-lock-chip${header.locked ? '' : ' live'}`} title={header.locked
+              ? 'Deze scores zijn bij de ochtend-generate vastgezet en veranderen vandaag niet meer.'
+              : 'Nog geen gelockte snapshot voor vandaag — dit is een live berekening.'}>
+              {header.locked ? `🔒 gelockt · ${new Date(header.date + 'T00:00:00Z').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', timeZone: 'UTC' })}` : 'live'}
+            </span>
           </div>
           <div className="fb-bias-strip">
-            {header.currencyScores.map((c) => {
-              const pct = Math.min(100, (Math.abs(c.score) / 6) * 100)
+            {header.currencyScores.map((c, i) => {
+              const maxAbs = Math.max(3, ...header.currencyScores.map((x) => Math.abs(x.score)))
+              const pct = Math.min(100, (Math.abs(c.score) / maxAbs) * 100)
               const pos = c.score >= 0
+              const strongest = i === 0 || i === header.currencyScores.length - 1
               return (
-                <div className="fb-bias-cell" key={c.currency}>
+                <div className={`fb-bias-cell${strongest ? ' edge' : ''}`} key={c.currency}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                     <span className="fb-bias-ccy">{c.currency}</span>
                     <span className="fb-bias-score num" style={{ color: pos ? 'var(--win)' : 'var(--loss)' }}>{pos ? '+' : ''}{c.score.toFixed(1)}</span>
                   </div>
-                  <div className="fb-bias-track"><span className={`fb-bias-fill ${pos ? 'pos' : 'neg'}`} style={{ width: `${pct / 2}%` }} /></div>
+                  <div className="fb-bias-track"><span className="fb-bias-mid" /><span className={`fb-bias-fill ${pos ? 'pos' : 'neg'}`} style={{ width: `${pct / 2}%` }} /></div>
                 </div>
               )
             })}
           </div>
+          {header.currencyScores.length >= 2 && (() => {
+            const top = header.currencyScores[0]
+            const bottom = header.currencyScores[header.currencyScores.length - 1]
+            const spread = top.score - bottom.score
+            if (spread < 2) return null
+            return (
+              <p className="fb-thesis">
+                Sterkste divergentie vandaag: <b>{top.currency}</b> ({top.score >= 0 ? '+' : ''}{top.score.toFixed(1)}) vs. <b>{bottom.currency}</b> ({bottom.score >= 0 ? '+' : ''}{bottom.score.toFixed(1)}) — daar zit fundamenteel de duidelijkste paar-these.
+              </p>
+            )
+          })()}
         </>
       )}
 

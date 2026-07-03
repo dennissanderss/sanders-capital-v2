@@ -1,4 +1,19 @@
 import type { FbCall, HorizonOutcome, CurrencyFactors } from '@/lib/fundamental/types'
+import { isV2Breakdown } from '@/lib/fundamental/types'
+import { FLAT_ATR_FRACTION } from '@/lib/fundamental/constants'
+
+// ─── v2-accessors: bias- en timing-score van een call ─────────
+// v1-calls hebben geen splitsing: bias valt terug op de zekerheid, timing is
+// onbekend (null) — de UI toont dan alleen de zekerheid.
+export function biasScoreOf(c: FbCall): number {
+  return isV2Breakdown(c.breakdown) ? c.breakdown.biasScore : c.conviction
+}
+export function timingScoreOf(c: FbCall): number | null {
+  return isV2Breakdown(c.breakdown) ? c.breakdown.timingScore : null
+}
+export function isV2Call(c: FbCall): boolean {
+  return isV2Breakdown(c.breakdown)
+}
 
 // Korte driver-omschrijving per valuta uit de al-berekende factoren.
 function ccyDriver(f: CurrencyFactors): string {
@@ -7,6 +22,8 @@ function ccyDriver(f: CurrencyFactors): string {
   else if (f.cbPts <= -1) parts.push('verruimende centrale bank')
   if (f.ratePts > 0) parts.push('rente boven doel')
   else if (f.ratePts < 0) parts.push('rente onder doel')
+  if ((f.surprisePts ?? 0) >= 0.5) parts.push('meevallende macro-cijfers')
+  else if ((f.surprisePts ?? 0) <= -0.5) parts.push('tegenvallende macro-cijfers')
   if (f.newsPts >= 0.3) parts.push('positief nieuws')
   else if (f.newsPts <= -0.3) parts.push('negatief nieuws')
   return parts.slice(0, 2).join(', ')
@@ -16,31 +33,48 @@ function ccyDriver(f: CurrencyFactors): string {
 // data — geen herberekening.
 export function plainSummary(call: FbCall): string {
   const r = call.reasoning
+  const b = call.breakdown
   const long = call.direction === 'bullish'
   const strong = long ? r.base : r.quote
   const weak = long ? r.quote : r.base
   const driver = ccyDriver(strong)
-  const tier = zekerheidTier(call.conviction).cls
 
   let mom: string
-  if (call.breakdown.contrarianPts > 0) {
-    mom = long
-      ? 'De koers daalde de afgelopen dagen juist — een gunstiger moment om long in te stappen.'
-      : 'De koers steeg de afgelopen dagen juist — een gunstiger moment om short in te stappen.'
+  if (isV2Breakdown(b)) {
+    if (b.stretchPts >= 2.5) {
+      mom = long
+        ? 'De koers daalde de afgelopen dagen juist — een gunstig moment om long in te stappen.'
+        : 'De koers steeg de afgelopen dagen juist — een gunstig moment om short in te stappen.'
+    } else if (b.stretchPts <= 0.5) {
+      mom = 'De koers is al flink de verwachte kant op gelopen — late instap (chasing).'
+    } else {
+      mom = 'Het recente koersverloop is neutraal voor de instap.'
+    }
+    if (b.eventPts < 3) mom += ' Let op: binnen 2 dagen staan er high-impact cijfers gepland.'
   } else {
-    mom = 'Het recente koersverloop gaf geen extra instapvoordeel.'
+    mom = 'contrarianPts' in b && b.contrarianPts > 0
+      ? (long
+        ? 'De koers daalde de afgelopen dagen juist — een gunstiger moment om long in te stappen.'
+        : 'De koers steeg de afgelopen dagen juist — een gunstiger moment om short in te stappen.')
+      : 'Het recente koersverloop gaf geen extra instapvoordeel.'
+  }
+
+  if (isV2Breakdown(b)) {
+    const biasTxt = b.biasScore >= 7 ? 'Sterke' : b.biasScore >= 5 ? 'Redelijke' : 'Zwakke'
+    const timingTxt = b.timingScore >= 6.5 ? 'goede' : b.timingScore >= 4 ? 'matige' : 'slechte'
+    return `De ${strong.currency} is fundamenteel sterker dan de ${weak.currency}${driver ? ` (${driver})` : ''}. ${mom} → ${biasTxt} ${long ? 'long' : 'short'}-bias op ${call.pair}, met ${timingTxt} timing (${b.timingScore.toFixed(1)}/10).`
   }
 
   let conf: string
   if (call.regime === 'Gemengd') {
     conf = 'De bredere markt geeft nu geen duidelijke bevestiging (gemengd regime).'
   } else {
-    const c = call.breakdown.imPts + call.breakdown.regimePts // max 3.5
+    const c = ('imPts' in b ? b.imPts : 0) + ('regimePts' in b ? b.regimePts : 0) // max 3.5
     conf = c >= 2.5 ? 'Markt en regime bevestigen de richting sterk.'
       : c >= 1.5 ? 'Markt en regime bevestigen de richting deels.'
       : 'Markt en regime bevestigen de richting nauwelijks.'
   }
-
+  const tier = zekerheidTier(call.conviction).cls
   const sterkte = tier === 'sterk' ? 'Sterke' : tier === 'matig' ? 'Redelijke' : 'Zwakke'
   return `De ${strong.currency} is fundamenteel sterker dan de ${weak.currency}${driver ? ` (${driver})` : ''}. ${mom} ${conf} → ${sterkte} ${long ? 'long' : 'short'} ${call.pair}.`
 }
@@ -65,18 +99,38 @@ export function outcomeAt(call: FbCall, horizon: number): HorizonOutcome | undef
   return call.outcomes.find((o) => o.horizon === horizon)
 }
 
-export interface WinStats { n: number; wins: number; losses: number; pending: number; winrate: number }
+// ─── Oordeel per call/horizon, mét vlak-deadband ──────────────
+// Een close-to-close beweging kleiner dan 15% van de 14d-ATR is een
+// muntje-op-zijn-kant: "vlak". Die telt niet mee in de trefkans (wel apart
+// zichtbaar). Alleen v2-calls hebben een ATR; v1-calls blijven binair.
+export type Verdict = 'win' | 'loss' | 'flat' | 'pending'
 
-// Trefkans op één horizon (alleen geresolvede calls tellen mee).
+export function verdictOf(call: FbCall, o: HorizonOutcome | undefined): Verdict {
+  if (!o || !o.resolved || o.correct == null) return 'pending'
+  const atr = call.reasoning.atrPips
+  if (atr && atr > 0 && o.exitPrice != null) {
+    const mult = call.pair.includes('JPY') ? 100 : 10000
+    const movePips = Math.abs(o.exitPrice - call.entryPrice) * mult
+    if (movePips < FLAT_ATR_FRACTION * atr) return 'flat'
+  }
+  return o.correct ? 'win' : 'loss'
+}
+
+export interface WinStats { n: number; wins: number; losses: number; flats: number; pending: number; winrate: number }
+
+// Trefkans op één horizon (alleen geresolvede calls tellen mee; "vlak"
+// telt niet als win of verlies).
 export function winStats(calls: FbCall[], horizon: number): WinStats {
-  let wins = 0, losses = 0, pending = 0
+  let wins = 0, losses = 0, flats = 0, pending = 0
   for (const c of calls) {
-    const o = outcomeAt(c, horizon)
-    if (!o || !o.resolved || o.correct == null) { pending++; continue }
-    if (o.correct) wins++; else losses++
+    const v = verdictOf(c, outcomeAt(c, horizon))
+    if (v === 'pending') pending++
+    else if (v === 'flat') flats++
+    else if (v === 'win') wins++
+    else losses++
   }
   const n = wins + losses
-  return { n, wins, losses, pending, winrate: n ? Math.round((wins / n) * 100) : 0 }
+  return { n, wins, losses, flats, pending, winrate: n ? Math.round((wins / n) * 100) : 0 }
 }
 
 // Splitsing naar groepen (label → calls) met winrate op de gekozen horizon.
@@ -105,11 +159,20 @@ export function closeToClosePips(call: FbCall, o: HorizonOutcome | undefined): n
   return Math.round((call.direction === 'bullish' ? raw : -raw) * mult)
 }
 
-// Profit factor op één horizon = som winst-pips ÷ som verlies-pips (close-to-close).
+// Close-to-close resultaat in % (positief = de voorspelde kant op).
+export function closeToClosePct(call: FbCall, o: HorizonOutcome | undefined): number | null {
+  if (!o || !o.resolved || o.exitPrice == null || !call.entryPrice) return null
+  const raw = (o.exitPrice - call.entryPrice) / call.entryPrice
+  return (call.direction === 'bullish' ? raw : -raw) * 100
+}
+
+// Profit factor op één horizon = som winst-% ÷ som verlies-% (close-to-close).
+// Op %-rendement, niet op pips: een pip GBP/NZD is economisch iets anders dan
+// een pip EUR/USD — pips over paren optellen laat high-vol paren domineren.
 export function profitFactor(calls: FbCall[], horizon: number): number | null {
   let win = 0, loss = 0, n = 0
   for (const c of calls) {
-    const p = closeToClosePips(c, outcomeAt(c, horizon))
+    const p = closeToClosePct(c, outcomeAt(c, horizon))
     if (p == null) continue
     n++
     if (p > 0) win += p; else loss += -p
@@ -117,6 +180,25 @@ export function profitFactor(calls: FbCall[], horizon: number): number | null {
   if (n === 0) return null
   if (loss === 0) return win > 0 ? Infinity : null
   return +(win / loss).toFixed(2)
+}
+
+// Korte duiding van een profit factor (voor naast het getal).
+export function pfVerdict(pf: number | null): { cls: 'win' | 'loss' | 'neutral'; text: string } | null {
+  if (pf == null) return null
+  if (pf >= 1.05) return { cls: 'win', text: 'winstgevend: winners samen groter dan losers' }
+  if (pf > 0.95) return { cls: 'neutral', text: 'break-even' }
+  return { cls: 'loss', text: 'verliesgevend: losers samen groter dan winners' }
+}
+
+// ─── Kalibratie: zekerheid → waargenomen trefkans ─────────────
+// Wilson-interval zodat een bucket met n=8 en 75% niet als "edge" oogt.
+export function wilson(wins: number, n: number): { lo: number; hi: number } {
+  if (n === 0) return { lo: 0, hi: 100 }
+  const z = 1.96, p = wins / n
+  const denom = 1 + (z * z) / n
+  const center = (p + (z * z) / (2 * n)) / denom
+  const margin = (z / denom) * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))
+  return { lo: Math.round(Math.max(0, center - margin) * 100), hi: Math.round(Math.min(1, center + margin) * 100) }
 }
 
 export const HZ_LABEL: Record<number, string> = { 1: '1 dag', 3: '3 dagen', 5: '5 dagen', 10: '10 dagen', 20: '20 dagen' }

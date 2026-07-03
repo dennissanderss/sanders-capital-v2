@@ -3,7 +3,36 @@
 > Zelfstandige spec van de Fundamental Briefing tool, bedoeld om de tool op een
 > **aparte website** te kunnen aanbieden of opnieuw te laten bouwen. Beschrijft
 > de methodiek, het datamodel, de API's, de frontend en de datastromen — plus
-> eerlijke kanttekeningen. Stand: juni 2026.
+> eerlijke kanttekeningen. Stand: juli 2026 (methodiek v2).
+
+## Changelog — methodiek v2 (live sinds 2026-07-03)
+
+Calls van vóór 3 juli 2026 zijn met **v1** gemeten (herkenbaar aan
+`breakdown` zonder `v: 2`); de Analyse-tab kan v1/v2 apart filteren.
+Wat v2 verandert:
+
+1. **Zekerheid gesplitst in BIAS en TIMING.** Bias (0–10) = hoe sterk de
+   fundamentals de richting steunen. Timing (0–10) = hoe gunstig het
+   instapmoment is. Zekerheid = 0,6 × bias + 0,4 × timing. Reden: het forward-
+   record liet zien dat de richting (bias) vaker goed zat dan het moment.
+2. **Nieuws per valuta gelabeld (LLM).** Eén Groq-call per generate geeft per
+   artikel een richting pér valuta (-2..+2). v1 gaf hetzelfde sentiment aan
+   álle `affected_currencies` — "Fed hawkish" maakte USD én EUR bullish.
+   Keyword-methode blijft als fallback (`reasoning.newsSource`).
+3. **Macro-verrassingen** (±2 per valuta): actual vs. forecast uit de
+   TradingView economische kalender, impact-gewogen, wegzakkend over 5 dagen.
+4. **Inflatie-gap** (±1): recentste CPI j/j t.o.v. het doel van de CB.
+5. **Grondstoffen-terms-of-trade** (±1): 5d-verandering olie→CAD, koper→AUD,
+   landbouw-index→NZD.
+6. **Event-risico in timing**: high-impact events (CPI/NFP/rentebesluit)
+   binnen ±2 dagen kosten timing-punten + expliciete waarschuwing in de call.
+7. **ATR-normalisatie**: de contrarian 30–120-pips-band is vervangen door
+   stretch in eenheden van de 14d-ATR; per call wordt `atrPips` vastgelegd.
+8. **Eerlijker meten**: profit factor op **%-rendement** i.p.v. pips-optelling
+   over paren; beweging < 0,15 × ATR telt als **"vlak"** (geen win/verlies,
+   alleen weergave — de DB blijft binair).
+9. **Gelockte header**: de bias-strip/regime wordt bij de ochtend-generate
+   vastgezet in `fb_daily_context` (zelfde lock-principe als de calls).
 
 ---
 
@@ -26,16 +55,18 @@ eerlijk getoetst trackrecord. **Educatief — geen financieel advies.**
 
 ---
 
-## 2. Methodiek (de scoreberekening)
+## 2. Methodiek (de scoreberekening, v2)
 
-> Vier valutascores → regime → paar-onbalans → richting → zekerheid (0–10).
-> Alle getallen/weging zijn exact zoals geïmplementeerd. Verander deze niet
-> zonder te backtesten.
+> Acht valutascores → regime → paar-onbalans → richting → bias + timing →
+> zekerheid (0–10). Alle getallen/weging zijn exact zoals geïmplementeerd.
+> Verander deze niet zonder te backtesten.
 
 ### 2.1 Valutascore per valuta (8 majors: USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD)
 
 ```
 valutascore = CB-bias × 2  +  rente-vs-doel × 1,5  +  nieuws (gecapt ±1,5)
+            + verrassingen (gecapt ±2)  +  inflatie-gap (gecapt ±1)
+            + grondstoffen (gecapt ±1; alleen AUD/CAD/NZD)
 ```
 
 **CB-bias** (centralebankbeleid → ruwe score, daarna ×2):
@@ -58,13 +89,38 @@ anders       → −1
 > Let op: dit is **niet** het rente-niveau en **niet** het renteverschil tussen
 > twee valuta (carry). Carry is bewust weggelaten — zie §11.
 
-**Nieuws-sentiment** (per valuta, gecapt op ±1,5 in de score):
-- Per artikel: zoek bull/bear **frasen** (gewicht ×1,5) en **losse woorden**
-  (×0,5), met negatie-detectie (bv. "no rate hike" → omgekeerd).
+**Nieuws-sentiment** (per valuta, gecapt op ±1,5 in de score) — v2:
+- Eén Groq-LLM-call per generate (`llama-3.3-70b-versatile`, JSON-mode,
+  temperature 0) labelt elk artikel met een **richting pér valuta** (-2..+2).
+  1-based artikelnummering (0-based gaf in de praktijk een off-by-one).
 - `relevantie-gewicht = min(relevance_score / 5, 1,5)`
 - `recentheid = <12u →1,5 · <24u →1,2 · <48u →1,0 · anders →0,7`
-- `netto = (bull − bear) × relevantie-gewicht × recentheid × 0,25`
-- Toegekend aan elke valuta in `affected_currencies` van het artikel.
+- `bijdrage per valuta = (llm-richting / 2) × relevantie-gewicht × recentheid × 0,75`
+- **Fallback** (geen GROQ_API_KEY / timeout / kapotte JSON): de oude
+  keyword-methode van v1 (frasen ×1,5, woorden ×0,5, negatie-detectie,
+  `netto = (bull − bear) × relevantie × recentheid × 0,25`, toegekend aan alle
+  `affected_currencies`). `reasoning.newsSource` legt vast welke methode gold.
+
+**Macro-verrassingen** (gecapt ±2) — nieuw in v2. Bron: TradingView
+economische kalender (actual + forecast + importance per event):
+- Per event met actual én forecast, max 5 dagen oud:
+  `teken = sign(actual − forecast)`, omgekeerd voor werkloosheid/claims e.d.
+  (INVERSE-lijst). Voorraden/veilingen (olie, gas, bonds) zijn uitgesloten.
+- `impact-gewicht = high 1,0 · medium 0,5 · low 0,2`
+- `grootte = clamp(|actual − forecast| / max(|forecast − previous|, 10% van
+  het niveau), 0,25..1,5)` — een verrassing zo groot als de verwachte
+  verandering zelf = 1,0.
+- `recentheid = <24u 1,0 · <48u 0,8 · <72u 0,6 · <96u 0,45 · anders 0,3`
+- Som per valuta, gecapt ±2. Top-6 bijdragen opgeslagen in
+  `reasoning.base/quote.surpriseDetail` (uitkomst vs. verwacht, na te checken).
+
+**Inflatie-gap** (gecapt ±1) — nieuw in v2: recentste headline-CPI j/j uit de
+kalender t.o.v. het CB-doel (2%; CHF 1%; AUD 2,5%).
+`pts = clamp((cpi − doel) / 2, ±1)`. Boven doel = hawkish druk = positief.
+
+**Grondstoffen** (gecapt ±1) — nieuw in v2, alleen commodity-valuta:
+5d-verandering van CL=F (olie→CAD), HG=F (koper→AUD), DBA (landbouw→NZD);
+`pts = clamp(5d% / 3, ±1)`.
 
 ### 2.2 Marktregime (puur uit de valutascores)
 ```
@@ -90,18 +146,34 @@ de **top 8** op zekerheid opgeslagen (MAX_CALLS_PER_DAY).
 EUR/JPY, GBP/JPY, AUD/JPY, NZD/JPY, CAD/JPY, EUR/AUD, GBP/AUD, AUD/NZD, EUR/CHF,
 GBP/CHF, EUR/CAD, GBP/NZD, AUD/CAD.
 
-### 2.4 Zekerheid (conviction, 0–10) — vier subscores
+### 2.4 Bias, timing en zekerheid (v2)
+
+Twee aparte scores, bewust gescheiden — een sterke bias met slechte timing
+wil je zíen, maar nog niet handelen:
+
 ```
-fundPts       = min(|fund_score| / 5, 1) × 4          // 0..4
-contrarianPts = contrarianPass ? (|mom5d| 30..120 ? 2,5 : 1,5) : 0   // 0 / 1,5 / 2,5
-imPts         = intermarket_alignment / 100 × 2       // 0..2
-regimePts     = regimeAligned ? 1,5 : 0,5             // 0,5 / 1,5
-zekerheid     = min(10, afronden(fundPts + contrarianPts + imPts + regimePts))
+// BIAS (0,5..10): hoe sterk de fundamentals de richting steunen
+fundPts    = min(|fund_score| / 6, 1) × 8,5
+regimePts  = regimeAligned ? 1,5 : 0,5
+biasScore  = fundPts + regimePts
+
+// TIMING (0..10): hoe gunstig het instapmoment is
+stretch    = 5d-beweging ÷ 14d-ATR, positief als TEGEN de richting in
+stretchPts = clamp((stretch + 0,5) / 2, 0..1) × 4   // -0,5 ATR (chasing) → 0 ·
+                                                    // 0 → 1 · +1,5 ATR → 4
+             (geen ATR beschikbaar → neutrale 1)
+imPts      = intermarket_alignment / 100 × 3
+eventPts   = max(0, 3 − 1,5 × aantal high-impact events base/quote binnen ±2d)
+timingScore = stretchPts + imPts + eventPts
+
+zekerheid  = afronden(0,6 × biasScore + 0,4 × timingScore)
 ```
-- **contrarianPass** = de koers bewoog de afgelopen 5 handelsdagen **tégen** de
-  fundamentele richting in (mean-reversion: koop de dip / verkoop de rally).
+
 - **regimeAligned** = past de richting bij het regime (safe havens JPY/CHF,
   high-yield AUD/NZD/CAD, USD-regels). Verbatim regel-set, zie code.
+- v1 (calls vóór 2026-07-03) gebruikte: `fundPts (0..4) + contrarianPts
+  (0/1,5/2,5, vaste 30–120-pips-band) + imPts (0..2) + regimePts` als één
+  optelsom. De UI herkent v1-rijen aan `breakdown` zonder `v: 2`.
 
 ### 2.5 Intermarket-alignment (0–100%)
 Instrumenten: **S&P 500, VIX, goud, US 10Y-rente, DXY (dollar)**. Per regime telt
@@ -130,7 +202,13 @@ Bijdrage per instrument (sterkte) op basis van |%-verandering|: `>1% →1,0 · >
 - **Context (telt niet mee in de winrate):** grootste favorabele beweging (MFE) en
   grootste adverse beweging (MAE) binnen de horizon, in pips, mét begin/eindkoers
   en datum (na te checken in TradingView).
-- **Profit factor** = som winst-pips ÷ som verlies-pips (close-to-close).
+- **"Vlak" (v2, alleen weergave):** beweegt de close minder dan **0,15 × 14d-ATR**
+  (ATR vastgelegd op call-moment in `reasoning.atrPips`), dan telt de call als
+  *vlak* — geen win of verlies, apart zichtbaar. De DB-kolom `correct` blijft
+  binair (bron van waarheid); v1-calls zonder ATR blijven volledig binair.
+- **Profit factor** = som winst-% ÷ som verlies-% (close-to-close, v2). Op
+  %-rendement omdat pips over verschillende paren optellen high-vol paren laat
+  domineren. Pips blijven per rij zichtbaar als detail.
 
 Twee soorten leakage worden uitgesloten:
 1. *Selectie-leakage* — alleen vooruit genereren, met nieuws zoals op het
@@ -178,6 +256,13 @@ CREATE TABLE fb_calls (
   UNIQUE (call_date, call_type, pair)
 );
 
+-- v2: gelockte dag-header (bias-strip + regime), één rij per dag.
+CREATE TABLE fb_daily_context (
+  ctx_date    DATE PRIMARY KEY,
+  header      JSONB NOT NULL,      -- BriefingHeader-snapshot van de ochtend
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE fb_outcomes (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   call_id      UUID NOT NULL REFERENCES fb_calls(id) ON DELETE CASCADE,
@@ -211,7 +296,16 @@ CREATE TABLE fb_outcomes (
 
   // Append-only (alleen in calls vanaf de uitbreiding; oude calls missen ze):
   "intermarket": [ { "key":"sp500","direction":"down","changePct":-0.05,"contributed":true }, ... ],
-  "newsDetail":  { "EUR":[ { "title":"...","source":"ForexLive","date":"2026-06-29T..","weight":1.5 } ], "GBP":[...] }
+  "newsDetail":  { "EUR":[ { "title":"...","source":"ForexLive","date":"2026-06-29T..","weight":1.5,
+                             "impact":1.5 } ], "GBP":[...] },   // impact = LLM-richting (v2)
+
+  // v2 (append-only, vanaf 2026-07-03):
+  "modelVersion": "v2",
+  "atrPips": 72,                       // 14d-ATR op call-moment (vlak-deadband + stretch)
+  "eventRisk": [ { "currency":"USD","title":"CPI YoY","date":"2026-07-14T12:30:00Z" } ],
+  "newsSource": "llm"                  // of "keywords" (fallback)
+  // base/quote bevatten daarnaast: surprisePts, surpriseDetail[], inflGapPts,
+  // cpiYoY, cpiTarget, commodityPts, commodityName, commodityChangePct
 }
 ```
 `intermarket` en `newsDetail` zijn **optioneel** (append-only toegevoegd). Oude
@@ -243,10 +337,19 @@ rijen tonen "niet vastgelegd voor deze call".
 - **Koersen + intermarket**: Yahoo Finance chart-API
   (`query1/query2.finance.yahoo.com/v8/finance/chart/<symbol>?interval=1d`), op
   voltooide dag-candles. FX-symbolen als `EURUSD=X`; intermarket `^GSPC, ^VIX,
-  GC=F, ^TNX, DX-Y.NYB`.
+  GC=F, ^TNX, DX-Y.NYB`; grondstoffen (v2) `CL=F, HG=F, DBA`.
+- **Economische kalender (v2)**: TradingView
+  (`economic-calendar.tradingview.com/events?from=..&to=..&countries=US,EU,GB,JP,CH,AU,CA,NZ`,
+  met `Origin: https://www.tradingview.com`-header). Actual/forecast/previous +
+  importance per event. Window: −40 dagen (verrassingen + CPI) tot +7 dagen
+  (event-risico). Ongedocumenteerde bron — faalt hij, dan vallen de
+  kalender-componenten stil op 0 en blijft de rest werken.
+- **Nieuws-labeling (v2)**: Groq (`api.groq.com`, model
+  `llama-3.3-70b-versatile`), één call per generate. Faalt → keyword-fallback.
 
 **Env-variabelen:** `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (of
-anon key), `CRON_SECRET` (optioneel).
+anon key), `GROQ_API_KEY` (v2-nieuwslabeling; optioneel maar aanbevolen),
+`CRON_SECRET` (optioneel).
 
 ---
 
@@ -287,18 +390,24 @@ cijfers, groen/rood voor richting/uitkomst, blauw als spaarzame accent.
 
 ```
 src/lib/fundamental/
-  constants.ts   — paren, symbolen, horizons, bias-map, gates
-  types.ts       — alle types (FbCall, HorizonOutcome, CallReasoning, …)
-  scoring.ts     — bias/rate/news-scoring, regime, paar-bias, conviction, intermarket
-  prices.ts      — Yahoo-fetch (voltooide candles), momentum, horizon-evaluatie + MFE/MAE
-  service.ts     — generate / resolve / readData (de orkestratie)
+  constants.ts   — paren, symbolen, horizons, bias-map, gates, v2-constanten
+  types.ts       — alle types (FbCall, ConvictionV2, CallReasoning, …)
+  scoring.ts     — valutascores (v1+v2-extras), regime, paar-bias,
+                   buildConvictionV2 (bias/timing), intermarket
+  calendar.ts    — TradingView-kalender: verrassingen, event-risico, inflatie-gap (v2)
+  newsLlm.ts     — Groq-nieuwslabeling per valuta + keyword-fallback (v2)
+  prices.ts      — Yahoo-fetch (voltooide candles), momentum, ATR14,
+                   horizon-evaluatie + MFE/MAE
+  service.ts     — generate / resolve / readData + gelockte header (de orkestratie)
 src/app/api/fundamental-briefing/{generate,resolve,data}/route.ts
 src/app/api/cron/{fb-generate,fb-resolve}/route.ts
 src/app/tools/fundamental-briefing/page.tsx
 src/components/fundamental-briefing/
   Dashboard.tsx, BriefingTab.tsx, CallDetail.tsx, Trackrecord.tsx, Analyse.tsx,
-  ui.tsx (Tip, HowToRead, HowItWorks, Tour), helpers.ts, styles.css
+  ui.tsx (Tip, HowToRead, HowItWorks, Tour), helpers.ts (stats incl. vlak/PF%/
+  kalibratie), styles.css
 supabase/migrations/20260625_fundamental_briefing.sql
+supabase/migrations/20260703_fb_daily_context.sql
 ```
 
 De score-/conviction-wiskunde is gedeeld met (een kopie van) de bestaande FX-desk

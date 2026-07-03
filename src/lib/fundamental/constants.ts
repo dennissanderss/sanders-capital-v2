@@ -46,3 +46,31 @@ export const BIAS_SCORES: Record<string, number> = {
 export const FUND_GATE = 2.0
 // Max aantal calls per dag dat we opslaan (hoogste conviction eerst).
 export const MAX_CALLS_PER_DAY = 8
+
+// ─── Methodiek v2 (bias/timing-splitsing, kalender, grondstoffen) ──────
+
+// Markering in breakdown/reasoning zodat v1- en v2-calls in het trackrecord
+// uit elkaar te houden zijn. v2 live sinds 2026-07-03.
+export const MODEL_VERSION = 'v2'
+export const MODEL_V2_SINCE = '2026-07-03'
+
+// Grondstoffen-proxy per commodity-valuta (5d-verandering → terms-of-trade).
+export const COMMODITY_SYMBOLS: Record<string, { symbol: string; name: string }> = {
+  AUD: { symbol: 'HG=F', name: 'Koper' },
+  CAD: { symbol: 'CL=F', name: 'Olie (WTI)' },
+  NZD: { symbol: 'DBA', name: 'Landbouw-index (DBA)' },
+}
+
+// Inflatiedoel per centrale bank (midden van de band waar van toepassing).
+export const INFLATION_TARGETS: Record<string, number> = {
+  USD: 2, EUR: 2, GBP: 2, JPY: 2, CHF: 1, AUD: 2.5, CAD: 2, NZD: 2,
+}
+
+// TradingView economic-calendar landcodes per valuta.
+export const CCY_COUNTRY: Record<string, string> = {
+  USD: 'US', EUR: 'EU', GBP: 'GB', JPY: 'JP', CHF: 'CH', AUD: 'AU', CAD: 'CA', NZD: 'NZ',
+}
+
+// Onder deze fractie van de 14d-ATR telt een close-to-close beweging als
+// "vlak" (geen win/loss) — alleen weergave/statistiek, DB blijft binair.
+export const FLAT_ATR_FRACTION = 0.15

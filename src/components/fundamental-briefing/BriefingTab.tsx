@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { FbCall } from '@/lib/fundamental/types'
 import { HORIZONS } from '@/lib/fundamental/constants'
 import { CallDetail } from './CallDetail'
-import { dirLabel, fmtDate, zekerheidTier } from './helpers'
+import { dirLabel, fmtDate, zekerheidTier, verdictOf, outcomeAt, timingScoreOf, biasScoreOf, isV2Call } from './helpers'
 
 // Onder deze zekerheid is een call te zwak om te handelen (richting duidelijk,
 // maar momentum/markt/regime bevestigen 'm nauwelijks). Alleen weergave.
@@ -13,20 +13,24 @@ const TRADE_MIN = 5
 function CallRow({ c, sel, onSelect }: { c: FbCall; sel: boolean; onSelect: () => void }) {
   const long = c.direction === 'bullish'
   const tier = zekerheidTier(c.conviction)
+  const timing = timingScoreOf(c)
+  const hasEvents = (c.reasoning.eventRisk?.length ?? 0) > 0
   return (
     <div className={`fb-row${sel ? ' sel' : ''}`} onClick={onSelect}>
       <span className={`fb-chip ${long ? 'long' : 'short'}`}>{dirLabel(c.direction)}</span>
       <div>
-        <div className="fb-row-pair">{c.pair}</div>
+        <div className="fb-row-pair">{c.pair}{hasEvents && <span className="fb-ev-flag" title="High-impact cijfers binnen 2 dagen">⚠</span>}</div>
         <div className="fb-row-meta">
           <span className="fb-dots">
             {HORIZONS.map((h) => {
-              const o = c.outcomes.find((x) => x.horizon === h)
-              const cls = !o || !o.resolved || o.correct == null ? '' : o.correct ? ' win' : ' loss'
+              const v = verdictOf(c, outcomeAt(c, h))
+              const cls = v === 'win' ? ' win' : v === 'loss' ? ' loss' : v === 'flat' ? ' flat' : ''
               return <span key={h} className={`fb-hdot${cls}`} title={`${h} dagen`} />
             })}
           </span>
-          {' '}· instap {fmtDate(c.entryDate)}
+          {timing != null
+            ? <> · bias <b className="num">{biasScoreOf(c).toFixed(1)}</b> · timing <b className={`num${timing < 4 ? ' fb-timing-low' : ''}`}>{timing.toFixed(1)}</b></>
+            : <> · instap {fmtDate(c.entryDate)}</>}
         </div>
       </div>
       <div className="fb-row-conv-cell">
@@ -50,9 +54,12 @@ export function BriefingTab({ calls, kind, emptyText, hoofdhorizon }: { calls: F
     if (!selId || !sorted.find((c) => c.id === selId)) setSelId(pref)
   }, [sorted, strong, selId])
 
+  const anyV2 = sorted.some(isV2Call)
   const intro = (
     <p className="fb-calls-intro">
-      <b>Sterkste calls bovenaan.</b> Het getal is de zekerheid (0–10). Zwakke calls (onder de {TRADE_MIN}) staan apart — die wil je niet traden.
+      <b>Sterkste calls bovenaan.</b> Het getal is de zekerheid (0–10).
+      {anyV2 && <> Elke call heeft ook een <b>bias</b> (hoe sterk de fundamentele these is) en een <b>timing</b> (hoe gunstig dít instapmoment is) — een sterke bias met slechte timing wil je zien, maar nog niet instappen.</>}
+      {' '}Zwakke calls (onder de {TRADE_MIN}) staan apart — die wil je niet traden.
     </p>
   )
 
@@ -67,6 +74,7 @@ export function BriefingTab({ calls, kind, emptyText, hoofdhorizon }: { calls: F
       <div className="fb-legend">
         <span className="it"><span className="fb-hdot win" /> goed</span>
         <span className="it"><span className="fb-hdot loss" /> fout</span>
+        <span className="it"><span className="fb-hdot flat" /> vlak (nauwelijks beweging)</span>
         <span className="it"><span className="fb-hdot" /> nog wachten</span>
         <span className="it">5 bolletjes = 1 / 3 / 5 / 10 / 20 dagen</span>
       </div>

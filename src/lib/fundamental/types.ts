@@ -16,6 +16,10 @@ export interface ScoreBreakdown {
   newsRaw: number          // ongecapt nieuws-sentiment
   newsCapped: number       // ±1.5
   total: number
+  // v2 (append-only — v1-data mist deze):
+  surprisePts?: number     // macro-verrassingen, gecapt ±2
+  inflGapPts?: number      // inflatie t.o.v. doel, gecapt ±1
+  commodityPts?: number    // grondstoffen-terms-of-trade, gecapt ±1
 }
 
 export interface CurrencyScore {
@@ -34,6 +38,29 @@ export interface ConvictionBreakdownLite {
   imPts: number
   regimePts: number
   total: number
+}
+
+// v2: zekerheid gesplitst in BIAS (fundamenteel) en TIMING (instapkwaliteit).
+// total = 0.6 × bias + 0.4 × timing. Opgeslagen in dezelfde JSONB-kolom;
+// v1-rijen hebben de oude vorm — onderscheid via isV2Breakdown().
+export interface ConvictionV2 {
+  v: 2
+  // Bias-kant (0..10): hoe sterk de fundamentals de richting steunen.
+  fundPts: number        // geschaalde |fund_score|, 0..8.5
+  regimePts: number      // 0.5 of 1.5
+  biasScore: number      // fundPts + regimePts, 0.5..10
+  // Timing-kant (0..10): hoe gunstig het instapmoment is.
+  stretchPts: number     // ATR-genormaliseerde tegendraadse beweging, 0..4
+  imPts: number          // intermarket-bevestiging, 0..3
+  eventPts: number       // event-rust (geen high-impact events op komst), 0..3
+  timingScore: number    // stretchPts + imPts + eventPts, 0..10
+  total: number          // blend (de "zekerheid")
+}
+
+export type ConvictionAny = ConvictionBreakdownLite | ConvictionV2
+
+export function isV2Breakdown(b: ConvictionAny): b is ConvictionV2 {
+  return (b as ConvictionV2).v === 2
 }
 
 // Eén voltooide dag-candle.
@@ -60,6 +87,24 @@ export interface HorizonOutcome {
   resolved: boolean
 }
 
+// Eén meegewogen macro-verrassing (actual vs. forecast uit de kalender).
+export interface SurpriseItem {
+  title: string
+  date: string             // ISO van de publicatie
+  actual: number
+  forecast: number
+  unit?: string
+  importance: number       // -1 laag · 0 middel · 1 hoog
+  pts: number              // bijdrage aan de verrassingsscore (getekend)
+}
+
+// Aankomend high-impact kalender-event (timing-risico).
+export interface EventRiskItem {
+  currency: string
+  title: string
+  date: string             // ISO
+}
+
 // Fundamentele factor-uitleg per valuta (voor het call-detail).
 export interface CurrencyFactors {
   currency: string
@@ -71,6 +116,15 @@ export interface CurrencyFactors {
   target: number | null
   newsPts: number          // gecapt
   newsHeadlines: string[]
+  // v2 (append-only — v1-calls missen deze):
+  surprisePts?: number
+  surpriseDetail?: SurpriseItem[]
+  inflGapPts?: number
+  cpiYoY?: number | null
+  cpiTarget?: number | null
+  commodityPts?: number
+  commodityName?: string
+  commodityChangePct?: number | null
 }
 
 // Append-only (gat 1): per intermarket-instrument de richting + bijdrage.
@@ -89,6 +143,7 @@ export interface NewsItem {
   source: string
   date: string | null
   weight: number              // relevantie × recentheid (zoals meegewogen)
+  impact?: number             // v2: LLM-richting voor déze valuta (-2..+2)
 }
 
 export interface CallReasoning {
@@ -103,6 +158,11 @@ export interface CallReasoning {
   imAlignment: number
   intermarket?: ImInstrument[]            // append-only (gat 1)
   newsDetail?: Record<string, NewsItem[]> // append-only (gat 2), per valutacode
+  // v2 (append-only):
+  modelVersion?: string                   // 'v2' vanaf 2026-07-03
+  atrPips?: number                        // 14d-ATR in pips op call-moment
+  eventRisk?: EventRiskItem[]             // high-impact events binnen het timing-venster
+  newsSource?: 'llm' | 'keywords'         // hoe het nieuws is gelabeld
 }
 
 // Eén gelockte call met al zijn horizon-uitkomsten.
@@ -114,9 +174,9 @@ export interface FbCall {
   base: string
   quote: string
   direction: Direction
-  fundScore: number        // ruw -5..+5
+  fundScore: number        // ruwe paar-onbalans
   conviction: number       // 0..10
-  breakdown: ConvictionBreakdownLite
+  breakdown: ConvictionAny
   regime: string
   entryPrice: number
   entryDate: string
@@ -131,6 +191,7 @@ export interface BriefingHeader {
   regimeExplain: string
   regimeColor: string
   currencyScores: CurrencyScore[]
+  locked?: boolean         // true = 's ochtends gelockte snapshot (fb_daily_context)
 }
 
 // Response van /api/fundamental-briefing/data

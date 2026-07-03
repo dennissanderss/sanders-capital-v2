@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 import type { FbCall } from '@/lib/fundamental/types'
-import { winStats, profitFactor, outcomeAt, closeToClosePips, fmtDate, fmtPrice, dirLabel, HZ_LABEL } from './helpers'
+import { winStats, profitFactor, pfVerdict, outcomeAt, closeToClosePips, verdictOf as verdictOfOutcome, fmtDate, fmtPrice, dirLabel, HZ_LABEL, type Verdict } from './helpers'
 import { Tip, HowToRead } from './ui'
 
-function verdictOf(c: FbCall, h: number): 'win' | 'loss' | 'pending' {
-  const o = outcomeAt(c, h)
-  return !o || !o.resolved || o.correct == null ? 'pending' : o.correct ? 'win' : 'loss'
+function verdictOf(c: FbCall, h: number): Verdict {
+  return verdictOfOutcome(c, outcomeAt(c, h))
 }
 
 export function Trackrecord({ calls, hoofdhorizon, secondaryHorizons, lensLabel }: {
@@ -42,12 +41,15 @@ export function Trackrecord({ calls, hoofdhorizon, secondaryHorizons, lensLabel 
         <span>
           {v === 'pending'
             ? <span className="fb-tr-verdict pending">wacht</span>
-            : <span className={`fb-tr-verdict ${v}`}>{v === 'win' ? 'JUIST' : 'ONJUIST'}{pips != null ? <span className="num" style={{ fontWeight: 400, marginLeft: 4 }}>{pips > 0 ? '+' : ''}{pips}p</span> : null}</span>}
+            : v === 'flat'
+              ? <span className="fb-tr-verdict flat" title="Minder dan 15% van een gemiddelde dagbeweging — telt niet mee in de trefkans">VLAK{pips != null ? <span className="num" style={{ fontWeight: 400, marginLeft: 4 }}>{pips > 0 ? '+' : ''}{pips}p</span> : null}</span>
+              : <span className={`fb-tr-verdict ${v}`}>{v === 'win' ? 'JUIST' : 'ONJUIST'}{pips != null ? <span className="num" style={{ fontWeight: 400, marginLeft: 4 }}>{pips > 0 ? '+' : ''}{pips}p</span> : null}</span>}
         </span>
         <span className="fb-tr2-sec">
           {secondaryHorizons.map((h) => {
             const sv = verdictOf(c, h)
-            return <span key={h} className={`fb-mini ${sv}`} title={`${HZ_LABEL[h]}: ${sv === 'win' ? 'juist' : sv === 'loss' ? 'onjuist' : 'wacht'}`}>{sv === 'win' ? 'J' : sv === 'loss' ? 'O' : '·'}</span>
+            const label = sv === 'win' ? 'juist' : sv === 'loss' ? 'onjuist' : sv === 'flat' ? 'vlak' : 'wacht'
+            return <span key={h} className={`fb-mini ${sv}`} title={`${HZ_LABEL[h]}: ${label}`}>{sv === 'win' ? 'J' : sv === 'loss' ? 'O' : sv === 'flat' ? 'V' : '·'}</span>
           })}
         </span>
       </div>
@@ -59,8 +61,8 @@ export function Trackrecord({ calls, hoofdhorizon, secondaryHorizons, lensLabel 
       <HowToRead>
         <p>Het rapport voor de <b>{lensLabel}</b>-lens: van alle voorspellingen, hoe vaak zat de richting goed op <b>{HZ_LABEL[hoofdhorizon]}</b>?</p>
         <ol>
-          <li><b>Trefkans</b> = % voorspellingen dat de goede kant op eindigde. 50% = muntje.</li>
-          <li><b>Profit factor</b> = som winst-pips ÷ som verlies-pips. Boven 1 = de winners waren samen groter dan de losers.</li>
+          <li><b>Trefkans</b> = % voorspellingen dat de goede kant op eindigde. 50% = muntje. Calls met vrijwel geen beweging (&lt; 0,15 × ATR) tellen als <b>vlak</b> en zitten er niet in.</li>
+          <li><b>Profit factor</b> = som winst-% ÷ som verlies-% (close-to-close, in procenten zodat paren eerlijk optellen). Boven 1 = de winners waren samen groter dan de losers; onder 1 = verliesgevend.</li>
           <li>In de lijst zie je elke losse voorspelling met <b>referentiekoers → eindkoers</b> en het oordeel — na te checken in TradingView.</li>
         </ol>
       </HowToRead>
@@ -75,10 +77,15 @@ export function Trackrecord({ calls, hoofdhorizon, secondaryHorizons, lensLabel 
       ) : (
         <>
           <div className="fb-kpis">
-            <div className="fb-kpi"><div className="l">Trefkans · {HZ_LABEL[hoofdhorizon]} <Tip text="Van alle beoordeelde voorspellingen op deze termijn: hoeveel % zat goed. 50% = muntje." /></div><div className="v accent num">{overall.winrate}%</div></div>
-            <div className="fb-kpi"><div className="l">Profit factor <Tip text="Som winst-pips ÷ som verlies-pips. Boven 1 = winst." /></div><div className="v num">{pf == null ? '—' : pf === Infinity ? '∞' : pf}</div></div>
+            <div className="fb-kpi"><div className="l">Trefkans · {HZ_LABEL[hoofdhorizon]} <Tip text="Van alle beoordeelde voorspellingen op deze termijn: hoeveel % zat goed. 50% = muntje. 'Vlak' telt niet mee." /></div><div className="v accent num">{overall.winrate}%</div></div>
+            <div className="fb-kpi">
+              <div className="l">Profit factor <Tip text="Som winst-% ÷ som verlies-% (close-to-close). Boven 1 = winstgevend, onder 1 = verliesgevend." /></div>
+              <div className={`v num${pfVerdict(pf)?.cls === 'win' ? ' win' : pfVerdict(pf)?.cls === 'loss' ? ' loss' : ''}`}>{pf == null ? '—' : pf === Infinity ? '∞' : pf}</div>
+              {pfVerdict(pf) && <div className={`fb-pf-verdict ${pfVerdict(pf)!.cls}`}>{pfVerdict(pf)!.text}</div>}
+            </div>
             <div className="fb-kpi"><div className="l">Juist</div><div className="v win num">{overall.wins}</div></div>
             <div className="fb-kpi"><div className="l">Onjuist</div><div className="v loss num">{overall.losses}</div></div>
+            {overall.flats > 0 && <div className="fb-kpi"><div className="l">Vlak <Tip text="Beweging kleiner dan 15% van de ATR — geen win of verlies." /></div><div className="v num">{overall.flats}</div></div>}
             <div className="fb-kpi"><div className="l">Nog wachten</div><div className="v num">{overall.pending}</div></div>
           </div>
 

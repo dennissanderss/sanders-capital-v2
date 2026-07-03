@@ -340,3 +340,67 @@
 .fb-tour-btn { background: var(--accent); border: none; color: #fff; font: inherit; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; }
 .fb-tour-btn.ghost { background: var(--bg-inset); color: var(--ink-2); }
 @media (min-width: 760px) { .fb-tour-overlay { align-items: center; } }
+
+/* ═══ v2: bias/timing-splitsing, events, kalibratie, vlak ═══ */
+
+/* Detail-kop: drie scores naast elkaar (bias · timing · zekerheid) */
+.fb-scores { display: flex; gap: 18px; align-items: flex-start; }
+.fb-score-cell { text-align: right; }
+.fb-score-cell .v { font-size: 22px; font-weight: 700; line-height: 1; font-family: var(--font-num); color: var(--ink); }
+.fb-score-cell .v.low { color: var(--amber); }
+.fb-score-cell.total .v { font-size: 28px; }
+.fb-score-cell .l { font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; display: block; }
+.fb-score-cell.total { border-left: 1px solid var(--line); padding-left: 18px; }
+
+/* Event-risico-waarschuwing in het call-detail */
+.fb-event-warn { font-size: 12.5px; line-height: 1.55; color: var(--ink-2); background: var(--amber-bg); border: 1px solid rgba(217,142,43,.28); border-radius: var(--radius-sm); padding: 11px 14px; margin: 12px 0 0; }
+.fb-event-warn b { color: var(--ink); }
+.fb-event-warn ul { margin: 6px 0 0; padding-left: 18px; }
+.fb-event-warn li { margin: 3px 0; }
+
+/* Groeps-kopjes in de berekening (Bias / Timing) */
+.fb-group-label { font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; margin: 0 1px 8px; }
+
+/* Event-vlag + lage timing in de call-lijst */
+.fb-ev-flag { font-size: 11px; margin-left: 6px; vertical-align: 1px; }
+.fb-timing-low { color: var(--amber); }
+.fb-row-meta b.num { font-weight: 700; color: var(--ink-2); }
+
+/* "Vlak"-oordeel (beweging < 0,15 × ATR) */
+.fb-hdot.flat { background: var(--bg-inset); box-shadow: inset 0 0 0 1.5px var(--ink-4); }
+.fb-tdot.flat { background: var(--bg-inset); box-shadow: 0 0 0 1px var(--ink-4); }
+.fb-tverdict.flat { color: var(--ink-3); }
+.fb-mini.flat { background: var(--bg-inset); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.fb-tr-verdict.flat { background: var(--bg-inset); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
+
+/* PF-duiding (één zin naast het getal) */
+.fb-pf-verdict { font-size: 10px; line-height: 1.4; margin-top: 4px; font-weight: 600; }
+.fb-pf-verdict.win { color: var(--win); }
+.fb-pf-verdict.loss { color: var(--loss); }
+.fb-pf-verdict.neutral { color: var(--ink-3); }
+.fb-an-headline .v.fb-pos { color: var(--win); } .fb-an-headline .v.fb-neg { color: var(--loss); }
+.fb-an-flats { font-size: 11px; color: var(--ink-3); font-weight: 400; }
+
+/* Kalibratie-paneel */
+.fb-calib { display: flex; flex-direction: column; gap: 4px; }
+.fb-calib-row { display: grid; grid-template-columns: 64px 1fr 44px 54px; gap: 10px; align-items: center; font-size: 12px; padding: 6px 0; border-top: 1px solid var(--line-soft); }
+.fb-calib-row:first-child { border-top: none; }
+.fb-calib-label { font-weight: 600; color: var(--ink-2); }
+.fb-calib-track { position: relative; height: 12px; background: var(--bg-inset); border-radius: 6px; overflow: hidden; }
+.fb-calib-mid { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--line-strong); }
+.fb-calib-ci { position: absolute; top: 2px; bottom: 2px; background: rgba(37, 99, 235, 0.18); border-radius: 4px; }
+.fb-calib-dot { position: absolute; top: 50%; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); transform: translate(-50%, -50%); box-shadow: 0 0 0 2px var(--bg); }
+.fb-calib-val { text-align: right; font-weight: 700; }
+
+/* Gelockt-chip in de regime-balk */
+.fb-lock-chip { font-size: 10.5px; font-weight: 600; color: var(--ink-3); background: var(--bg-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; white-space: nowrap; cursor: default; }
+.fb-lock-chip.live { color: var(--amber); background: var(--amber-bg); border-color: rgba(217,142,43,.28); }
+
+/* Bias-strip: nul-lijn + highlight van de uitersten */
+.fb-bias-track { height: 6px; }
+.fb-bias-mid { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 2px; background: var(--line-strong); z-index: 1; }
+.fb-bias-cell.edge { border-color: var(--line-strong); background: var(--bg-2); }
+
+/* Sterkste-these-regel onder de bias-strip */
+.fb-thesis { font-size: 12px; color: var(--ink-2); margin: -12px 0 20px; padding: 0 2px; line-height: 1.5; }
+.fb-thesis b { color: var(--ink); }

@@ -95,10 +95,20 @@ export function intermarketContributions(signals: ImSignal[], regime: string): I
   })
 }
 
-// ─── Valutascores (CB×2 + rente×1.5 + nieuws gecapt ±1.5) ──────
+// ─── Valutascores ─────────────────────────────────────────────
+// v1: CB×2 + rente-vs-doel×1.5 + nieuws (±1.5).
+// v2 voegt toe (via `extras`, allemaal optioneel — zonder extras is de
+// uitkomst identiek aan v1): macro-verrassingen (±2), inflatie-gap (±1)
+// en grondstoffen-terms-of-trade (±1, alleen AUD/CAD/NZD).
+export interface CurrencyExtras {
+  surprisePts?: number
+  inflGapPts?: number
+  commodityPts?: number
+}
 export function computeCurrencyScores(
   ratesMap: Record<string, RateRow>,
   news: Record<string, { score: number; headlines: string[]; sentiment: string }>,
+  extras?: Record<string, CurrencyExtras>,
 ): Record<string, CurrencyScore> {
   const out: Record<string, CurrencyScore> = {}
   for (const ccy of MAJORS) {
@@ -121,9 +131,21 @@ export function computeCurrencyScores(
     if (newsBonus > 0.3) reasons.push(`Nieuws-sentiment positief (${nd.sentiment})`)
     else if (newsBonus < -0.3) reasons.push(`Nieuws-sentiment negatief (${nd.sentiment})`)
 
+    const ex = extras?.[ccy]
+    const surprisePts = ex?.surprisePts ?? 0
+    const inflGapPts = ex?.inflGapPts ?? 0
+    const commodityPts = ex?.commodityPts ?? 0
+    if (surprisePts >= 0.5) reasons.push('Macro-data verraste positief')
+    else if (surprisePts <= -0.5) reasons.push('Macro-data viel tegen')
+    if (inflGapPts >= 0.3) reasons.push('Inflatie boven doel → hawkish druk')
+    else if (inflGapPts <= -0.3) reasons.push('Inflatie onder doel → ruimte voor verruiming')
+    if (commodityPts >= 0.3) reasons.push('Grondstoffenprijzen in de rug')
+    else if (commodityPts <= -0.3) reasons.push('Grondstoffenprijzen tegen')
+    const extraTotal = surprisePts + inflGapPts + commodityPts
+
     out[ccy] = {
       currency: ccy,
-      score: baseScore + newsBonus,
+      score: baseScore + newsBonus + extraTotal,
       baseScore,
       newsBonus: Math.round(newsBonus * 10) / 10,
       reasons,
@@ -132,7 +154,9 @@ export function computeCurrencyScores(
         biasLabel: rate?.bias || 'onbekend',
         biasRaw: bs, biasMultiplied: bs * 2,
         rateScore: rts * 1.5, rate: rate?.rate ?? null, target: rate?.target ?? null,
-        newsRaw: nd?.score || 0, newsCapped: newsBonus, total: baseScore + newsBonus,
+        newsRaw: nd?.score || 0, newsCapped: newsBonus,
+        total: baseScore + newsBonus + extraTotal,
+        ...(extras ? { surprisePts, inflGapPts, commodityPts } : {}),
       },
     }
   }
@@ -228,7 +252,9 @@ export function calculateIntermarketAlignment(signals: ImSignal[], regime: strin
   return Math.round((score / max) * 100)
 }
 
-// ─── Conviction (0-10) — hergebruikt de gedeelde breakdown ────
+// ─── Conviction v1 (0-10) — hergebruikt de gedeelde breakdown ─
+// Blijft bestaan voor de oude FX-desk tool; de Fundamental Briefing
+// gebruikt sinds v2 buildConvictionV2 hieronder.
 export function buildConviction(p: {
   fundScore: number; base: string; quote: string; direction: Direction
   momentum5dPips: number; imAlignment: number; regime: string
@@ -243,4 +269,64 @@ export function buildConviction(p: {
     imAlignment: p.imAlignment,
     regimeAligned,
   })
+}
+
+// ─── Conviction v2: BIAS en TIMING als aparte scores ──────────
+//
+// Bias (0.5..10)  = hoe sterk de fundamentals de richting steunen:
+//   fundPts   = min(|fund_score| / 6, 1) × 8.5   (6 = zeer sterke divergentie)
+//   regimePts = past bij het macro-regime ? 1.5 : 0.5
+//
+// Timing (0..10) = hoe gunstig het instapmoment is:
+//   stretchPts = ATR-genormaliseerde tegendraadse beweging. De 5d-beweging in
+//                eenheden van de 14d-ATR, positief als de koers TEGEN de
+//                fundamentele richting in liep (dip om te kopen / rally om te
+//                shorten). -0.5 ATR (chasing) → 0 pt · 0 → 1 pt · +1.5 ATR → 4 pt.
+//                Vervangt de vaste 30–120-pips-band: 60 pips is op EUR/CHF
+//                een uitschieter en op GBP/NZD ruis — ATR maakt dat eerlijk.
+//   imPts      = intermarket-bevestiging: alignment% / 100 × 3.
+//   eventPts   = event-rust: 3 − 1.5 per high-impact event (CPI, NFP,
+//                rentebesluit…) voor base of quote binnen het venster, min 0.
+//
+// Zekerheid (total) = 0.6 × bias + 0.4 × timing — bias weegt zwaarder omdat
+// het forward-trackrecord liet zien dat de richting vaker goed zit dan het
+// moment; de UI toont beide apart.
+export interface ConvictionV2Result {
+  v: 2
+  fundPts: number; regimePts: number; biasScore: number
+  stretchPts: number; imPts: number; eventPts: number; timingScore: number
+  total: number
+}
+const r1 = (v: number) => Math.round(v * 10) / 10
+export function buildConvictionV2(p: {
+  fundScore: number; base: string; quote: string; direction: Direction
+  momentum5dPips: number; atrPips: number | null; imAlignment: number; regime: string
+  highImpactEventCount: number
+}): ConvictionV2Result {
+  const isBull = p.direction === 'bullish'
+  const regimeAligned = isAlignedWithRegime(p.base, p.quote, isBull, p.regime)
+
+  // Bias
+  const fundPts = Math.min(Math.abs(p.fundScore) / 6, 1) * 8.5
+  const regimePts = regimeAligned ? 1.5 : 0.5
+  const biasScore = Math.min(10, fundPts + regimePts)
+
+  // Timing — stretch in ATR-eenheden (tegen de richting in = positief).
+  let stretchPts = 1 // zonder ATR (te weinig historie): neutraal
+  if (p.atrPips != null && p.atrPips > 0) {
+    const momAtr = p.momentum5dPips / p.atrPips
+    const stretch = isBull ? -momAtr : momAtr
+    stretchPts = Math.max(0, Math.min(1, (stretch + 0.5) / 2)) * 4
+  }
+  const imPts = (p.imAlignment / 100) * 3
+  const eventPts = Math.max(0, 3 - 1.5 * p.highImpactEventCount)
+  const timingScore = Math.min(10, stretchPts + imPts + eventPts)
+
+  const total = Math.min(10, r1(0.6 * biasScore + 0.4 * timingScore))
+  return {
+    v: 2,
+    fundPts: r1(fundPts), regimePts: r1(regimePts), biasScore: r1(biasScore),
+    stretchPts: r1(stretchPts), imPts: r1(imPts), eventPts: r1(eventPts), timingScore: r1(timingScore),
+    total,
+  }
 }

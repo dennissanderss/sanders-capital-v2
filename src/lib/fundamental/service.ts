@@ -5,17 +5,22 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import {
   MAJORS, PAIRS, PAIR_SYMBOLS, INTERMARKET_SYMBOLS, HORIZONS, FUND_GATE, MAX_CALLS_PER_DAY,
+  COMMODITY_SYMBOLS, MODEL_VERSION,
 } from './constants'
 import {
   analyzeNewsSentiment, computeCurrencyScores, determineRegime, computePairBias,
-  buildConviction, isAlignedWithRegime, calculateIntermarketAlignment, intermarketContributions,
-  type RateRow, type NewsRow, type ImSignal,
+  buildConvictionV2, isAlignedWithRegime, calculateIntermarketAlignment, intermarketContributions,
+  type RateRow, type NewsRow, type ImSignal, type CurrencyExtras, type NewsSentiment,
 } from './scoring'
+import { analyzeNewsPerCurrency } from './newsLlm'
+import { fetchCalendar, surpriseScores, inflationGaps, upcomingEventRisk } from './calendar'
 import {
   fetchManyDaily, momentum5d, dailyChangePct, evaluateHorizon, todayUTC, pipMult,
+  atr14Pips, change5dPct,
 } from './prices'
 import type {
   CallType, FbCall, HorizonOutcome, CallReasoning, CurrencyFactors, BriefingHeader, FbDataResponse,
+  EventRiskItem, SurpriseItem,
 } from './types'
 
 function getSupabase(): SupabaseClient {
@@ -44,23 +49,124 @@ async function fetchNews(sb: SupabaseClient): Promise<NewsRow[]> {
   return (data || []) as NewsRow[]
 }
 
-function factorsOf(ccy: string, cs: ReturnType<typeof computeCurrencyScores>): CurrencyFactors {
+// Extra v2-detail per valuta voor het call-detail (transparantie).
+interface FactorDetail {
+  surpriseDetail?: SurpriseItem[]
+  cpiYoY?: number | null
+  cpiTarget?: number | null
+  commodityName?: string
+  commodityChangePct?: number | null
+}
+
+function factorsOf(
+  ccy: string, cs: ReturnType<typeof computeCurrencyScores>, det?: FactorDetail,
+): CurrencyFactors {
   const c = cs[ccy]
+  const b = c?.breakdown
   return {
     currency: ccy,
     total: +(c?.score ?? 0).toFixed(2),
-    biasLabel: c?.breakdown.biasLabel || 'onbekend',
-    cbPts: c?.breakdown.biasMultiplied ?? 0,
-    ratePts: c?.breakdown.rateScore ?? 0,
-    rate: c?.breakdown.rate ?? null,
-    target: c?.breakdown.target ?? null,
-    newsPts: c?.breakdown.newsCapped ?? 0,
+    biasLabel: b?.biasLabel || 'onbekend',
+    cbPts: b?.biasMultiplied ?? 0,
+    ratePts: b?.rateScore ?? 0,
+    rate: b?.rate ?? null,
+    target: b?.target ?? null,
+    newsPts: b?.newsCapped ?? 0,
     newsHeadlines: c?.newsHeadlines || [],
+    ...(b?.surprisePts != null ? {
+      surprisePts: b.surprisePts,
+      inflGapPts: b.inflGapPts,
+      commodityPts: b.commodityPts,
+      ...det,
+    } : {}),
   }
 }
 
-// ─── Header (regime + bias per valuta) — puur rates+news, geen prijzen ──
+// ─── Marktcontext (v2): rates + LLM-nieuws + kalender + grondstoffen ────
+// Eén keer per generate berekend; het resultaat (de header) wordt gelockt in
+// fb_daily_context zodat de bias-strip net als de calls één keer per ochtend
+// vaststaat — en pageloads geen LLM/kalender-calls meer doen.
+interface MarketContext {
+  cs: ReturnType<typeof computeCurrencyScores>
+  regime: string
+  news: Record<string, NewsSentiment>
+  newsSource: 'llm' | 'keywords'
+  eventRisk: Record<string, EventRiskItem[]>
+  factorDetail: Record<string, FactorDetail>
+}
+
+async function buildMarketContext(sb: SupabaseClient, fromISO: string): Promise<MarketContext> {
+  const nowMs = Date.now()
+  const [rates, articles, events, comHist] = await Promise.all([
+    fetchRates(sb),
+    fetchNews(sb),
+    fetchCalendar(nowMs),
+    fetchManyDaily(Object.entries(COMMODITY_SYMBOLS).map(([ccy, v]) => [ccy, v.symbol] as [string, string]), fromISO),
+  ])
+  const { sentiment: news, source: newsSource } = await analyzeNewsPerCurrency(articles, nowMs)
+
+  const surprises = surpriseScores(events, nowMs)
+  const gaps = inflationGaps(events, nowMs)
+  const eventRisk = upcomingEventRisk(events, nowMs, 2)
+
+  const extras: Record<string, CurrencyExtras> = {}
+  const factorDetail: Record<string, FactorDetail> = {}
+  for (const ccy of MAJORS) {
+    const comPct = COMMODITY_SYMBOLS[ccy] ? change5dPct(comHist[ccy] || []) : null
+    // 3% beweging in 5 dagen = vol punt; gecapt ±1.
+    const commodityPts = comPct == null ? 0 : +Math.max(-1, Math.min(1, comPct / 3)).toFixed(2)
+    extras[ccy] = {
+      surprisePts: surprises[ccy]?.pts ?? 0,
+      inflGapPts: gaps[ccy]?.pts ?? 0,
+      commodityPts,
+    }
+    factorDetail[ccy] = {
+      surpriseDetail: surprises[ccy]?.detail || [],
+      cpiYoY: gaps[ccy]?.cpiYoY ?? null,
+      cpiTarget: gaps[ccy]?.target ?? null,
+      commodityName: COMMODITY_SYMBOLS[ccy]?.name,
+      commodityChangePct: comPct,
+    }
+  }
+
+  const cs = computeCurrencyScores(rates, news, extras)
+  const { regime } = determineRegime(cs)
+  return { cs, regime, news, newsSource, eventRisk, factorDetail }
+}
+
+function headerFromContext(ctx: MarketContext, date: string): BriefingHeader {
+  const reg = determineRegime(ctx.cs)
+  return {
+    date,
+    regime: reg.regime,
+    regimeExplain: reg.explain,
+    regimeColor: reg.color,
+    currencyScores: MAJORS.map((c) => ctx.cs[c]).sort((a, b) => b.score - a.score),
+    locked: true,
+  }
+}
+
+// Gelockte header opslaan; faalt stil als de migratie nog niet is gedraaid.
+async function storeDailyHeader(sb: SupabaseClient, date: string, header: BriefingHeader): Promise<void> {
+  try {
+    await sb.from('fb_daily_context').upsert({ ctx_date: date, header }, { onConflict: 'ctx_date' })
+  } catch { /* tabel ontbreekt → live fallback in readData */ }
+}
+
+// ─── Header voor de UI: gelockte snapshot, anders live fallback ─────────
 async function buildHeader(sb: SupabaseClient): Promise<BriefingHeader> {
+  try {
+    const { data } = await sb
+      .from('fb_daily_context')
+      .select('ctx_date, header')
+      .order('ctx_date', { ascending: false })
+      .limit(1)
+    const row = data?.[0]
+    if (row?.header) return { ...(row.header as BriefingHeader), locked: true }
+  } catch { /* tabel ontbreekt → live fallback */ }
+
+  // Fallback (geen snapshot): goedkope live berekening zonder LLM/kalender —
+  // zelfde wiskunde als v1, alleen voor weergave tot de eerste generate draait.
   const rates = await fetchRates(sb)
   const news = analyzeNewsSentiment(await fetchNews(sb))
   const cs = computeCurrencyScores(rates, news)
@@ -71,6 +177,7 @@ async function buildHeader(sb: SupabaseClient): Promise<BriefingHeader> {
     regimeExplain: reg.explain,
     regimeColor: reg.color,
     currencyScores: MAJORS.map((c) => cs[c]).sort((a, b) => b.score - a.score),
+    locked: false,
   }
 }
 
@@ -83,13 +190,15 @@ export async function generateBriefing(callType: CallType): Promise<{ created: n
   const { data: existing } = await sb.from('fb_calls').select('id').eq('call_date', callDate).eq('call_type', callType).limit(1)
   if (existing && existing.length > 0) return { created: 0, skipped: true, date: callDate }
 
-  const rates = await fetchRates(sb)
-  const news = analyzeNewsSentiment(await fetchNews(sb))
-  const cs = computeCurrencyScores(rates, news)
-  const { regime } = determineRegime(cs)
-
-  // Prijzen (pairs + intermarket), ~60 dagen terug voor momentum.
+  // Marktcontext v2: rates + LLM-nieuws + kalender + grondstoffen.
   const fromISO = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0]
+  const ctx = await buildMarketContext(sb, fromISO)
+  const { cs, regime, news, newsSource, eventRisk, factorDetail } = ctx
+
+  // Header één keer per ochtend locken (bias-strip = zelfde snapshot als de calls).
+  await storeDailyHeader(sb, callDate, headerFromContext(ctx, callDate))
+
+  // Prijzen (pairs + intermarket), ~60 dagen terug voor momentum + ATR.
   const pairHist = await fetchManyDaily(PAIRS.map((p) => [p, PAIR_SYMBOLS[p]] as [string, string]), fromISO)
   const imHist = await fetchManyDaily(Object.entries(INTERMARKET_SYMBOLS), fromISO)
 
@@ -111,30 +220,42 @@ export async function generateBriefing(callType: CallType): Promise<{ created: n
     if (hist.length < 6) continue
     const last = hist[hist.length - 1]
     const mom = momentum5d(hist, pair)
-    const conv = buildConviction({
+    const atrPips = atr14Pips(hist, pair)
+
+    // Event-risico voor dit paar: high-impact events voor base of quote.
+    const pairEvents = [...(eventRisk[pb.base] || []), ...(eventRisk[pb.quote] || [])]
+      .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4)
+
+    const conv = buildConvictionV2({
       fundScore: pb.score, base: pb.base, quote: pb.quote, direction: pb.direction,
-      momentum5dPips: mom.pips, imAlignment, regime,
+      momentum5dPips: mom.pips, atrPips, imAlignment, regime,
+      highImpactEventCount: pairEvents.length,
     })
     const regimeAligned = isAlignedWithRegime(pb.base, pb.quote, pb.direction === 'bullish', regime)
     const reasoning: CallReasoning = {
-      base: factorsOf(pb.base, cs),
-      quote: factorsOf(pb.quote, cs),
+      base: factorsOf(pb.base, cs, factorDetail[pb.base]),
+      quote: factorsOf(pb.quote, cs, factorDetail[pb.quote]),
       regime,
       regimeAligned,
       regimeText: regimeAligned
         ? `${pair} ${pb.direction === 'bullish' ? 'long' : 'short'} past in het ${regime}-regime.`
-        : `${pair} is neutraal binnen het ${regime}-regime (telt niet als voorwaarde, alleen voor conviction).`,
+        : `${pair} is neutraal binnen het ${regime}-regime (telt niet als voorwaarde, alleen voor de bias-score).`,
       momentum5dPips: mom.pips,
       momentumStart: mom.start,
       momentumNow: mom.now,
       imAlignment,
-      // Append-only sleutels (gat 1 + 2). Oude rijen missen deze en tonen
-      // in de UI "niet vastgelegd voor deze call".
+      // Append-only sleutels. Oude rijen missen deze en tonen in de UI
+      // "niet vastgelegd voor deze call".
       intermarket: imContrib,
       newsDetail: {
         [pb.base]: news[pb.base]?.detail || [],
         [pb.quote]: news[pb.quote]?.detail || [],
       },
+      // v2:
+      modelVersion: MODEL_VERSION,
+      atrPips: atrPips ?? undefined,
+      eventRisk: pairEvents,
+      newsSource,
     }
     drafts.push({
       callDate, callType, pair, base: pb.base, quote: pb.quote,
