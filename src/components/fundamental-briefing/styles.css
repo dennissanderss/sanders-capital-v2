@@ -404,3 +404,35 @@
 /* Sterkste-these-regel onder de bias-strip */
 .fb-thesis { font-size: 12px; color: var(--ink-2); margin: -12px 0 20px; padding: 0 2px; line-height: 1.5; }
 .fb-thesis b { color: var(--ink); }
+
+/* ═══ Alle paren ═══ */
+.fb-pair-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(216px, 1fr)); gap: 10px; }
+.fb-pair-cell { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; }
+.fb-pair-cell.dim { opacity: .55; }
+.fb-pair-cell.is-call { border-color: var(--accent); cursor: pointer; }
+.fb-pair-cell.is-call:hover { background: var(--accent-soft); }
+.fb-pair-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.fb-pair-name { font-weight: 700; font-size: 14px; letter-spacing: -0.01em; }
+.fb-chip.none { background: var(--bg-inset); color: var(--ink-4); }
+.fb-pair-score-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.fb-pair-score { font-size: 15px; font-weight: 700; }
+.fb-pair-callinfo { font-size: 10px; color: var(--ink-3); text-align: right; line-height: 1.3; }
+.fb-pair-cell.is-call .fb-pair-callinfo { color: var(--accent); font-weight: 600; }
+
+/* ═══ Bewijs (backtest) ═══ */
+.fb-tab-badge { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); background: var(--accent-soft); padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: 1px; }
+.fb-bt-insights { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; margin: 0 0 16px; }
+@media (max-width: 860px) { .fb-bt-insights { grid-template-columns: 1fr; } }
+.fb-bt-insight { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.fb-bt-insight.main { border-color: var(--accent); background: var(--accent-soft); }
+.fb-bt-insight .t { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); margin-bottom: 6px; }
+.fb-bt-insight.main .t { color: var(--accent); }
+.fb-bt-insight p { font-size: 12.5px; line-height: 1.55; color: var(--ink-2); margin: 0; }
+.fb-bt-insight b { color: var(--ink); }
+
+.fb-eq { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px 10px; margin-top: 4px; }
+.fb-eq svg { width: 100%; height: 150px; display: block; }
+.fb-eq-zero { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 4 4; }
+.fb-eq-line { fill: none; stroke-width: 2; }
+.fb-eq-line.up { stroke: var(--win); } .fb-eq-line.down { stroke: var(--loss); }
+.fb-eq-label { font-size: 10.5px; color: var(--ink-3); margin-top: 6px; }

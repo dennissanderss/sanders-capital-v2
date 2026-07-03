@@ -4,19 +4,22 @@ import { useEffect, useMemo, useState } from 'react'
 import './styles.css'
 import type { FbDataResponse } from '@/lib/fundamental/types'
 import { BriefingTab } from './BriefingTab'
+import { PairsTab } from './PairsTab'
 import { Trackrecord } from './Trackrecord'
 import { Analyse } from './Analyse'
+import { BacktestTab } from './BacktestTab'
 import { HowItWorks, Tour, type TourStep } from './ui'
 
 type Lens = 'daytrade' | 'swing'
-type Tab = 'calls' | 'trackrecord' | 'analyse'
+type Tab = 'calls' | 'paren' | 'trackrecord' | 'analyse' | 'bewijs'
 
 const TOUR: TourStep[] = [
   { title: 'Welkom bij de Fundamental Briefing', text: 'Deze tool voorspelt per valutapaar een richting — omhoog of omlaag — op basis van de fundamentals, en houdt eerlijk bij of dat klopt. Bovenaan kies je je stijl: Daytrade (kort, 1 dag aanhouden) of Swing (langer, ~een week). Even in 4 korte stappen.' },
   { title: '1 · De calls van vandaag', tab: 'calls', text: 'Elk paar krijgt een richting (LONG = omhoog, SHORT = omlaag), een BIAS (hoe sterk de fundamentele these is) en een TIMING (hoe gunstig dit instapmoment is). Samen vormen ze de zekerheid van 0 tot 10. Sterke bias + slechte timing = interessant, maar nog even wachten.' },
   { title: '2 · Waarom een call?', tab: 'calls', text: 'Klik op een call. Bovenaan lees je in gewone taal waarom de tool deze richting verwacht. Wil je de exacte berekening? Klik "Toon de berekening".' },
-  { title: '3 · Klopte het? — Trackrecord', tab: 'trackrecord', text: 'Hier zie je van alle voorspellingen hoe vaak de richting goed zat, gemeten op 1 tot 20 dagen — met referentie- en eindkoers per call, zodat je het kunt nachecken.' },
-  { title: '4 · Analyse', tab: 'analyse', text: 'Hier splits je de resultaten uit per zekerheid, paar en termijn. Bij te weinig data krijg je een waarschuwing, zodat je geen toevalstreffer voor een patroon aanziet.' },
+  { title: '3 · Alle paren', tab: 'paren', text: 'Het volledige speelveld: alle 21 paren fundamenteel gescoord, ook de paren die géén call werden. Zo zie je in één oogopslag waar de sterkste divergenties zitten.' },
+  { title: '4 · Klopte het? — Trackrecord', tab: 'trackrecord', text: 'Hier zie je van alle voorspellingen hoe vaak de richting goed zat, gemeten op 1 tot 20 dagen — met referentie- en eindkoers per call, zodat je het kunt nachecken.' },
+  { title: '5 · Analyse & Bewijs', tab: 'bewijs', text: 'Analyse splitst het verse trackrecord uit; Bewijs toont een point-in-time simulatie over ~2 jaar (3.800+ trades, geen look-ahead) — inclusief de belangrijkste les: handel alleen bij timing ≥ 7.' },
   { title: 'Klaar!', text: 'Je kunt deze rondleiding altijd opnieuw starten via de knop "Rondleiding" bovenaan. Veel succes.' },
 ]
 
@@ -27,6 +30,7 @@ export default function Dashboard() {
   const [lens, setLens] = useState<Lens>('daytrade')
   const [tab, setTab] = useState<Tab>('calls')
   const [tourIdx, setTourIdx] = useState<number | null>(null)
+  const [focusPair, setFocusPair] = useState<string | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -139,8 +143,10 @@ export default function Dashboard() {
 
       <div className="fb-tabs">
         <button className={`fb-tab${tab === 'calls' ? ' active' : ''}`} onClick={() => setTab('calls')}>Calls van vandaag</button>
+        <button className={`fb-tab${tab === 'paren' ? ' active' : ''}`} onClick={() => setTab('paren')}>Alle paren</button>
         <button className={`fb-tab${tab === 'trackrecord' ? ' active' : ''}`} onClick={() => setTab('trackrecord')}>Trackrecord</button>
         <button className={`fb-tab${tab === 'analyse' ? ' active' : ''}`} onClick={() => setTab('analyse')}>Analyse</button>
+        <button className={`fb-tab${tab === 'bewijs' ? ' active' : ''}`} onClick={() => setTab('bewijs')}>Bewijs <span className="fb-tab-badge">backtest</span></button>
       </div>
 
       {loading && <div className="fb-empty">Briefing wordt geladen…</div>}
@@ -153,13 +159,22 @@ export default function Dashboard() {
               calls={cfg.todayCalls}
               kind={cfg.kind}
               hoofdhorizon={cfg.hoofd}
+              focusPair={focusPair}
               emptyText={cfg.kind === 'weekly' ? "Nog geen weekcalls — die worden maandagochtend gelockt." : "Nog geen dagcalls voor vandaag — ze worden 's ochtends gegenereerd."}
+            />
+          )}
+          {tab === 'paren' && (
+            <PairsTab
+              header={header ?? null}
+              todayCalls={cfg.todayCalls}
+              onSelectPair={(p) => { setFocusPair(p); setTab('calls') }}
             />
           )}
           {tab === 'trackrecord' && (
             <Trackrecord calls={cfg.trackrecord} hoofdhorizon={cfg.hoofd} secondaryHorizons={cfg.secondary} lensLabel={cfg.label} />
           )}
           {tab === 'analyse' && <Analyse calls={cfg.trackrecord} />}
+          {tab === 'bewijs' && <BacktestTab />}
         </>
       )}
 

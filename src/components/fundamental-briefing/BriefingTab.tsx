@@ -41,13 +41,26 @@ function CallRow({ c, sel, onSelect }: { c: FbCall; sel: boolean; onSelect: () =
   )
 }
 
-export function BriefingTab({ calls, kind, emptyText, hoofdhorizon }: { calls: FbCall[]; kind: 'daily' | 'weekly'; emptyText: string; hoofdhorizon: number }) {
+export function BriefingTab({ calls, kind, emptyText, hoofdhorizon, focusPair }: {
+  calls: FbCall[]; kind: 'daily' | 'weekly'; emptyText: string; hoofdhorizon: number; focusPair?: string | null
+}) {
   const sorted = useMemo(() => [...calls].sort((a, b) => b.conviction - a.conviction), [calls])
   const strong = useMemo(() => sorted.filter((c) => c.conviction >= TRADE_MIN), [sorted])
   const weak = useMemo(() => sorted.filter((c) => c.conviction < TRADE_MIN), [sorted])
 
   const [selId, setSelId] = useState<string | null>(null)
   const [showWeak, setShowWeak] = useState(false)
+
+  // Doorklik vanaf "Alle paren": selecteer die call (ook als hij bij de
+  // zwakke signalen staat — klap die dan open).
+  useEffect(() => {
+    if (!focusPair) return
+    const hit = sorted.find((c) => c.pair === focusPair)
+    if (hit) {
+      setSelId(hit.id)
+      if (hit.conviction < TRADE_MIN) setShowWeak(true)
+    }
+  }, [focusPair, sorted])
 
   useEffect(() => {
     const pref = strong[0]?.id ?? sorted[0]?.id ?? null
@@ -58,7 +71,7 @@ export function BriefingTab({ calls, kind, emptyText, hoofdhorizon }: { calls: F
   const intro = (
     <p className="fb-calls-intro">
       <b>Sterkste calls bovenaan.</b> Het getal is de zekerheid (0–10).
-      {anyV2 && <> Elke call heeft ook een <b>bias</b> (hoe sterk de fundamentele these is) en een <b>timing</b> (hoe gunstig dít instapmoment is) — een sterke bias met slechte timing wil je zien, maar nog niet instappen.</>}
+      {anyV2 && <> Elke call heeft ook een <b>bias</b> (hoe sterk de fundamentele these is) en een <b>timing</b> (hoe gunstig dít instapmoment is). Uit de 2-jaars simulatie (tabblad <b>Bewijs</b>): de edge zat vrijwel volledig in calls met <b>timing ≥ 7</b>.</>}
       {' '}Zwakke calls (onder de {TRADE_MIN}) staan apart — die wil je niet traden.
     </p>
   )

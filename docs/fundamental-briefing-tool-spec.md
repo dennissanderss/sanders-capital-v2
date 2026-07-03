@@ -416,6 +416,31 @@ conviction-logica; voor een standalone-site kan die volledig in
 
 ---
 
+## 10b. Backtest ("Bewijs"-tab) — point-in-time simulatie
+
+Script: `scripts/fb-backtest.ts` (`npx tsx scripts/fb-backtest.ts`) → schrijft
+`public/fb-backtest-v2.json`; de Bewijs-tab laadt dat lazy.
+
+**Methode.** Per handelsdag D (vanaf 2024-08-01, ~495 dagen) gebruikt het
+signaal uitsluitend informatie die op D om 06:30 UTC bekend was: voltooide
+dag-candles t/m D-1 en kalender-events met publicatiemoment vóór 06:30. Zelfde
+gate (|score| ≥ 2), zelfde top-8, zelfde bias/timing-formules als live v2.
+Uitkomsten close-to-close op 1/3/5/10/20 dagen. ~3.850 trades.
+
+**Eerlijke afwijkingen t.o.v. live** (staan ook in `meta.deviations` en in de
+UI): geen nieuwscomponent (geen historisch archief; simuleren = look-ahead —
+de fout van de oude backfill), CB-bias als proxy uit historische
+rentebesluiten (laatste wijziging met verval ±2/±1/0), geen rente-vs-doel.
+
+**Kernuitkomst (aug 2024 – jul 2026, in-sample):**
+- Alle calls: 1d ~49,5% winrate / PF 1,00 — en négatief op 10–20d (PF 0,69 op
+  20d). Het fundamentele niveau alleen voorspelt niets; renteverleden is
+  ingeprijsd.
+- **Timing ≥ 7** (n≈950): 1d 52,1% / PF 1,35 · **5d 55,6% / PF 1,49 /
+  +17.611 pips**. Monotoon: timing <3 → PF 0,71. De edge zit in het
+  instapmoment (ATR-stretch, intermarket, event-rust).
+- Vuistregel in de UI: **handel alleen bij timing ≥ 7.**
+
 ## 11. Eerlijke kanttekeningen (belangrijk om te vermelden)
 
 - **De edge is bescheiden.** Op schone, vooruit opgebouwde data: directionele
