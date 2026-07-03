@@ -74,3 +74,13 @@ export const CCY_COUNTRY: Record<string, string> = {
 // Onder deze fractie van de 14d-ATR telt een close-to-close beweging als
 // "vlak" (geen win/loss) — alleen weergave/statistiek, DB blijft binair.
 export const FLAT_ATR_FRACTION = 0.15
+
+// ─── Drie lenzen (sinds jul 2026) ──────────────────────────────
+// Uit de point-in-time simulatie (Bewijs-tab): de day/swing-edge zit bij
+// timing ≥ 7; de positie-lens (carry) wordt juist beter op langere horizon.
+export const TIMING_TRADEABLE = 7
+
+// Positie-lens (carry): minimaal beleidsrenteverschil in procentpunten om
+// een paar als positie-call te tellen, en max aantal per dag.
+export const CARRY_MIN_DIFF = 2.0
+export const MAX_POSITION_CALLS = 5

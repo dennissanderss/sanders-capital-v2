@@ -2,13 +2,19 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { FbCall } from '@/lib/fundamental/types'
-import { HORIZONS } from '@/lib/fundamental/constants'
+import { HORIZONS, TIMING_TRADEABLE } from '@/lib/fundamental/constants'
 import { CallDetail } from './CallDetail'
 import { dirLabel, fmtDate, zekerheidTier, verdictOf, outcomeAt, timingScoreOf, biasScoreOf, isV2Call } from './helpers'
 
-// Onder deze zekerheid is een call te zwak om te handelen (richting duidelijk,
-// maar momentum/markt/regime bevestigen 'm nauwelijks). Alleen weergave.
+// v1-fallback: onder deze zekerheid is een call te zwak om te handelen.
+// Voor v2-calls geldt de bewezen regel uit de simulatie: timing ≥ 7.
 const TRADE_MIN = 5
+
+function isTradeable(c: FbCall): boolean {
+  const timing = timingScoreOf(c)
+  if (timing != null) return timing >= TIMING_TRADEABLE
+  return c.conviction >= TRADE_MIN
+}
 
 function CallRow({ c, sel, onSelect }: { c: FbCall; sel: boolean; onSelect: () => void }) {
   const long = c.direction === 'bullish'
@@ -42,11 +48,14 @@ function CallRow({ c, sel, onSelect }: { c: FbCall; sel: boolean; onSelect: () =
 }
 
 export function BriefingTab({ calls, kind, emptyText, hoofdhorizon, focusPair }: {
-  calls: FbCall[]; kind: 'daily' | 'weekly'; emptyText: string; hoofdhorizon: number; focusPair?: string | null
+  calls: FbCall[]; kind: 'daily' | 'weekly' | 'position'; emptyText: string; hoofdhorizon: number; focusPair?: string | null
 }) {
+  const isCarry = kind === 'position'
   const sorted = useMemo(() => [...calls].sort((a, b) => b.conviction - a.conviction), [calls])
-  const strong = useMemo(() => sorted.filter((c) => c.conviction >= TRADE_MIN), [sorted])
-  const weak = useMemo(() => sorted.filter((c) => c.conviction < TRADE_MIN), [sorted])
+  // Positie-calls zijn al voorgefilterd (≥ 2pp carry, niet in Risk-Off) —
+  // daar is alles "tradeable". Day/swing: timing ≥ 7 (het bewezen filter).
+  const strong = useMemo(() => sorted.filter((c) => isCarry || isTradeable(c)), [sorted, isCarry])
+  const weak = useMemo(() => sorted.filter((c) => !isCarry && !isTradeable(c)), [sorted, isCarry])
 
   const [selId, setSelId] = useState<string | null>(null)
   const [showWeak, setShowWeak] = useState(false)
@@ -58,9 +67,9 @@ export function BriefingTab({ calls, kind, emptyText, hoofdhorizon, focusPair }:
     const hit = sorted.find((c) => c.pair === focusPair)
     if (hit) {
       setSelId(hit.id)
-      if (hit.conviction < TRADE_MIN) setShowWeak(true)
+      if (!isCarry && !isTradeable(hit)) setShowWeak(true)
     }
-  }, [focusPair, sorted])
+  }, [focusPair, sorted, isCarry])
 
   useEffect(() => {
     const pref = strong[0]?.id ?? sorted[0]?.id ?? null
@@ -68,11 +77,17 @@ export function BriefingTab({ calls, kind, emptyText, hoofdhorizon, focusPair }:
   }, [sorted, strong, selId])
 
   const anyV2 = sorted.some(isV2Call)
-  const intro = (
+  const intro = isCarry ? (
+    <p className="fb-calls-intro">
+      <b>Positie-lens (carry).</b> Richting = de valuta met de duidelijk hoogste beleidsrente (≥ 2pp verschil), weken aanhouden.
+      Je verdient aan het renteverschil (swap) én de koersdrift; in een <b>Risk-Off</b>-regime worden er géén positie-calls gegeven — daar crasht carry historisch.
+      Simulatie op 20 dagen: <b>69,8% winrate · PF 4,82 incl. swap</b> (n=126, voorlopig).
+    </p>
+  ) : (
     <p className="fb-calls-intro">
       <b>Sterkste calls bovenaan.</b> Het getal is de zekerheid (0–10).
-      {anyV2 && <> Elke call heeft ook een <b>bias</b> (hoe sterk de fundamentele these is) en een <b>timing</b> (hoe gunstig dít instapmoment is). Uit de 2-jaars simulatie (tabblad <b>Bewijs</b>): de edge zat vrijwel volledig in calls met <b>timing ≥ 7</b>.</>}
-      {' '}Zwakke calls (onder de {TRADE_MIN}) staan apart — die wil je niet traden.
+      {anyV2 && <> Elke call heeft ook een <b>bias</b> (hoe sterk de fundamentele these is) en een <b>timing</b> (hoe gunstig dít instapmoment is). Uit de 2-jaars simulatie (tabblad <b>Bewijs</b>): de edge zat vrijwel volledig in calls met <b>timing ≥ {TIMING_TRADEABLE}</b> — daarom staan alleen díe bij &quot;tradeable&quot;.</>}
+      {!anyV2 && <> Zwakke calls (onder de {TRADE_MIN}) staan apart — die wil je niet traden.</>}
     </p>
   )
 
@@ -96,13 +111,15 @@ export function BriefingTab({ calls, kind, emptyText, hoofdhorizon, focusPair }:
         <div className="fb-list">
           <div className="fb-list-head">Tradeable calls{strong.length > 0 ? ` (${strong.length})` : ''}</div>
           {strong.length === 0
-            ? <div className="fb-empty" style={{ padding: '22px 14px', fontSize: 12.5 }}>Geen calls met genoeg bevestiging vandaag — alle signalen zijn zwak. Vandaag liever niet handelen op deze tool.</div>
+            ? <div className="fb-empty" style={{ padding: '22px 14px', fontSize: 12.5 }}>{anyV2
+              ? `Geen calls met timing ≥ ${TIMING_TRADEABLE} vandaag. De fundamentele biases staan hieronder — kijken mag, instappen liever niet.`
+              : 'Geen calls met genoeg bevestiging vandaag — alle signalen zijn zwak. Vandaag liever niet handelen op deze tool.'}</div>
             : strong.map((c) => <CallRow key={c.id} c={c} sel={c.id === sel.id} onSelect={() => setSelId(c.id)} />)}
 
           {weak.length > 0 && (
             <>
               <button className="fb-weak-toggle" onClick={() => setShowWeak((s) => !s)}>
-                {showWeak ? '▲' : '▼'} Zwakkere signalen — niet handelen ({weak.length})
+                {showWeak ? '▲' : '▼'} {anyV2 ? `Timing te laag — bias zien, nog niet instappen (${weak.length})` : `Zwakkere signalen — niet handelen (${weak.length})`}
               </button>
               {showWeak && (
                 <div className="fb-weak-list">

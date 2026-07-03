@@ -10,7 +10,7 @@ import { Analyse } from './Analyse'
 import { BacktestTab } from './BacktestTab'
 import { HowItWorks, Tour, type TourStep } from './ui'
 
-type Lens = 'daytrade' | 'swing'
+type Lens = 'daytrade' | 'swing' | 'position'
 type Tab = 'calls' | 'paren' | 'trackrecord' | 'analyse' | 'bewijs'
 
 const TOUR: TourStep[] = [
@@ -59,17 +59,29 @@ export default function Dashboard() {
   const header = data?.header
 
   // Lens bepaalt: welke calls, welke hoofdhorizon, welke secundaire horizons.
+  // Day en Swing delen dezelfde dagcalls (het model is hetzelfde; alleen hoe
+  // lang je vasthoudt verschilt) — de simulatie liet zien dat diezelfde calls
+  // op 5 dagen het best presteren. Positie = het aparte carry-model.
   const cfg = useMemo(() => {
-    const isDay = lens === 'daytrade'
     const all = data?.trackrecord || []
+    if (lens === 'position') {
+      return {
+        label: 'Positie',
+        kind: 'position' as const,
+        todayCalls: data?.positionCalls || [],
+        trackrecord: all.filter((c) => c.callType === 'position'),
+        hoofd: 20,
+        secondary: [5, 10],
+      }
+    }
+    const isDay = lens === 'daytrade'
     return {
       label: isDay ? 'Daytrade' : 'Swing',
-      kind: (isDay ? 'daily' : 'weekly') as 'daily' | 'weekly',
-      todayCalls: isDay ? (data?.dailyCalls || []) : (data?.weeklyCalls || []),
-      trackrecord: all.filter((c) => c.callType === (isDay ? 'daily' : 'weekly')),
+      kind: 'daily' as const,
+      todayCalls: data?.dailyCalls || [],
+      trackrecord: all.filter((c) => c.callType === 'daily'),
       hoofd: isDay ? 1 : 5,
-      secondary: isDay ? [3, 5, 10, 20] : [3, 10, 20],
-      experimental: !isDay,
+      secondary: isDay ? [3, 5, 10, 20] : [1, 3, 10, 20],
     }
   }, [lens, data])
 
@@ -87,15 +99,22 @@ export default function Dashboard() {
 
       <HowItWorks />
 
-      {/* Lens-schakelaar — de uitleg zit ín de knop, geen aparte banner */}
-      <div className="fb-lens">
+      {/* Lens-schakelaar — drie stijlen, elk met het eigen simulatie-bewijs */}
+      <div className="fb-lens three">
         <button className={`fb-lens-btn${lens === 'daytrade' ? ' active' : ''}`} onClick={() => setLens('daytrade')}>
           <span className="fb-lens-name">Daytrade</span>
-          <span className="fb-lens-desc">elke ochtend verse dagcalls · zelfde dag aanhouden · afgerekend op 1 handelsdag</span>
+          <span className="fb-lens-desc">zelfde dag · afgerekend op 1 dag</span>
+          <span className="fb-lens-proof num">simulatie: 52% · PF 1,35 bij timing ≥ 7</span>
         </button>
         <button className={`fb-lens-btn${lens === 'swing' ? ' active' : ''}`} onClick={() => setLens('swing')}>
-          <span className="fb-lens-name">Swing <span className="fb-exp">experimenteel</span></span>
-          <span className="fb-lens-desc">weekcalls, maandag gelockt · ~een week aanhouden · afgerekend op 5 handelsdagen</span>
+          <span className="fb-lens-name">Swing</span>
+          <span className="fb-lens-desc">3–5 dagen aanhouden · afgerekend op 5 dagen</span>
+          <span className="fb-lens-proof num">simulatie: 55,6% · PF 1,49 bij timing ≥ 7</span>
+        </button>
+        <button className={`fb-lens-btn${lens === 'position' ? ' active' : ''}`} onClick={() => setLens('position')}>
+          <span className="fb-lens-name">Positie <span className="fb-exp">carry</span></span>
+          <span className="fb-lens-desc">weken aanhouden · afgerekend op 20 dagen</span>
+          <span className="fb-lens-proof num">simulatie: 69,8% · PF 4,82 incl. swap (n=126)</span>
         </button>
       </div>
 
@@ -160,7 +179,9 @@ export default function Dashboard() {
               kind={cfg.kind}
               hoofdhorizon={cfg.hoofd}
               focusPair={focusPair}
-              emptyText={cfg.kind === 'weekly' ? "Nog geen weekcalls — die worden maandagochtend gelockt." : "Nog geen dagcalls voor vandaag — ze worden 's ochtends gegenereerd."}
+              emptyText={cfg.kind === 'position'
+                ? 'Geen positie-calls op dit moment. Dat betekent: geen paar met ≥ 2pp renteverschil buiten een Risk-Off-regime — niet handelen is dan de call.'
+                : "Nog geen dagcalls voor vandaag — ze worden 's ochtends gegenereerd."}
             />
           )}
           {tab === 'paren' && (

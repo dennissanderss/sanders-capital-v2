@@ -37,6 +37,17 @@ export function plainSummary(call: FbCall): string {
   const long = call.direction === 'bullish'
   const strong = long ? r.base : r.quote
   const weak = long ? r.quote : r.base
+
+  // Positie-lens (carry): eigen samenvatting rond het renteverschil.
+  if (isV2Breakdown(b) && b.kind === 'carry') {
+    const diff = r.carryDiffPp != null ? Math.abs(r.carryDiffPp) : null
+    const swap = r.swapPctPer30d
+    let s = `De beleidsrente van de ${strong.currency}${r.carryBaseRate != null && r.carryQuoteRate != null ? ` (${long ? r.carryBaseRate : r.carryQuoteRate}%)` : ''} ligt${diff != null ? ` ${diff}pp` : ''} boven die van de ${weak.currency}${r.carryBaseRate != null && r.carryQuoteRate != null ? ` (${long ? r.carryQuoteRate : r.carryBaseRate}%)` : ''} → carry ${long ? 'LONG' : 'SHORT'} ${call.pair}, weken aanhouden.`
+    if (swap != null) s += ` De swap levert indicatief ≈ +${swap}% per 30 dagen op, bovenop het koersresultaat.`
+    if (b.timingScore < 4) s += ' Het instapmoment is nu matig — een terugzakker afwachten kan lonen.'
+    return s
+  }
+
   const driver = ccyDriver(strong)
 
   let mom: string

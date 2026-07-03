@@ -293,11 +293,30 @@ export function buildConviction(p: {
 // moment; de UI toont beide apart.
 export interface ConvictionV2Result {
   v: 2
+  kind?: 'carry'
   fundPts: number; regimePts: number; biasScore: number
   stretchPts: number; imPts: number; eventPts: number; timingScore: number
   total: number
 }
 const r1 = (v: number) => Math.round(v * 10) / 10
+
+// Timing (0..10) — gedeeld door de v2- en carry-conviction: ATR-genormaliseerde
+// tegendraadse strekking + intermarket-bevestiging + event-rust.
+function timingParts(p: {
+  isBull: boolean; momentum5dPips: number; atrPips: number | null
+  imAlignment: number; highImpactEventCount: number
+}): { stretchPts: number; imPts: number; eventPts: number; timingScore: number } {
+  let stretchPts = 1 // zonder ATR (te weinig historie): neutraal
+  if (p.atrPips != null && p.atrPips > 0) {
+    const momAtr = p.momentum5dPips / p.atrPips
+    const stretch = p.isBull ? -momAtr : momAtr
+    stretchPts = Math.max(0, Math.min(1, (stretch + 0.5) / 2)) * 4
+  }
+  const imPts = (p.imAlignment / 100) * 3
+  const eventPts = Math.max(0, 3 - 1.5 * p.highImpactEventCount)
+  return { stretchPts, imPts, eventPts, timingScore: Math.min(10, stretchPts + imPts + eventPts) }
+}
+
 export function buildConvictionV2(p: {
   fundScore: number; base: string; quote: string; direction: Direction
   momentum5dPips: number; atrPips: number | null; imAlignment: number; regime: string
@@ -311,22 +330,40 @@ export function buildConvictionV2(p: {
   const regimePts = regimeAligned ? 1.5 : 0.5
   const biasScore = Math.min(10, fundPts + regimePts)
 
-  // Timing — stretch in ATR-eenheden (tegen de richting in = positief).
-  let stretchPts = 1 // zonder ATR (te weinig historie): neutraal
-  if (p.atrPips != null && p.atrPips > 0) {
-    const momAtr = p.momentum5dPips / p.atrPips
-    const stretch = isBull ? -momAtr : momAtr
-    stretchPts = Math.max(0, Math.min(1, (stretch + 0.5) / 2)) * 4
-  }
-  const imPts = (p.imAlignment / 100) * 3
-  const eventPts = Math.max(0, 3 - 1.5 * p.highImpactEventCount)
-  const timingScore = Math.min(10, stretchPts + imPts + eventPts)
+  const t = timingParts({ isBull, momentum5dPips: p.momentum5dPips, atrPips: p.atrPips, imAlignment: p.imAlignment, highImpactEventCount: p.highImpactEventCount })
 
-  const total = Math.min(10, r1(0.6 * biasScore + 0.4 * timingScore))
+  const total = Math.min(10, r1(0.6 * biasScore + 0.4 * t.timingScore))
   return {
     v: 2,
     fundPts: r1(fundPts), regimePts: r1(regimePts), biasScore: r1(biasScore),
-    stretchPts: r1(stretchPts), imPts: r1(imPts), eventPts: r1(eventPts), timingScore: r1(timingScore),
+    stretchPts: r1(t.stretchPts), imPts: r1(t.imPts), eventPts: r1(t.eventPts), timingScore: r1(t.timingScore),
+    total,
+  }
+}
+
+// ─── Conviction voor de positie-lens (carry) ──────────────────
+// Bias komt hier uit het beleidsrenteverschil zelf (4pp = vol) + het
+// risico-regime (carry gedijt in Risk-On; in Risk-Off wordt er helemaal
+// niet gegenereerd — daar crasht carry historisch). Timing = zelfde formule
+// als v2: ook een positie-trade stapt liever in op een terugzakker.
+export function buildConvictionCarry(p: {
+  diffPp: number; direction: Direction; regime: string
+  momentum5dPips: number; atrPips: number | null; imAlignment: number
+  highImpactEventCount: number
+}): ConvictionV2Result {
+  const isBull = p.direction === 'bullish'
+  const fundPts = Math.min(Math.abs(p.diffPp) / 4, 1) * 8.5
+  const regimePts = p.regime === 'Risk-On' ? 1.5 : 1.0 // Risk-Off → geen calls
+  const biasScore = Math.min(10, fundPts + regimePts)
+
+  const t = timingParts({ isBull, momentum5dPips: p.momentum5dPips, atrPips: p.atrPips, imAlignment: p.imAlignment, highImpactEventCount: p.highImpactEventCount })
+
+  // Bij weken vasthouden weegt het instapmoment minder: 75/25.
+  const total = Math.min(10, r1(0.75 * biasScore + 0.25 * t.timingScore))
+  return {
+    v: 2, kind: 'carry',
+    fundPts: r1(fundPts), regimePts: r1(regimePts), biasScore: r1(biasScore),
+    stretchPts: r1(t.stretchPts), imPts: r1(t.imPts), eventPts: r1(t.eventPts), timingScore: r1(t.timingScore),
     total,
   }
 }

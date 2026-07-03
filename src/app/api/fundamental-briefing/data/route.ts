@@ -11,17 +11,12 @@ async function safe(fn: () => Promise<unknown>) {
 // Leest de gelockte calls + trackrecord. Genereert lui de calls van vandaag
 // als de cron nog niet heeft gedraaid (idempotent: bestaande dag wordt
 // overgeslagen zonder opnieuw te berekenen).
+// Sinds de drie-lenzen-versie: daily + position, elke werkdag. Weekly is
+// legacy en wordt niet meer aangevuld (swing = dagcalls op 5d-horizon).
 export async function GET() {
   await safe(() => generateBriefing('daily'))
-  const isMonday = new Date().getUTCDay() === 1
-  if (isMonday) await safe(() => generateBriefing('weekly'))
+  await safe(() => generateBriefing('position'))
 
-  let data = await readData()
-  // Bootstrap: nog nooit een weekly? Genereer er één zodat de tab gevuld is.
-  if (data.weeklyCalls.length === 0 && !data.trackrecord.some((c) => c.callType === 'weekly')) {
-    await safe(() => generateBriefing('weekly'))
-    data = await readData()
-  }
-
+  const data = await readData()
   return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } })
 }

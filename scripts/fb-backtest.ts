@@ -103,6 +103,13 @@ function buildRateDecisions(events: CalendarEvent[]): Record<string, RateDecisio
   for (const c of MAJORS) out[c].sort((a, b) => a.t - b.t)
   return out
 }
+// Beleidsrente op een moment t (point-in-time, uit de besluiten-reeks).
+function rateAt(decisions: RateDecision[], nowMs: number): number | null {
+  let r: number | null = null
+  for (const d of decisions) { if (d.t < nowMs) r = d.rate; else break }
+  return r
+}
+
 function cbBiasRaw(decisions: RateDecision[], nowMs: number): number {
   let lastMoveT = -1, dir = 0
   for (let i = 1; i < decisions.length; i++) {
@@ -167,13 +174,17 @@ async function main() {
   const dayList = (candles['EUR/USD'] || []).map((c) => c.date).filter((d) => d >= START)
   console.log(`── simulatie over ${dayList.length} handelsdagen ──`)
 
-  interface BtHorizon { x: string; xp: number; ok: boolean; pips: number; pct: number }
+  interface BtHorizon { x: string; xp: number; ok: boolean; pips: number; pct: number; cpct?: number }
   interface BtTrade {
     d: string; p: string; dir: 'L' | 'S'; f: number; bias: number; timing: number; c: number
     e: number; ed: string; atr: number | null
     h: Partial<Record<number, BtHorizon>>
   }
   const trades: BtTrade[] = []
+  // Carry-lens: maandag-entries, long de high-yielder (|verschil| ≥ 2pp),
+  // niet in Risk-Off. cpct = %-resultaat inclusief swap-benadering.
+  interface CarryTrade { d: string; p: string; dir: 'L' | 'S'; diff: number; e: number; ed: string; h: Partial<Record<number, BtHorizon>> }
+  const carryTrades: CarryTrade[] = []
 
   for (const D of dayList) {
     const nowMs = new Date(D + 'T00:00:00Z').getTime() + CALL_HOUR_UTC * 3600000
@@ -242,9 +253,38 @@ async function main() {
       const { conv: _omit, ...rest } = t
       trades.push(rest)
     }
+
+    // ── Carry-lens: alleen op maandagen (weken vasthouden, geen overlap-explosie) ──
+    const isMonday = new Date(D + 'T00:00:00Z').getUTCDay() === 1
+    if (isMonday && regime !== 'Risk-Off') {
+      for (const pair of PAIRS) {
+        const [base, quote] = pair.split('/')
+        const rb = rateAt(decisions[base], nowMs), rq = rateAt(decisions[quote], nowMs)
+        if (rb == null || rq == null) continue
+        const diff = +(rb - rq).toFixed(2)
+        if (Math.abs(diff) < 2) continue
+        const hist = upTo(candles[pair] || [], D)
+        if (hist.length < 2) continue
+        const entry = hist[hist.length - 1]
+        const isBull = diff > 0
+        const ct: CarryTrade = { d: D, p: pair, dir: isBull ? 'L' : 'S', diff, e: entry.close, ed: entry.date, h: {} }
+        for (const hz of HORIZONS) {
+          const out = evaluateHorizon(candles[pair] || [], entry.date, entry.close, isBull, pair, hz)
+          if (!out || out.exitPrice == null) continue
+          const mult = pipMult(pair)
+          const raw = out.exitPrice - entry.close
+          const pips = Math.round((isBull ? raw : -raw) * mult)
+          const pct = +(((isBull ? raw : -raw) / entry.close) * 100).toFixed(3)
+          const calDays = (new Date(out.exitDate! + 'T00:00:00Z').getTime() - new Date(entry.date + 'T00:00:00Z').getTime()) / 86400000
+          const cpct = +(pct + (Math.abs(diff) * calDays) / 365).toFixed(3)
+          ct.h[hz] = { x: out.exitDate!, xp: out.exitPrice, ok: !!out.correct, pips, pct, cpct }
+        }
+        carryTrades.push(ct)
+      }
+    }
   }
 
-  console.log(`trades: ${trades.length}`)
+  console.log(`trades: ${trades.length} | carry-trades (maandagen): ${carryTrades.length}`)
 
   // Snelle sanity-samenvatting per horizon.
   for (const hz of HORIZONS) {
@@ -254,6 +294,15 @@ async function main() {
     const posPct = done.filter((t) => t.h[hz]!.pct > 0).reduce((a, t) => a + t.h[hz]!.pct, 0)
     const negPct = done.filter((t) => t.h[hz]!.pct < 0).reduce((a, t) => a - t.h[hz]!.pct, 0)
     console.log(`${String(hz).padStart(2)}d: n=${done.length} winrate=${(100 * wins / Math.max(1, done.length)).toFixed(1)}% som=${sumPips}p PF%=${negPct > 0 ? (posPct / negPct).toFixed(2) : '∞'}`)
+  }
+  console.log('carry-lens:')
+  for (const hz of HORIZONS) {
+    const done = carryTrades.filter((t) => t.h[hz])
+    if (!done.length) continue
+    const winsC = done.filter((t) => (t.h[hz]!.cpct ?? 0) > 0).length
+    const posC = done.filter((t) => (t.h[hz]!.cpct ?? 0) > 0).reduce((a, t) => a + t.h[hz]!.cpct!, 0)
+    const negC = done.filter((t) => (t.h[hz]!.cpct ?? 0) < 0).reduce((a, t) => a - t.h[hz]!.cpct!, 0)
+    console.log(`${String(hz).padStart(2)}d: n=${done.length} winrate(incl.swap)=${(100 * winsC / done.length).toFixed(1)}% PF=${negC > 0 ? (posC / negC).toFixed(2) : '∞'}`)
   }
 
   const meta = {
@@ -269,12 +318,17 @@ async function main() {
       'CB-bias is een proxy uit historische rentebesluiten (laatste verhoging/verlaging met verval), niet het handmatige live-label.',
       'Geen rente-vs-doel-component: het beleidsdoel per centrale bank is historisch niet beschikbaar.',
     ],
+    carry: {
+      trades: carryTrades.length,
+      method: 'Carry-lens: maandag-entries, long de valuta met de hoogste beleidsrente (verschil ≥ 2pp), niet in Risk-Off. cpct = koersresultaat + renteverschil naar rato van de kalenderdagen (swap-benadering op beleidsrente; echte broker-swap is ongunstiger).',
+    },
   }
 
   const outPath = resolve(__dirname, '../public/fb-backtest-v2.json')
   mkdirSync(resolve(__dirname, '../public'), { recursive: true })
-  writeFileSync(outPath, JSON.stringify({ meta, trades }))
-  console.log(`geschreven: ${outPath} (${(JSON.stringify({ meta, trades }).length / 1024).toFixed(0)} kB)`)
+  const payload = JSON.stringify({ meta, trades, carryTrades })
+  writeFileSync(outPath, payload)
+  console.log(`geschreven: ${outPath} (${(payload.length / 1024).toFixed(0)} kB)`)
 }
 
 main().catch((e) => { console.error(e); process.exit(1) })

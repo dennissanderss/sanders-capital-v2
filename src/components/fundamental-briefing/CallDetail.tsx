@@ -175,8 +175,23 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
             Klik een onderdeel open voor de exacte input.
           </p>
 
-          <div className="fb-group-label">Bias — de fundamentele these <Tip text={TIP.bias} /></div>
+          <div className="fb-group-label">{v2.kind === 'carry' ? 'Bias — de carry-these' : 'Bias — de fundamentele these'} <Tip text={TIP.bias} /></div>
           <div className="fb-subs">
+            {v2.kind === 'carry' ? (
+              <SubRow k="fund" label="Renteverschil (carry)" val={v2.fundPts} open={openSub === 'fund'} onClick={subToggle}>
+                <p className="fb-sub-intro">
+                  De positie-lens handelt het <b>rente-niveau-verschil</b>: long de valuta met de duidelijk hoogste beleidsrente.
+                  Je verdient dagelijks aan de swap; historisch driftte de koers er in risicovriendelijke regimes ook licht naartoe.
+                </p>
+                <div className="fb-sub-line"><span>Beleidsrente {r.base.currency}</span><span className="num">{r.carryBaseRate != null ? `${r.carryBaseRate}%` : '—'}</span></div>
+                <div className="fb-sub-line"><span>Beleidsrente {r.quote.currency}</span><span className="num">{r.carryQuoteRate != null ? `${r.carryQuoteRate}%` : '—'}</span></div>
+                <div className="fb-sub-line"><span>Verschil</span><span className="num" style={{ fontWeight: 700 }}>{r.carryDiffPp != null ? `${r.carryDiffPp > 0 ? '+' : ''}${r.carryDiffPp}pp` : '—'}</span></div>
+                {r.swapPctPer30d != null && (
+                  <div className="fb-sub-line"><span>Indicatieve swap-opbrengst <Tip text="Renteverschil naar rato van de tijd: |verschil| × dagen ÷ 365. Wat je broker werkelijk geeft is lager (spread op de swap)." /></span><span className="num fb-pos">≈ +{r.swapPctPer30d}% per 30 dagen</span></div>
+                )}
+                <p className="fb-formula">Punten: min(|{r.carryDiffPp ?? 0}| / 4, 1) × 8,5 = <b>{v2.fundPts.toFixed(1)}</b> → richting <b>{dirLabel(call.direction)}</b> (long de hoogste rente).</p>
+              </SubRow>
+            ) : (
             <SubRow k="fund" label="Fundamentele onbalans" val={v2.fundPts} open={openSub === 'fund'} onClick={subToggle}>
               <p className="fb-sub-intro">
                 Het verschil tussen beide valutascores. Het draait om de <b>richting van het beleid</b>, niet om het rente-niveau.
@@ -191,6 +206,7 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
                 <p className="fb-sub-note" style={{ marginTop: 8 }}>Nieuws is voor deze call met de reserve-methode (trefwoorden) gelabeld — de AI-labeling was niet beschikbaar.</p>
               )}
             </SubRow>
+            )}
 
             <SubRow k="reg" label="Past bij marktregime" tip={TIP.regime} val={v2.regimePts} open={openSub === 'reg'} onClick={subToggle}>
               <p className="fb-sub-intro">Past de richting bij het huidige marktthema ({call.regime})?</p>
@@ -260,8 +276,17 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
           </div>
 
           <div className="fb-sub-total" style={{ marginTop: 12 }}>
-            <span className="l">Zekerheid = 0,6 × bias + 0,4 × timing</span>
-            <span className="v num">0,6 × {v2.biasScore.toFixed(1)} + 0,4 × {v2.timingScore.toFixed(1)} = {call.conviction.toFixed(1)}</span>
+            {v2.kind === 'carry' ? (
+              <>
+                <span className="l">Zekerheid = 0,75 × bias + 0,25 × timing <Tip text="Bij weken vasthouden weegt het instapmoment minder zwaar dan bij daytrades." /></span>
+                <span className="v num">0,75 × {v2.biasScore.toFixed(1)} + 0,25 × {v2.timingScore.toFixed(1)} = {call.conviction.toFixed(1)}</span>
+              </>
+            ) : (
+              <>
+                <span className="l">Zekerheid = 0,6 × bias + 0,4 × timing</span>
+                <span className="v num">0,6 × {v2.biasScore.toFixed(1)} + 0,4 × {v2.timingScore.toFixed(1)} = {call.conviction.toFixed(1)}</span>
+              </>
+            )}
           </div>
         </div>
       ) : (

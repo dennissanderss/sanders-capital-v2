@@ -5,11 +5,11 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import {
   MAJORS, PAIRS, PAIR_SYMBOLS, INTERMARKET_SYMBOLS, HORIZONS, FUND_GATE, MAX_CALLS_PER_DAY,
-  COMMODITY_SYMBOLS, MODEL_VERSION,
+  COMMODITY_SYMBOLS, MODEL_VERSION, CARRY_MIN_DIFF, MAX_POSITION_CALLS,
 } from './constants'
 import {
   analyzeNewsSentiment, computeCurrencyScores, determineRegime, computePairBias,
-  buildConvictionV2, isAlignedWithRegime, calculateIntermarketAlignment, intermarketContributions,
+  buildConvictionV2, buildConvictionCarry, isAlignedWithRegime, calculateIntermarketAlignment, intermarketContributions,
   type RateRow, type NewsRow, type ImSignal, type CurrencyExtras, type NewsSentiment,
 } from './scoring'
 import { analyzeNewsPerCurrency } from './newsLlm'
@@ -89,6 +89,7 @@ function factorsOf(
 interface MarketContext {
   cs: ReturnType<typeof computeCurrencyScores>
   regime: string
+  rates: Record<string, RateRow>
   news: Record<string, NewsSentiment>
   newsSource: 'llm' | 'keywords'
   eventRisk: Record<string, EventRiskItem[]>
@@ -131,7 +132,7 @@ async function buildMarketContext(sb: SupabaseClient, fromISO: string): Promise<
 
   const cs = computeCurrencyScores(rates, news, extras)
   const { regime } = determineRegime(cs)
-  return { cs, regime, news, newsSource, eventRisk, factorDetail }
+  return { cs, regime, rates, news, newsSource, eventRisk, factorDetail }
 }
 
 function headerFromContext(ctx: MarketContext, date: string): BriefingHeader {
@@ -193,7 +194,7 @@ export async function generateBriefing(callType: CallType): Promise<{ created: n
   // Marktcontext v2: rates + LLM-nieuws + kalender + grondstoffen.
   const fromISO = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0]
   const ctx = await buildMarketContext(sb, fromISO)
-  const { cs, regime, news, newsSource, eventRisk, factorDetail } = ctx
+  const { cs, regime, rates, news, newsSource, eventRisk, factorDetail } = ctx
 
   // Header één keer per ochtend locken (bias-strip = zelfde snapshot als de calls).
   await storeDailyHeader(sb, callDate, headerFromContext(ctx, callDate))
@@ -214,32 +215,69 @@ export async function generateBriefing(callType: CallType): Promise<{ created: n
   type Draft = Omit<FbCall, 'id' | 'status' | 'outcomes'>
   const drafts: Draft[] = []
   for (const pair of PAIRS) {
-    const pb = computePairBias(pair, cs)
-    if (pb.direction === 'neutraal' || Math.abs(pb.score) < FUND_GATE) continue
     const hist = pairHist[pair] || []
     if (hist.length < 6) continue
     const last = hist[hist.length - 1]
     const mom = momentum5d(hist, pair)
     const atrPips = atr14Pips(hist, pair)
+    const [pairBase, pairQuote] = pair.split('/')
 
     // Event-risico voor dit paar: high-impact events voor base of quote.
-    const pairEvents = [...(eventRisk[pb.base] || []), ...(eventRisk[pb.quote] || [])]
+    const pairEvents = [...(eventRisk[pairBase] || []), ...(eventRisk[pairQuote] || [])]
       .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4)
 
-    const conv = buildConvictionV2({
-      fundScore: pb.score, base: pb.base, quote: pb.quote, direction: pb.direction,
-      momentum5dPips: mom.pips, atrPips, imAlignment, regime,
-      highImpactEventCount: pairEvents.length,
-    })
-    const regimeAligned = isAlignedWithRegime(pb.base, pb.quote, pb.direction === 'bullish', regime)
+    let direction: 'bullish' | 'bearish'
+    let fundScore: number
+    let conv: ReturnType<typeof buildConvictionV2>
+    let carryExtras: Partial<CallReasoning> = {}
+
+    if (callType === 'position') {
+      // ── Positie-lens (carry): richting = beleidsrenteverschil ──
+      // Carry crasht historisch in Risk-Off → dan geen positie-calls.
+      if (regime === 'Risk-Off') continue
+      const rb = rates[pairBase]?.rate, rq = rates[pairQuote]?.rate
+      if (rb == null || rq == null) continue
+      const diff = +(rb - rq).toFixed(2)
+      if (Math.abs(diff) < CARRY_MIN_DIFF) continue
+      direction = diff > 0 ? 'bullish' : 'bearish'
+      fundScore = diff
+      conv = buildConvictionCarry({
+        diffPp: diff, direction, regime,
+        momentum5dPips: mom.pips, atrPips, imAlignment,
+        highImpactEventCount: pairEvents.length,
+      })
+      carryExtras = {
+        carryDiffPp: diff,
+        carryBaseRate: rb,
+        carryQuoteRate: rq,
+        swapPctPer30d: +((Math.abs(diff) * 30) / 365).toFixed(2),
+      }
+    } else {
+      // ── Day/swing: fundamentele onbalans (v2) ──
+      const pb = computePairBias(pair, cs)
+      if (pb.direction === 'neutraal' || Math.abs(pb.score) < FUND_GATE) continue
+      direction = pb.direction
+      fundScore = pb.score
+      conv = buildConvictionV2({
+        fundScore: pb.score, base: pb.base, quote: pb.quote, direction: pb.direction,
+        momentum5dPips: mom.pips, atrPips, imAlignment, regime,
+        highImpactEventCount: pairEvents.length,
+      })
+    }
+
+    const regimeAligned = callType === 'position'
+      ? regime !== 'Risk-Off'
+      : isAlignedWithRegime(pairBase, pairQuote, direction === 'bullish', regime)
     const reasoning: CallReasoning = {
-      base: factorsOf(pb.base, cs, factorDetail[pb.base]),
-      quote: factorsOf(pb.quote, cs, factorDetail[pb.quote]),
+      base: factorsOf(pairBase, cs, factorDetail[pairBase]),
+      quote: factorsOf(pairQuote, cs, factorDetail[pairQuote]),
       regime,
       regimeAligned,
-      regimeText: regimeAligned
-        ? `${pair} ${pb.direction === 'bullish' ? 'long' : 'short'} past in het ${regime}-regime.`
-        : `${pair} is neutraal binnen het ${regime}-regime (telt niet als voorwaarde, alleen voor de bias-score).`,
+      regimeText: callType === 'position'
+        ? `Carry-positie in ${regime}-regime (in Risk-Off worden geen positie-calls gegeven — daar crasht carry historisch).`
+        : regimeAligned
+          ? `${pair} ${direction === 'bullish' ? 'long' : 'short'} past in het ${regime}-regime.`
+          : `${pair} is neutraal binnen het ${regime}-regime (telt niet als voorwaarde, alleen voor de bias-score).`,
       momentum5dPips: mom.pips,
       momentumStart: mom.start,
       momentumNow: mom.now,
@@ -248,24 +286,25 @@ export async function generateBriefing(callType: CallType): Promise<{ created: n
       // "niet vastgelegd voor deze call".
       intermarket: imContrib,
       newsDetail: {
-        [pb.base]: news[pb.base]?.detail || [],
-        [pb.quote]: news[pb.quote]?.detail || [],
+        [pairBase]: news[pairBase]?.detail || [],
+        [pairQuote]: news[pairQuote]?.detail || [],
       },
       // v2:
       modelVersion: MODEL_VERSION,
       atrPips: atrPips ?? undefined,
       eventRisk: pairEvents,
       newsSource,
+      ...carryExtras,
     }
     drafts.push({
-      callDate, callType, pair, base: pb.base, quote: pb.quote,
-      direction: pb.direction, fundScore: pb.score, conviction: conv.total,
+      callDate, callType, pair, base: pairBase, quote: pairQuote,
+      direction, fundScore, conviction: conv.total,
       breakdown: conv, regime, entryPrice: last.close, entryDate: last.date, reasoning,
     })
   }
 
   drafts.sort((a, b) => b.conviction - a.conviction)
-  const top = drafts.slice(0, MAX_CALLS_PER_DAY)
+  const top = drafts.slice(0, callType === 'position' ? MAX_POSITION_CALLS : MAX_CALLS_PER_DAY)
   if (top.length === 0) return { created: 0, date: callDate }
 
   const { data: inserted, error } = await sb.from('fb_calls').insert(
@@ -364,6 +403,8 @@ export async function readData(): Promise<FbDataResponse> {
   const dailyCalls = all.filter((c) => c.callType === 'daily' && c.callDate === today)
   const latestWeeklyDate = all.filter((c) => c.callType === 'weekly').map((c) => c.callDate).sort().slice(-1)[0]
   const weeklyCalls = all.filter((c) => c.callType === 'weekly' && c.callDate === latestWeeklyDate)
+  const latestPositionDate = all.filter((c) => c.callType === 'position').map((c) => c.callDate).sort().slice(-1)[0]
+  const positionCalls = all.filter((c) => c.callType === 'position' && c.callDate === latestPositionDate)
 
   const header = await buildHeader(sb)
   return {
@@ -372,6 +413,7 @@ export async function readData(): Promise<FbDataResponse> {
     header,
     dailyCalls,
     weeklyCalls,
+    positionCalls,
     trackrecord: all,
   }
 }

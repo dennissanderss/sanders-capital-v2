@@ -4,7 +4,8 @@ import { generateBriefing } from '@/lib/fundamental/service'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-// Genereert de gelockte daily-call elke werkdagochtend, en de weekly op maandag.
+// Genereert elke werkdagochtend de gelockte daily-calls (day/swing-lens) en
+// de position-calls (carry-lens). Weekly is legacy en wordt niet meer gemaakt.
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
@@ -13,9 +14,8 @@ export async function GET(request: Request) {
   }
   try {
     const daily = await generateBriefing('daily')
-    const isMonday = new Date().getUTCDay() === 1
-    const weekly = isMonday ? await generateBriefing('weekly') : { skipped: true, created: 0, date: daily.date }
-    return NextResponse.json({ ok: true, daily, weekly })
+    const position = await generateBriefing('position')
+    return NextResponse.json({ ok: true, daily, position })
   } catch (e) {
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 })
   }

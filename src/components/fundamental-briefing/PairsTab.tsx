@@ -17,13 +17,18 @@ export function PairsTab({ header, todayCalls, onSelectPair }: {
   const rows = useMemo(() => {
     if (!header) return []
     const score: Record<string, number> = {}
-    for (const c of header.currencyScores) score[c.currency] = c.score
+    const rate: Record<string, number | null> = {}
+    for (const c of header.currencyScores) {
+      score[c.currency] = c.score
+      rate[c.currency] = c.breakdown?.rate ?? null
+    }
     return PAIRS.map((pair) => {
       const [base, quote] = pair.split('/')
       const diff = +( (score[base] ?? 0) - (score[quote] ?? 0) ).toFixed(2)
       const direction = diff > 0.5 ? 'LONG' : diff < -0.5 ? 'SHORT' : '—'
       const call = todayCalls.find((c) => c.pair === pair)
-      return { pair, base, quote, diff, direction, isCall: !!call, call }
+      const carryDiff = rate[base] != null && rate[quote] != null ? +((rate[base]! - rate[quote]!)).toFixed(2) : null
+      return { pair, base, quote, diff, direction, isCall: !!call, call, carryDiff }
     }).sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
   }, [header, todayCalls])
 
@@ -76,6 +81,11 @@ export function PairsTab({ header, todayCalls, onSelectPair }: {
                 {!gated && <span className="fb-pair-callinfo">onder de gate — geen duidelijke these</span>}
               </div>
               <div className="fb-bias-track"><span className="fb-bias-mid" /><span className={`fb-bias-fill ${pos ? 'pos' : 'neg'}`} style={{ width: `${pct / 2}%` }} /></div>
+              {r.carryDiff != null && Math.abs(r.carryDiff) >= 2 && (
+                <div className="fb-pair-carry" title="Beleidsrenteverschil ≥ 2pp: kandidaat voor de Positie-lens (carry). Long de valuta met de hoogste rente.">
+                  carry {r.carryDiff > 0 ? '+' : ''}{r.carryDiff}pp → {r.carryDiff > 0 ? 'LONG' : 'SHORT'}-swap
+                </div>
+              )}
             </div>
           )
         })}

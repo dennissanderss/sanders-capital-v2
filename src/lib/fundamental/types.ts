@@ -4,7 +4,8 @@
 import type { Horizon } from './constants'
 
 export type Direction = 'bullish' | 'bearish'
-export type CallType = 'daily' | 'weekly'
+// 'position' = carry-lens (sinds jul 2026); 'weekly' is legacy (niet meer gegenereerd).
+export type CallType = 'daily' | 'weekly' | 'position'
 
 export interface ScoreBreakdown {
   biasLabel: string
@@ -45,6 +46,7 @@ export interface ConvictionBreakdownLite {
 // v1-rijen hebben de oude vorm — onderscheid via isV2Breakdown().
 export interface ConvictionV2 {
   v: 2
+  kind?: 'carry'         // positie-lens: fundPts komt uit het renteverschil
   // Bias-kant (0..10): hoe sterk de fundamentals de richting steunen.
   fundPts: number        // geschaalde |fund_score|, 0..8.5
   regimePts: number      // 0.5 of 1.5
@@ -163,6 +165,11 @@ export interface CallReasoning {
   atrPips?: number                        // 14d-ATR in pips op call-moment
   eventRisk?: EventRiskItem[]             // high-impact events binnen het timing-venster
   newsSource?: 'llm' | 'keywords'         // hoe het nieuws is gelabeld
+  // Positie-lens (carry), append-only:
+  carryDiffPp?: number                    // beleidsrente base − quote, in pp
+  carryBaseRate?: number | null
+  carryQuoteRate?: number | null
+  swapPctPer30d?: number                  // indicatieve swap-opbrengst per 30 dagen
 }
 
 // Eén gelockte call met al zijn horizon-uitkomsten.
@@ -200,6 +207,7 @@ export interface FbDataResponse {
   today: string
   header: BriefingHeader | null
   dailyCalls: FbCall[]
-  weeklyCalls: FbCall[]
+  weeklyCalls: FbCall[]      // legacy — wordt niet meer aangevuld
+  positionCalls: FbCall[]    // carry-lens (vandaag)
   trackrecord: FbCall[]
 }

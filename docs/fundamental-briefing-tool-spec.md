@@ -218,13 +218,21 @@ Twee soorten leakage worden uitgesloten:
 
 ---
 
-## 4. Cadans & lenzen
+## 4. Cadans & lenzen (drie lenzen sinds jul 2026)
 
-- **Daytrade**: dagcalls, elke werkdagochtend vers gelockt. Hoofdhorizon **1 dag**.
-  Secundaire horizons 3/5/10/20 lopen mee.
-- **Swing** (experimenteel): weekcalls, **maandagochtend** gelockt. Hoofdhorizon
-  **5 dagen**. Secundair 3/10/20. Zelfde fundamentele analyse — alleen de horizon
-  verschilt.
+- **Daytrade**: dagcalls (v2-model), elke werkdagochtend vers gelockt.
+  Hoofdhorizon **1 dag**. Tradeable = **timing ≥ 7** (bewezen filter).
+  Simulatie: 52,1% winrate / PF 1,35.
+- **Swing**: dezélfde dagcalls, maar 3–5 dagen aanhouden; hoofdhorizon
+  **5 dagen**. Tradeable = timing ≥ 7. Simulatie: 55,6% / PF 1,49. (De oude
+  aparte "weekly"-calls zijn legacy en worden niet meer gegenereerd.)
+- **Positie (carry)**: eigen model, `call_type='position'`, elke werkdag
+  gelockt, max 5. Richting = **beleidsrenteverschil ≥ 2pp** (long de hoogste
+  rente), **niet in Risk-Off** (carry crasht daar historisch). Hoofdhorizon
+  **20 dagen**. Zekerheid = 0,75 × bias (renteverschil/4, gecapt) + 0,25 ×
+  timing. Reasoning bevat carryDiffPp, beide rentes en de indicatieve
+  swap-opbrengst (|diff| × dagen ÷ 365). Simulatie (maandag-entries):
+  20d **69,8% / PF 4,82 incl. swap** (n=126, voorlopig).
 - Koers-inputs (momentum, intermarket, entry) zijn verankerd op **voltooide
   dag-candles** → een call verandert niet binnen de dag.
 

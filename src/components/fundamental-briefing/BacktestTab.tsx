@@ -5,28 +5,33 @@ import { HZ_LABEL, sampleTier } from './helpers'
 import { Tip, HowToRead } from './ui'
 
 // ─── Data-vorm van public/fb-backtest-v2.json ─────────────────
-interface BtHorizon { x: string; xp: number; ok: boolean; pips: number; pct: number }
+interface BtHorizon { x: string; xp: number; ok: boolean; pips: number; pct: number; cpct?: number }
 interface BtTrade {
-  d: string; p: string; dir: 'L' | 'S'; f: number; bias: number; timing: number; c: number
-  e: number; ed: string; atr: number | null
+  d: string; p: string; dir: 'L' | 'S'
+  f?: number; bias?: number; timing?: number; c?: number
+  diff?: number                       // carry-lens: renteverschil in pp
+  e: number; ed: string; atr?: number | null
   h: Record<string, BtHorizon>
 }
 interface BtData {
   meta: {
     generatedAt: string; model: string; period: { from: string; to: string }
     days: number; trades: number; callMomentUTC: string; method: string; deviations: string[]
+    carry?: { trades: number; method: string }
   }
   trades: BtTrade[]
+  carryTrades?: BtTrade[]
 }
 
 const BT_HORIZONS = [1, 3, 5, 10, 20]
 
-type Preset = 'alle' | 'timing7' | 'zeker7' | 'top1'
+type Preset = 'alle' | 'timing7' | 'zeker7' | 'top1' | 'carry'
 const PRESETS: { key: Preset; label: string; desc: string }[] = [
-  { key: 'alle', label: 'Alle calls', desc: 'Elke call die de gate haalde (top-8 per dag).' },
-  { key: 'timing7', label: 'Timing ≥ 7', desc: 'Alleen calls met een gunstig instapmoment — dít is waar de edge zit.' },
-  { key: 'zeker7', label: 'Zekerheid ≥ 7', desc: 'Alleen de sterkste totaalscores.' },
-  { key: 'top1', label: 'Top-1 per dag', desc: 'Alleen de hoogste zekerheid van elke dag.' },
+  { key: 'alle', label: 'Alle calls', desc: 'Elke call die de gate haalde (top-8 per dag). Day/swing-model.' },
+  { key: 'timing7', label: 'Timing ≥ 7', desc: 'Alleen calls met een gunstig instapmoment — dít is de day/swing-edge.' },
+  { key: 'zeker7', label: 'Zekerheid ≥ 7', desc: 'Alleen de sterkste totaalscores (day/swing-model).' },
+  { key: 'top1', label: 'Top-1 per dag', desc: 'Alleen de hoogste zekerheid van elke dag (day/swing-model).' },
+  { key: 'carry', label: 'Positie (carry)', desc: 'De positie-lens: maandag-entries, long de hoogste beleidsrente (≥ 2pp), niet in Risk-Off. Resultaat incl. swap-benadering.' },
 ]
 
 function fmtP(pair: string, v: number): string { return v.toFixed(pair.includes('JPY') ? 3 : 5) }
@@ -34,26 +39,30 @@ function fmtD(iso: string): string {
   try { return new Date(iso + 'T00:00:00Z').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: '2-digit', timeZone: 'UTC' }) } catch { return iso }
 }
 
-function applyPreset(trades: BtTrade[], preset: Preset): BtTrade[] {
-  if (preset === 'timing7') return trades.filter((t) => t.timing >= 7)
-  if (preset === 'zeker7') return trades.filter((t) => t.c >= 7)
+function applyPreset(data: BtData, preset: Preset): BtTrade[] {
+  const trades = data.trades
+  if (preset === 'carry') return data.carryTrades || []
+  if (preset === 'timing7') return trades.filter((t) => (t.timing ?? 0) >= 7)
+  if (preset === 'zeker7') return trades.filter((t) => (t.c ?? 0) >= 7)
   if (preset === 'top1') {
     const best: Record<string, BtTrade> = {}
-    for (const t of trades) if (!best[t.d] || t.c > best[t.d].c) best[t.d] = t
+    for (const t of trades) if (!best[t.d] || (t.c ?? 0) > (best[t.d].c ?? 0)) best[t.d] = t
     return Object.values(best)
   }
   return trades
 }
 
-function stats(trades: BtTrade[], hz: number) {
+// useSwap: reken met %-resultaat inclusief swap-benadering (carry-lens).
+function stats(trades: BtTrade[], hz: number, useSwap = false) {
   let n = 0, wins = 0, pips = 0, posPct = 0, negPct = 0
   for (const t of trades) {
     const h = t.h[String(hz)]
     if (!h) continue
+    const pct = useSwap && h.cpct != null ? h.cpct : h.pct
     n++
-    if (h.ok) wins++
+    if (useSwap ? pct > 0 : h.ok) wins++
     pips += h.pips
-    if (h.pct > 0) posPct += h.pct; else negPct -= h.pct
+    if (pct > 0) posPct += pct; else negPct -= pct
   }
   return {
     n, wins,
@@ -66,9 +75,12 @@ function stats(trades: BtTrade[], hz: number) {
 }
 
 // Cumulatieve %-curve (close-to-close, gelijk gewicht per trade).
-function equitySeries(trades: BtTrade[], hz: number): { x: number; y: number }[] {
+function equitySeries(trades: BtTrade[], hz: number, useSwap = false): { x: number; y: number }[] {
   const rows = trades
-    .map((t) => ({ d: t.d, pct: t.h[String(hz)]?.pct }))
+    .map((t) => {
+      const h = t.h[String(hz)]
+      return { d: t.d, pct: h ? (useSwap && h.cpct != null ? h.cpct : h.pct) : undefined }
+    })
     .filter((r): r is { d: string; pct: number } => r.pct != null)
     .sort((a, b) => a.d.localeCompare(b.d))
   let cum = 0
@@ -113,19 +125,24 @@ export function BacktestTab() {
     return () => { alive = false }
   }, [])
 
-  const filtered = useMemo(() => (data ? applyPreset(data.trades, preset) : []), [data, preset])
-  const head = useMemo(() => stats(filtered, hz), [filtered, hz])
-  const series = useMemo(() => equitySeries(filtered, hz), [filtered, hz])
+  // De positie-lens is een 20-dagen-model; spring daar automatisch heen.
+  useEffect(() => { if (preset === 'carry') setHz(20) }, [preset])
+
+  const isCarry = preset === 'carry'
+  const filtered = useMemo(() => (data ? applyPreset(data, preset) : []), [data, preset])
+  const head = useMemo(() => stats(filtered, hz, isCarry), [filtered, hz, isCarry])
+  const headPrice = useMemo(() => stats(filtered, hz, false), [filtered, hz])
+  const series = useMemo(() => equitySeries(filtered, hz, isCarry), [filtered, hz, isCarry])
 
   const byPair = useMemo(() => {
     if (!filtered.length) return []
     const map: Record<string, BtTrade[]> = {}
     for (const t of filtered) (map[t.p] ||= []).push(t)
     return Object.entries(map)
-      .map(([p, rows]) => ({ pair: p, s: stats(rows, hz) }))
-      .filter((g) => g.s.n >= 20)
+      .map(([p, rows]) => ({ pair: p, s: stats(rows, hz, isCarry) }))
+      .filter((g) => g.s.n >= (isCarry ? 10 : 20))
       .sort((a, b) => (b.s.pf === Infinity ? 99 : b.s.pf ?? 0) - (a.s.pf === Infinity ? 99 : a.s.pf ?? 0))
-  }, [filtered, hz])
+  }, [filtered, hz, isCarry])
 
   const listRows = useMemo(() =>
     [...filtered].sort((a, b) => b.d.localeCompare(a.d)).slice(0, listLimit),
@@ -153,30 +170,29 @@ export function BacktestTab() {
         <p>De uitkomsten zijn dus een eerlijke ondergrens van de <i>testbare</i> onderdelen — het live-model heeft daarbovenop nieuws + handmatige CB-labels, die hier niet gesimuleerd kunnen worden.</p>
       </HowToRead>
 
-      {/* Hoofdinzicht */}
+      {/* Hoofdinzicht: één bewezen edge per lens */}
       <div className="fb-bt-insights">
         <div className="fb-bt-insight main">
-          <div className="t">💡 De belangrijkste uitkomst</div>
+          <div className="t">💡 Drie lenzen, drie bewezen profielen</div>
           <p>
-            De edge zit in de <b>timing</b>, niet in het fundamentele niveau. Calls met <b>timing ≥ 7</b> (gunstige tegendraadse
-            strekking, marktbevestiging, geen cijfers op komst) haalden op 5 dagen <b>{stats(applyPreset(data.trades, 'timing7'), 5).winrate}% winrate</b> en
-            profit factor <b>{(stats(applyPreset(data.trades, 'timing7'), 5).pf ?? 0).toFixed(2)}</b> over {stats(applyPreset(data.trades, 'timing7'), 5).n} trades
-            ({stats(applyPreset(data.trades, 'timing7'), 5).pips > 0 ? '+' : ''}{stats(applyPreset(data.trades, 'timing7'), 5).pips.toLocaleString('nl-NL')} pips).
-            Zonder dat filter is het geheel een muntje ({stats(data.trades, 1).winrate}% op 1 dag) en op langere horizon verliesgevend.
+            <b>Daytrade (1d):</b> {stats(applyPreset(data, 'timing7'), 1).winrate}% winrate · PF {(stats(applyPreset(data, 'timing7'), 1).pf ?? 0).toFixed(2)} bij timing ≥ 7 (n={stats(applyPreset(data, 'timing7'), 1).n}).{' '}
+            <b>Swing (5d):</b> {stats(applyPreset(data, 'timing7'), 5).winrate}% · PF {(stats(applyPreset(data, 'timing7'), 5).pf ?? 0).toFixed(2)} ({stats(applyPreset(data, 'timing7'), 5).pips > 0 ? '+' : ''}{stats(applyPreset(data, 'timing7'), 5).pips.toLocaleString('nl-NL')} pips, n={stats(applyPreset(data, 'timing7'), 5).n}).{' '}
+            <b>Positie/carry (20d):</b> {stats(applyPreset(data, 'carry'), 20, true).winrate}% · PF {(stats(applyPreset(data, 'carry'), 20, true).pf ?? 0).toFixed(2)} incl. swap (n={stats(applyPreset(data, 'carry'), 20, true).n} — voorlopig).
+            Hoe langer de horizon, hoe hoger de winrate — mits je per horizon het júiste model gebruikt.
           </p>
         </div>
         <div className="fb-bt-insight">
           <div className="t">Wat werkt niet</div>
           <p>
-            Een hoge fundamentele score alléén voorspelde in deze simulatie <b>niets</b> — op 10–20 dagen zelfs negatief.
-            Renteverleden is ingeprijsd; vandaar dat live v2 op nieuws + verrassingen leunt (hier niet testbaar) en timing apart toont.
+            Het fundamentele niveau alléén voorspelde niets ({stats(data.trades, 1).winrate}% op 1 dag; 20d PF {(stats(data.trades, 20).pf ?? 0).toFixed(2)}) — renteverleden is ingeprijsd.
+            Day/swing-edge komt van <b>timing</b> (dip/rally, markt, event-rust); lange-termijn-edge van <b>carry</b> (renteverschil), niet van dezelfde score langer vasthouden.
           </p>
         </div>
         <div className="fb-bt-insight">
-          <div className="t">Hoe dit de tool stuurt</div>
+          <div className="t">Vuistregels in de tool</div>
           <p>
-            De timing-score die je bij elke live call ziet is exact de score die hier de rangorde bepaalde: van PF {(stats(data.trades.filter((t) => t.timing >= 7), 1).pf ?? 0).toFixed(2)} (timing ≥ 7)
-            naar PF {(stats(data.trades.filter((t) => t.timing < 3), 1).pf ?? 0).toFixed(2)} (timing &lt; 3) op 1 dag. Vuistregel: <b>handel alleen bij timing ≥ 7</b>.
+            Day/swing: <b>handel alleen bij timing ≥ 7</b> (PF {(stats(data.trades.filter((t) => (t.timing ?? 0) >= 7), 1).pf ?? 0).toFixed(2)} vs. {(stats(data.trades.filter((t) => (t.timing ?? 0) < 3), 1).pf ?? 0).toFixed(2)} bij timing &lt; 3).
+            Positie: alleen ≥ 2pp renteverschil, nooit in Risk-Off, en reken de swap mee — die is een groot deel van het rendement.
           </p>
         </div>
       </div>
@@ -198,14 +214,20 @@ export function BacktestTab() {
           </div>
         </div>
       </div>
-      <p className="fb-note" style={{ margin: '0 0 14px' }}>{PRESETS.find((p) => p.key === preset)?.desc}</p>
+      <p className="fb-note" style={{ margin: '0 0 14px' }}>
+        {PRESETS.find((p) => p.key === preset)?.desc}
+        {isCarry && m.carry ? <> {m.carry.method}</> : null}
+      </p>
 
       {/* KPI's */}
       <div className="fb-kpis">
         <div className="fb-kpi"><div className="l">Trades</div><div className="v num">{head.n.toLocaleString('nl-NL')}</div></div>
-        <div className="fb-kpi"><div className="l">Winrate · {HZ_LABEL[hz]}</div><div className="v accent num">{head.winrate}%</div></div>
-        <div className="fb-kpi"><div className="l">Profit factor <Tip text="Som winst-% ÷ som verlies-% (close-to-close)." /></div><div className={`v num ${pfCls}`}>{pfTxt}</div></div>
-        <div className="fb-kpi"><div className="l">Som pips <Tip text="Alle pips per trade zijn hieronder in de lijst na te rekenen met referentie- en eindkoers + datum. Let op: pips over verschillende paren optellen is indicatief — de PF op % is de eerlijkere maat." /></div><div className={`v num ${head.pips > 0 ? 'win' : head.pips < 0 ? 'loss' : ''}`}>{head.pips > 0 ? '+' : ''}{head.pips.toLocaleString('nl-NL')}</div></div>
+        <div className="fb-kpi"><div className="l">Winrate · {HZ_LABEL[hz]}{isCarry ? ' · incl. swap' : ''}</div><div className="v accent num">{head.winrate}%</div></div>
+        <div className="fb-kpi"><div className="l">Profit factor{isCarry ? ' · incl. swap' : ''} <Tip text={isCarry ? 'Som winst-% ÷ som verlies-%, met het renteverschil naar rato van de dagen meegerekend (swap-benadering op beleidsrente — broker-swap is ongunstiger).' : 'Som winst-% ÷ som verlies-% (close-to-close).'} /></div><div className={`v num ${pfCls}`}>{pfTxt}</div></div>
+        {isCarry && (
+          <div className="fb-kpi"><div className="l">Alleen koers <Tip text="Zelfde trades, zonder swap: zo zie je hoeveel van het rendement uit het renteverschil komt." /></div><div className="v num">{headPrice.winrate}% · PF {headPrice.pf == null ? '—' : headPrice.pf === Infinity ? '∞' : headPrice.pf.toFixed(2)}</div></div>
+        )}
+        <div className="fb-kpi"><div className="l">Som pips <Tip text="Alle pips per trade zijn hieronder in de lijst na te rekenen met referentie- en eindkoers + datum. Let op: pips over verschillende paren optellen is indicatief — de PF op % is de eerlijkere maat. Pips zijn puur koers (zonder swap)." /></div><div className={`v num ${head.pips > 0 ? 'win' : head.pips < 0 ? 'loss' : ''}`}>{head.pips > 0 ? '+' : ''}{head.pips.toLocaleString('nl-NL')}</div></div>
         <div className="fb-kpi"><div className="l">Gem. pips/trade</div><div className={`v num ${head.avgPips > 0 ? 'win' : head.avgPips < 0 ? 'loss' : ''}`}>{head.avgPips > 0 ? '+' : ''}{head.avgPips}</div></div>
       </div>
 
@@ -214,10 +236,10 @@ export function BacktestTab() {
       {/* Per termijn overzicht voor de huidige selectie */}
       <div className="fb-bd" style={{ marginTop: 18 }}>
         <div className="fb-bd-card">
-          <div className="fb-bd-title">Per termijn (huidige selectie)</div>
+          <div className="fb-bd-title">Per termijn (huidige selectie{isCarry ? ', incl. swap' : ''})</div>
           <div className="fb-an-head"><span></span><span>winrate</span><span>PF</span><span></span></div>
           {BT_HORIZONS.map((h) => {
-            const s = stats(filtered, h)
+            const s = stats(filtered, h, isCarry)
             return (
               <div key={h} className={`fb-an-row tier-${s.tier.tier}`}>
                 <span className="fb-an-label">{HZ_LABEL[h]}</span>
@@ -229,10 +251,10 @@ export function BacktestTab() {
           })}
         </div>
         <div className="fb-bd-card">
-          <div className="fb-bd-title">Per timing-score · {HZ_LABEL[hz]} <Tip text="De kern van het bewijs: hogere timing → beter resultaat, laag → slechter. Dit is dezelfde score die je bij elke live call ziet." /></div>
+          <div className="fb-bd-title">Per timing-score · {HZ_LABEL[hz]} <Tip text="De kern van het day/swing-bewijs: hogere timing → beter resultaat, laag → slechter. Dit is dezelfde score die je bij elke live call ziet." /></div>
           <div className="fb-an-head"><span></span><span>winrate</span><span>PF</span><span></span></div>
           {[{ lo: 7, hi: 99, label: 'timing 7+' }, { lo: 5, hi: 7, label: '5–7' }, { lo: 3, hi: 5, label: '3–5' }, { lo: 0, hi: 3, label: '< 3' }].map((b) => {
-            const s = stats(data.trades.filter((t) => t.timing >= b.lo && t.timing < b.hi), hz)
+            const s = stats(data.trades.filter((t) => (t.timing ?? 0) >= b.lo && (t.timing ?? 0) < b.hi), hz)
             return (
               <div key={b.label} className={`fb-an-row tier-${s.tier.tier}`}>
                 <span className="fb-an-label">{b.label}</span>
@@ -242,7 +264,7 @@ export function BacktestTab() {
               </div>
             )
           })}
-          <p className="fb-an-foot">Buckets over álle {data.trades.length.toLocaleString('nl-NL')} trades (ongeacht de selectie hierboven).</p>
+          <p className="fb-an-foot">Buckets over álle {data.trades.length.toLocaleString('nl-NL')} day/swing-trades (ongeacht de selectie hierboven).</p>
         </div>
       </div>
 
@@ -269,7 +291,7 @@ export function BacktestTab() {
         <div className="fb-tr-list">
           <div className="fb-tr2-head">
             <span>Datum</span><span>Paar</span><span>Referentie</span><span>Eindkoers · {HZ_LABEL[hz]}</span><span>Resultaat</span>
-            <span className="fb-tr2-sec">bias / timing</span>
+            <span className="fb-tr2-sec">{isCarry ? 'renteverschil' : 'bias / timing'}</span>
           </div>
           {listRows.map((t, i) => {
             const h = t.h[String(hz)]
@@ -282,7 +304,9 @@ export function BacktestTab() {
                 <span>{h
                   ? <span className={`fb-tr-verdict ${h.ok ? 'win' : 'loss'}`}>{h.ok ? 'JUIST' : 'ONJUIST'}<span className="num" style={{ fontWeight: 400, marginLeft: 4 }}>{h.pips > 0 ? '+' : ''}{h.pips}p</span></span>
                   : <span className="fb-tr-verdict pending">—</span>}</span>
-                <span className="fb-tr2-sec num" style={{ fontSize: 11 }}>{t.bias.toFixed(1)} / {t.timing.toFixed(1)}</span>
+                <span className="fb-tr2-sec num" style={{ fontSize: 11 }}>{isCarry
+                  ? (t.diff != null ? `${t.diff > 0 ? '+' : ''}${t.diff}pp` : '—')
+                  : `${(t.bias ?? 0).toFixed(1)} / ${(t.timing ?? 0).toFixed(1)}`}</span>
               </div>
             )
           })}
