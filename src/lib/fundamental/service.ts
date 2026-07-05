@@ -187,6 +187,12 @@ export async function generateBriefing(callType: CallType): Promise<{ created: n
   const sb = getSupabase()
   const callDate = todayUTC()
 
+  // Weekend: de forexmarkt is dicht — geen nieuwe calls. Voorkomt dat een
+  // pageload op zaterdag/zondag (lazy generate) rommel-calls lockt met
+  // dezelfde entry als vrijdag.
+  const dow = new Date().getUTCDay()
+  if (dow === 0 || dow === 6) return { created: 0, skipped: true, date: callDate }
+
   // Idempotent: al gegenereerd voor vandaag?
   const { data: existing } = await sb.from('fb_calls').select('id').eq('call_date', callDate).eq('call_type', callType).limit(1)
   if (existing && existing.length > 0) return { created: 0, skipped: true, date: callDate }
@@ -400,7 +406,11 @@ export async function readData(): Promise<FbDataResponse> {
   }
 
   const all = (calls || []).map((c) => rowToCall(c, outByCall))
-  const dailyCalls = all.filter((c) => c.callType === 'daily' && c.callDate === today)
+  // Laatste beschikbare dag i.p.v. strikt "vandaag": in het weekend (of vóór
+  // de ochtend-cron) tonen we de meest recente gelockte calls; de UI legt
+  // uit waaróm er geen verse zijn.
+  const latestDailyDate = all.filter((c) => c.callType === 'daily').map((c) => c.callDate).sort().slice(-1)[0]
+  const dailyCalls = all.filter((c) => c.callType === 'daily' && c.callDate === latestDailyDate)
   const latestWeeklyDate = all.filter((c) => c.callType === 'weekly').map((c) => c.callDate).sort().slice(-1)[0]
   const weeklyCalls = all.filter((c) => c.callType === 'weekly' && c.callDate === latestWeeklyDate)
   const latestPositionDate = all.filter((c) => c.callType === 'position').map((c) => c.callDate).sort().slice(-1)[0]

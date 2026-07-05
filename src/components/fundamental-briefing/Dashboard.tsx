@@ -179,6 +179,7 @@ export default function Dashboard() {
               kind={cfg.kind}
               hoofdhorizon={cfg.hoofd}
               focusPair={focusPair}
+              today={data?.today}
               emptyText={cfg.kind === 'position'
                 ? 'Geen positie-calls op dit moment. Dat betekent: geen paar met ≥ 2pp renteverschil buiten een Risk-Off-regime — niet handelen is dan de call.'
                 : "Nog geen dagcalls voor vandaag — ze worden 's ochtends gegenereerd."}

@@ -47,8 +47,8 @@ function CallRow({ c, sel, onSelect }: { c: FbCall; sel: boolean; onSelect: () =
   )
 }
 
-export function BriefingTab({ calls, kind, emptyText, hoofdhorizon, focusPair }: {
-  calls: FbCall[]; kind: 'daily' | 'weekly' | 'position'; emptyText: string; hoofdhorizon: number; focusPair?: string | null
+export function BriefingTab({ calls, kind, emptyText, hoofdhorizon, focusPair, today }: {
+  calls: FbCall[]; kind: 'daily' | 'weekly' | 'position'; emptyText: string; hoofdhorizon: number; focusPair?: string | null; today?: string
 }) {
   const isCarry = kind === 'position'
   const sorted = useMemo(() => [...calls].sort((a, b) => b.conviction - a.conviction), [calls])
@@ -77,6 +77,23 @@ export function BriefingTab({ calls, kind, emptyText, hoofdhorizon, focusPair }:
   }, [sorted, strong, selId])
 
   const anyV2 = sorted.some(isV2Call)
+
+  // Waarom geen verse calls? Weekend (markt dicht) of de ochtend-cron is
+  // nog niet geweest. Zonder deze uitleg lijkt "oude datum" op een defect.
+  const latestDate = sorted[0]?.callDate
+  const isStale = !!(today && latestDate && latestDate < today)
+  const dowNow = new Date().getUTCDay()
+  const isWeekendNow = dowNow === 0 || dowNow === 6
+  const staleBanner = isStale ? (
+    <div className="fb-mode-banner">
+      {isWeekendNow ? (
+        <>🛌 <b>Weekend — de forexmarkt is dicht.</b> Er worden geen nieuwe calls gelockt; dit zijn de calls van <b>{fmtDate(latestDate!)}</b> (de laatste handelsdag). Maandagochtend rond <b>08:30</b> (NL) verschijnen verse calls.</>
+      ) : (
+        <>⏳ <b>De calls van vandaag zijn nog niet gelockt.</b> Dat gebeurt elke werkdagochtend rond <b>08:30</b> (NL). Tot dan zie je de calls van <b>{fmtDate(latestDate!)}</b>.</>
+      )}
+    </div>
+  ) : null
+
   const intro = isCarry ? (
     <p className="fb-calls-intro">
       <b>Positie-lens (carry).</b> Richting = de valuta met de duidelijk hoogste beleidsrente (≥ 2pp verschil), weken aanhouden.
@@ -92,12 +109,22 @@ export function BriefingTab({ calls, kind, emptyText, hoofdhorizon, focusPair }:
   )
 
   if (sorted.length === 0) {
-    return <div>{intro}<div className="fb-empty">{emptyText}</div></div>
+    return (
+      <div>
+        {intro}
+        <div className="fb-empty">
+          {isWeekendNow
+            ? <>🛌 <b>Weekend — de forexmarkt is dicht.</b><br />Er worden geen calls gelockt op zaterdag en zondag. Maandagochtend rond 08:30 (NL) staan hier verse calls.</>
+            : emptyText}
+        </div>
+      </div>
+    )
   }
   const sel = sorted.find((c) => c.id === selId) || strong[0] || sorted[0]
 
   return (
     <div>
+      {staleBanner}
       {intro}
       <div className="fb-legend">
         <span className="it"><span className="fb-hdot win" /> goed</span>
