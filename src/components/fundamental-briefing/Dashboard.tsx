@@ -87,7 +87,7 @@ export default function Dashboard() {
 
   return (
     <div className="fb-tool">
-      <div className="fb-head">
+      <div className="fb-head fb-hero">
         <div className="fb-head-row">
           <h1 className="fb-title">Fundamental Briefing</h1>
           <button className="fb-tour-start" onClick={() => setTourIdx(0)}>? Rondleiding</button>

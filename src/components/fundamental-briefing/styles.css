@@ -40,6 +40,17 @@
 
 /* Header */
 .fb-head { margin-bottom: 18px; }
+/* Hero-band: licht data-visual (Higgsfield) rechts, wit uitlopend naar links
+   zodat de tekst vol leesbaar blijft. Puur decoratief — geen layout-shift. */
+.fb-head.fb-hero {
+  background:
+    linear-gradient(90deg, #ffffff 34%, rgba(255, 255, 255, 0.82) 56%, rgba(255, 255, 255, 0.28) 100%),
+    url('/fb-hero-light.webp') right center / cover no-repeat;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 22px 20px;
+  box-shadow: var(--shadow);
+}
 .fb-head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .fb-title { font-size: 23px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
 .fb-sub { font-size: 13px; color: var(--ink-2); margin: 7px 0 0; max-width: 70ch; line-height: 1.55; }
