@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import type { FbCall } from '@/lib/fundamental/types'
 import { HORIZONS, MODEL_V2_SINCE } from '@/lib/fundamental/constants'
-import { winStats, profitFactor, pfVerdict, sampleTier, convictionBand, HZ_LABEL, wilson, isV2Call } from './helpers'
+import { winStats, profitFactor, pfVerdict, sampleTier, convictionBand, HZ_LABEL, wilson, isV2Call, moveStats, MOVE_THRESHOLDS } from './helpers'
 import { Tip, HowToRead } from './ui'
 
 const CONV_ORDER = ['8.0+', '7.0–8.0', '6.0–7.0', '< 6.0']
@@ -50,6 +50,7 @@ export function Analyse({ calls }: { calls: FbCall[] }) {
   const [pair, setPair] = useState<string>('alle')
   const [bucket, setBucket] = useState<string>('alle')
   const [versie, setVersie] = useState<string>('alle')
+  const [moveDrempel, setMoveDrempel] = useState<number>(30)
 
   const hasV1 = useMemo(() => calls.some((c) => !isV2Call(c)), [calls])
   const hasV2 = useMemo(() => calls.some(isV2Call), [calls])
@@ -72,9 +73,11 @@ export function Analyse({ calls }: { calls: FbCall[] }) {
     .sort((x, y) => y.a.n - x.a.n)
 
   // Kalibratie: zekerheid-bucket → waargenomen trefkans met Wilson-interval.
+  // AUDIT-FIX: gebruikte versieFiltered en negeerde zo stilzwijgend de
+  // paar/zekerheid-filters die de rest van de tab wél toepast.
   const calib = CONV_ORDER
     .map((b) => {
-      const s = winStats(versieFiltered.filter((c) => convictionBand(c) === b), hz)
+      const s = winStats(filtered.filter((c) => convictionBand(c) === b), hz)
       return { label: b, ...s, ci: wilson(s.wins, s.n) }
     })
     .filter((g) => g.n > 0)
@@ -153,14 +156,14 @@ export function Analyse({ calls }: { calls: FbCall[] }) {
           <div className="fb-bd-title">Per zekerheid <Tip text="Helpt zien of 'zekerder' ook vaker goed betekent." /></div>
           {byBucket.length === 0 ? <div className="fb-note" style={{ margin: 0 }}>Nog geen beoordeelde calls voor deze filters.</div> : (
             <>
-              <div className="fb-an-head"><span></span><span>winrate</span><span>PF</span><span></span></div>
+              <div className="fb-an-head"><span></span><span>winrate</span><span title="Profit factor: opgetelde winst ÷ opgeteld verlies. Boven 1 = winstgevend, onder 1 = verliesgevend.">PF</span><span></span></div>
               {byBucket.map((g) => <Row key={g.label} label={g.label} a={g.a} />)}
             </>
           )}
         </div>
         <div className="fb-bd-card">
           <div className="fb-bd-title">Per termijn (huidige filters)</div>
-          <div className="fb-an-head"><span></span><span>winrate</span><span>PF</span><span></span></div>
+          <div className="fb-an-head"><span></span><span>winrate</span><span title="Profit factor: opgetelde winst ÷ opgeteld verlies. Boven 1 = winstgevend, onder 1 = verliesgevend.">PF</span><span></span></div>
           {HORIZONS.map((h) => <Row key={h} label={HZ_LABEL[h]} a={agg(filtered, h)} />)}
         </div>
       </div>
@@ -168,10 +171,59 @@ export function Analyse({ calls }: { calls: FbCall[] }) {
       {byPair.length > 0 && (
         <div className="fb-bd-card" style={{ marginTop: 18 }}>
           <div className="fb-bd-title">Per paar <Tip text="Op welke paren de fundamentele richting het best/slechtst werkt. Alleen paren met beoordeelde calls." /></div>
-          <div className="fb-an-head"><span></span><span>winrate</span><span>PF</span><span></span></div>
+          <div className="fb-an-head"><span></span><span>winrate</span><span title="Profit factor: opgetelde winst ÷ opgeteld verlies. Boven 1 = winstgevend, onder 1 = verliesgevend.">PF</span><span></span></div>
           {byPair.map((g) => <Row key={g.label} label={g.label} a={g.a} />)}
         </div>
       )}
+
+      {/* Move-kwaliteit: was de beweging groot genoeg om op te handelen? */}
+      <div className="fb-bd-card" style={{ marginTop: 18 }}>
+        <div className="fb-bd-title">
+          Beweging — was er ook echt iets te verdienen? · {HZ_LABEL[hz]}
+          <Tip text="Een juiste richting is niets waard als de koers nauwelijks beweegt. Dit meet per call de grootste beweging in de voorspelde richting binnen de termijn (na te rekenen via de call-details). 'Bruikbaar' = richting juist én beweging boven de drempel." />
+        </div>
+        <div className="fb-an-controls" style={{ margin: '4px 0 10px' }}>
+          <div>
+            <span className="fb-mono">Minimale beweging</span>
+            <div className="fb-hz-toggle">
+              {MOVE_THRESHOLDS.map((t) => (
+                <button key={t} className={`fb-hz-btn${moveDrempel === t ? ' active' : ''}`} onClick={() => setMoveDrempel(t)}>{t} pips</button>
+              ))}
+            </div>
+          </div>
+        </div>
+        {(() => {
+          const head = moveStats(filtered, hz, moveDrempel)
+          if (head.n === 0) return <div className="fb-note" style={{ margin: 0 }}>Nog geen beoordeelde calls met bewegingsdata voor deze filters.</div>
+          return (
+            <>
+              <div className="fb-an-headline" style={{ marginBottom: 12 }}>
+                <div><div className="l">Richting juist én ≥ {moveDrempel} pips mee</div><div className="v accent num">{head.n ? Math.round((head.correctWithMove / head.n) * 100) : 0}%</div></div>
+                <div><div className="l">Van de juiste calls haalde de drempel</div><div className="v num">{head.pctCorrectWithMove}%</div></div>
+                <div><div className="l">Mediane meebeweging</div><div className="v num">{head.medianMfe != null ? `${head.medianMfe}p` : '—'} <span className="fb-an-flats">n={head.n}</span></div></div>
+              </div>
+              <div className="fb-an-head"><span></span><span>juist+move</span><span>med. mee</span><span></span></div>
+              {CONV_ORDER.map((b) => {
+                const rows = filtered.filter((c) => convictionBand(c) === b)
+                const s = moveStats(rows, hz, moveDrempel)
+                if (s.n === 0) return null
+                const tier = sampleTier(s.n)
+                return (
+                  <div key={b} className={`fb-an-row tier-${tier.tier}`}>
+                    <span className="fb-an-label">{b}</span>
+                    <span className="num fb-an-wr">{Math.round((s.correctWithMove / s.n) * 100)}%</span>
+                    <span className="num fb-an-pf">{s.medianMfe != null ? `${s.medianMfe}p` : '—'}</span>
+                    <span className="fb-an-n num">n={s.n}{tier.tier === 'ruis' ? '*' : tier.tier === 'voorlopig' ? '†' : ''}</span>
+                  </div>
+                )
+              })}
+              <p className="fb-an-foot">
+                &quot;Juist+move&quot; = de richting klopte én de koers bewoog binnen de termijn minstens {moveDrempel} pips de voorspelde kant op — de calls waar een technische trader iets aan had. Het verse trackrecord is hiervoor nog dun; het tabblad <b>Bewijs</b> heeft dezelfde meting over 3.800+ gesimuleerde trades.
+              </p>
+            </>
+          )
+        })()}
+      </div>
 
       {/* Kalibratie: wordt de zekerheid ook waargemaakt? */}
       <div className="fb-bd-card" style={{ marginTop: 18 }}>

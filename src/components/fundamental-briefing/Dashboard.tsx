@@ -79,7 +79,11 @@ export default function Dashboard() {
       label: isDay ? 'Daytrade' : 'Swing',
       kind: 'daily' as const,
       todayCalls: data?.dailyCalls || [],
-      trackrecord: all.filter((c) => c.callType === 'daily'),
+      // AUDIT-FIX: de 16 oude weekcalls (legacy, zelfde 5d-hoofdhorizon)
+      // waren in geen enkele lens meer zichtbaar — een trackrecord hoort
+      // niets kwijt te raken. Ze tellen mee onder Swing; via het
+      // methodiek-filter in Analyse zijn ze te scheiden.
+      trackrecord: all.filter((c) => c.callType === 'daily' || (!isDay && c.callType === 'weekly')),
       hoofd: isDay ? 1 : 5,
       secondary: isDay ? [3, 5, 10, 20] : [1, 3, 10, 20],
     }
@@ -101,20 +105,25 @@ export default function Dashboard() {
 
       {/* Lens-schakelaar — drie stijlen, elk met het eigen simulatie-bewijs */}
       <div className="fb-lens three">
+        {/* AUDIT-FIX: geen kale winrates meer als "bewijs" op de knoppen —
+            de 1d-winrate is statistisch niet van een muntje te onderscheiden
+            (de edge zit in de winst/verlies-verhouding), de carry-cijfers
+            komen uit maar ~8 maanden simulatie. De knop beschrijft de stijl;
+            het bewijs mét nuance staat op het Bewijs-tabblad. */}
         <button className={`fb-lens-btn${lens === 'daytrade' ? ' active' : ''}`} onClick={() => setLens('daytrade')}>
           <span className="fb-lens-name">Daytrade</span>
           <span className="fb-lens-desc">zelfde dag · afgerekend op 1 dag</span>
-          <span className="fb-lens-proof num">simulatie: 52% · PF 1,35 bij timing ≥ 7</span>
+          <span className="fb-lens-proof">simulatie: winners groter dan verliezers bij timing ≥ 7 — zie Bewijs</span>
         </button>
         <button className={`fb-lens-btn${lens === 'swing' ? ' active' : ''}`} onClick={() => setLens('swing')}>
           <span className="fb-lens-name">Swing</span>
           <span className="fb-lens-desc">3–5 dagen aanhouden · afgerekend op 5 dagen</span>
-          <span className="fb-lens-proof num">simulatie: 55,6% · PF 1,49 bij timing ≥ 7</span>
+          <span className="fb-lens-proof">simulatie: sterkste lens bij timing ≥ 7 — zie Bewijs</span>
         </button>
         <button className={`fb-lens-btn${lens === 'position' ? ' active' : ''}`} onClick={() => setLens('position')}>
           <span className="fb-lens-name">Positie <span className="fb-exp">carry</span></span>
           <span className="fb-lens-desc">weken aanhouden · afgerekend op 20 dagen</span>
-          <span className="fb-lens-proof num">simulatie: 69,8% · PF 4,82 incl. swap (n=126)</span>
+          <span className="fb-lens-proof">rente-verschil + swap · korte simulatie (~8 mnd) — zie Bewijs</span>
         </button>
       </div>
 
@@ -181,7 +190,7 @@ export default function Dashboard() {
               focusPair={focusPair}
               today={data?.today}
               emptyText={cfg.kind === 'position'
-                ? 'Geen positie-calls op dit moment. Dat betekent: geen paar met ≥ 2pp renteverschil buiten een Risk-Off-regime — niet handelen is dan de call.'
+                ? 'Geen positie-calls op dit moment. Dat betekent: geen paar met minstens 2 procentpunt renteverschil buiten een Risk-Off-regime — niet handelen is dan de call.'
                 : "Nog geen dagcalls voor vandaag — ze worden 's ochtends gegenereerd."}
             />
           )}

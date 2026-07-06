@@ -174,7 +174,13 @@ async function main() {
   const dayList = (candles['EUR/USD'] || []).map((c) => c.date).filter((d) => d >= START)
   console.log(`── simulatie over ${dayList.length} handelsdagen ──`)
 
-  interface BtHorizon { x: string; xp: number; ok: boolean; pips: number; pct: number; cpct?: number }
+  // mfe/mae = grootste beweging mee/tegen binnen de horizon (pips, met koers
+  // en datum zodat elke move in TradingView na te rekenen is).
+  interface BtHorizon {
+    x: string; xp: number; ok: boolean; pips: number; pct: number; cpct?: number
+    mfe?: number; mfp?: number; mfd?: string   // favorabel: pips, prijs, datum
+    mae?: number; map?: number; mad?: string   // adverse:  pips, prijs, datum
+  }
   interface BtTrade {
     d: string; p: string; dir: 'L' | 'S'; f: number; bias: number; timing: number; c: number
     e: number; ed: string; atr: number | null
@@ -248,7 +254,11 @@ async function main() {
         const raw = out.exitPrice - t.e
         const pips = Math.round((isBull ? raw : -raw) * mult)
         const pct = +(((isBull ? raw : -raw) / t.e) * 100).toFixed(3)
-        t.h[hz] = { x: out.exitDate!, xp: out.exitPrice, ok: !!out.correct, pips, pct }
+        t.h[hz] = {
+          x: out.exitDate!, xp: out.exitPrice, ok: !!out.correct, pips, pct,
+          mfe: out.mfePips ?? undefined, mfp: out.mfePrice ?? undefined, mfd: out.mfeDate ?? undefined,
+          mae: out.maePips ?? undefined, map: out.maePrice ?? undefined, mad: out.maeDate ?? undefined,
+        }
       }
       const { conv: _omit, ...rest } = t
       trades.push(rest)
@@ -277,7 +287,11 @@ async function main() {
           const pct = +(((isBull ? raw : -raw) / entry.close) * 100).toFixed(3)
           const calDays = (new Date(out.exitDate! + 'T00:00:00Z').getTime() - new Date(entry.date + 'T00:00:00Z').getTime()) / 86400000
           const cpct = +(pct + (Math.abs(diff) * calDays) / 365).toFixed(3)
-          ct.h[hz] = { x: out.exitDate!, xp: out.exitPrice, ok: !!out.correct, pips, pct, cpct }
+          ct.h[hz] = {
+            x: out.exitDate!, xp: out.exitPrice, ok: !!out.correct, pips, pct, cpct,
+            mfe: out.mfePips ?? undefined, mfp: out.mfePrice ?? undefined, mfd: out.mfeDate ?? undefined,
+            mae: out.maePips ?? undefined, map: out.maePrice ?? undefined, mad: out.maeDate ?? undefined,
+          }
         }
         carryTrades.push(ct)
       }

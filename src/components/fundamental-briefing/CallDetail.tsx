@@ -13,6 +13,7 @@ const DIR_NL: Record<string, string> = { up: 'omhoog', down: 'omlaag', flat: 'vl
 
 const TIP = {
   zekerheid: 'Samenvattend cijfer (0-10): 60% bias-sterkte + 40% timing. Bepaalt alleen de rangschikking — niet of de voorspelling goed of fout is.',
+  zekerheidCarry: 'Samenvattend cijfer (0-10): 75% bias (het renteverschil) + 25% timing — bij weken vasthouden weegt het instapmoment minder. Bepaalt alleen de rangschikking.',
   bias: 'Hoe sterk de fundamentals deze richting steunen (0-10): beleidsdivergentie tussen de twee valuta’s + past het bij het macro-regime.',
   timing: 'Hoe gunstig het instapmoment is (0-10): is de koers tegendraads gestrekt (dip/rally), bevestigt de bredere markt, en zijn er geen high-impact cijfers op komst?',
   tegendraads: 'Of de koers de afgelopen dagen tégen de fundamentele richting in bewoog, gemeten in eenheden van de gemiddelde dagbeweging (ATR). Dan is de instap aantrekkelijker (koop de dip / verkoop de rally).',
@@ -72,7 +73,7 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
             </div>
             <div className="fb-score-cell total">
               <div className="v num">{call.conviction.toFixed(1)}</div>
-              <div className="l"><span className={`fb-ztag ${zekerheidTier(call.conviction).cls}`}>{zekerheidTier(call.conviction).label}</span> zekerheid <Tip text={TIP.zekerheid} /></div>
+              <div className="l"><span className={`fb-ztag ${zekerheidTier(call.conviction).cls}`}>{zekerheidTier(call.conviction).label}</span> zekerheid <Tip text={v2.kind === 'carry' ? TIP.zekerheidCarry : TIP.zekerheid} /></div>
             </div>
           </div>
         ) : (
@@ -84,6 +85,15 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
       </div>
 
       <p className="fb-plain">{plainSummary(call)}</p>
+
+      {/* AUDIT-FIX (as 1): de verwachte ordegrootte van de beweging hoort in
+          het antwoord-eerst-blok, niet verstopt in de berekening. */}
+      {r.atrPips != null && (
+        <p className="fb-move-scale num">
+          Normale dagbeweging van {call.pair}: <b>~{r.atrPips} pips</b>
+          <Tip text="Het gemiddelde van de dagelijkse koersuitslagen over de afgelopen 14 dagen (ATR). Gebruik dit als maatstaf: een dagcall heeft ruwweg zo'n beweging als speelruimte; een swing-call (5 dagen) doorgaans een veelvoud." />
+        </p>
+      )}
 
       {/* Event-risico: expliciet waarschuwen, niet alleen punten aftrekken. */}
       {events.length > 0 && (
@@ -139,7 +149,7 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
                   <>
                     <span className={`fb-verdict ${sel.correct ? 'win' : 'loss'}`}>{sel.correct ? 'JUIST' : 'ONJUIST'}</span>{' '}
                     <span style={{ color: 'var(--ink-2)' }}>
-                      na {HZ_LABEL[selHz]}: eindkoers ging {sel.exitPrice > call.entryPrice ? 'omhoog' : 'omlaag'}, en je voorspelde {long ? 'omhoog (LONG)' : 'omlaag (SHORT)'}.
+                      na {HZ_LABEL[selHz]}: eindkoers {sel.exitPrice > call.entryPrice ? 'ging omhoog' : sel.exitPrice < call.entryPrice ? 'ging omlaag' : 'eindigde exact gelijk (telt als onjuist)'}, en je voorspelde {long ? 'omhoog (LONG)' : 'omlaag (SHORT)'}.
                     </span>
                   </>
                 )}
@@ -153,6 +163,13 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
                 <div className="fb-hz-fav num">
                   Grootste beweging mee: <span className="fb-pos">{sgn(sel.mfePips)} pips</span>
                   {' '}({fmtPrice(call.pair, call.entryPrice)} {fmtDate(call.entryDate)} → {fmtPrice(call.pair, sel.mfePrice)} {fmtDate(sel.mfeDate)})
+                </div>
+              )}
+              {sel.maePips != null && (
+                <div className="fb-hz-fav num">
+                  Grootste beweging tegen: <span className="fb-neg">{sel.maePips} pips</span>
+                  {' '}({fmtPrice(call.pair, call.entryPrice)} {fmtDate(call.entryDate)} → {fmtPrice(call.pair, sel.maePrice)} {fmtDate(sel.maeDate)})
+                  {' '}<Tip text="Wat je onderweg maximaal tegen je had: belangrijk voor waar je stop loss had kunnen liggen. Let op: dit zegt niet of de tegenbeweging vóór of ná de meebeweging kwam." />
                 </div>
               )}
             </>
@@ -185,7 +202,7 @@ export function CallDetail({ call, hoofdhorizon }: { call: FbCall; hoofdhorizon:
                 </p>
                 <div className="fb-sub-line"><span>Beleidsrente {r.base.currency}</span><span className="num">{r.carryBaseRate != null ? `${r.carryBaseRate}%` : '—'}</span></div>
                 <div className="fb-sub-line"><span>Beleidsrente {r.quote.currency}</span><span className="num">{r.carryQuoteRate != null ? `${r.carryQuoteRate}%` : '—'}</span></div>
-                <div className="fb-sub-line"><span>Verschil</span><span className="num" style={{ fontWeight: 700 }}>{r.carryDiffPp != null ? `${r.carryDiffPp > 0 ? '+' : ''}${r.carryDiffPp}pp` : '—'}</span></div>
+                <div className="fb-sub-line"><span>Verschil</span><span className="num" style={{ fontWeight: 700 }}>{r.carryDiffPp != null ? `${r.carryDiffPp > 0 ? '+' : ''}${r.carryDiffPp} procentpunt` : '—'}</span></div>
                 {r.swapPctPer30d != null && (
                   <div className="fb-sub-line"><span>Indicatieve swap-opbrengst <Tip text="Renteverschil naar rato van de tijd: |verschil| × dagen ÷ 365. Wat je broker werkelijk geeft is lager (spread op de swap)." /></span><span className="num fb-pos">≈ +{r.swapPctPer30d}% per 30 dagen</span></div>
                 )}

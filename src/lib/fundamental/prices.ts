@@ -19,18 +19,40 @@ export function todayUTC(): string {
   return new Date().toISOString().split('T')[0]
 }
 
-// Drop de nog-vormende candle van vandaag (UTC). Op weekenden/feestdagen is
-// de laatste candle al voltooid (datum ≠ vandaag) en blijft hij staan.
-export function dropForming(bars: Candle[]): Candle[] {
-  if (bars.length === 0) return bars
-  return bars[bars.length - 1].date === todayUTC() ? bars.slice(0, -1) : bars
+const DAY_SEC = 86400
+
+// AUDIT-FIX (jul 2026): correcte datum van een Yahoo FX-dag-candle.
+// Yahoo stempelt een =X-dag-candle op exchange-middernacht: 00:00 UTC in de
+// winter, maar 23:00 UTC van de VORIGE dag in de zomer (Britse zomertijd).
+// De oude code nam `new Date(t).toISOString()` → in de zomer werd elke
+// sessie één dag te vroeg gedateerd (maandag verscheen als zondag), wat de
+// belofte "na te checken in TradingView" brak en zondag-candles opleverde.
+// meta.gmtoffset is GEEN oplossing: die reflecteert de offset op fetch-moment,
+// niet per bar — fataal voor de 2-jaars backtest die alles in één keer ophaalt.
+// Afronden op de dichtstbijzijnde middernacht geeft de juiste sessiedatum,
+// seizoen- én fetch-tijd-onafhankelijk.
+export function sessionDateUTC(t: number): string {
+  const midnight = Math.round(t / DAY_SEC) * DAY_SEC
+  return new Date(midnight * 1000).toISOString().split('T')[0]
+}
+// Afstand (in s) tot de dichtstbijzijnde middernacht. Een echte dag-candle
+// ligt altijd ≤ 1u van een middernacht (0 winter, 3600 zomer); een intraday
+// quote-/snapshot-bar (levert Yahoo soms mee in het weekend, met afwijkende
+// OHLC) ligt er veel verder vanaf.
+function distMidnight(t: number): number {
+  return Math.abs(t - Math.round(t / DAY_SEC) * DAY_SEC)
+}
+function isWeekendDate(d: string): boolean {
+  const day = new Date(d + 'T00:00:00Z').getUTCDay()
+  return day === 0 || day === 6
 }
 
 // Haal voltooide dag-candles (OHLC) op. period1/period2 i.p.v. range omdat
 // Yahoo range=2y voor =X soms leeg teruggeeft.
 export async function fetchDailyCandles(symbol: string, fromISO: string): Promise<Candle[]> {
   const p1 = Math.floor(new Date(fromISO + 'T00:00:00Z').getTime() / 1000)
-  const p2 = Math.floor(Date.now() / 1000)
+  const nowSec = Math.floor(Date.now() / 1000)
+  const p2 = nowSec
   for (let attempt = 0; attempt < 3; attempt++) {
     for (const host of ['query1.finance.yahoo.com', 'query2.finance.yahoo.com']) {
       try {
@@ -44,18 +66,40 @@ export async function fetchDailyCandles(symbol: string, fromISO: string): Promis
         if (!result) continue
         const ts: number[] = result.timestamp || []
         const q = result.indicators?.quote?.[0] || {}
-        const bars: Candle[] = ts
+        const raw = ts
           .map((t, i) => ({
-            date: new Date(t * 1000).toISOString().split('T')[0],
+            t, date: sessionDateUTC(t),
             open: q.open?.[i], high: q.high?.[i], low: q.low?.[i], close: q.close?.[i],
           }))
-          .filter((c): c is Candle => c.close != null && c.high != null && c.low != null)
-        if (bars.length > 0) return dropForming(bars)
+          .filter((c) => c.close != null && c.high != null && c.low != null)
+          // Vormende sessie: pas voltooid als de volledige dag verstreken is
+          // (vervangt het fragiele dropForming op datum === vandaag).
+          .filter((c) => c.t + DAY_SEC <= nowSec)
+          // Intraday quote-/snapshot-bar (> 2u van middernacht) is geen dag-candle.
+          .filter((c) => distMidnight(c.t) <= 7200)
+        // Dedup per datum: houd de bar het dichtst bij middernacht.
+        const byDate = new Map<string, typeof raw[number]>()
+        for (const c of raw) {
+          const cur = byDate.get(c.date)
+          if (!cur || distMidnight(c.t) < distMidnight(cur.t)) byDate.set(c.date, c)
+        }
+        const bars: Candle[] = [...byDate.values()]
+          .filter((c) => !isWeekendDate(c.date)) // net: correcte FX-week is ma–vr
+          .sort((a, b) => a.t - b.t)
+          .map(({ t: _t, ...c }) => c as Candle)
+        if (bars.length > 0) return bars
       } catch { /* try next */ }
     }
     await new Promise((r) => setTimeout(r, 700))
   }
   return []
+}
+
+// Behouden voor backwards-compat; de dating-fix hierboven maakt de oude
+// vandaag-check overbodig, maar externe imports mogen niet breken.
+export function dropForming(bars: Candle[]): Candle[] {
+  if (bars.length === 0) return bars
+  return bars[bars.length - 1].date === todayUTC() ? bars.slice(0, -1) : bars
 }
 
 // Batch-fetch meerdere symbolen (4 tegelijk, met pauze tegen rate-limits).
