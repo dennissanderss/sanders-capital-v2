@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import './styles.css'
 import type { FbDataResponse } from '@/lib/fundamental/types'
 import { BriefingTab } from './BriefingTab'
@@ -13,14 +13,44 @@ import { HowItWorks, Tour, type TourStep } from './ui'
 type Lens = 'daytrade' | 'swing' | 'position'
 type Tab = 'calls' | 'paren' | 'trackrecord' | 'analyse' | 'bewijs'
 
+// ─── Zijbalk-iconen (strakke line-icons, geen dependency) ──────
+const IconCalls = () => (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h3l2-6 4 12 2-7 1 1h2" /></svg>
+)
+const IconPairs = () => (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="6" height="6" rx="1.2" /><rect x="11" y="3" width="6" height="6" rx="1.2" /><rect x="3" y="11" width="6" height="6" rx="1.2" /><rect x="11" y="11" width="6" height="6" rx="1.2" /></svg>
+)
+const IconTrack = () => (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="10" r="7" /><path d="M10 6v4l3 2" /></svg>
+)
+const IconAnalyse = () => (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17V9M8 17V4M13 17v-6M18 17V7" /></svg>
+)
+const IconProof = () => (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2.5 4 5v5c0 3.5 2.5 6 6 7.5 3.5-1.5 6-4 6-7.5V5l-6-2.5Z" /><path d="M7.5 10l1.8 1.8 3.5-3.6" /></svg>
+)
+
+const NAV: { key: Tab; label: string; sub: string; icon: ReactNode }[] = [
+  { key: 'calls', label: 'Calls vandaag', sub: 'de signalen van nu', icon: <IconCalls /> },
+  { key: 'paren', label: 'Alle paren', sub: 'het volledige speelveld', icon: <IconPairs /> },
+  { key: 'trackrecord', label: 'Trackrecord', sub: 'klopte het?', icon: <IconTrack /> },
+  { key: 'analyse', label: 'Analyse', sub: 'waar werkt het?', icon: <IconAnalyse /> },
+  { key: 'bewijs', label: 'Bewijs', sub: '2-jaars simulatie', icon: <IconProof /> },
+]
+
+const LENS_META: Record<Lens, { name: string; horizon: string; note: string }> = {
+  daytrade: { name: 'Daytrade', horizon: 'zelfde dag · 1 dag', note: 'Kort aanhouden. In de simulatie waren de winners groter dan de verliezers bij goede timing.' },
+  swing: { name: 'Swing', horizon: '3–5 dagen', note: 'De sterkste lens in de simulatie — mits je alleen bij goede timing instapt.' },
+  position: { name: 'Positie', horizon: 'weken · 20 dagen', note: 'Renteverschil (carry) + swap. Korte simulatie (~8 mnd) — lees als indicatie.' },
+}
+
 const TOUR: TourStep[] = [
-  { title: 'Welkom bij de Fundamental Briefing', text: 'Deze tool voorspelt per valutapaar een richting — omhoog of omlaag — op basis van de fundamentals, en houdt eerlijk bij of dat klopt. Bovenaan kies je je stijl: Daytrade (kort, 1 dag aanhouden) of Swing (langer, ~een week). Even in 4 korte stappen.' },
-  { title: '1 · De calls van vandaag', tab: 'calls', text: 'Elk paar krijgt een richting (LONG = omhoog, SHORT = omlaag), een BIAS (hoe sterk de fundamentele these is) en een TIMING (hoe gunstig dit instapmoment is). Samen vormen ze de zekerheid van 0 tot 10. Sterke bias + slechte timing = interessant, maar nog even wachten.' },
-  { title: '2 · Waarom een call?', tab: 'calls', text: 'Klik op een call. Bovenaan lees je in gewone taal waarom de tool deze richting verwacht. Wil je de exacte berekening? Klik "Toon de berekening".' },
-  { title: '3 · Alle paren', tab: 'paren', text: 'Het volledige speelveld: alle 21 paren fundamenteel gescoord, ook de paren die géén call werden. Zo zie je in één oogopslag waar de sterkste divergenties zitten.' },
-  { title: '4 · Klopte het? — Trackrecord', tab: 'trackrecord', text: 'Hier zie je van alle voorspellingen hoe vaak de richting goed zat, gemeten op 1 tot 20 dagen — met referentie- en eindkoers per call, zodat je het kunt nachecken.' },
-  { title: '5 · Analyse & Bewijs', tab: 'bewijs', text: 'Analyse splitst het verse trackrecord uit; Bewijs toont een point-in-time simulatie over ~2 jaar (3.800+ trades, geen look-ahead) — inclusief de belangrijkste les: handel alleen bij timing ≥ 7.' },
-  { title: 'Klaar!', text: 'Je kunt deze rondleiding altijd opnieuw starten via de knop "Rondleiding" bovenaan. Veel succes.' },
+  { title: 'Welkom bij de Fundamental Briefing', text: 'Deze tool voorspelt per valutapaar een richting — omhoog of omlaag — op basis van de fundamentals, en houdt eerlijk bij of dat klopt. Links kies je een onderdeel, bovenaan je stijl. Even in 4 korte stappen.' },
+  { title: '1 · Kies je stijl', text: 'Bovenaan schakel je tussen Daytrade (kort), Swing (paar dagen) en Positie (weken, carry). Elke stijl gebruikt het model dat op díe horizon het best werkt.' },
+  { title: '2 · De calls van vandaag', tab: 'calls', text: 'Elk paar krijgt een richting (LONG = omhoog, SHORT = omlaag), een BIAS (hoe sterk de these) en een TIMING (hoe gunstig het instapmoment). Klik een call voor de onderbouwing tot de bron.' },
+  { title: '3 · Klopte het? — Trackrecord & Analyse', tab: 'trackrecord', text: 'Hier zie je van alle voorspellingen hoe vaak de richting goed zat, mét de beweging in pips (referentie- en eindkoers erbij, na te checken in TradingView).' },
+  { title: '4 · Bewijs', tab: 'bewijs', text: 'Een point-in-time simulatie over ~2 jaar (zonder vooruitkijken) — inclusief de belangrijkste les: handel alleen bij timing ≥ 7.' },
+  { title: 'Klaar!', text: 'Je kunt deze rondleiding altijd opnieuw starten via de knop onderaan de zijbalk. Veel succes.' },
 ]
 
 export default function Dashboard() {
@@ -41,12 +71,10 @@ export default function Dashboard() {
     return () => { alive = false }
   }, [])
 
-  // Rondleiding: de eerste keer automatisch starten.
   useEffect(() => {
     try { if (!localStorage.getItem('fb_tour_v1')) setTourIdx(0) } catch { /* geen storage */ }
   }, [])
 
-  // Tijdens de rondleiding het juiste tabblad tonen.
   useEffect(() => {
     if (tourIdx == null) return
     const s = TOUR[tourIdx]
@@ -58,20 +86,14 @@ export default function Dashboard() {
 
   const header = data?.header
 
-  // Lens bepaalt: welke calls, welke hoofdhorizon, welke secundaire horizons.
-  // Day en Swing delen dezelfde dagcalls (het model is hetzelfde; alleen hoe
-  // lang je vasthoudt verschilt) — de simulatie liet zien dat diezelfde calls
-  // op 5 dagen het best presteren. Positie = het aparte carry-model.
   const cfg = useMemo(() => {
     const all = data?.trackrecord || []
     if (lens === 'position') {
       return {
-        label: 'Positie',
-        kind: 'position' as const,
+        label: 'Positie', kind: 'position' as const,
         todayCalls: data?.positionCalls || [],
         trackrecord: all.filter((c) => c.callType === 'position'),
-        hoofd: 20,
-        secondary: [5, 10],
+        hoofd: 20, secondary: [5, 10],
       }
     }
     const isDay = lens === 'daytrade'
@@ -79,135 +101,148 @@ export default function Dashboard() {
       label: isDay ? 'Daytrade' : 'Swing',
       kind: 'daily' as const,
       todayCalls: data?.dailyCalls || [],
-      // AUDIT-FIX: de 16 oude weekcalls (legacy, zelfde 5d-hoofdhorizon)
-      // waren in geen enkele lens meer zichtbaar — een trackrecord hoort
-      // niets kwijt te raken. Ze tellen mee onder Swing; via het
-      // methodiek-filter in Analyse zijn ze te scheiden.
       trackrecord: all.filter((c) => c.callType === 'daily' || (!isDay && c.callType === 'weekly')),
       hoofd: isDay ? 1 : 5,
       secondary: isDay ? [3, 5, 10, 20] : [1, 3, 10, 20],
     }
   }, [lens, data])
 
+  const lm = LENS_META[lens]
+
   return (
-    <div className="fb-tool">
-      <div className="fb-head fb-hero">
-        <div className="fb-head-row">
-          <h1 className="fb-title">Fundamental Briefing</h1>
-          <button className="fb-tour-start" onClick={() => setTourIdx(0)}>? Rondleiding</button>
+    <div className="fb-tool fb-shell">
+      {/* ── Zijbalk ── */}
+      <aside className="fb-sb">
+        <div className="fb-sb-brand">
+          <span className="fb-sb-logo">FB</span>
+          <span className="fb-sb-brandtxt">
+            <b>Fundamental</b>
+            <span>Briefing</span>
+          </span>
         </div>
-        <p className="fb-sub">
-          Fundamenteel-gedreven valuta-bias, één keer per ochtend gelockt en daarna eerlijk gevolgd — puur of de richting goed zit.
-        </p>
-      </div>
 
-      <HowItWorks />
+        <nav className="fb-sb-nav">
+          {NAV.map((item) => (
+            <button
+              key={item.key}
+              className={`fb-sb-item${tab === item.key ? ' active' : ''}`}
+              onClick={() => setTab(item.key)}
+            >
+              <span className="fb-sb-ic">{item.icon}</span>
+              <span className="fb-sb-lbl">
+                <b>{item.label}</b>
+                <span>{item.sub}</span>
+              </span>
+              {item.key === 'bewijs' && <span className="fb-sb-badge">2j</span>}
+            </button>
+          ))}
+        </nav>
 
-      {/* Lens-schakelaar — drie stijlen, elk met het eigen simulatie-bewijs */}
-      <div className="fb-lens three">
-        {/* AUDIT-FIX: geen kale winrates meer als "bewijs" op de knoppen —
-            de 1d-winrate is statistisch niet van een muntje te onderscheiden
-            (de edge zit in de winst/verlies-verhouding), de carry-cijfers
-            komen uit maar ~8 maanden simulatie. De knop beschrijft de stijl;
-            het bewijs mét nuance staat op het Bewijs-tabblad. */}
-        <button className={`fb-lens-btn${lens === 'daytrade' ? ' active' : ''}`} onClick={() => setLens('daytrade')}>
-          <span className="fb-lens-name">Daytrade</span>
-          <span className="fb-lens-desc">zelfde dag · afgerekend op 1 dag</span>
-          <span className="fb-lens-proof">simulatie: winners groter dan verliezers bij timing ≥ 7 — zie Bewijs</span>
-        </button>
-        <button className={`fb-lens-btn${lens === 'swing' ? ' active' : ''}`} onClick={() => setLens('swing')}>
-          <span className="fb-lens-name">Swing</span>
-          <span className="fb-lens-desc">3–5 dagen aanhouden · afgerekend op 5 dagen</span>
-          <span className="fb-lens-proof">simulatie: sterkste lens bij timing ≥ 7 — zie Bewijs</span>
-        </button>
-        <button className={`fb-lens-btn${lens === 'position' ? ' active' : ''}`} onClick={() => setLens('position')}>
-          <span className="fb-lens-name">Positie <span className="fb-exp">carry</span></span>
-          <span className="fb-lens-desc">weken aanhouden · afgerekend op 20 dagen</span>
-          <span className="fb-lens-proof">rente-verschil + swap · korte simulatie (~8 mnd) — zie Bewijs</span>
-        </button>
-      </div>
+        <div className="fb-sb-foot">
+          <button className="fb-sb-tour" onClick={() => setTourIdx(0)}>
+            <span>?</span> Rondleiding
+          </button>
+          <div className="fb-sb-note">Educatief · geen financieel advies</div>
+        </div>
+      </aside>
 
-      {header && (
-        <>
-          <div className="fb-regime-bar">
-            <span className="fb-regime-chip"><span className={`fb-dot ${header.regimeColor}`} />{header.regime}</span>
-            <span className="fb-regime-explain">{header.regimeExplain}</span>
-            <span className={`fb-lock-chip${header.locked ? '' : ' live'}`} title={header.locked
-              ? 'Deze scores zijn bij de ochtend-generate vastgezet en veranderen vandaag niet meer.'
-              : 'Nog geen gelockte snapshot voor vandaag — dit is een live berekening.'}>
-              {header.locked ? `🔒 gelockt · ${new Date(header.date + 'T00:00:00Z').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', timeZone: 'UTC' })}` : 'live'}
-            </span>
+      {/* ── Hoofdvenster ── */}
+      <div className="fb-main">
+        {/* Bovenbalk: stijl-schakelaar + regime + status */}
+        <header className="fb-topbar">
+          <div className="fb-lens-seg" role="tablist" aria-label="Handelsstijl">
+            {(['daytrade', 'swing', 'position'] as Lens[]).map((l) => (
+              <button key={l} className={`fb-lens-opt${lens === l ? ' active' : ''}`} onClick={() => setLens(l)}>
+                {LENS_META[l].name}
+                {l === 'position' && <span className="fb-lens-tag">carry</span>}
+              </button>
+            ))}
           </div>
-          <div className="fb-bias-strip">
-            {header.currencyScores.map((c, i) => {
-              const maxAbs = Math.max(3, ...header.currencyScores.map((x) => Math.abs(x.score)))
-              const pct = Math.min(100, (Math.abs(c.score) / maxAbs) * 100)
-              const pos = c.score >= 0
-              const strongest = i === 0 || i === header.currencyScores.length - 1
-              return (
-                <div className={`fb-bias-cell${strongest ? ' edge' : ''}`} key={c.currency}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                    <span className="fb-bias-ccy">{c.currency}</span>
-                    <span className="fb-bias-score num" style={{ color: pos ? 'var(--win)' : 'var(--loss)' }}>{pos ? '+' : ''}{c.score.toFixed(1)}</span>
+
+          <div className="fb-topbar-right">
+            {header && (
+              <>
+                <span className="fb-tb-regime"><span className={`fb-dot ${header.regimeColor}`} />{header.regime}</span>
+                <span className={`fb-tb-lock${header.locked ? '' : ' live'}`} title={header.locked
+                  ? 'Vanochtend vastgezet — verandert vandaag niet meer.'
+                  : 'Nog geen gelockte snapshot — live berekening.'}>
+                  {header.locked
+                    ? `🔒 ${new Date(header.date + 'T00:00:00Z').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', timeZone: 'UTC' })}`
+                    : 'live'}
+                </span>
+              </>
+            )}
+          </div>
+        </header>
+
+        {/* Lens-context (één eerlijke regel) */}
+        <div className="fb-lens-ctx">
+          <span className="fb-lens-ctx-name">{lm.name}</span>
+          <span className="fb-lens-ctx-hz">{lm.horizon}</span>
+          <span className="fb-lens-ctx-note">{lm.note}</span>
+        </div>
+
+        {/* Marktcontext-rail: valutasterkte (altijd zichtbaar) */}
+        {header && (
+          <div className="fb-rail">
+            <div className="fb-rail-head">Valutasterkte<span className="fb-rail-sub">{header.regimeExplain}</span></div>
+            <div className="fb-rail-strip">
+              {header.currencyScores.map((c, i) => {
+                const maxAbs = Math.max(3, ...header.currencyScores.map((x) => Math.abs(x.score)))
+                const pct = Math.min(100, (Math.abs(c.score) / maxAbs) * 100)
+                const pos = c.score >= 0
+                const edge = i === 0 || i === header.currencyScores.length - 1
+                return (
+                  <div className={`fb-rail-cell${edge ? ' edge' : ''}`} key={c.currency}>
+                    <div className="fb-rail-top">
+                      <span className="fb-rail-ccy">{c.currency}</span>
+                      <span className="fb-rail-score num" style={{ color: pos ? 'var(--win)' : 'var(--loss)' }}>{pos ? '+' : ''}{c.score.toFixed(1)}</span>
+                    </div>
+                    <div className="fb-rail-track"><span className="fb-rail-mid" /><span className={`fb-rail-fill ${pos ? 'pos' : 'neg'}`} style={{ width: `${pct / 2}%` }} /></div>
                   </div>
-                  <div className="fb-bias-track"><span className="fb-bias-mid" /><span className={`fb-bias-fill ${pos ? 'pos' : 'neg'}`} style={{ width: `${pct / 2}%` }} /></div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
-          {header.currencyScores.length >= 2 && (() => {
-            const top = header.currencyScores[0]
-            const bottom = header.currencyScores[header.currencyScores.length - 1]
-            const spread = top.score - bottom.score
-            if (spread < 2) return null
-            return (
-              <p className="fb-thesis">
-                Sterkste divergentie vandaag: <b>{top.currency}</b> ({top.score >= 0 ? '+' : ''}{top.score.toFixed(1)}) vs. <b>{bottom.currency}</b> ({bottom.score >= 0 ? '+' : ''}{bottom.score.toFixed(1)}) — daar zit fundamenteel de duidelijkste paar-these.
-              </p>
-            )
-          })()}
-        </>
-      )}
+        )}
 
-      <div className="fb-tabs">
-        <button className={`fb-tab${tab === 'calls' ? ' active' : ''}`} onClick={() => setTab('calls')}>Calls van vandaag</button>
-        <button className={`fb-tab${tab === 'paren' ? ' active' : ''}`} onClick={() => setTab('paren')}>Alle paren</button>
-        <button className={`fb-tab${tab === 'trackrecord' ? ' active' : ''}`} onClick={() => setTab('trackrecord')}>Trackrecord</button>
-        <button className={`fb-tab${tab === 'analyse' ? ' active' : ''}`} onClick={() => setTab('analyse')}>Analyse</button>
-        <button className={`fb-tab${tab === 'bewijs' ? ' active' : ''}`} onClick={() => setTab('bewijs')}>Bewijs <span className="fb-tab-badge">backtest</span></button>
+        {/* Content */}
+        <main className="fb-content">
+          {tab === 'calls' && <HowItWorks />}
+
+          {loading && <div className="fb-empty">Briefing wordt geladen…</div>}
+          {err && <div className="fb-empty">Kon de briefing niet laden: {err}</div>}
+
+          {data && !loading && (
+            <>
+              {tab === 'calls' && (
+                <BriefingTab
+                  calls={cfg.todayCalls}
+                  kind={cfg.kind}
+                  hoofdhorizon={cfg.hoofd}
+                  focusPair={focusPair}
+                  today={data?.today}
+                  emptyText={cfg.kind === 'position'
+                    ? 'Geen positie-calls op dit moment. Dat betekent: geen paar met minstens 2 procentpunt renteverschil buiten een Risk-Off-regime — niet handelen is dan de call.'
+                    : "Nog geen dagcalls voor vandaag — ze worden 's ochtends gegenereerd."}
+                />
+              )}
+              {tab === 'paren' && (
+                <PairsTab
+                  header={header ?? null}
+                  todayCalls={cfg.todayCalls}
+                  onSelectPair={(p) => { setFocusPair(p); setTab('calls') }}
+                />
+              )}
+              {tab === 'trackrecord' && (
+                <Trackrecord calls={cfg.trackrecord} hoofdhorizon={cfg.hoofd} secondaryHorizons={cfg.secondary} lensLabel={cfg.label} />
+              )}
+              {tab === 'analyse' && <Analyse calls={cfg.trackrecord} />}
+              {tab === 'bewijs' && <BacktestTab />}
+            </>
+          )}
+        </main>
       </div>
-
-      {loading && <div className="fb-empty">Briefing wordt geladen…</div>}
-      {err && <div className="fb-empty">Kon de briefing niet laden: {err}</div>}
-
-      {data && !loading && (
-        <>
-          {tab === 'calls' && (
-            <BriefingTab
-              calls={cfg.todayCalls}
-              kind={cfg.kind}
-              hoofdhorizon={cfg.hoofd}
-              focusPair={focusPair}
-              today={data?.today}
-              emptyText={cfg.kind === 'position'
-                ? 'Geen positie-calls op dit moment. Dat betekent: geen paar met minstens 2 procentpunt renteverschil buiten een Risk-Off-regime — niet handelen is dan de call.'
-                : "Nog geen dagcalls voor vandaag — ze worden 's ochtends gegenereerd."}
-            />
-          )}
-          {tab === 'paren' && (
-            <PairsTab
-              header={header ?? null}
-              todayCalls={cfg.todayCalls}
-              onSelectPair={(p) => { setFocusPair(p); setTab('calls') }}
-            />
-          )}
-          {tab === 'trackrecord' && (
-            <Trackrecord calls={cfg.trackrecord} hoofdhorizon={cfg.hoofd} secondaryHorizons={cfg.secondary} lensLabel={cfg.label} />
-          )}
-          {tab === 'analyse' && <Analyse calls={cfg.trackrecord} />}
-          {tab === 'bewijs' && <BacktestTab />}
-        </>
-      )}
 
       {tourIdx != null && (
         <Tour
