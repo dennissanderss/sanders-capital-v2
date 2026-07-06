@@ -201,6 +201,46 @@ export function pfVerdict(pf: number | null): { cls: 'win' | 'loss' | 'neutral';
   return { cls: 'loss', text: 'verliesgevend: losers samen groter dan winners' }
 }
 
+// ─── Move-kwaliteit: was de beweging groot genoeg om op te handelen? ──
+// Voor een technische trader is een correcte richting zonder beweging
+// waardeloos. Deze statistiek meet per horizon hoeveel calls ook een
+// betekenisvolle beweging in de voorspelde richting gaven (MFE ≥ drempel).
+export const MOVE_THRESHOLDS = [20, 30, 50, 75] // pips; default 30
+export interface MoveStats {
+  n: number                 // beoordeeld (resolved, incl. vlak — move telt altijd)
+  withMove: number          // MFE ≥ drempel
+  correct: number           // richting juist (close-to-close)
+  correctWithMove: number   // richting juist ÉN MFE ≥ drempel
+  pctWithMove: number       // % van alle beoordeelde calls met move ≥ drempel
+  pctCorrectWithMove: number// % van de correcte calls met move ≥ drempel
+  medianMfe: number | null  // mediane grootste meebeweging (pips)
+}
+export function moveStats(calls: FbCall[], horizon: number, thresholdPips: number): MoveStats {
+  let n = 0, withMove = 0, correct = 0, correctWithMove = 0
+  const mfes: number[] = []
+  for (const c of calls) {
+    const o = outcomeAt(c, horizon)
+    if (!o || !o.resolved || o.mfePips == null) continue
+    n++
+    mfes.push(o.mfePips)
+    const hasMove = o.mfePips >= thresholdPips
+    if (hasMove) withMove++
+    // AUDIT-FIX: consistent met winStats — een "vlak"-uitkomst (nauwelijks
+    // netto beweging) telt ook hier niet als juist.
+    if (verdictOf(c, o) === 'win') {
+      correct++
+      if (hasMove) correctWithMove++
+    }
+  }
+  mfes.sort((a, b) => a - b)
+  return {
+    n, withMove, correct, correctWithMove,
+    pctWithMove: n ? Math.round((withMove / n) * 100) : 0,
+    pctCorrectWithMove: correct ? Math.round((correctWithMove / correct) * 100) : 0,
+    medianMfe: mfes.length ? mfes[Math.floor(mfes.length / 2)] : null,
+  }
+}
+
 // ─── Kalibratie: zekerheid → waargenomen trefkans ─────────────
 // Wilson-interval zodat een bucket met n=8 en 75% niet als "edge" oogt.
 export function wilson(wins: number, n: number): { lo: number; hi: number } {

@@ -32,6 +32,9 @@ export function Trackrecord({ calls, hoofdhorizon, secondaryHorizons, lensLabel 
     const v = verdictOf(c, hoofdhorizon)
     const long = c.direction === 'bullish'
     const pips = closeToClosePips(c, o)
+    const moveTitle = o?.mfePips != null
+      ? `Grootste beweging mee: ${fmtPrice(c.pair, c.entryPrice)} (${fmtDate(c.entryDate)}) → ${o.mfePrice != null ? fmtPrice(c.pair, o.mfePrice) : '?'} (${o.mfeDate ? fmtDate(o.mfeDate) : '?'}). Grootste beweging tegen: ${o.maePips ?? 0}p${o.maePrice != null ? ` tot ${fmtPrice(c.pair, o.maePrice)}` : ''}${o.maeDate ? ` (${fmtDate(o.maeDate)})` : ''}.`
+      : undefined
     return (
       <div className="fb-tr2-row">
         <span className="num">{fmtDate(c.callDate)}</span>
@@ -44,6 +47,9 @@ export function Trackrecord({ calls, hoofdhorizon, secondaryHorizons, lensLabel 
             : v === 'flat'
               ? <span className="fb-tr-verdict flat" title="Minder dan 15% van een gemiddelde dagbeweging — telt niet mee in de trefkans">VLAK{pips != null ? <span className="num" style={{ fontWeight: 400, marginLeft: 4 }}>{pips > 0 ? '+' : ''}{pips}p</span> : null}</span>
               : <span className={`fb-tr-verdict ${v}`}>{v === 'win' ? 'JUIST' : 'ONJUIST'}{pips != null ? <span className="num" style={{ fontWeight: 400, marginLeft: 4 }}>{pips > 0 ? '+' : ''}{pips}p</span> : null}</span>}
+          {v !== 'pending' && o?.mfePips != null && (
+            <span className="fb-move-note num" title={moveTitle}>mee +{o.mfePips}p · tegen {o.maePips ?? 0}p</span>
+          )}
         </span>
         <span className="fb-tr2-sec">
           {secondaryHorizons.map((h) => {
@@ -68,7 +74,7 @@ export function Trackrecord({ calls, hoofdhorizon, secondaryHorizons, lensLabel 
       </HowToRead>
 
       <div className="fb-data-banner">
-        <b>{calls.length}</b> voorspellingen · <b>{overall.n}</b> al beoordeeld op {HZ_LABEL[hoofdhorizon]} · <b>{overall.pending}</b> nog wachten.
+        <b>{calls.length}</b> voorspellingen · <b>{overall.n}</b> beoordeeld op {HZ_LABEL[hoofdhorizon]}{overall.flats > 0 && <> · <b>{overall.flats}</b> vlak (nauwelijks beweging, telt niet mee)</>} · <b>{overall.pending}</b> nog wachten.
         {overall.n < 30 && <span className="fb-warn"> Nog te weinig data voor harde conclusies — het rapport bouwt vooruit op.</span>}
       </div>
 
@@ -101,7 +107,13 @@ export function Trackrecord({ calls, hoofdhorizon, secondaryHorizons, lensLabel 
               const newest = gi === 0
               const open = isOpen(g.date, newest)
               const s = winStats(g.rows, hoofdhorizon)
-              const tally = s.n > 0 ? `${s.wins}/${s.n} juist` : `${g.rows.length === s.pending ? 'alle' : g.rows.length} nog wachten`
+              // AUDIT-FIX: vlak-calls heetten hier "nog wachten" — de telling
+              // klopte zichtbaar niet. Nu elke uitkomstsoort benoemd.
+              const parts: string[] = []
+              if (s.n > 0) parts.push(`${s.wins}/${s.n} juist`)
+              if (s.flats > 0) parts.push(`${s.flats} vlak`)
+              if (s.pending > 0) parts.push(`${s.pending} wachten`)
+              const tally = parts.join(' · ') || 'geen uitkomsten'
               return (
                 <div key={g.date}>
                   <button className="fb-date-group" onClick={() => toggle(g.date, newest)}>

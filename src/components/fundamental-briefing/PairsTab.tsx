@@ -82,8 +82,8 @@ export function PairsTab({ header, todayCalls, onSelectPair }: {
               </div>
               <div className="fb-bias-track"><span className="fb-bias-mid" /><span className={`fb-bias-fill ${pos ? 'pos' : 'neg'}`} style={{ width: `${pct / 2}%` }} /></div>
               {r.carryDiff != null && Math.abs(r.carryDiff) >= 2 && (
-                <div className="fb-pair-carry" title="Beleidsrenteverschil ≥ 2pp: kandidaat voor de Positie-lens (carry). Long de valuta met de hoogste rente.">
-                  carry {r.carryDiff > 0 ? '+' : ''}{r.carryDiff}pp → {r.carryDiff > 0 ? 'LONG' : 'SHORT'}-swap
+                <div className="fb-pair-carry" title={`De beleidsrente van ${r.base} en ${r.quote} verschilt ${Math.abs(r.carryDiff)} procentpunt — kandidaat voor de Positie-lens: wie de kant van de hoogste rente kiest, ontvangt dagelijks renteverschil (swap).`}>
+                  renteverschil {r.carryDiff > 0 ? '+' : ''}{r.carryDiff}%-punt → positie-kandidaat
                 </div>
               )}
             </div>

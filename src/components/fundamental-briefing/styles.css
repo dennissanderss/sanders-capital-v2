@@ -454,3 +454,10 @@
 .fb-eq-line { fill: none; stroke-width: 2; }
 .fb-eq-line.up { stroke: var(--win); } .fb-eq-line.down { stroke: var(--loss); }
 .fb-eq-label { font-size: 10.5px; color: var(--ink-3); margin-top: 6px; }
+
+/* Move-notitie onder een oordeel (grootste beweging mee/tegen, hover = koersen+datums) */
+.fb-move-note { display: block; font-size: 10px; color: var(--ink-3); margin-top: 3px; cursor: help; }
+
+/* Verwachte bewegingsordegrootte in het antwoord-eerst-blok van het call-detail */
+.fb-move-scale { font-size: 12px; color: var(--ink-2); margin: 8px 0 0; padding: 0 2px; }
+.fb-move-scale b { color: var(--ink); }

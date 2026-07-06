@@ -96,9 +96,9 @@ export function BriefingTab({ calls, kind, emptyText, hoofdhorizon, focusPair, t
 
   const intro = isCarry ? (
     <p className="fb-calls-intro">
-      <b>Positie-lens (carry).</b> Richting = de valuta met de duidelijk hoogste beleidsrente (≥ 2pp verschil), weken aanhouden.
-      Je verdient aan het renteverschil (swap) én de koersdrift; in een <b>Risk-Off</b>-regime worden er géén positie-calls gegeven — daar crasht carry historisch.
-      Simulatie op 20 dagen: <b>69,8% winrate · PF 4,82 incl. swap</b> (n=126, voorlopig).
+      <b>Positie-lens (carry).</b> Richting = de valuta met de duidelijk hoogste beleidsrente (minstens 2 procentpunt verschil), weken aanhouden.
+      Je verdient aan het renteverschil dat dagelijks binnentikt (de &quot;swap&quot;) én aan de koersbeweging; in een <b>Risk-Off</b>-regime worden er géén positie-calls gegeven — daar gaat deze strategie historisch hard onderuit.
+      De simulatie op het Bewijs-tabblad beslaat voor deze lens maar ~8 maanden — lees die cijfers als indicatie, niet als bewijs.
     </p>
   ) : (
     <p className="fb-calls-intro">
