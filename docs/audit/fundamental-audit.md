@@ -165,4 +165,14 @@ Na akkoord gebouwd, één wijziging per commit (zie git-historie van die dag):
 - `supabase/migrations/20261114_v4_overstap.sql` **níet** nu draaien — pas bij de overstap (fase 7).
 - De handmatige CB-labels in `central_bank_rates` zijn nog van 23 juni; de v4-engine gebruikt ze niet, maar de oude engine (die nog getoond wordt) wel — actualiseren blijft redactiewerk van de eigenaar.
 
-**Vervolg (fase 7, pas na akkoord):** na minimaal vier weken schaduw draaien (t/m ±15 december 2026) worden de schaduwresultaten gerapporteerd (zelfde meetdefinitie, Wilson-CI's op clusters). Pas na akkoord op die cijfers: migratie draaien, oude engine uitfaseren conform fase 5, UI omzetten naar de v4-calls met drie-zinnen-uitleg.
+## Fase 7 — vervroegde overstap (14 november 2026, dezelfde avond)
+
+**Op uitdrukkelijk verzoek van de eigenaar is de geplande schaduwperiode van vier weken overgeslagen** en is de v4-engine dezelfde dag live gezet. Dit wijkt af van het oorspronkelijke plan ("overstap pas na akkoord op de schaduwresultaten") — het risico is expliciet benoemd en geaccepteerd: de v4-signaalregel is getoetst op 20 maanden historische data (fase 4), maar heeft nog geen dag live trackrecord. Het trackrecord begint daarom leeg en forward-only.
+
+Uitgevoerd:
+- **Engine live:** calls krijgen `metadata.source='v4'`, `engine_version='v4.0'`. De cron (`/api/cron/v4-shadow`, ma–vr 06:50 UTC) genereert en rekent af; eerste calls op maandag 17 november.
+- **Oude engine uit:** de v2-generatie is uit `POST /api/trackrecord-v2` verwijderd (afbouwmodus: rekent alleen de laatste openstaande v2-calls af en maakt nooit meer nieuwe). De oude fx-desk-UI is vervangen.
+- **Nieuwe tool op de site:** `/tools/fx-selector/v2` toont de v4-briefing — tab *Vandaag* (calls in drie zinnen + per paar waarom er géén call is) en tab *Trackrecord* (per-horizon winrates op besliste uitkomsten; elke uitkomst met begin-/eindkoers en datum, narekenbaar in TradingView). Data via `GET /api/v4`. De introductiepagina is herschreven; de ontkrachte claims (56% winrate, 434+ trades) zijn verwijderd.
+- **Nog actief uit het oude systeem:** `GET /api/briefing-v2` draait nog omdat de Telegram-webhook hem gebruikt (alleen-lezen weergave; geen invloed op calls). Migreren of uitzetten is een losse vervolgklus.
+
+**Migratie (eenmalig handwerk eigenaar):** open Supabase → SQL Editor → plak de inhoud van `supabase/migrations/20261114_v4_overstap.sql` → Run. Additief en idempotent: voegt de kolom `engine_version` toe (en vult die uit metadata), een index, en de tabel `v4_daily_inputs`. De site werkt ook zonder deze migratie — alles draait op metadata-velden — maar hiermee wordt het schema netjes.
