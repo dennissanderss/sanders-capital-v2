@@ -74,6 +74,7 @@ export function berekenV4Calls(
     const laatste = bars[bars.length - 1]
     const vijfTerug = bars[bars.length - 6]
     const m = pipMultV4(pair)
+    const slot = +laatste.close.toFixed(pair.includes('JPY') ? 3 : 5)
     const mom5Pips = +((laatste.close - vijfTerug.close) * m).toFixed(1)
     const atr = atr14Pips(bars, pair)
 
@@ -93,13 +94,13 @@ export function berekenV4Calls(
       pair,
       richting: renteRichting,
       signalDate: laatste.date,
-      signalClose: laatste.close,
+      signalClose: slot,
       mom5Pips,
       mom5Atr: atr ? +(Math.abs(mom5Pips) / atr).toFixed(2) : null,
       yldD5bp,
       redenering: [
         `${sterker} is sterker dan ${zwakker}: het 2-jaars renteverschil van ${pair} is de afgelopen 5 handelsdagen ${yldD5bp > 0 ? '+' : ''}${yldD5bp} bp richting ${sterker} verschoven (${base}: ${b.eerderWaarde}% op ${b.eerderDatum} → ${b.waarde}% op ${b.datum}; ${quote}: ${q.eerderWaarde}% → ${q.waarde}%).`,
-        `De koers is er juist tégen in bewogen: ${mom5Pips > 0 ? '+' : ''}${mom5Pips} pips in 5 dagen${atr ? ` (${(Math.abs(mom5Pips) / atr).toFixed(1)}× de dagelijkse ATR)` : ''}, slot ${laatste.close} op ${laatste.date}.`,
+        `De koers is er juist tégen in bewogen: ${mom5Pips > 0 ? '+' : ''}${mom5Pips} pips in 5 dagen${atr ? ` (${(Math.abs(mom5Pips) / atr).toFixed(1)}× de dagelijkse ATR)` : ''}, slot ${slot} op ${laatste.date}.`,
         `Verwachting: herstel richting ${sterker} binnen ~5 handelsdagen, gemeten close-to-close met drempel ${pipDrempel(pair)} pips.`,
       ],
     })

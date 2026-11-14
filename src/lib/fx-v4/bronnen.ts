@@ -19,13 +19,14 @@ export interface CotStand { asOf: string; net: number; pct52w: number | null }
 const UA = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
 
 async function haalTekst(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url, { headers: UA, cache: 'no-store' })
-    if (!res.ok) return null
-    return await res.text()
-  } catch {
-    return null
+  for (let poging = 0; poging < 3; poging++) {
+    try {
+      const res = await fetch(url, { headers: UA, cache: 'no-store' })
+      if (res.ok) return await res.text()
+    } catch { /* opnieuw */ }
+    await new Promise((r) => setTimeout(r, 800 * (poging + 1)))
   }
+  return null
 }
 
 const isNum = (v: string | undefined | null) => v != null && v !== '' && !isNaN(parseFloat(v))
@@ -79,7 +80,9 @@ async function renteJPY(vanaf: string): Promise<YieldPoint[]> {
       return { date: m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : '', y: p[i2y] }
     })
     const uit = opschonen(rows, vanaf)
-    if (uit.length >= 8) return uit
+    // het huidige-jaarbestand bevat soms maar ~2 weken; voor een stabiele
+    // Δ5 (en provenance) willen we ruim meer, anders het historische bestand
+    if (uit.length >= 30) return uit
   }
   return []
 }
