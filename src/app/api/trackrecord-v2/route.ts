@@ -164,11 +164,15 @@ function determineRegime(scores: Record<string, number>): string {
 
 async function fetchPrice(symbol: string): Promise<number | null> {
   try {
+    // Audit fase 6: cache uitgeschakeld. De Vercel-datacache serveerde bij
+    // afrekening soms een quote van 24u eerder (stale-while-revalidate):
+    // 42 exits lagen buiten de dagrange van de afrekendag en 99 calls
+    // kregen exact 0 pips (geboekt als verlies). Zie audit fase 1.
     const res = await fetch(
       `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,
       {
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-        next: { revalidate: 300 },
+        cache: 'no-store',
       }
     )
     if (!res.ok) return null
@@ -185,7 +189,7 @@ async function fetchRecentPrices(symbol: string, days: number): Promise<{ date: 
       `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${days + 5}d`,
       {
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-        next: { revalidate: 300 },
+        cache: 'no-store', // audit fase 6: geen stale quotes in signaal-inputs
       }
     )
     if (!res.ok) return []
