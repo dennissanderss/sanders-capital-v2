@@ -199,24 +199,31 @@
 .home-2026 .hero-quote blockquote { margin: 0; font-family: 'Archivo', sans-serif; font-weight: 600; font-size: clamp(14px, 1.5vw, 17px); line-height: 1.36; letter-spacing: -0.01em; color: var(--d-ink-2); text-wrap: pretty; }
 .home-2026 .hero-quote figcaption { margin-top: 9px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
 
-/* globe stage — animated terminal globe (canvas) */
+/* globe stage — orthografische aarde op canvas + terminal-labels */
 .home-2026 .globe-stage { position: relative; width: 100%; height: clamp(380px, 42vw, 560px); }
-.home-2026 .globe-stage::before {
-  content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: min(660px, 96%); aspect-ratio: 1; border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(59, 130, 246, 0.30), rgba(59, 130, 246, 0.08) 60%, transparent 72%);
-  filter: blur(18px); opacity: 0.85; pointer-events: none;
-}
-.home-2026 canvas.globe { position: absolute; inset: 0; display: block; }
+.home-2026 canvas.globe { position: absolute; inset: 0; display: block; touch-action: pan-y; }
 .home-2026 .glabel {
   position: absolute; left: 0; top: 0; will-change: transform, opacity;
-  display: inline-flex; align-items: center; white-space: nowrap;
-  font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-weight: 500; font-style: italic;
-  letter-spacing: 0.02em;
-  color: rgba(214, 228, 248, 0.92); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7), 0 0 14px rgba(80, 140, 240, 0.4);
-  transition: opacity .25s;
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  padding: 4px 9px 5px;
+  border: 1px solid rgba(147, 197, 253, 0.20);
+  border-radius: 6px;
+  background: rgba(9, 20, 39, 0.70);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  box-shadow: 0 8px 22px rgba(2, 8, 20, 0.45);
+  font-family: 'Hanken Grotesk', sans-serif;
+  transition: opacity .3s ease;
+  pointer-events: none;
 }
-.home-2026 .glabel .gp { color: rgba(224, 235, 252, 0.95); font-weight: 500; letter-spacing: 0.02em; }
+.home-2026 .glabel .gc {
+  font-size: 9.5px; font-weight: 700; letter-spacing: 0.14em;
+  color: rgba(96, 165, 250, 0.95);
+}
+.home-2026 .glabel .gp {
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em;
+  color: rgba(228, 238, 252, 0.95);
+  font-variant-numeric: tabular-nums;
+}
 
 @media (max-width: 1000px) {
   .home-2026 .hero-2col { grid-template-columns: 1fr; gap: 8px; }
