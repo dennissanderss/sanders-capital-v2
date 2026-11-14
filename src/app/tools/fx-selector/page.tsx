@@ -4,7 +4,7 @@ import FadeIn from '@/components/FadeIn'
 
 export const metadata: Metadata = {
   title: 'Introductie — Sanders Capital FX System',
-  description: 'Van marktregime tot concrete trade: de Sanders Capital Daily Macro Briefing uitgelegd van A tot Z.',
+  description: 'Van marktregime tot concrete trade: de Sanders Capital Fundamental Briefing uitgelegd van A tot Z.',
 }
 
 /* ─── Components ──────────────────────────────────────────────── */
@@ -40,8 +40,8 @@ export default function IntroductionPage() {
             Een fundamentele bias-tool die de <strong className="text-text-muted">verschuiving in 2-jaars renteverwachtingen</strong> vertaalt naar richting per valutapaar — elke call in drie zinnen uitgelegd, met een transparant forward-only trackrecord dat je zelf kunt nachecken in TradingView.
           </p>
           <div className="flex items-center justify-center gap-3 mt-6">
-            <Link href="/tools/fx-selector/v2" className="px-6 py-2.5 rounded-xl bg-accent/20 border border-accent/30 text-sm text-accent-light hover:bg-accent/30 transition-colors font-medium">
-              Open Daily Briefing
+            <Link href="/tools/fundamental-briefing" className="px-6 py-2.5 rounded-xl bg-accent/20 border border-accent/30 text-sm text-accent-light hover:bg-accent/30 transition-colors font-medium">
+              Open Fundamental Briefing
             </Link>
             <Link href="/tools/tradescope" className="px-6 py-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-sm text-purple-400 hover:bg-purple-500/20 transition-colors font-medium">
               Open TradeMind
@@ -63,7 +63,7 @@ export default function IntroductionPage() {
                   <span className="text-sm font-semibold text-heading">Fundamentele Bias</span>
                 </div>
                 <p className="text-[10px] text-text-dim leading-relaxed mb-2">
-                  De <strong className="text-text-muted">Daily Macro Briefing</strong> volgt per valuta de 2-jaars staatsrente (officiële bronnen: FRED, ECB, Japans MoF, Bank of Canada, RBA, BoE) en zoekt paren waar de koers tégen de renteherprijzing in is bewogen.
+                  De <strong className="text-text-muted">Fundamental Briefing</strong> volgt per valuta de 2-jaars staatsrente (officiële bronnen: FRED, ECB, Japans MoF, Bank of Canada, RBA, BoE) en zoekt paren waar de koers tégen de renteherprijzing in is bewogen.
                 </p>
                 <div className="text-[9px] text-accent-light/60 space-y-0.5">
                   <p>&rsaquo; Bepaalt de <strong>richting</strong> (long/short) — geen entries, geen TP/SL</p>
@@ -92,7 +92,7 @@ export default function IntroductionPage() {
 
             <div className="mt-4 p-3 rounded-xl bg-[rgba(12,22,38,0.03)] border border-black/[0.08] text-center">
               <p className="text-[10px] text-text-dim">
-                <strong className="text-text-muted">Hiërarchie:</strong> De Daily Macro Briefing bepaalt de richting &rarr; TradeMind meet het resultaat.
+                <strong className="text-text-muted">Hiërarchie:</strong> De Fundamental Briefing bepaalt de richting &rarr; TradeMind meet het resultaat.
                 De fundamentele laag is altijd leidend — als de fundamentals &ldquo;geen trade&rdquo; zeggen, is er geen call.
               </p>
             </div>
@@ -103,7 +103,7 @@ export default function IntroductionPage() {
       {/* ═══ DAILY MACRO BRIEFING ═══ */}
       <FadeIn>
         <Section>
-          <SectionHead badge="Tool 1" badgeColor="text-accent-light bg-accent/15" title="Daily Macro Briefing" sub="Eén signaalregel, drie stappen — herbouwd na de audit van november 2026" />
+          <SectionHead badge="Tool 1" badgeColor="text-accent-light bg-accent/15" title="Fundamental Briefing" sub="Eén signaalregel, drie stappen — herbouwd na de audit van november 2026" />
           <div className="p-5 sm:p-6 space-y-4">
             {[
               { n: '1', t: 'Renteherprijzing', d: 'Per valuta wordt de 2-jaars staatsrente gevolgd (dagelijks, officiële bronnen). Is het renteverschil van een paar de afgelopen 5 handelsdagen duidelijk één kant op geschoven, dan wijst dat de fundamentele richting.', c: 'text-accent-light' },
@@ -135,8 +135,8 @@ export default function IntroductionPage() {
             </div>
 
             <div className="text-center">
-              <Link href="/tools/fx-selector/v2" className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-accent/15 border border-accent/25 text-sm text-accent-light hover:bg-accent/25 transition-colors">
-                Open Daily Macro Briefing &rarr;
+              <Link href="/tools/fundamental-briefing" className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-accent/15 border border-accent/25 text-sm text-accent-light hover:bg-accent/25 transition-colors">
+                Open Fundamental Briefing &rarr;
               </Link>
             </div>
           </div>
@@ -195,9 +195,9 @@ export default function IntroductionPage() {
           <div className="p-5 sm:p-6">
             <div className="space-y-3">
               {[
-                { n: '1', t: 'Open de Daily Macro Briefing', d: 'Bekijk de calls van vandaag: welke paren een renteherprijzing hebben waar de koers net tegenin bewoog. Dit is je fundamentele kompas.', href: '/tools/fx-selector/v2' },
-                { n: '2', t: 'Lees de drie zinnen per call', d: 'Elke call legt zichzelf uit: wat er in de renteverwachting verschoof (met brondatums), hoe de koers bewoog, en wat de verwachting is.', href: '/tools/fx-selector/v2' },
-                { n: '3', t: 'Check het trackrecord', d: 'Elke uitkomst staat met begin- en eindkoers plus datum — pak TradingView erbij en reken het na. Zo hoort een trackrecord te werken.', href: '/tools/fx-selector/v2' },
+                { n: '1', t: 'Open de Fundamental Briefing', d: 'Bekijk de calls van vandaag: welke paren een renteherprijzing hebben waar de koers net tegenin bewoog. Dit is je fundamentele kompas.', href: '/tools/fundamental-briefing' },
+                { n: '2', t: 'Lees de drie zinnen per call', d: 'Elke call legt zichzelf uit: wat er in de renteverwachting verschoof (met brondatums), hoe de koers bewoog, en wat de verwachting is.', href: '/tools/fundamental-briefing' },
+                { n: '3', t: 'Check het trackrecord', d: 'Elke uitkomst staat met begin- en eindkoers plus datum — pak TradingView erbij en reken het na. Zo hoort een trackrecord te werken.', href: '/tools/fundamental-briefing' },
                 { n: '4', t: 'Bepaal je eigen entry en risk', d: 'De briefing geeft richting en overtuiging. De entry, stop en positiegrootte bepaal je binnen je eigen risicokader.', href: null },
                 { n: '5', t: 'Log in TradeMind', d: 'Registreer je trade met entry, SL, TP, screenshots en notities. Analyseer later je performance.', href: '/tools/tradescope' },
               ].map((s) => (
@@ -222,8 +222,8 @@ export default function IntroductionPage() {
         <div className="text-center py-6 space-y-3">
           <p className="text-sm text-text-dim">Klaar om te beginnen?</p>
           <div className="flex items-center justify-center gap-3">
-            <Link href="/tools/fx-selector/v2" className="px-6 py-2.5 rounded-xl bg-accent/20 border border-accent/30 text-sm text-accent-light hover:bg-accent/30 transition-colors font-medium">
-              Daily Macro Briefing
+            <Link href="/tools/fundamental-briefing" className="px-6 py-2.5 rounded-xl bg-accent/20 border border-accent/30 text-sm text-accent-light hover:bg-accent/30 transition-colors font-medium">
+              Fundamental Briefing
             </Link>
             <Link href="/tools/tradescope" className="px-6 py-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-sm text-purple-400 hover:bg-purple-500/20 transition-colors font-medium">
               TradeMind

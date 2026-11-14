@@ -190,7 +190,7 @@ async function handleStatus(chatId: number) {
     lines.push(
       ``,
       `<i>Laatste update: ${nlTime()}</i>`,
-      `🔗 sanderscapital.nl/tools/fx-selector/v2`,
+      `🔗 sanderscapital.nl/tools/fundamental-briefing`,
     )
 
     await sendReply(chatId, lines.join('\n'))

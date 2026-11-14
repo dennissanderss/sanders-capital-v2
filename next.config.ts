@@ -18,19 +18,22 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // Execution Engine is verwijderd; oude (geïndexeerde) URL netjes
-      // doorsturen naar de briefing i.p.v. een 404.
+      // Alle oude tool-URL's (Execution Engine, oude dashboards, Daily
+      // Macro Briefing) komen uit op de ene overgebleven tool: de
+      // Fundamental Briefing (v4-engine). Zie docs/audit/fundamental-audit.md.
       {
         source: '/tools/execution',
-        destination: '/tools/fx-selector/v2',
+        destination: '/tools/fundamental-briefing',
         permanent: true,
       },
-      // Audit fase 6: verweesde oude dashboard-pagina. Die vuurde bij elk
-      // bezoek POST's af die het trackrecord vervuilden (weekend-calls,
-      // dubbele afrekeningen). Permanent doorsturen naar de huidige briefing.
       {
         source: '/tools/fx-selector/tool',
-        destination: '/tools/fx-selector/v2',
+        destination: '/tools/fundamental-briefing',
+        permanent: true,
+      },
+      {
+        source: '/tools/fx-selector/v2',
+        destination: '/tools/fundamental-briefing',
         permanent: true,
       },
     ]

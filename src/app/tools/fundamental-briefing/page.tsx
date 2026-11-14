@@ -1,10 +1,11 @@
-import Dashboard from '@/components/fundamental-briefing/Dashboard'
+import SimpleBriefing from './SimpleBriefing'
 
 export const metadata = {
   title: 'Fundamental Briefing | Sanders Capital',
-  description: 'Fundamenteel-gedreven valuta-bias met een schoon, vooruit opgebouwd trackrecord over meerdere horizons.',
+  description:
+    'Welk valutapaar is vandaag interessant volgens het systeem, welke richting, en hoeveel pips is het doel — met een transparant forward-only trackrecord.',
 }
 
 export default function FundamentalBriefingPage() {
-  return <Dashboard />
+  return <SimpleBriefing />
 }

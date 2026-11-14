@@ -16,7 +16,6 @@ interface ToolSetting {
 const premiumTools = [
   { href: '/tools/fx-selector', label: 'Introductie', slug: 'fx-selector', isIntro: true },
   { href: '/tools/fx-analyse', label: 'Fundamentals', slug: 'fx-analyse' },
-  { href: '/tools/fx-selector/v2', label: 'Daily Macro Briefing', slug: 'fx-selector-v2', flowArrow: true },
   { href: '/tools/fundamental-briefing', label: 'Fundamental Briefing', slug: 'fundamental-briefing', flowArrow: true },
   { href: '/tools/tradescope', label: 'TradeMind', slug: 'tradescope', flowArrow: true },
 ] as const
@@ -88,12 +87,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide py-1 -mb-px">
             {allTools.map((link, i) => {
-              // Exacte match of startsWith, maar fx-selector mag niet matchen met fx-selector/v2
-              const isActive = pathname === link.href || (
-                pathname.startsWith(link.href + '/') &&
-                // Voorkom dat /tools/fx-selector matcht met /tools/fx-selector/v2
-                !(link.href === '/tools/fx-selector' && pathname.startsWith('/tools/fx-selector/v2'))
-              )
+              const isActive = pathname === link.href || pathname.startsWith(link.href + '/')
               const premium = isPremiumTool(link.slug)
               const locked = premium && !hasAccess(link.slug)
               // Show divider between premium and free sections

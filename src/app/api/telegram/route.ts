@@ -157,7 +157,7 @@ export async function POST(request: Request) {
     `<b>Commando's:</b>`,
     `  /status · /schema · /help`,
     ``,
-    `🔗 sanderscapital.nl/tools/fx-selector/v2`,
+    `🔗 sanderscapital.nl/tools/fundamental-briefing`,
   ].join('\n'))
 
   return NextResponse.json({ success, message: success ? 'Test notificatie verstuurd!' : 'Versturen mislukt' })

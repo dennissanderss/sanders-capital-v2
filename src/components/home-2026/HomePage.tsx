@@ -267,14 +267,14 @@ export default async function HomePage() {
               <span className="tp-live"><span className="d" />Pro</span>
             </div>
 
-            <Link className="tp-row feature" href="/tools/fx-selector/v2">
+            <Link className="tp-row feature" href="/tools/fundamental-briefing">
               <span className="tp-idx">01</span>
               <span className="tp-ic">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h4l2.5-6 4 12 2.5-6H21" /></svg>
               </span>
               <span className="tp-main">
-                <span className="tp-name">Daily Macro Briefing</span>
-                <span className="tp-formula">Macro-bias <span className="ar">→</span> valutascores <span className="ar">→</span> concrete calls</span>
+                <span className="tp-name">Fundamental Briefing</span>
+                <span className="tp-formula">Renteherprijzing <span className="ar">→</span> paar + richting <span className="ar">→</span> pips-doel</span>
               </span>
               <span className="tp-go"><ArrowRight /></span>
             </Link>
