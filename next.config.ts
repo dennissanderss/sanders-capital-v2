@@ -25,6 +25,14 @@ const nextConfig: NextConfig = {
         destination: '/tools/fx-selector/v2',
         permanent: true,
       },
+      // Audit fase 6: verweesde oude dashboard-pagina. Die vuurde bij elk
+      // bezoek POST's af die het trackrecord vervuilden (weekend-calls,
+      // dubbele afrekeningen). Permanent doorsturen naar de huidige briefing.
+      {
+        source: '/tools/fx-selector/tool',
+        destination: '/tools/fx-selector/v2',
+        permanent: true,
+      },
     ]
   },
 };
