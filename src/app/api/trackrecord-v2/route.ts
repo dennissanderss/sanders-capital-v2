@@ -318,7 +318,16 @@ export async function GET() {
 }
 
 // ─── POST: Generate today's signals & resolve pending ───────
-export async function POST() {
+// Audit fase 6: alleen de cron (met CRON_SECRET) mag calls aanmaken en
+// afrekenen. Voorheen was dit endpoint publiek en vuurde de oude
+// dashboard-pagina het bij elk bezoek af — bron van weekend-calls,
+// wisselende aanmaaktijden en dubbele afrekeningen (zie audit fase 1).
+export async function POST(request: Request) {
+  const authHeader = request.headers.get('authorization')
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
     const today = new Date().toISOString().split('T')[0]
     const now = new Date().toISOString()

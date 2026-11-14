@@ -20,7 +20,11 @@ export async function GET(request: Request) {
     // Call the trackrecord-v2 POST handler directly (no HTTP needed)
     const fakeRequest = new Request('http://localhost/api/trackrecord-v2', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        // De POST-handler is sinds de audit afgeschermd met CRON_SECRET.
+        Authorization: `Bearer ${cronSecret}`,
+      },
     })
 
     const response = await trackrecordPost(fakeRequest)
