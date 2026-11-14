@@ -161,9 +161,9 @@ Na akkoord gebouwd, één wijziging per commit (zie git-historie van die dag):
 6. **Cron** `/api/cron/v4-shadow` (ma–vr 06:50 UTC, achter het cron-secret): eerst afrekenen, dan genereren. Geverifieerd via dry-run op 14 nov (zaterdag): alle 6 rentebronnen leveren, signaalregel draait op alle 14 paren, weekend-guard weigert correct, Storage schrijfbaar, deployed endpoint antwoordt 401 zonder secret. **Eerste echte calls: maandag 17 november 06:50.**
 
 **Openstaande acties voor de eigenaar:**
-- Dode bestanden fysiek verwijderen (verwijderen was voor de agent geblokkeerd; de pagina's zijn al onklaar): `git rm -r src/app/tools/fx-selector/v2/BriefingV2Dashboard.tsx src/app/tools/fx-selector/v2/components src/app/tools/fx-selector/v2/hooks src/app/tools/fx-selector/v2/utils.ts src/app/tools/fx-selector/v2/types.ts src/app/tools/fx-selector/v2/constants.ts`
-- `supabase/migrations/20261114_v4_overstap.sql` **níet** nu draaien — pas bij de overstap (fase 7).
-- De handmatige CB-labels in `central_bank_rates` zijn nog van 23 juni; de v4-engine gebruikt ze niet, maar de oude engine (die nog getoond wordt) wel — actualiseren blijft redactiewerk van de eigenaar.
+- ~~Dode bestanden fysiek verwijderen~~ — gedaan op 14 nov (fase 7-opruiming): het oude dashboard, de v2-hulpbestanden én de complete fx-desk-map (24 bestanden) zijn verwijderd; de gedeelde conviction-rekenkern is verhuisd naar `src/lib/fundamental/conviction.ts` omdat de Fundamental Briefing die nog gebruikt.
+- `supabase/migrations/20261114_v4_overstap.sql` draaien in de Supabase SQL-editor (zie fase 7 — additief, mag altijd).
+- De handmatige CB-labels in `central_bank_rates` zijn nog van 23 juni; de v4-engine gebruikt ze niet — alleen de Telegram-weergave en de rentetarieven-pagina tonen ze nog. Actualiseren blijft redactiewerk van de eigenaar.
 
 ## Fase 7 — vervroegde overstap (14 november 2026, dezelfde avond)
 

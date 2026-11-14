@@ -5,7 +5,7 @@
 // doel ×1.5 + nieuws, gecapt ±1.5), maar als schone, herbruikbare module.
 // Conviction (0-10) hergebruikt de gedeelde convictionBreakdown.
 // ─────────────────────────────────────────────────────────────
-import { convictionBreakdown, type ConvictionBreakdown } from '@/components/fx-desk/lib/conviction'
+import { convictionBreakdown, type ConvictionBreakdown } from './conviction'
 import { MAJORS, BIAS_SCORES } from './constants'
 import type { CurrencyScore, Direction, ImInstrument, NewsItem } from './types'
 
