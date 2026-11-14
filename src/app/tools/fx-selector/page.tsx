@@ -37,7 +37,7 @@ export default function IntroductionPage() {
             FX Trading System
           </h1>
           <p className="text-sm text-text-dim max-w-2xl mx-auto leading-relaxed">
-            Een geïntegreerd systeem dat <strong className="text-text-muted">fundamentele macro-analyse</strong> vertaalt naar concrete valutaparen — van marktregime tot een handvol onderbouwde calls per dag. Volledig transparant en met een live trackrecord.
+            Een fundamentele bias-tool die de <strong className="text-text-muted">verschuiving in 2-jaars renteverwachtingen</strong> vertaalt naar richting per valutapaar — elke call in drie zinnen uitgelegd, met een transparant forward-only trackrecord dat je zelf kunt nachecken in TradingView.
           </p>
           <div className="flex items-center justify-center gap-3 mt-6">
             <Link href="/tools/fx-selector/v2" className="px-6 py-2.5 rounded-xl bg-accent/20 border border-accent/30 text-sm text-accent-light hover:bg-accent/30 transition-colors font-medium">
@@ -63,12 +63,12 @@ export default function IntroductionPage() {
                   <span className="text-sm font-semibold text-heading">Fundamentele Bias</span>
                 </div>
                 <p className="text-[10px] text-text-dim leading-relaxed mb-2">
-                  De <strong className="text-text-muted">Daily Macro Briefing</strong> analyseert 21 valutaparen op basis van centraal bankbeleid, renteverschillen, nieuws sentiment en intermarket signalen.
+                  De <strong className="text-text-muted">Daily Macro Briefing</strong> volgt per valuta de 2-jaars staatsrente (officiële bronnen: FRED, ECB, Japans MoF, Bank of Canada, RBA, BoE) en zoekt paren waar de koers tégen de renteherprijzing in is bewogen.
                 </p>
                 <div className="text-[9px] text-accent-light/60 space-y-0.5">
-                  <p>&rsaquo; Bepaalt de <strong>richting</strong> (bullish/bearish)</p>
-                  <p>&rsaquo; Filtert door 4 criteria (score, IM, contrarian, richting)</p>
-                  <p>&rsaquo; Levert <strong>concrete trades</strong> op</p>
+                  <p>&rsaquo; Bepaalt de <strong>richting</strong> (long/short) — geen entries, geen TP/SL</p>
+                  <p>&rsaquo; Elke call in <strong>drie zinnen</strong> onderbouwd, met brondata en datums</p>
+                  <p>&rsaquo; Gemeten op 5 horizons (1–20 handelsdagen), close-to-close</p>
                 </div>
                 <div className="hidden sm:block absolute top-1/2 -right-2 text-accent-light/20 text-lg font-bold">&rsaquo;</div>
               </div>
@@ -103,14 +103,12 @@ export default function IntroductionPage() {
       {/* ═══ DAILY MACRO BRIEFING ═══ */}
       <FadeIn>
         <Section>
-          <SectionHead badge="Tool 1" badgeColor="text-accent-light bg-accent/15" title="Daily Macro Briefing" sub="Fundamentele analyse in 5 stappen" />
+          <SectionHead badge="Tool 1" badgeColor="text-accent-light bg-accent/15" title="Daily Macro Briefing" sub="Eén signaalregel, drie stappen — herbouwd na de audit van november 2026" />
           <div className="p-5 sm:p-6 space-y-4">
             {[
-              { n: '1', t: 'Marktregime', d: 'Classificeert het macro klimaat: Risk-Off, Risk-On, USD Dominant, USD Zwak of Gemengd. Gebaseerd op centraal bankbeleid van 8 valuta\'s.', c: 'text-accent-light' },
-              { n: '2', t: 'Nieuws Sentiment', d: 'Analyseert headlines uit 7 bronnen (Fed, ECB, ForexLive, CNBC etc.) en berekent een sentiment score per valuta. Recent nieuws weegt zwaarder.', c: 'text-green-400' },
-              { n: '3', t: 'Intermarket Signalen', d: 'Checkt of VIX, S&P500, Gold, US Yields, Oil en DXY het regime bevestigen. Alignment boven 50% = regime bevestigd.', c: 'text-amber-400' },
-              { n: '4', t: 'Trade Focus', d: 'Filtert 21 paren door 4 criteria: score ≥2.0, IM >50%, contrarian prijsbeweging (5d) en duidelijke richting. Alleen paren die alle 4 passeren worden concrete trades.', c: 'text-gold' },
-              { n: '5', t: 'Concrete Trades', d: 'De paren die alle filters passeren. Inclusief call datum/tijd, richting, score en overtuiging. Elk wordt automatisch getracked in het live trackrecord.', c: 'text-purple-400' },
+              { n: '1', t: 'Renteherprijzing', d: 'Per valuta wordt de 2-jaars staatsrente gevolgd (dagelijks, officiële bronnen). Is het renteverschil van een paar de afgelopen 5 handelsdagen duidelijk één kant op geschoven, dan wijst dat de fundamentele richting.', c: 'text-accent-light' },
+              { n: '2', t: 'Contrarian-voorwaarde', d: 'Er komt alleen een call als de koers er juist tégen in bewoog (op voltooide dag-candles). Je koopt de dip in de richting van de renteherprijzing — beweegt de prijs al mee, dan is er geen opzet en dus geen call.', c: 'text-amber-400' },
+              { n: '3', t: 'Eerlijke meting', d: 'Elke call wordt op 1, 3, 5, 10 en 20 handelsdagen afgerekend, slotkoers tegen slotkoers, met een drempel van 30 pips (50 bij JPY). Pas als een horizon volledig verstreken is, telt de uitkomst — nooit eerder, nooit achteraf aangepast.', c: 'text-gold' },
             ].map((s, i) => (
               <div key={i} className="flex items-start gap-3">
                 <span className={`text-xs font-bold ${s.c} bg-[rgba(12,22,38,0.04)] w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5`}>{s.n}</span>
@@ -123,10 +121,10 @@ export default function IntroductionPage() {
 
             <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
               {[
-                { v: '56%', l: 'Winrate', s: '400 trades' },
-                { v: '21', l: 'Paren', s: '8 valuta\'s' },
-                { v: '1 dag', l: 'Hold', s: 'Dagkoers NY close' },
-                { v: 'Live', l: 'Trackrecord', s: 'Auto-updated' },
+                { v: '14', l: 'Paren', s: '6 valuta\'s met rentedekking' },
+                { v: '5', l: 'Horizons', s: '1 t/m 20 handelsdagen' },
+                { v: '54–58%', l: 'Richting in toetsperiode', s: 'geen garantie' },
+                { v: 'Forward-only', l: 'Trackrecord', s: 'sinds 14 nov 2026' },
               ].map((m, i) => (
                 <div key={i} className="p-2 rounded-lg bg-[rgba(12,22,38,0.03)]">
                   <p className="text-lg font-mono font-bold text-heading">{m.v}</p>
@@ -153,12 +151,12 @@ export default function IntroductionPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[10px] text-text-dim">
               <div className="space-y-3">
                 <div>
-                  <p className="text-text-muted font-semibold mb-1">Fundamentele scoring (Model B)</p>
-                  <p>Score = CB beleid (&times;2) + renteverschil (&times;1.5) + nieuws bonus (&plusmn;1.5). Geoptimaliseerd over 400 trades en 2.100 configuraties. Bewezen winrate: 56%.</p>
+                  <p className="text-text-muted font-semibold mb-1">Hoe dit is getoetst (audit, november 2026)</p>
+                  <p>De signaalregel is de enige combinatie die een strenge chronologische toets overleefde: ontwikkeld op de oudste 70% van 20 maanden data, één keer beoordeeld op de nieuwste 30%. Resultaat in de toetsperiode: 54–58% richtingstrefkans op 5 dagen — bescheiden en eerlijk, geen geldmachine. Eén macroklimaat aan bewijs; daarom wordt alles doorlopend gemeten.</p>
                 </div>
                 <div>
-                  <p className="text-text-muted font-semibold mb-1">Intermarket &amp; contrarian filter</p>
-                  <p>Een call wordt alleen entry-ready bij intermarket-bevestiging (alignment &gt;50%) en een contrarian prijsbeweging over 5 dagen. Deze filters zijn historisch de sterkste edge in de scoring.</p>
+                  <p className="text-text-muted font-semibold mb-1">Wat er na de audit is verwijderd</p>
+                  <p>Handmatige centrale-banklabels (bleken maandenlang bevroren), nieuws-trefwoordscores (ruis), het intermarket-filter (vuurde nooit) en de TP/SL-weergave (werd nooit gemeten). Elk overgebleven onderdeel heeft zijn plek in de toets verdiend.</p>
                 </div>
               </div>
               <div className="space-y-3">
@@ -166,11 +164,11 @@ export default function IntroductionPage() {
                   <p className="text-text-muted font-semibold mb-1">Databronnen</p>
                   <div className="space-y-1">
                     {[
-                      ['CB beleid & rente', 'Supabase DB, bijgewerkt na CB vergaderingen'],
-                      ['Nieuws', '7 RSS bronnen (Fed, ECB, ForexLive, CNBC, Bloomberg, BBC, NYT)'],
-                      ['Intermarket', 'Yahoo Finance (VIX, S&P, Gold, US10Y, Oil, DXY)'],
-                      ['FX koersen', 'Yahoo Finance (21 paren, dagelijks + intraday)'],
-                      ['Trackrecord', '434+ trades, live bijgewerkt via cron job'],
+                      ['2-jaars rentes', 'FRED (USD), ECB (EUR), MoF Japan (JPY), Bank of Canada (CAD), RBA (AUD), BoE (GBP, 5-jaars)'],
+                      ['FX koersen', 'Yahoo Finance, uitsluitend voltooide dag-candles'],
+                      ['Positionering', 'CFTC CoT (wekelijks) — alleen als context gelogd'],
+                      ['Inputs', 'Elke dag integraal vastgelegd, zodat elke call narekenbaar blijft'],
+                      ['Trackrecord', 'Forward-only sinds 14 nov 2026, automatisch afgerekend'],
                     ].map(([k, v]) => (
                       <p key={k}><strong className="text-text-muted">{k}:</strong> {v}</p>
                     ))}
@@ -197,9 +195,9 @@ export default function IntroductionPage() {
           <div className="p-5 sm:p-6">
             <div className="space-y-3">
               {[
-                { n: '1', t: 'Open de Daily Macro Briefing', d: 'Bekijk het marktregime, valutascores en concrete trades van vandaag. Dit is je fundamentele kompas.', href: '/tools/fx-selector/v2' },
-                { n: '2', t: 'Bekijk de concrete trades', d: 'In Stap 5 van de briefing staan de paren die alle 4 filters passeren. Dit zijn je kandidaten.', href: '/tools/fx-selector/v2' },
-                { n: '3', t: 'Lees de redenering per call', d: 'Klap een entry-ready call open voor regime-bijdrage, nieuws-sentiment, intermarket-bevestiging en de score-opbouw.', href: '/tools/fx-selector/v2' },
+                { n: '1', t: 'Open de Daily Macro Briefing', d: 'Bekijk de calls van vandaag: welke paren een renteherprijzing hebben waar de koers net tegenin bewoog. Dit is je fundamentele kompas.', href: '/tools/fx-selector/v2' },
+                { n: '2', t: 'Lees de drie zinnen per call', d: 'Elke call legt zichzelf uit: wat er in de renteverwachting verschoof (met brondatums), hoe de koers bewoog, en wat de verwachting is.', href: '/tools/fx-selector/v2' },
+                { n: '3', t: 'Check het trackrecord', d: 'Elke uitkomst staat met begin- en eindkoers plus datum — pak TradingView erbij en reken het na. Zo hoort een trackrecord te werken.', href: '/tools/fx-selector/v2' },
                 { n: '4', t: 'Bepaal je eigen entry en risk', d: 'De briefing geeft richting en overtuiging. De entry, stop en positiegrootte bepaal je binnen je eigen risicokader.', href: null },
                 { n: '5', t: 'Log in TradeMind', d: 'Registreer je trade met entry, SL, TP, screenshots en notities. Analyseer later je performance.', href: '/tools/tradescope' },
               ].map((s) => (
