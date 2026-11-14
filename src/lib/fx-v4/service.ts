@@ -1,9 +1,9 @@
 // ─────────────────────────────────────────────────────────────
-// FX v4 (schaduwmodus) — service-laag
+// FX v4 — service-laag (live engine van de Daily Macro Briefing)
 //
 // generateV4Shadow(): berekent één keer per dag de v4-calls en slaat ze
-//   op als rijen in trade_focus_records met metadata.source='v4-shadow'.
-//   De oude tool filtert op source='v2' en toont ze dus niet (schaduw).
+//   op als rijen in trade_focus_records met metadata.source='v4'.
+//   (Functienamen dragen nog het shadow-achtervoegsel uit de bouwfase.)
 // resolveV4Shadow(): rekent openstaande v4-calls af op 1/3/5/10/20
 //   voltooide handelsdagen (close-to-close, drempel 30/50 pips) in de
 //   bestaande accuracy-jsonb-kolom. No-leakage: pas als de exit-candle
@@ -23,8 +23,8 @@ import { fetchManyDaily, todayUTC, atr14Pips } from '../fundamental/prices'
 import type { Candle } from '../fundamental/types'
 import { haalRentes, haalCot, type YieldPoint, type CotStand } from './bronnen'
 import {
-  ENGINE_VERSION, V4_PAIRS, V4_PAIR_SYMBOLS, V4_HORIZONS, V4_METING,
-  pipMultV4, pipDrempel,
+  ENGINE_VERSION, V4_SOURCE, V4_SOURCES_ALL, V4_PAIRS, V4_PAIR_SYMBOLS,
+  V4_HORIZONS, V4_METING, pipMultV4, pipDrempel,
 } from './constants'
 
 function getSupabase(): SupabaseClient {
@@ -119,7 +119,7 @@ export async function generateV4Shadow(candles: Record<string, Candle[]>) {
     .from('trade_focus_records')
     .select('id')
     .eq('date', vandaag)
-    .eq('metadata->>source', 'v4-shadow')
+    .in('metadata->>source', [...V4_SOURCES_ALL])
     .limit(1)
   if (bestaand && bestaand.length > 0) return { status: 'al gegenereerd', calls: 0 }
 
@@ -142,7 +142,7 @@ export async function generateV4Shadow(candles: Record<string, Candle[]>) {
         result: 'pending',
         methodology: 'v4-close-to-close',
         metadata: {
-          source: 'v4-shadow',
+          source: V4_SOURCE,
           engine_version: ENGINE_VERSION,
           richting: c.richting,
           signalDate: c.signalDate,
@@ -209,7 +209,7 @@ export async function resolveV4Shadow(candles: Record<string, Candle[]>) {
   const { data: alle } = await sb
     .from('trade_focus_records')
     .select('id, date, pair, exit_price, metadata, accuracy')
-    .eq('metadata->>source', 'v4-shadow')
+    .in('metadata->>source', [...V4_SOURCES_ALL])
     .order('date', { ascending: true })
     .limit(1000)
   // alleen rijen waar de 20d-horizon nog niet is afgerekend

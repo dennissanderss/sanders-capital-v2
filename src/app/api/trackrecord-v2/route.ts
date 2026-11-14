@@ -378,140 +378,14 @@ export async function POST(request: Request) {
       }
     }
 
-    // 2. Check if today already has records
-    const { data: existing } = await getSupabase()
-      .from('trade_focus_records')
-      .select('id')
-      .eq('date', today)
-      .eq('metadata->>source', 'v2')
-
-    if (existing && existing.length > 0) {
-      return NextResponse.json({
-        version: 'v3.1-optimizer',
-        message: 'Today already recorded',
-        resolved: resolvedCount,
-      })
-    }
-
-    // 3. Fetch CB rates
-    const { data: cbRatesData } = await getSupabase()
-      .from('central_bank_rates')
-      .select('currency, bank, rate, target, bias')
-
-    const cbRates = (cbRatesData || []).map(r => ({
-      currency: r.currency, rate: r.rate, target: r.target, bias: r.bias,
-    }))
-
-    // 4. Fetch recent news (72h window)
-    const newsStart = new Date()
-    newsStart.setDate(newsStart.getDate() - 3)
-    const { data: newsArticles } = await getSupabase()
-      .from('news_articles')
-      .select('title, summary, affected_currencies, published_at, relevance_score')
-      .gte('published_at', newsStart.toISOString())
-      .order('published_at', { ascending: false })
-      .limit(200)
-
-    // 5. Calculate currency scores & regime
-    const scores = calcCurrencyScores(cbRates, newsArticles || [], today)
-    const regime = determineRegime(scores)
-
-    // 6. Fetch intermarket data for IM alignment
-    const imHistory: Record<string, { date: string; close: number }[]> = {}
-    for (const [key, symbol] of Object.entries(INTERMARKET_SYMBOLS)) {
-      imHistory[key] = await fetchRecentPrices(symbol, 5)
-    }
-    const imAlignment = getIntermarketAlignment(imHistory, today, regime)
-
-    // 7. If IM doesn't confirm, no trades today
-    if (imAlignment < 50) {
-      return NextResponse.json({
-        version: 'v3.1-optimizer',
-        message: `No trades today: IM alignment ${Math.round(imAlignment)}% (need >=50%)`,
-        regime,
-        imAlignment: Math.round(imAlignment),
-        resolved: resolvedCount,
-        records: [],
-      })
-    }
-
-    // 8. Fetch 10-day price history for contrarian check
-    const priceHistory: Record<string, { date: string; close: number }[]> = {}
-    for (const [pair, symbol] of Object.entries(PAIR_SYMBOLS)) {
-      priceHistory[pair] = await fetchRecentPrices(symbol, LOOKBACK_DAYS + 3)
-    }
-
-    // 9. Score pairs & apply contrarian filter
-    const newRecords: Record<string, unknown>[] = []
-    for (const pair of PAIRS) {
-      const [base, quote] = pair.split('/')
-      const diff = (scores[base] || 0) - (scores[quote] || 0)
-      const absDiff = Math.abs(diff)
-
-      if (absDiff < SCORE_THRESHOLD) continue
-
-      const isBullish = diff > 0
-      const direction = isBullish ? 'bullish_mean_reversion' : 'bearish_mean_reversion'
-
-      // 5d contrarian check
-      const prices = priceHistory[pair] || []
-      if (prices.length < LOOKBACK_DAYS + 1) continue
-
-      const lastIdx = prices.length - 1
-      const lookbackIdx = lastIdx - LOOKBACK_DAYS
-      if (lookbackIdx < 0) continue
-
-      const momentum5d = prices[lastIdx].close - prices[lookbackIdx].close
-      const isContrarian = (isBullish && momentum5d < 0) || (!isBullish && momentum5d > 0)
-      if (!isContrarian) continue
-
-      // Get entry price
-      const entryPrice = await fetchPrice(PAIR_SYMBOLS[pair])
-      if (!entryPrice) continue
-
-      const conviction = absDiff >= 3.5 ? 'sterk' : 'matig'
-      const isJpy = pair.includes('JPY')
-
-      newRecords.push({
-        date: today,
-        pair,
-        direction,
-        conviction,
-        score: Math.round(diff * 100) / 100,
-        entry_price: entryPrice,
-        regime,
-        result: 'pending',
-        metadata: {
-          source: 'v2',
-          version: 'v3.1-optimizer',
-          signal: direction,
-          imAlignment: Math.round(imAlignment),
-          momentum5d: Math.round(momentum5d * (isJpy ? 100 : 10000)),
-          callTime: now,
-          entryTime: now,
-          newsSimulated: false,
-          holdingPeriod: 1,
-          lookbackDays: LOOKBACK_DAYS,
-          meanReversion: true,
-        },
-      })
-    }
-
-    if (newRecords.length > 0) {
-      const { error } = await getSupabase().from('trade_focus_records').insert(newRecords)
-      if (error) {
-        return NextResponse.json({ error: error.message, version: 'v3.1-optimizer' }, { status: 500 })
-      }
-    }
-
+    // ── Afbouwmodus (overstap naar v4, 14 nov 2026) ──────────
+    // De oude v2-engine genereert geen nieuwe calls meer; dit endpoint
+    // rekent alleen nog openstaande v2-calls af tot de laatste gesloten
+    // is. De actieve engine is /api/cron/v4-shadow (v4).
     return NextResponse.json({
-      version: 'v3.1-optimizer',
-      formula: 'Model B (CB×2 + rate_gap×1.5 + news) + Contrarian 5d + IM>50% + 1d hold',
-      message: `${newRecords.length} signals for ${today}`,
-      regime,
-      imAlignment: Math.round(imAlignment),
+      version: 'v3.1-optimizer (afbouw)',
+      message: 'Afbouwmodus: alleen afrekenen, geen nieuwe v2-calls. De v4-engine is actief.',
       resolved: resolvedCount,
-      records: newRecords,
     })
   } catch (e) {
     return NextResponse.json({ error: String(e), version: 'v3.1-optimizer' }, { status: 500 })

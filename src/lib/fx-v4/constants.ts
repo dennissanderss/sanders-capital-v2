@@ -1,14 +1,21 @@
 // ─────────────────────────────────────────────────────────────
-// FX v4 (schaduwmodus) — constanten
+// FX v4 — constanten
 //
 // De v4-engine implementeert exact het pakket dat de chronologische
 // 70/30-toets overleefde (docs/audit/fundamental-audit.md, fase 4):
 // contrarian op voltooide dag-candles, alleen waar het 5-daagse
 // momentum van het 2-jaars renteverschil dezelfde kant op wijst.
 // Geen entries, geen SL/TP: bias en onderbouwing.
+//
+// Live sinds 14 nov 2026 (vervroegde overstap op verzoek van de
+// eigenaar; de vier weken schaduwdraaien zijn overgeslagen — zie het
+// fase 7-addendum in docs/audit/fundamental-audit.md).
 // ─────────────────────────────────────────────────────────────
 
-export const ENGINE_VERSION = 'v4.0-shadow'
+export const ENGINE_VERSION = 'v4.0'
+// bron-label in trade_focus_records; 'v4-shadow' was de (lege) schaduwfase
+export const V4_SOURCE = 'v4'
+export const V4_SOURCES_ALL = ['v4', 'v4-shadow'] as const
 
 // Alleen paren waarvan BEIDE benen een geverifieerde dagelijkse
 // rentereeks hebben (fase 4): USD, EUR, JPY, CAD, AUD (2-jaars) en
