@@ -261,8 +261,6 @@ export interface DeskCallHistoryRecord {
   durationText: string
   outcome: 'correct' | 'incorrect' | 'pending'
   entry: number
-  tp: number
-  sl: number
   close: number | null
   pips: number | null
   note: string

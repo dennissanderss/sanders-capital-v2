@@ -14,11 +14,12 @@ const YAHOO_SYMBOLS: Record<string, string> = {
   'EUR/CAD': 'EURCAD=X', 'GBP/NZD': 'GBPNZD=X', 'AUD/CAD': 'AUDCAD=X',
 }
 
+// Audit fase 6: de TP/SL-props zijn verwijderd — die niveaus waren verzonnen
+// weergave (entry ± 120/40 pips) en werden nooit gemeten. De chart toont nu
+// alleen de koers, de instap en de werkelijke uitkomst van de 1d-meting.
 interface PriceChartProps {
   pair: string
   entry: number
-  tp: number
-  sl: number
   calledAt: string  // ISO date or "13 jun, 09:15"
   closedAt: string | null
   outcome: Outcome
@@ -73,8 +74,6 @@ export function PriceChart(props: PriceChartProps) {
 // ─── Render SVG once we have the data ─────────────────────────
 function PriceChartSvg({
   entry,
-  tp,
-  sl,
   outcome,
   series,
   entryIdx,
@@ -93,7 +92,7 @@ function PriceChartSvg({
   const dec = entry > 50 ? 2 : 4
   const fmtLv = (v: number) => Number(v).toFixed(dec)
 
-  const vals = [...series, entry, tp, sl]
+  const vals = [...series, entry]
   let min = Math.min(...vals)
   let max = Math.max(...vals)
   const mg = (max - min) * 0.1 || 1
@@ -114,13 +113,12 @@ function PriceChartSvg({
 
   const eX = x(entryIdx)
   const cX = closeIdx != null ? x(closeIdx) : x(n - 1)
-  const hitV = win ? tp : loss ? sl : null
+  // Werkelijke uitkomst: de koers op het afrekenmoment (geen TP/SL-niveaus).
+  const exitV = !open && closeIdx != null ? series[closeIdx] : null
   const hitC = win ? C.win : C.loss
 
   const levels = [
-    { key: 'tp', v: tp, label: 'Take profit', color: C.win, active: win, entry: false },
     { key: 'entry', v: entry, label: 'Instap', color: C.gold, active: false, entry: true },
-    { key: 'sl', v: sl, label: 'Stop', color: C.loss, active: loss, entry: false },
   ]
 
   return (
@@ -178,8 +176,8 @@ function PriceChartSvg({
       <circle cx={eX} cy={y(entry)} r="5.5" fill="#ffffff" stroke={C.gold} strokeWidth="1.6" />
       <circle cx={eX} cy={y(entry)} r="2" fill={C.gold} />
 
-      {!open && hitV !== null && (() => {
-        const my = y(hitV)
+      {!open && exitV !== null && (() => {
+        const my = y(exitV)
         const ty = my < 42 ? my + 20 : my - 12
         return (
           <g>
@@ -187,7 +185,7 @@ function PriceChartSvg({
             <circle cx={cX} cy={my} r="6" fill="#ffffff" stroke={hitC} strokeWidth="1.9" />
             <circle cx={cX} cy={my} r="2.4" fill={hitC} />
             <text x={cX} y={ty} textAnchor="middle" fill={hitC} fontSize="10" fontWeight="700" fontFamily="DM Sans" letterSpacing="0.07em">
-              {win ? 'TP GERAAKT' : 'STOP GERAAKT'}
+              {win ? 'RICHTING JUIST' : 'RICHTING ONJUIST'}
             </text>
           </g>
         )

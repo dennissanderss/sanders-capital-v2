@@ -76,7 +76,7 @@ export function Calls({ records, loading }: CallsProps) {
         lineHeight: 1.5,
         maxWidth: '60ch',
       }}>
-        De backtest. Elke call uit het trackrecord met instap, take profit, stop, uitkomst en de koersgrafiek per trade. Filter op uitkomst of paar.
+        Het trackrecord. Elke call met de koers op het meetmoment, de uitkomst van de 1-daagse richtingsmeting (geen TP of SL — de tool geeft richting, geen entries) en de koersgrafiek. Filter op uitkomst of paar.
       </p>
 
       {/* Prestatie-overzicht (volledige trackrecord) */}
@@ -182,8 +182,6 @@ export function Calls({ records, loading }: CallsProps) {
                 <PriceChart
                   pair={sel.pair}
                   entry={sel.entry}
-                  tp={sel.tp}
-                  sl={sel.sl}
                   calledAt={sel.calledAt}
                   closedAt={sel.closedAt}
                   outcome={sel.outcome}
@@ -196,11 +194,7 @@ export function Calls({ records, loading }: CallsProps) {
                   </span>
                   <span className="lg">
                     <span className="sw" style={{ borderTopColor: 'var(--win)', borderTopStyle: 'dashed' }} />
-                    Take profit
-                  </span>
-                  <span className="lg">
-                    <span className="sw" style={{ borderTopColor: 'var(--loss)', borderTopStyle: 'dashed' }} />
-                    Stop
+                    Uitkomst op afrekenmoment
                   </span>
                 </div>
               </div>
@@ -215,15 +209,14 @@ export function Calls({ records, loading }: CallsProps) {
                   <span className="v num">{fmt(sel.entry, sel.entry > 50 ? 2 : 4)}</span>
                 </div>
                 <div className="df">
-                  <span className="k mono-label">Take profit</span>
-                  <span className="v num">{fmt(sel.tp, sel.tp > 50 ? 2 : 4)}</span>
+                  <span className="k mono-label">Uitkomst</span>
                   <span className={`tp-badge ${sel.outcome === 'correct' ? 'yes' : sel.outcome === 'incorrect' ? 'no' : 'open'}`}>
-                    {sel.outcome === 'correct' ? 'TP gehit: ja' : sel.outcome === 'incorrect' ? 'TP gehit: nee' : 'Nog niet geraakt'}
+                    {sel.outcome === 'correct' ? 'Richting juist (1d)' : sel.outcome === 'incorrect' ? 'Richting onjuist (1d)' : 'Nog open'}
                   </span>
                 </div>
                 <div className="df">
-                  <span className="k mono-label">Stop</span>
-                  <span className="v num">{fmt(sel.sl, sel.sl > 50 ? 2 : 4)}</span>
+                  <span className="k mono-label">Sluitkoers</span>
+                  <span className="v num">{sel.close != null ? fmt(sel.close, sel.close > 50 ? 2 : 4) : '—'}</span>
                 </div>
                 <div className="df">
                   <span className="k mono-label">Gesloten op</span>

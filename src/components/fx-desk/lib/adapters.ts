@@ -356,19 +356,15 @@ function mapSentimentLabel(s?: string): SentimentStand {
 
 // ─── Track record → call history (for Calls tab) ──────────────
 export function adaptTrackRecord(records: ApiTrackRecord[]): DeskCallHistoryRecord[] {
-  const TP_PIPS = 120 // balanced model TP
-  const SL_PIPS = 40  // balanced model SL
-
+  // Audit fase 6: de verzonnen TP (entry ± 120 pips) en SL (∓ 40 pips) zijn
+  // verwijderd. Die niveaus bestonden alleen in de weergave — de meting is
+  // een 1-daagse richtingscheck zonder TP/SL, en bij 97% van de winnende
+  // calls was de "TP gehit"-claim onwaar (zie docs/audit, fase 1).
   return records
     .map((r) => {
       const dir = dirOfPair(r.direction)
       if (!dir) return null
       if (r.entry_price == null) return null
-
-      const isJpy = r.pair.includes('JPY')
-      const pipSize = isJpy ? 0.01 : 0.0001
-      const tp = dir === 'long' ? r.entry_price + TP_PIPS * pipSize : r.entry_price - TP_PIPS * pipSize
-      const sl = dir === 'long' ? r.entry_price - SL_PIPS * pipSize : r.entry_price + SL_PIPS * pipSize
 
       const src: 'fundamenteel' | 'engine' =
         r.metadata?.source === 'engine' || r.metadata?.signal === 'engine' ? 'engine' : 'fundamenteel'
@@ -396,8 +392,6 @@ export function adaptTrackRecord(records: ApiTrackRecord[]): DeskCallHistoryReco
         durationText,
         outcome: r.result,
         entry: r.entry_price,
-        tp,
-        sl,
         close: r.exit_price,
         pips: r.pips_moved,
         note: buildNote(r),
