@@ -20,7 +20,7 @@ De tool haalt 43,2% (1d) tot 50,4% (20d) richtingstrefkans — nergens beter dan
 
 **Wat stel ik voor:**
 1. **Meting repareren** (vaste dagelijkse lock op voltooide candles, multi-horizon close-to-close, geen bezoeker-triggers, inputs per dag vastleggen, TP/SL-fictie weg) — randvoorwaarde voor alles.
-2. **Kern = contrarian op voltooide candles** (ontwikkel 54,0% / toets 53,9% op 5d), **gefilterd door 2-jaars rente-momentum** (combi: ontwikkel 54,8% / toets 57,5%) en **CoT-positioneringsextremen** (ontwikkel 53,4–53,8% / toets 54,3–62,5%) — de enige drie dingen die de chronologische 70/30-toets overleefden. CB-niveaufactor, grondstoffactor en risk-off-factor zakten voor de toets; verrassingsdata wordt al gelogd en is over 12 maanden te beoordelen.
+2. **Kern = contrarian op voltooide candles** (ontwikkel 54,0% / toets 53,9% op 5d), **gefilterd door 2-jaars rente-momentum** (combi: ontwikkel 54,8% / toets 57,5%) — de enige combinatie die de chronologische 70/30-toets overleefde. CB-niveaufactor, grondstoffactor, risk-off-factor én CoT-extremen (zie correctie in fase 4) zakten voor de toets; verrassingsdata en CoT worden gelogd en zijn over 12 maanden te herbeoordelen.
 3. **Vereenvoudigen:** de dubbele engine (v3-weergave-engine, 2.804 regels), het dode oude dashboard (2.754 regels), v1-trackrecord, nooit-vurende filters en verzonnen UI-velden kunnen weg; elke call moet in drie zinnen uitlegbaar zijn.
 4. **Eerlijke verwachting:** het best geteste pakket belooft 54–58% richtingstrefkans met dunne marges — een bias-hulpmiddel, geen signaaldienst. De oude claims (57%+ winrate, PF 4) draagt de data aantoonbaar niet.
 
@@ -118,12 +118,14 @@ Universum: 21 paren × 415 handelsdagen (8 apr 2025–13 nov 2026). **Ontwikkel 
 | V3a CB/rente-NIVEAU (huidige factor) | 56,2 / 62,0 (eff 54 — schijn) | 54,7 / 50,4, **−pips** | ❌ verwijderen |
 | V3b rente-momentum Δ5 standalone | 50,4 / 49,6 | 53,4 / 52,9 | ❌ alleen-in-toets telt niet |
 | V3c **contrarian + rente-momentum eens** | 54,8 / 52,4 | **57,5 [51,7–63,1] / 59,2** | ✅ als filter (zekerheid matig; traindelta klein) |
-| V4 **CoT-extremen faden** | 53,4 / 53,8 | 54,3 / **62,5 [51,3–72,6]** | ✅ als waarschuwingsfilter (zekerheid matig) |
+| V4 CoT-extremen faden — **GECORRIGEERD 14 nov** | 48,7 / 51,9 | 53,6 / 51,9 | ❌ zakt alsnog (zie correctie hieronder) |
 | V5 verrassingsverschil | geen train-data | 51,3 / 52,5 | ⏳ wordt al gelogd; beoordeel na 12 mnd |
 | V6 risk-off-verandering (JPY/CHF) | 52,8 / 53,2 | 53,5 / 50,8 | ❌ te zwak |
 | V7 grondstof-momentum (AUD/CAD) | 51,2 / 54,7 | 48,9 / **44,7** | ❌ keert om in de toets |
 
-Eerlijkheid: 20 maanden ≈ anderhalf macroklimaat; "werkt in beide periodes" is noodzakelijk, niet voldoende bewijs. Het beste pakket (V2+V3c+V4) belooft 54–58% richtingstrefkans met dunne marges.
+Eerlijkheid: 20 maanden ≈ anderhalf macroklimaat; "werkt in beide periodes" is noodzakelijk, niet voldoende bewijs. Het beste pakket (V2+V3c) belooft 54–58% richtingstrefkans met dunne marges.
+
+**Correctie (14 nov 2026, vóór de bouw ontdekt):** de oorspronkelijke V4-toets las de verkeerde kolommen uit het CFTC-jaarbestand (kolom 7/8 = open interest/noncomm-long in plaats van 8/9 = noncomm long/short). Geverifieerd tegen de officiële CFTC Socrata-API (resource 6dca-aqww) en opnieuw getoetst met de juiste data: ontwikkel 48,7%/51,9% (5d/20d), toets 53,6%/51,9% — CI's ruim door de 50. **CoT-extremen faden is daarmee alsnog gezakt** en zit níet in de v4-engine; de percentielen worden wel dagelijks gelogd zodat er over 12 maanden een eerlijke herbeoordeling kan plaatsvinden. De eerder in dit rapport genoemde V4-cijfers (53,4–53,8 / 54,3–62,5) zijn ongeldig.
 
 ## Fase 5 — Eenvoud: wat eruit kan
 
@@ -147,6 +149,20 @@ Doel: elke call in drie zinnen. *"[Valuta X] is sterker dan [Y] omdat de 2-jaars
 
 **Blijft (verdient zijn plek):** de CB-tabel als feiten-weergave (mits geactualiseerd en gever­sioneerd), de contrarian-kern op voltooide candles, de nieuwsfeed als leescontext, de kennisbank-uitleg, en de meetdiscipline van de nieuwe FB-tool (gelockte ochtend-run, multi-horizon, no-leakage) als blauwdruk.
 
-## Vervolg (fase 6 — pas na akkoord)
+## Fase 6 — uitgevoerd op 14 november 2026
 
-Backup-branch; `engine_version` op elke call (bestaande calls krijgen de versie van hun datum: backfill / v3.1-opt-vroeg / v3.1-opt); dagelijkse vastlegging van álle inputs; nieuwe engine minimaal vier weken in schaduwmodus naast de oude; overstap pas na akkoord op de schaduwresultaten; bias en onderbouwing, geen entries/SL/TP; TypeScript-build groen; één wijziging per commit, Nederlandse commit-messages.
+Na akkoord gebouwd, één wijziging per commit (zie git-historie van die dag):
+
+1. **Backup-branch** `backup/pre-v4-herbouw` gepusht.
+2. **Spoedreparaties:** de verweesde oude dashboardpagina (`/tools/fx-selector/tool`) is een permanente redirect geworden (het POST-vurende dashboard wordt nergens meer gerenderd); de backfill- en optimize-endpoints geven 410 Gone; `POST /api/trackrecord-v2` zit achter het cron-secret; de afrekening gebruikt geen gecachete quotes meer (`cache: 'no-store'`); de verzonnen TP/SL en de "TP gehit"-badge zijn uit de UI vervangen door de echte 1d-richtingsuitkomst met werkelijke sluitkoers.
+3. **engine_version** staat op alle 1.353 bestaande calls (metadata-key, met backup en verificatie): `backfill-simulatie` (399), `v3.1-optimizer-vroeg` (15), `v3.1-optimizer` (939).
+4. **v4-engine in schaduwmodus** (`src/lib/fx-v4/`): contrarian op voltooide candles, alleen waar het 5d-momentum van het 2-jaars renteverschil dezelfde kant op wijst (het V2+V3c-pakket). 14 paren met geverifieerde rentedekking (CHF/NZD-paren uitgesloten: geen bron). Calls worden opgeslagen als `metadata.source='v4-shadow'` in `trade_focus_records` — de site toont uitsluitend de oude engine. Uitkomsten op 1/3/5/10/20 voltooide handelsdagen close-to-close (drempel 30/50 pips) in de `accuracy`-kolom. Redenering per call in drie zinnen in `metadata.redenering`.
+5. **Dagelijkse input-vastlegging:** elke run schrijft rentes (met brondatums), candle-closes, CoT-percentielen én een dump van `central_bank_rates` naar Storage-bucket `v4-inputs/<datum>.json` — elke v4-score is voortaan narekenbaar.
+6. **Cron** `/api/cron/v4-shadow` (ma–vr 06:50 UTC, achter het cron-secret): eerst afrekenen, dan genereren. Geverifieerd via dry-run op 14 nov (zaterdag): alle 6 rentebronnen leveren, signaalregel draait op alle 14 paren, weekend-guard weigert correct, Storage schrijfbaar, deployed endpoint antwoordt 401 zonder secret. **Eerste echte calls: maandag 17 november 06:50.**
+
+**Openstaande acties voor de eigenaar:**
+- Dode bestanden fysiek verwijderen (verwijderen was voor de agent geblokkeerd; de pagina's zijn al onklaar): `git rm -r src/app/tools/fx-selector/v2/BriefingV2Dashboard.tsx src/app/tools/fx-selector/v2/components src/app/tools/fx-selector/v2/hooks src/app/tools/fx-selector/v2/utils.ts src/app/tools/fx-selector/v2/types.ts src/app/tools/fx-selector/v2/constants.ts`
+- `supabase/migrations/20261114_v4_overstap.sql` **níet** nu draaien — pas bij de overstap (fase 7).
+- De handmatige CB-labels in `central_bank_rates` zijn nog van 23 juni; de v4-engine gebruikt ze niet, maar de oude engine (die nog getoond wordt) wel — actualiseren blijft redactiewerk van de eigenaar.
+
+**Vervolg (fase 7, pas na akkoord):** na minimaal vier weken schaduw draaien (t/m ±15 december 2026) worden de schaduwresultaten gerapporteerd (zelfde meetdefinitie, Wilson-CI's op clusters). Pas na akkoord op die cijfers: migratie draaien, oude engine uitfaseren conform fase 5, UI omzetten naar de v4-calls met drie-zinnen-uitleg.
