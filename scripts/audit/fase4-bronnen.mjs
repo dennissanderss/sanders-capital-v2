@@ -218,18 +218,22 @@ writeFileSync('scripts/audit/data/fase4-yields.json', JSON.stringify(yields))
     'NZ DOLLAR -': 'NZD', 'NEW ZEALAND DOLLAR -': 'NZD',
     'CANADIAN DOLLAR -': 'CAD', 'SWISS FRANC -': 'CHF', 'U.S. DOLLAR INDEX -': 'USD',
   }
+  // KOLOMCORRECTIE (geverifieerd tegen de CFTC Socrata-API, resource
+  // 6dca-aqww): in het legacy-formaat is kolom 7 = Open Interest (All),
+  // kolom 8 = Noncommercial Long (All), kolom 9 = Noncommercial Short (All).
+  // De eerdere versie las kolom 7/8 en rekende dus met open interest i.p.v.
+  // noncomm-posities — die uitkomst was ongeldig.
   const cot = []
   for (const jaar of [2025, 2026]) {
     try {
       const txt = readFileSync(`scripts/audit/data/cot${jaar}.txt`, 'latin1')
-      // CSV: kolom 0 = marktnaam, 2 = datum yyyy-mm-dd, 7/8 = noncomm long/short (All)
       for (const line of txt.split('\n')) {
         const p = line.split(',').map((s) => s.replace(/"/g, '').trim())
-        if (p.length < 10) continue
+        if (p.length < 11) continue
         const markt = Object.keys(MARKTEN).find((m) => p[0].toUpperCase().startsWith(m))
         if (!markt) continue
         const date = p[2]
-        const long = parseInt(p[7], 10), short = parseInt(p[8], 10)
+        const long = parseInt(p[8], 10), short = parseInt(p[9], 10)
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(long) || isNaN(short)) continue
         cot.push({ ccy: MARKTEN[markt], date, net: long - short, long, short })
       }
