@@ -8,6 +8,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { ENGINE_VERSION, V4_SOURCES_ALL, V4_HORIZONS, V4_METING, V4_PAIRS, pipDrempel } from '@/lib/fx-v4/constants'
+import { doelUitkomst } from '@/lib/fx-v4/uitkomst'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,6 +56,7 @@ export async function GET() {
         cotQuote: m.cotQuote ?? null,
         drempel: pipDrempel(r.pair),
         horizons: r.accuracy || {},
+        uitkomst: doelUitkomst(r.accuracy),
       }
     })
 
@@ -77,9 +79,10 @@ export async function GET() {
       }
     }
 
-    // vandaag/laatste handelsdag + input-log (overgeslagen paren, provenance)
+    // actieve calls (nog niet gehaald en deadline nog niet voorbij) +
+    // input-log van de laatste run (overgeslagen paren, provenance)
     const laatsteDatum = calls[0]?.date ?? null
-    const vandaagCalls = laatsteDatum ? calls.filter((c) => c.date === laatsteDatum) : []
+    const actieveCalls = calls.filter((c) => c.uitkomst.status === 'loopt')
     let inputLog: { date: string; overgeslagen?: { pair: string; reden: string }[]; renteBronnen?: Record<string, string> } | null = null
     for (let terug = 0; terug < 6 && !inputLog; terug++) {
       const d = new Date(Date.now() - terug * 86400000).toISOString().slice(0, 10)
@@ -97,7 +100,7 @@ export async function GET() {
       meting: V4_METING,
       paren: V4_PAIRS,
       laatsteDatum,
-      vandaag: { calls: vandaagCalls, inputLog },
+      actief: { calls: actieveCalls, inputLog },
       trackrecord: { totaal: calls.length, perHorizon, calls },
       gegenereerdOp: new Date().toISOString(),
     })

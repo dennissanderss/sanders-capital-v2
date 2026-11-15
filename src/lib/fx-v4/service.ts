@@ -26,6 +26,7 @@ import {
   ENGINE_VERSION, V4_SOURCE, V4_SOURCES_ALL, V4_PAIRS, V4_PAIR_SYMBOLS,
   V4_HORIZONS, V4_METING, pipMultV4, pipDrempel,
 } from './constants'
+import { isAfgerond } from './uitkomst'
 
 function getSupabase(): SupabaseClient {
   return createClient(
@@ -126,7 +127,30 @@ export async function generateV4Shadow(candles: Record<string, Candle[]>) {
   const vanaf = new Date(Date.now() - 120 * 86400000).toISOString().slice(0, 10)
   const rentes = await haalRentes(vanaf)
   const cot = await haalCot(vandaag)
-  const { calls, overgeslagen } = berekenV4Calls(candles, rentes)
+  const { calls: kandidaten, overgeslagen } = berekenV4Calls(candles, rentes)
+
+  // ── Eén lopende call per paar ──────────────────────────────
+  // Zolang een eerdere call niet is afgerond (doel gehaald óf de
+  // 5-dagen-deadline afgerekend), krijgt dat paar geen nieuwe call.
+  // Voorkomt dat dezelfde these dag na dag opnieuw wordt uitgestuurd
+  // (de cluster-fout van de oude tool) en dat een paar wordt
+  // "nageroepen" nadat het doel al binnen is.
+  const kijkVanaf = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10)
+  const { data: recent } = await sb
+    .from('trade_focus_records')
+    .select('pair, date, accuracy')
+    .in('metadata->>source', [...V4_SOURCES_ALL])
+    .gte('date', kijkVanaf)
+  const lopend = new Map<string, string>()
+  for (const r of recent || []) {
+    if (!isAfgerond(r.accuracy)) lopend.set(r.pair, r.date)
+  }
+  const calls = kandidaten.filter((c) => !lopend.has(c.pair))
+  for (const c of kandidaten) {
+    if (lopend.has(c.pair)) {
+      overgeslagen.push({ pair: c.pair, reden: `er loopt al een call op dit paar (van ${lopend.get(c.pair)})` })
+    }
+  }
 
   if (calls.length > 0) {
     const rijen = calls.map((c) => {
