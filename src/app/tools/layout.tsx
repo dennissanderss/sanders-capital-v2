@@ -18,6 +18,7 @@ const premiumTools = [
   { href: '/tools/fx-analyse', label: 'Fundamentals', slug: 'fx-analyse' },
   { href: '/tools/fundamental-briefing', label: 'Fundamental Briefing', slug: 'fundamental-briefing', flowArrow: true },
   { href: '/tools/tradescope', label: 'TradeMind', slug: 'tradescope', flowArrow: true },
+  { href: '/tools/aandelen', label: 'Aandelen Analyzer', slug: 'aandelen' },
 ] as const
 
 const freeTools = [
