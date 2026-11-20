@@ -13,7 +13,9 @@ import { MAJORS } from './constants'
 import { analyzeNewsSentiment, type NewsRow, type NewsSentiment } from './scoring'
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const GROQ_MODEL = 'llama-3.3-70b-versatile'
+// Groq heeft llama-3.3-70b-versatile uit de lucht gehaald; daardoor viel de
+// tool stil terug op keywords. Overschrijfbaar via env zonder nieuwe code.
+const GROQ_MODEL = process.env.GROQ_NEWS_MODEL || 'openai/gpt-oss-120b'
 
 const SYSTEM_PROMPT = `Je bent een FX-macro-analist. Je krijgt genummerde nieuwsartikelen (titel + samenvatting). Beoordeel per artikel de impact op de WAARDE van elke geraakte G8-valuta (USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD).
 
@@ -44,6 +46,7 @@ async function callGroq(articles: NewsRow[]): Promise<LlmImpacts | null> {
       body: JSON.stringify({
         model: GROQ_MODEL,
         temperature: 0,
+        reasoning_effort: 'low',
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
