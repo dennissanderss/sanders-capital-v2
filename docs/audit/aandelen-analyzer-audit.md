@@ -70,7 +70,7 @@ Correct bevonden (afwijking kleiner dan één miljoenste): alle gemiddelden, RSI
 | # | Ernst | Bevinding | Bewijs | Status |
 |---|---|---|---|---|
 | C1 | Kritiek | Het trendfilter verloor meestal van vasthouden, maar de pagina noemde het "het belangrijkste filter" | 19 van 23 aandelen. Heineken: "Kopen 100/100" bij −49% tegenover +9% | Deels |
-| C2 | Kritiek | De backtest toetst het trendfilter, niet het plan met stop en doel | Bij puur toeval wint een plan met doel 3 en stop 2 in 40% van de gevallen: verwachting nul vóór kosten | Deels (eerlijke tekst; plan zelf niet getoetst) |
+| C2 | Kritiek | De backtest toetst het trendfilter, niet het plan met stop en doel | Bij puur toeval wint een plan met doel 3 en stop 2 in 40% van de gevallen: verwachting nul vóór kosten | Opgelost in de vervolgronde: plan getoetst, zie onder |
 | C3 | Kritiek | Banken en verzekeraars scoorden het hoogst, op 5 van de 10 checks | JPMorgan 100, Allianz 100, ING 90 | Opgelost |
 | C4 | Kritiek | Foute Yahoo-velden lieten het oordeel omslaan | Microsoft: kasstroomrendement 0,1% in plaats van 1,9%. Adyen: omzet −33% door wisseling van bruto naar netto. Unilever: rendement op kapitaal 47% in plaats van ongeveer 17% | Opgelost |
 | C5 | Hoog | Vastgoedfondsen, nutsbedrijven en holdings werden met de verkeerde maat gemeten | Realty Income: K/W 37 is daar betekenisloos | Deels |
@@ -141,7 +141,6 @@ Onder de twee oordelen staat nu een vaste regel over spreiding, 1% risico per tr
 
 | Punt | Waarom niet nu |
 |---|---|
-| Het echte plan (instap, stop, doel) backtesten | Dit is het enige dat het korte-termijnoordeel echt zou onderbouwen. Het is een apart bouwproject: instap op de volgende opening, gaten door de stop, kosten. Tot die tijd zegt de pagina eerlijk dat het niet getoetst is |
 | "Instap mogelijk" verlagen als het trendfilter op dit aandeel niet werkte | Niet overgenomen. Eén aandeel over negen jaar is te weinig om op te sturen; dat is ruis najagen. De uitkomst staat nu wel prominent in de kaart |
 | Marktfilter (geen instap als de index onder zijn 200-daags staat) | Zinnig, maar een nieuwe regel die eerst getoetst moet worden |
 | Analyse en AI-tekst opslaan in Supabase, limiet per gebruiker | Vraagt een SQL-migratie die jij moet draaien. Nu er een login voor staat is het risico klein. Wel is er een tijdelijke cache per server |
@@ -178,6 +177,25 @@ Niet getest:
 - **Vergelijking met TradingView.** Alles is vergeleken met Yahoo-ruwdata.
 - **De pagina op een telefoon.**
 
+## Vervolg: het handelsplan getoetst
+
+In een tweede ronde is het plan zelf teruggerekend (`toetsPlan` in `src/lib/stocks/analysis.ts`), met dezelfde regels als het oordeel van vandaag.
+
+**Zo is gerekend.** Signaal op het slot, instap op de opening van de volgende handelsdag, stop 2× en doel 3× de ATR vanaf die instap. Opent de koers voorbij stop of doel, dan geldt de openingskoers. Worden beide op één dag geraakt, dan telt de stop. Na 20 handelsdagen zonder stop of doel: uit op het slot. 0,2% kosten per trade, één trade tegelijk. De regel over kwartaalcijfers zit er niet in; oude cijferdata zijn niet beschikbaar.
+
+**Uitkomst over 54 grote aandelen** (32 uit de VS, 22 uit Nederland en Europa, ongeveer negen jaar):
+
+| | Trades | Met winst | Gemiddeld per trade | Aandelen met positief resultaat |
+|---|---|---|---|---|
+| Het plan (met instapsignaal) | 4.780 | 47,0% | +0,20% | 31 van 54 |
+| Controle: zelfde stop en doel, zonder signaal | 10.746 | 46,7% | +0,30% | 38 van 54 |
+
+**Wat dit betekent.** Het instapsignaal voegt niets toe. Wie op elk willekeurig moment instapte met dezelfde stop en hetzelfde doel, deed het per trade iets beter. De kleine plus in beide rijen komt van een beurs die in die jaren steeg en van het feit dat dit aandelen zijn die het hebben overleefd. Per aandeel loopt het sterk uiteen: van +30 keer het risico (Microsoft) tot −18 (Boeing).
+
+Het plan begrenst dus het verlies per trade, maar het is geen aangetoonde manier om de markt te verslaan. De pagina zegt dat nu ook: bij het plan, in de oordeelkaart en in een eigen blok onderaan het tabblad Korte termijn, met de laatste trades per aandeel om na te kijken.
+
+**Beperkingen van dit onderzoek.** Eén periode, die grotendeels een stijgende markt was. Alleen aandelen die nu nog bestaan. Koersen van Yahoo, niet gecontroleerd tegen een tweede bron. Geen dividend meegerekend. De uitkomst zegt daarom vooral wat er níet is aangetoond.
+
 ## Wat dit betekent voor het gebruik
 
-De tool is na deze ronde betrouwbaarder in wat hij toont en eerlijker over wat hij niet weet. Hij is nog steeds geen bewezen strategie. Het lange-termijndeel is een nette checklist op openbare cijfers. Het korte-termijndeel is een trendfilter met een plan waarvan het voordeel niet is aangetoond. Gebruik het eerste om bedrijven te leren lezen, en handel pas op het tweede als het plan zelf is getoetst.
+De tool is na deze ronde betrouwbaarder in wat hij toont en eerlijker over wat hij niet weet. Hij is nog steeds geen bewezen strategie. Het lange-termijndeel is een nette checklist op openbare cijfers. Het korte-termijndeel is een trendfilter met een plan dat inmiddels is getoetst: het begrenst je verlies, maar het instapsignaal gaf in het verleden geen voorsprong. Gebruik het eerste om bedrijven te leren lezen. Gebruik het tweede hooguit als discipline voor je risico per trade, niet als reden om te verwachten dat je er geld mee verdient.

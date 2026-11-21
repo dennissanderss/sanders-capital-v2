@@ -467,13 +467,48 @@ export interface KorteTermijn {
   indicatoren: Indicatoren | null
 }
 
+// De puntentelling van de korte termijn als losse functie: het oordeel van
+// vandaag én de historische toets van het handelsplan gebruiken exact
+// dezelfde regels, zodat de toets ook echt het getoonde plan toetst.
+interface KortInvoer {
+  slot: number; sma50: number; sma200: number
+  momentum: number | null; kwartaal: number | null; rsi: number | null; vanTop: number | null
+}
+const RSI_OVERVERHIT = 70
+const SCORE_INSTAP = 70
+function kortPunten(x: KortInvoer) {
+  return {
+    trend200: x.slot > x.sma200 ? 25 : 0,
+    gouden: x.sma50 > x.sma200 ? 15 : 0,
+    trend50: x.slot > x.sma50 ? 10 : 0,
+    momentum: x.momentum == null ? null : x.momentum > 0.10 ? 15 : x.momentum > 0 ? 7.5 : 0,
+    kwartaal: x.kwartaal == null ? null : x.kwartaal > 0 ? 10 : 0,
+    rsi: x.rsi == null ? null : x.rsi > RSI_OVERVERHIT ? 0 : x.rsi > 65 ? 7.5 : x.rsi >= 40 ? 15 : 7.5,
+    top: x.vanTop == null ? null : x.vanTop >= -0.10 ? 10 : x.vanTop >= -0.20 ? 5 : 0,
+  }
+}
+const KORT_MAX = { trend200: 25, gouden: 15, trend50: 10, momentum: 15, kwartaal: 10, rsi: 15, top: 10 } as const
+function kortScore(p: ReturnType<typeof kortPunten>): number | null {
+  let punten = 0, max = 0
+  for (const k of Object.keys(KORT_MAX) as (keyof typeof KORT_MAX)[]) {
+    const v = p[k]
+    if (v != null) { punten += v; max += KORT_MAX[k] }
+  }
+  return max > 0 ? Math.round((100 * punten) / max) : null
+}
+// Instapsignaal op koers alleen (kwartaalcijfers zijn historisch niet terug te halen).
+function kortSignaal(x: KortInvoer): boolean {
+  const score = kortScore(kortPunten(x))
+  return x.slot > x.sma200 && x.slot > x.sma50 && score != null && score >= SCORE_INSTAP && !(x.rsi != null && x.rsi > RSI_OVERVERHIT)
+}
+
 // Aantal kalenderdagen tot de kwartaalcijfers (0 = vandaag), op hele dagen.
 function dagenTot(datum: string): number {
   const vandaag = new Date().toISOString().slice(0, 10)
   return Math.round((Date.parse(datum) - Date.parse(vandaag)) / 86400000)
 }
 
-export function analyseKorteTermijn(c: DagCandle[], valuta: string, cijfersDatum: string | null, toets: Toets | null): KorteTermijn {
+export function analyseKorteTermijn(c: DagCandle[], valuta: string, cijfersDatum: string | null, toets: Toets | null, planToets: PlanToets | null = null): KorteTermijn {
   const ind = berekenIndicatoren(c)
   if (!ind || ind.sma200 == null || ind.sma50 == null) {
     return {
@@ -490,35 +525,35 @@ export function analyseKorteTermijn(c: DagCandle[], valuta: string, cijfersDatum
   const rnd = (r: Rendement | null) =>
     r ? `${plus(r.pct)}${pct(r.pct)} (${p(r.vanKoers)} op ${datumNl(r.vanDatum)} → ${p(r.totKoers)} op ${datumNl(r.totDatum)})` : '—'
 
+  const pt = kortPunten({ slot, sma50, sma200, momentum: ind.momentum12_1?.pct ?? null, kwartaal: ind.rendement3m?.pct ?? null, rsi, vanTop })
   const checks: Check[] = [
     check('trend200', 'Koers boven het 200-daags gemiddelde',
       'Het 200-daags gemiddelde is de gemiddelde slotkoers van de laatste ±10 maanden. Staat de koers erboven, dan is de lange trend omhoog. Dit is een risicofilter: het houdt je uit langdurige dalingen, maar het verhoogt het rendement meestal niet. Onderaan deze pagina zie je hoe het op dit aandeel uitpakte.',
-      `${p(slot)} tegenover ${p(sma200)} (${plus(afstand200)}${pct(afstand200)})`, bovenSma200 ? 25 : 0, 25),
+      `${p(slot)} tegenover ${p(sma200)} (${plus(afstand200)}${pct(afstand200)})`, pt.trend200, 25),
     check('gouden', '50-daags boven 200-daags gemiddelde',
       'Als het kortere gemiddelde boven het langere ligt, is de trend van de laatste maanden sterker dan die van het afgelopen jaar ("golden cross"). Andersom ("death cross") is de trend aan het keren.',
-      `${p(sma50)} tegenover ${p(sma200)}`, sma50 > sma200 ? 15 : 0, 15),
+      `${p(sma50)} tegenover ${p(sma200)}`, pt.gouden, 15),
     check('trend50', 'Koers boven het 50-daags gemiddelde',
       'Het 50-daags gemiddelde laat de trend van de laatste ±2,5 maand zien. Staat de koers eronder, dan is het aandeel de laatste weken aan het zakken, ook als de lange trend nog omhoog is. Zonder deze check geen instapsignaal.',
-      `${p(slot)} tegenover ${p(sma50)}`, bovenSma50 ? 10 : 0, 10),
+      `${p(slot)} tegenover ${p(sma50)}`, pt.trend50, 10),
     check('momentum', 'Momentum 12 maanden (laatste maand niet meegeteld)',
       'Aandelen die het afgelopen jaar goed deden, bleven in onderzoek gemiddeld nog enkele maanden beter presteren (Jegadeesh & Titman, 1993). Meer dan +10% geeft alle punten, positief de helft. Kanttekening: dat onderzoek ging over mandjes van honderden aandelen die 3 tot 12 maanden werden vastgehouden, niet over één aandeel voor een paar weken.',
-      rnd(ind.momentum12_1), ind.momentum12_1 ? (ind.momentum12_1.pct > 0.10 ? 15 : ind.momentum12_1.pct > 0 ? 7.5 : 0) : null, 15),
+      rnd(ind.momentum12_1), pt.momentum, 15),
     check('kwartaal', 'Rendement laatste 3 maanden',
       'Bevestigt of de beweging nog loopt of juist stilvalt. Positief geeft de punten.',
-      rnd(ind.rendement3m), ind.rendement3m ? (ind.rendement3m.pct > 0 ? 10 : 0) : null, 10),
+      rnd(ind.rendement3m), pt.kwartaal, 10),
     check('rsi', 'RSI (14 dagen): niet oververhit, niet in vrije val',
       'De RSI (0–100) meet hoe hard de koers de laatste weken is gestegen of gedaald. Tussen 40 en 65 alle punten. Boven 70 noemen we het aandeel oververhit: geen instap, en geen punten. Tussen 65 en 70 de helft. Onder 40 ook de helft, omdat het aandeel dan juist hard daalt. Dit is een vuistregel uit de praktijk, geen onderzocht patroon.',
       rsi == null ? '—' : nl(rsi, 0),
-      rsi == null ? null : rsi > 70 ? 0 : rsi > 65 ? 7.5 : rsi >= 40 ? 15 : 7.5, 15),
+      pt.rsi, 15),
     check('top', 'Afstand tot hoogste koers van 52 weken',
       'Sterke aandelen staan dicht bij hun jaartop. Binnen 10% van de top alle punten, binnen 20% de helft. Een aandeel dat ver onder zijn top staat is niet vanzelf "goedkoop": de markt verkoopt het om een reden.',
       vanTop == null || ind.hoog52 == null ? '—' : `${pct(vanTop)} (top ${p(ind.hoog52)} op ${datumNl(ind.hoog52Datum)})`,
-      vanTop == null ? null : vanTop >= -0.10 ? 10 : vanTop >= -0.20 ? 5 : 0, 10),
+      pt.top, 10),
   ]
-  const c0 = cat('', checks)
-  const score = c0.max > 0 ? Math.round((100 * c0.punten) / c0.max) : null
+  const score = kortScore(pt)
 
-  const oververhit = rsi != null && rsi > 70
+  const oververhit = rsi != null && rsi > RSI_OVERVERHIT
   const dagenCijfers = cijfersDatum ? dagenTot(cijfersDatum) : null
   const cijfersDichtbij = dagenCijfers != null && dagenCijfers >= 0 && dagenCijfers <= 14
   const maand = ind.rendement1m
@@ -533,10 +568,10 @@ export function analyseKorteTermijn(c: DagCandle[], valuta: string, cijfersDatum
   } else if (!bovenSma50) {
     oordeel = 'afwachten'
     samenvatting.push(`Score ${score}/100: de lange trend is nog omhoog, maar de koers (${p(slot)}) is onder het 50-daags gemiddelde (${p(sma50)}) gezakt${maand ? ` en staat ${plus(maand.pct)}${pct(maand.pct)} sinds ${datumNl(maand.vanDatum)}` : ''}. De laatste weken daalt het aandeel dus. Wachten tot de koers weer boven het 50-daags gemiddelde sluit.`)
-  } else if (score != null && score >= 70 && cijfersDichtbij) {
+  } else if (score != null && score >= SCORE_INSTAP && cijfersDichtbij) {
     oordeel = 'afwachten'
     samenvatting.push(`Score ${score}/100: de trend klopt, maar op ${datumNl(cijfersDatum)} komen de kwartaalcijfers. Rond cijfers kan de koers in één nacht 5–15% verspringen, dwars door je stop-loss heen. Wachten tot na de cijfers.`)
-  } else if (score != null && score >= 70) {
+  } else if (score != null && score >= SCORE_INSTAP) {
     oordeel = 'kopen'
     const mee = checks.filter((x) => x.status === 'goed').length
     samenvatting.push(`Score ${score}/100: de koers staat boven het 200- en het 50-daags gemiddelde en is niet oververhit; ${mee} van de ${checks.length} checks staan op groen.`)
@@ -559,6 +594,19 @@ export function analyseKorteTermijn(c: DagCandle[], valuta: string, cijfersDatum
     )
   }
 
+  // Het plan zelf, teruggerekend op dit aandeel (zie toetsPlan).
+  const genoegTrades = planToets != null && planToets.aantal >= 20
+  if (planToets && oordeel !== 'vermijden') {
+    const kern = `${planToets.aantal} trades in ${nl(planToets.jaren, 0)} jaar, ${planToets.winnaars} met winst (${pct(planToets.winnaars / planToets.aantal, 0)}), gemiddeld ${plus(planToets.gemPct)}${pct(planToets.gemPct, 2)} per trade na kosten`
+    samenvatting.push(
+      !genoegTrades
+        ? `Het handelsplan zelf, teruggerekend op dit aandeel: ${kern}. Dat zijn te weinig trades om er iets uit af te leiden.`
+        : planToets.gemPct > 0
+          ? `Het handelsplan zelf, teruggerekend op dit aandeel: ${kern}. Op dit aandeel leverde het plan in het verleden dus iets op; één aandeel bewijst weinig.`
+          : `Het handelsplan zelf, teruggerekend op dit aandeel: ${kern}. Op dit aandeel kostte het plan in het verleden dus geld.`,
+    )
+  }
+
   let plan: Handelsplan | null = null
   if (oordeel === 'kopen' && atr != null && atr > 0) {
     const stop = slot - 2 * atr
@@ -568,7 +616,7 @@ export function analyseKorteTermijn(c: DagCandle[], valuta: string, cijfersDatum
       stop, stopPct: stop / slot - 1, doel, doelPct: doel / slot - 1, atr,
       uitleg: [
         `De ATR (${p(atr)}) is de gemiddelde dagelijkse koersbeweging van de laatste weken. De stop-loss ligt 2× ATR onder de instap, zodat normale schommelingen je er niet uit gooien. Het doel ligt 3× ATR erboven: de mogelijke winst is 1,5× het risico.`,
-        'Eerlijk over het bewijs: dit plan is niet getoetst. Als koersen puur willekeurig bewegen, wordt het doel in 40% van de gevallen eerder geraakt dan de stop, en is het resultaat over veel trades nul — vóór kosten. Het plan verdient alleen geld als de trend je meer dan die 40% oplevert, en dat hebben wij niet aangetoond. Het plan beperkt vooral je verlies per trade.',
+        'Eerlijk over het bewijs: als koersen puur willekeurig bewegen, wordt het doel in 40% van de gevallen eerder geraakt dan de stop, en is het resultaat over veel trades nul — vóór kosten. Het plan verdient alleen geld als de trend je meer dan die 40% oplevert. Wij hebben dit plan teruggerekend over 54 grote aandelen: gemiddeld +0,2% per trade na kosten, 47% van de trades met winst. Maar wie zonder enig signaal instapte, met dezelfde stop en hetzelfde doel, haalde +0,3% per trade. Het instapsignaal voegde dus niets toe; de kleine plus kwam van een beurs die in die jaren steeg. Het plan beperkt je verlies per trade, maar het is geen aangetoonde voorsprong. Onderaan staat hoe het op dit aandeel uitpakte.',
         'In de praktijk: je koopt op de opening van de volgende handelsdag, niet op het getoonde slot; schuif stop en doel mee met je echte instapkoers. Een stop-loss is geen garantie: bij slecht nieuws kan de koers lager openen dan je stop. Reken op 0,2–0,7% kosten per retourtje (transactiekosten, spread en bij Amerikaanse aandelen valutakosten). Is na 20 handelsdagen stop noch doel geraakt, sluit de trade dan.',
       ],
     }
@@ -622,6 +670,151 @@ export function toetsTrendfilter(c: DagCandle[]): Toets | null {
     regel: { totaal: eqR - 1, perJaar: Math.pow(eqR, 1 / jaren) - 1, maxVerlies: ddR },
     kopenHouden: { totaal: eqB - 1, perJaar: Math.pow(eqB, 1 / jaren) - 1, maxVerlies: ddB },
     pctBelegd: belegd / dagen, wissels,
+  }
+}
+
+// ─── Historische toets van het HANDELSPLAN op dít aandeel ────
+// Toetst het plan zoals het getoond wordt, niet alleen het trendfilter:
+//   • signaal op het slot van dag t met exact de regels van het oordeel
+//     (kortSignaal) — alleen de kwartaalcijfer-regel ontbreekt, want oude
+//     cijferdata zijn niet beschikbaar;
+//   • instap op de OPENING van dag t+1 (je kunt niet op het slot handelen
+//     waar het signaal uit komt) → geen look-ahead;
+//   • stop = instap − 2×ATR, doel = instap + 3×ATR (ATR van dag t);
+//   • opent de koers voorbij stop of doel, dan geldt de openingskoers (gat);
+//   • worden stop én doel op dezelfde dag geraakt, dan telt de stop (voorzichtig);
+//   • na 20 handelsdagen zonder stop of doel: uit op het slot;
+//   • 0,2% kosten per trade (heen en terug samen); één trade tegelijk.
+// Koersen zijn gecorrigeerd voor splitsingen, niet voor dividend.
+// Uitkomst van het eenmalige onderzoek van 21 november 2026: dit plan
+// teruggerekend over 54 grote aandelen (VS, Nederland, Europa), ±9 jaar.
+// Zie docs/audit/aandelen-analyzer-audit.md. Opnieuw draaien = cijfers hier bijwerken.
+export const PLAN_STUDIE = {
+  datum: '2026-11-21', aandelen: 54, trades: 4780,
+  winnend: 0.47, gemPct: 0.00198, positief: 31,
+  zonderSignaal: { trades: 10746, winnend: 0.467, gemPct: 0.00297 },
+} as const
+export const PLAN_KOSTEN = 0.002
+export const PLAN_MAX_DAGEN = 20
+export interface PlanTrade {
+  signaalDatum: string
+  instapDatum: string
+  instap: number
+  uitDatum: string
+  uit: number
+  reden: 'doel' | 'stop' | 'tijd'
+  pct: number // na kosten
+}
+export interface PlanToets {
+  van: string
+  tot: string
+  jaren: number
+  aantal: number
+  winnaars: number
+  viaDoel: number
+  viaStop: number
+  viaTijd: number
+  gemPct: number // gemiddeld resultaat per trade, na kosten
+  gemWinst: number | null
+  gemVerlies: number | null
+  gemR: number // gemiddeld resultaat in veelvouden van het risico (afstand tot de stop)
+  somR: number // opgeteld: bij 1% risico per trade is dit het resultaat in % van de rekening
+  trades: PlanTrade[] // de laatste trades, ter controle in TradingView
+}
+
+// `zonderSignaal`: stap elke keer in zodra er geen trade loopt. Alleen voor
+// onderzoek: laat zien wat de uitstapregels opleveren zónder het instapsignaal.
+export function toetsPlan(c: DagCandle[], zonderSignaal = false): PlanToets | null {
+  const n = c.length
+  if (n < 200 + 252) return null
+  const close = c.map((x) => x.close)
+  const s50 = smaReeks(close, 50), s200 = smaReeks(close, 200)
+
+  // RSI en ATR (Wilder) als doorlopende reeks, zelfde methode als de losse functies.
+  const rsi: (number | null)[] = new Array(n).fill(null)
+  const atr: (number | null)[] = new Array(n).fill(null)
+  {
+    const p = 14
+    let w = 0, v = 0, a = 0
+    const tr = (i: number) => Math.max(c[i].high - c[i].low, Math.abs(c[i].high - c[i - 1].close), Math.abs(c[i].low - c[i - 1].close))
+    for (let i = 1; i < n; i++) {
+      const d = close[i] - close[i - 1]
+      if (i <= p) {
+        if (d >= 0) w += d; else v -= d
+        a += tr(i)
+        if (i === p) { w /= p; v /= p; a /= p }
+      } else {
+        w = (w * (p - 1) + Math.max(d, 0)) / p
+        v = (v * (p - 1) + Math.max(-d, 0)) / p
+        a = (a * (p - 1) + tr(i)) / p
+      }
+      if (i >= p) { rsi[i] = v === 0 ? 100 : 100 - 100 / (1 + w / v); atr[i] = a }
+    }
+  }
+
+  // Signaal per dag, met dezelfde kalendervensters als berekenIndicatoren.
+  const signaal: boolean[] = new Array(n).fill(false)
+  let i12 = -1, i3 = -1, i1 = -1
+  const schuif = (p: number, datum: string) => { while (p + 1 < n && c[p + 1].date <= datum) p++; return p }
+  for (let i = 0; i < n; i++) {
+    const d = c[i].date
+    i12 = schuif(i12, maandenTerug(d, 12)); i3 = schuif(i3, maandenTerug(d, 3)); i1 = schuif(i1, maandenTerug(d, 1))
+    if (s200[i] == null || s50[i] == null || i12 < 0) continue // nog geen vol jaar historie
+    let top = 0
+    for (let j = i12 + 1; j <= i; j++) if (c[j].high > top) top = c[j].high
+    signaal[i] = zonderSignaal || kortSignaal({
+      slot: close[i], sma50: s50[i] as number, sma200: s200[i] as number,
+      momentum: i1 > i12 && close[i12] ? close[i1] / close[i12] - 1 : null,
+      kwartaal: i3 >= 0 && i3 < i && close[i3] ? close[i] / close[i3] - 1 : null,
+      rsi: rsi[i], vanTop: top > 0 ? close[i] / top - 1 : null,
+    })
+  }
+
+  const trades: PlanTrade[] = []
+  const rs: number[] = []
+  const start = signaal.findIndex((_, i) => s200[i] != null && c[0].date <= maandenTerug(c[i].date, 12))
+  if (start < 0) return null
+  let i = start
+  while (i < n - 1) {
+    const a = atr[i]
+    const e = i + 1
+    const instap = c[e].open
+    if (!signaal[i] || a == null || a <= 0 || !instap) { i++; continue }
+    const stop = instap - 2 * a, doel = instap + 3 * a
+    let uit: number | null = null
+    let reden: PlanTrade['reden'] = 'tijd'
+    let j = e
+    for (; j < n && j < e + PLAN_MAX_DAGEN; j++) {
+      const b = c[j]
+      if (j > e && b.open <= stop) { uit = b.open; reden = 'stop'; break }
+      if (j > e && b.open >= doel) { uit = b.open; reden = 'doel'; break }
+      if (b.low <= stop) { uit = stop; reden = 'stop'; break }
+      if (b.high >= doel) { uit = doel; reden = 'doel'; break }
+    }
+    if (uit == null) {
+      if (j >= n && j < e + PLAN_MAX_DAGEN) break // trade loopt nog: niet meetellen
+      j = e + PLAN_MAX_DAGEN - 1
+      uit = c[j].close
+    }
+    const pctNa = uit / instap - 1 - PLAN_KOSTEN
+    trades.push({ signaalDatum: c[i].date, instapDatum: c[e].date, instap, uitDatum: c[j].date, uit, reden, pct: pctNa })
+    rs.push((pctNa * instap) / (2 * a))
+    i = j // op de dag van uitstappen mag een nieuw signaal ontstaan (instap de dag erna)
+  }
+  if (trades.length === 0) return null
+
+  const winst = trades.filter((t) => t.pct > 0), verlies = trades.filter((t) => t.pct <= 0)
+  const gem = (v: number[]) => (v.length ? v.reduce((a, b) => a + b, 0) / v.length : null)
+  return {
+    van: c[start].date, tot: c[n - 1].date, jaren: jarenTussen(c[start].date, c[n - 1].date),
+    aantal: trades.length, winnaars: winst.length,
+    viaDoel: trades.filter((t) => t.reden === 'doel').length,
+    viaStop: trades.filter((t) => t.reden === 'stop').length,
+    viaTijd: trades.filter((t) => t.reden === 'tijd').length,
+    gemPct: gem(trades.map((t) => t.pct)) as number,
+    gemWinst: gem(winst.map((t) => t.pct)), gemVerlies: gem(verlies.map((t) => t.pct)),
+    gemR: gem(rs) as number, somR: rs.reduce((a, b) => a + b, 0),
+    trades: trades.slice(-8).reverse(),
   }
 }
 

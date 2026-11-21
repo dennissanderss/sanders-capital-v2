@@ -16,7 +16,7 @@ import {
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
 import type { AandeelAnalyse } from '@/lib/stocks/service'
-import type { Check, Oordeel, Status, Categorie } from '@/lib/stocks/analysis'
+import { PLAN_KOSTEN, PLAN_MAX_DAGEN, PLAN_STUDIE, type Check, type Oordeel, type Status, type Categorie } from '@/lib/stocks/analysis'
 import type { JaarRij } from '@/lib/stocks/yahoo'
 import { nl, pct, groot, datumNl } from '@/lib/stocks/format'
 
@@ -622,6 +622,7 @@ function TabKort({ d, prijs }: { d: AandeelAnalyse; prijs: (v: number | null | u
   const kt = d.korteTermijn
   const plan = kt.plan
   const t = d.toets
+  const pl = d.planToets
   const [bereik, setBereik] = useState(252)
   const [rekening, setRekening] = useState('')
   const reeks = useMemo(() => d.grafiek.slice(-bereik), [d.grafiek, bereik])
@@ -668,7 +669,8 @@ function TabKort({ d, prijs }: { d: AandeelAnalyse; prijs: (v: number | null | u
           maanden werden vastgehouden. Wij passen die ideeën toe op één aandeel en een termijn van dagen tot weken;
           dat is een stap verder dan het onderzoek draagt. De zeven checks meten bovendien grotendeels hetzelfde (de
           trend), dus een score van 100 is geen zeven keer onafhankelijke bevestiging. Zie het als een risicofilter:
-          het houdt je uit dalende aandelen, maar het is geen bewezen winstformule. Alle berekeningen draaien op
+          het houdt je uit dalende aandelen, maar het is geen winstformule. Wij hebben het handelsplan zelf
+          teruggerekend; de uitkomst staat onderaan deze pagina en is nuchter. Alle berekeningen draaien op
           afgeronde handelsdagen (slotkoers {datumNl(d.koers.slotDatum)}), niet op de lopende dag.
         </p>
       </Kaart>
@@ -816,10 +818,71 @@ function TabKort({ d, prijs }: { d: AandeelAnalyse; prijs: (v: number | null | u
             Dit zijn koersen gecorrigeerd voor dividend; zet in TradingView de optie ADJ aan om dezelfde beginkoers te zien.
           </p>
           <p className="text-xs text-text-muted leading-relaxed mt-2">
-            Wat dit níet is: een toets van het handelsplan met stop en doel hierboven. Dat plan is niet teruggerekend.
-            Er gaan in het echt ook nog transactiekosten af ({t.wissels} keer handelen), en dit aandeel bestaat nog
-            steeds — aandelen die in deze periode zijn verdwenen zie je hier nooit, wat vasthouden mooier doet lijken.
+            Dit is alleen het trendfilter, zonder stop en doel; het handelsplan zelf staat hieronder. Er gaan in het
+            echt ook nog transactiekosten af ({t.wissels} keer handelen), en dit aandeel bestaat nog steeds —
+            aandelen die in deze periode zijn verdwenen zie je hier nooit, wat vasthouden mooier doet lijken.
           </p>
+        </Kaart>
+      )}
+
+      {pl && (
+        <Kaart
+          titel="Had het handelsplan op dit aandeel gewerkt?"
+          sub={`Elke keer dat de regels een instapsignaal gaven, van ${datumNl(pl.van)} tot ${datumNl(pl.tot)} (${nl(pl.jaren, 1)} jaar), na ${pct(PLAN_KOSTEN, 1)} kosten per trade.`}
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3">
+            <Feit label="Trades" waarde={`${pl.aantal}`} uitleg={`${pl.viaDoel} via doel · ${pl.viaStop} via stop · ${pl.viaTijd} na ${PLAN_MAX_DAGEN} dagen`} />
+            <Feit label="Met winst" waarde={`${pl.winnaars} (${pct(pl.winnaars / pl.aantal, 0)})`} uitleg="Bij puur toeval zou dat rond 40% liggen" />
+            <Feit label="Gemiddeld per trade" waarde={`${plus(pl.gemPct)}${pct(pl.gemPct, 2)}`} uitleg={`winst gem. ${pl.gemWinst != null ? `+${pct(pl.gemWinst)}` : '—'} · verlies gem. ${pl.gemVerlies != null ? pct(pl.gemVerlies) : '—'}`} />
+            <Feit label="Bij 1% risico per trade" waarde={`${plus(pl.somR)}${nl(pl.somR, 0)}%`} uitleg={`opgeteld over alle trades, in ${nl(pl.jaren, 0)} jaar`} />
+          </div>
+          <p className="text-sm text-text leading-relaxed mt-4">
+            {pl.aantal < 20
+              ? 'Dit zijn te weinig trades om er iets uit af te leiden.'
+              : pl.gemPct > 0
+                ? 'Op dit aandeel leverde het plan in het verleden iets op. Lees dat niet als bewijs: zie hieronder.'
+                : 'Op dit aandeel kostte het plan in het verleden geld.'}
+          </p>
+          <p className="text-xs text-text-muted leading-relaxed mt-2">
+            <strong className="text-heading">Wat het bredere onderzoek zegt.</strong> Wij hebben dit plan teruggerekend
+            over {PLAN_STUDIE.aandelen} grote aandelen uit de VS, Nederland en Europa ({nl(PLAN_STUDIE.trades, 0)} trades): gemiddeld{' '}
+            +{pct(PLAN_STUDIE.gemPct, 1)} per trade na kosten, {pct(PLAN_STUDIE.winnend, 0)} met winst, positief bij {PLAN_STUDIE.positief} van
+            de {PLAN_STUDIE.aandelen} aandelen. Ter controle deden we hetzelfde zónder instapsignaal: gewoon elke keer instappen
+            met dezelfde stop en hetzelfde doel. Dat gaf +{pct(PLAN_STUDIE.zonderSignaal.gemPct, 1)} per trade. Het
+            instapsignaal voegde dus niets toe. De kleine plus komt van een beurs die in die jaren steeg, en van het
+            feit dat dit aandelen zijn die het hebben overleefd. Dit plan is daarmee een manier om je verlies per
+            trade te begrenzen, geen aangetoonde manier om de markt te verslaan.
+          </p>
+          <p className="text-xs text-text-muted leading-relaxed mt-2">
+            Zo is gerekend: signaal op het slot, instap op de opening van de volgende handelsdag, stop 2× en doel 3×
+            de ATR vanaf die instap. Opent de koers voorbij stop of doel, dan geldt de openingskoers. Worden beide op
+            één dag geraakt, dan telt de stop. Na {PLAN_MAX_DAGEN} handelsdagen zonder stop of doel: uit op het slot. Eén
+            trade tegelijk. De regel &quot;geen instap vlak voor kwartaalcijfers&quot; zit er niet in, want oude
+            cijferdata zijn niet beschikbaar.
+          </p>
+          <div className="overflow-x-auto mt-4">
+            <table className="w-full text-sm min-w-[520px]">
+              <caption className="text-left text-xs font-semibold text-heading pb-1.5">De laatste trades, na te kijken in TradingView</caption>
+              <thead>
+                <tr className="text-left text-[11px] uppercase tracking-wide text-text-muted">
+                  <th className="py-1.5 font-semibold">Instap</th>
+                  <th className="py-1.5 font-semibold">Uit</th>
+                  <th className="py-1.5 font-semibold">Reden</th>
+                  <th className="py-1.5 font-semibold text-right">Resultaat</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {pl.trades.map((x) => (
+                  <tr key={x.instapDatum}>
+                    <td className="py-2 text-text whitespace-nowrap">{datumNl(x.instapDatum)} · {prijs(x.instap)}</td>
+                    <td className="py-2 text-text whitespace-nowrap">{datumNl(x.uitDatum)} · {prijs(x.uit)}</td>
+                    <td className="py-2 text-text-muted">{x.reden === 'doel' ? 'doel geraakt' : x.reden === 'stop' ? 'stop geraakt' : `${PLAN_MAX_DAGEN} dagen voorbij`}</td>
+                    <td className={`py-2 text-right font-medium ${x.pct > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{plus(x.pct)}{pct(x.pct)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </Kaart>
       )}
     </div>

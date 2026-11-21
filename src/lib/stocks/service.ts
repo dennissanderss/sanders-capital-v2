@@ -10,8 +10,8 @@ import {
   type JaarRij, type NieuwsItem,
 } from './yahoo'
 import {
-  analyseLangeTermijn, analyseKorteTermijn, toetsTrendfilter, grafiekReeks,
-  type Kern, type LangeTermijn, type KorteTermijn, type Toets, type GrafiekPunt,
+  analyseLangeTermijn, analyseKorteTermijn, toetsTrendfilter, toetsPlan, grafiekReeks,
+  type Kern, type LangeTermijn, type KorteTermijn, type Toets, type PlanToets, type GrafiekPunt,
 } from './analysis'
 import { maakVerhaal, type Verhaal } from './narrative'
 
@@ -70,7 +70,8 @@ export interface AandeelAnalyse {
   jaren: JaarRij[]
   langeTermijn: LangeTermijn
   korteTermijn: KorteTermijn
-  toets: Toets | null
+  toets: Toets | null // het 200-daags filter teruggerekend
+  planToets: PlanToets | null // het handelsplan (instap, stop, doel) teruggerekend
   grafiek: GrafiekPunt[]
   analisten: {
     aantal: number | null // aantal koersdoelen
@@ -182,7 +183,8 @@ async function bouwAnalyse(symbol: string): Promise<AandeelAnalyse | null> {
   const isAandeel = !type || type === 'EQUITY'
 
   const toets = toetsTrendfilter(candles)
-  const korteTermijn = analyseKorteTermijn(candles, valuta, cijfersDatum, toets)
+  const planToets = toetsPlan(candles)
+  const korteTermijn = analyseKorteTermijn(candles, valuta, cijfersDatum, toets, planToets)
   const ind = korteTermijn.indicatoren
   const vanTop = ind?.hoog52 ? laatste.close / ind.hoog52 - 1 : null
   let langeTermijn = analyseLangeTermijn(jaren, kern, sector, industrie, vanTop)
@@ -265,7 +267,7 @@ async function bouwAnalyse(symbol: string): Promise<AandeelAnalyse | null> {
       marktkap, marktkapValuta: hoofdValuta, hoofdValuta, factor,
     },
     kern, cijfersDatum, jaren, langeTermijn, korteTermijn,
-    toets, grafiek: grafiekReeks(candles),
+    toets, planToets, grafiek: grafiekReeks(candles),
     analisten, nieuws: nieuwsRes.nieuws.slice(0, 6), waarschuwingen,
     onvolledig,
     gemaaktOp: new Date().toISOString(),
